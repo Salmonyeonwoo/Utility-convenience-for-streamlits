@@ -9,7 +9,6 @@ import json
 import re
 import base64
 import io
-# ast 라이브러리 제거 (더 이상 필요 없음)
 
 # ⭐ Admin SDK 관련 라이브러리 임포트
 from firebase_admin import credentials, firestore, initialize_app
@@ -46,6 +45,8 @@ def initialize_firestore_admin():
         if "FIREBASE_SERVICE_ACCOUNT_JSON" not in st.secrets:
             return None, "FIREBASE_SERVICE_ACCOUNT_JSON Secret이 누락되었습니다."
         
+        # st.secrets를 통해 값을 가져옵니다. 
+        # Streamlit Cloud 환경에서 딕셔너리로 자동 파싱되거나, 문자열로 들어옵니다.
         service_account_data = st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"]
         
         sa_info = None
@@ -72,6 +73,7 @@ def initialize_firestore_admin():
              return None, "JSON 내 'project_id' 또는 'private_key' 필드가 누락되었습니다."
 
         # 4. Firebase Admin SDK 초기화
+        import firebase_admin # 이 함수 내에서만 임포트하여 로컬 충돌 가능성 줄임
         if not firebase_admin._apps:
             cred = credentials.Certificate(sa_info)
             initialize_app(cred, name="admin_app")
@@ -434,7 +436,7 @@ LANG = {
         "warning_topic": "学習テーマを入力してください。",
         "lstm_header": "LSTMベース達成度予測ダッシュボード",
         "lstm_desc": "仮想の過去クイズスコアデータに基づき、LSTMモデルを訓練して将来の達成度を予測し表示します。",
-        "lstm_disabled_error": "現在、ビルド環境の問題によりLSTM機能は一時的に無効化されています。「カスタムコンテンツ生成」機能を先にご利用ください。",
+        "lstm_disabled_error": "現在、ビルド環境の問題によりLSTM機能は一時的に無効化されています。「カスタムコンテンツ生成」機能を先にご利用ください。」",
         "lang_select": "言語選択",
         "embed_success": "全{count}チャンクで学習DB構築完了!",
         "embed_fail": "埋め込み失敗: フリーティアのクォータ超過またはネットワークの問題。",
