@@ -31,56 +31,56 @@ from tensorflow.keras.layers import LSTM, Dense
 
 
 # ================================
-# 1. Firebase 연동 및 직렬화/역직렬화 함수 (Admin SDK 사용 - JSON 통합)
+# 1. Firebase Admin SDK 초기화 및 Secrets 처리 함수
 # ================================
-@st.cache_resource(ttl=None)
-def initialize_firestore_admin():
+
+# 이 함수는 초기화 객체 자체를 생성하는 용도로만 사용됩니다.
+def _get_admin_credentials():
     """
-    Firebase Admin SDK를 사용하여 관리자 권한으로 Firestore 클라이언트를 초기화합니다.
-    'FIREBASE_SERVICE_ACCOUNT_JSON' 키 하나만 사용하여 데이터를 추출합니다.
+    Secrets에서 서비스 계정 정보를 안전하게 로드하고 딕셔너리로 반환합니다.
+    (initialize_firestore_admin 함수가 안전하게 호출할 수 있도록 분리)
+    """
+    if "FIREBASE_SERVICE_ACCOUNT_JSON" not in st.secrets:
+        return None, "FIREBASE_SERVICE_ACCOUNT_JSON Secret이 누락되었습니다."
+    
+    service_account_data = st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"]
+    
+    if isinstance(service_account_data, str):
+        try:
+            # 문자열인 경우: 유효하지 않은 이스케이프 문자 및 줄바꿈을 복구하여 JSON 로드
+            sa_info_str = service_account_data.strip().replace('\\n', '\n')
+            sa_info = json.loads(sa_info_str)
+        except json.JSONDecodeError:
+            return None, "FIREBASE_SERVICE_ACCOUNT_JSON의 JSON 구문 오류입니다. 값을 확인하세요."
+    elif isinstance(service_account_data, dict):
+        # 딕셔너리인 경우 (Streamlit Cloud에서 자동 파싱된 경우)
+        sa_info = service_account_data
+    else:
+        return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 형식이 올바르지 않습니다. (Type: {type(service_account_data)})"
+        
+    if not sa_info.get("project_id") or not sa_info.get("private_key"):
+        return None, "JSON 내 'project_id' 또는 'private_key' 필드가 누락되었습니다."
+
+    return sa_info, None
+
+@st.cache_resource(ttl=None)
+def initialize_firestore_client(sa_info):
+    """
+    캐시 가능한 Firestore 클라이언트 객체를 생성합니다.
     """
     try:
-        # 1. Secrets에서 JSON 데이터 로드
-        if "FIREBASE_SERVICE_ACCOUNT_JSON" not in st.secrets:
-            return None, "FIREBASE_SERVICE_ACCOUNT_JSON Secret이 누락되었습니다."
-        
-        # st.secrets를 통해 값을 가져옵니다. 
-        service_account_data = st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"]
-        
-        sa_info = None
-        
-        # 2. 데이터 형식 확인 및 정제 (최종 복구 로직)
-        if isinstance(service_account_data, str):
-            # 문자열인 경우: 유효하지 않은 이스케이프 문자 및 줄바꿈을 복구하여 JSON 로드
-            try:
-                # 1단계: Secrets UI의 Multi-line 입력 시 생기는 \n 문제를 복구
-                sa_info_str = service_account_data.strip().replace('\\n', '\n')
-                # 2단계: JSON 파싱 시도 (이전의 오류가 발생한 지점)
-                sa_info = json.loads(sa_info_str)
-            except json.JSONDecodeError:
-                return None, "FIREBASE_SERVICE_ACCOUNT_JSON의 JSON 구문 오류입니다. 값을 확인하세요."
-        elif not isinstance(sa_info, dict):
-            # 딕셔너리도, 문자열도 아닌 경우
-            return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 형식이 올바르지 않습니다. (현재 타입: {type(sa_info)})"
-            
-        # 3. 필수 필드 검사
-        if not sa_info.get("project_id") or not sa_info.get("private_key"):
-             return None, "JSON 내 'project_id' 또는 'private_key' 필드가 누락되었습니다."
-
-        # 4. Firebase Admin SDK 초기화
-        import firebase_admin # 이 함수 내에서만 임포트하여 로컬 충돌 가능성 줄임
+        # Firebase Admin SDK 초기화
+        import firebase_admin
         if not firebase_admin._apps:
             cred = credentials.Certificate(sa_info)
-            initialize_app(cred, name="admin_app")
-        
-        # 5. Firestore 클라이언트 반환
-        db = firestore.client()
-        return db, None
+            # 이름 없이 default 앱으로 초기화
+            initialize_app(cred) 
+            
+        # Firestore 클라이언트 반환 (default 앱 사용)
+        return firestore.client(), None
 
     except Exception as e:
-        error_msg = f"Firebase Admin 초기화 실패: Admin SDK 인증 정보를 확인하세요. ({e})"
-        print(error_msg)
-        return None, error_msg
+        return None, f"Firebase Admin 초기화 실패: {e}"
 
 
 def save_index_to_firestore(db, vector_store, index_id="user_portfolio_rag"):
@@ -134,6 +134,7 @@ def load_index_from_firestore(db, embeddings, index_id="user_portfolio_rag"):
 
 # ================================
 # 2. JSON/RAG/LSTM 함수 정의
+# (이 섹션의 나머지 함수들은 기존 코드를 그대로 유지합니다.)
 # ================================
 def clean_and_load_json(text):
     """LLM 응답 텍스트에서 JSON 객체만 정규표현식으로 추출하여 로드"""
@@ -493,17 +494,22 @@ if 'llm' not in st.session_state:
             st.session_state.is_llm_ready = True
             
             # ⭐⭐ Admin SDK 클라이언트 초기화 (st.secrets 기반 최종 안전성) ⭐⭐
-            db, error_message = initialize_firestore_admin() 
-            st.session_state.firestore_db = db
+            # initialize_firestore_admin() 대신, 분리된 함수를 호출하도록 수정
+            sa_info, error_message = _get_admin_credentials()
             
             if error_message:
-                # Admin SDK 초기화 실패 시 에러 메시지를 LLM 에러 메시지에 포함
                 llm_init_error = f"{L['llm_error_init']} (DB Auth Error: {error_message})"
-            
+            elif sa_info:
+                db, error_message = initialize_firestore_client(sa_info)
+                st.session_state.firestore_db = db
+                
+                if error_message:
+                    llm_init_error = f"{L['llm_init_error']} (DB Client Error: {error_message})"
+
             # DB 로딩 로직
-            if db and 'conversation_chain' not in st.session_state:
+            if st.session_state.firestore_db and 'conversation_chain' not in st.session_state:
                 # DB 로딩 시도
-                loaded_index = load_index_from_firestore(db, st.session_state.embeddings)
+                loaded_index = load_index_from_firestore(st.session_state.firestore_db, st.session_state.embeddings)
                 
                 if loaded_index:
                     st.session_state.conversation_chain = get_rag_chain(loaded_index)
@@ -513,7 +519,7 @@ if 'llm' not in st.session_state:
                     st.session_state.firestore_load_success = False
             
         except Exception as e:
-            llm_init_error = f"{L['llm_error_init']} {e}"
+            llm_init_error = f"{L['llm_init_error']} {e}"
             st.session_state.is_llm_ready = False
     
     if llm_init_error:
