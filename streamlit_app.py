@@ -42,7 +42,7 @@ def initialize_firestore_admin():
     try:
         # 1. Secrets에서 JSON 데이터 로드
         if "FIREBASE_SERVICE_ACCOUNT_JSON" not in st.secrets:
-            return None, "FIREBASE_SERVICE_ACCOUNT_JSON Secret이 누락되었습니다."
+            firebase_cred_dict = json.loads(st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"])
         
         # st.secrets를 통해 값을 가져옵니다. 
         service_account_data = st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"]
