@@ -14,7 +14,6 @@ import io
 from firebase_admin import credentials, firestore, initialize_app
 # Admin SDK의 firestore와 Google Cloud SDK의 firestore를 구분하기 위해 alias 사용
 from google.cloud import firestore as gcp_firestore
-# from google.oauth2 import service_account 
 
 from langchain.chains import ConversationalRetrievalChain
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
@@ -46,29 +45,25 @@ def initialize_firestore_admin():
             return None, "FIREBASE_SERVICE_ACCOUNT_JSON Secret이 누락되었습니다."
         
         # st.secrets를 통해 값을 가져옵니다. 
-        # Streamlit Cloud 환경에서 딕셔너리로 자동 파싱되거나, 문자열로 들어옵니다.
         service_account_data = st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"]
         
         sa_info = None
         
-        # 2. 데이터 형식 확인 및 정제 (가장 강력한 복구 로직)
+        # 2. 데이터 형식 확인 및 정제 (최종 복구 로직)
         if isinstance(service_account_data, str):
             # 문자열인 경우: 유효하지 않은 이스케이프 문자 및 줄바꿈을 복구하여 JSON 로드
             try:
                 # 1단계: Secrets UI의 Multi-line 입력 시 생기는 \n 문제를 복구
                 sa_info_str = service_account_data.strip().replace('\\n', '\n')
-                # 2단계: JSON 파싱 시도
+                # 2단계: JSON 파싱 시도 (이전의 오류가 발생한 지점)
                 sa_info = json.loads(sa_info_str)
             except json.JSONDecodeError:
-                # 만약 복구 후에도 JSONDecodeError가 발생하면, 이는 Secrets 입력 문자열이 잘못된 것임
                 return None, "FIREBASE_SERVICE_ACCOUNT_JSON의 JSON 구문 오류입니다. 값을 확인하세요."
-        elif isinstance(service_account_data, dict):
-            # 딕셔너리인 경우 (Streamlit Cloud에서 자동 파싱된 경우)
-            sa_info = service_account_data
-        else:
-            return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 형식이 올바르지 않습니다. (Type: {type(service_account_data)})"
+        elif not isinstance(sa_info, dict):
+            # 딕셔너리도, 문자열도 아닌 경우
+            return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 형식이 올바르지 않습니다. (현재 타입: {type(sa_info)})"
             
-        # 3. 필수 필드 검사 (추출된 데이터가 유효한지 확인)
+        # 3. 필수 필드 검사
         if not sa_info.get("project_id") or not sa_info.get("private_key"):
              return None, "JSON 내 'project_id' 또는 'private_key' 필드가 누락되었습니다."
 
@@ -441,7 +436,7 @@ LANG = {
         "embed_success": "全{count}チャンクで学習DB構築完了!",
         "embed_fail": "埋め込み失敗: フリーティアのクォータ超過またはネットワークの問題。",
         "warning_no_files": "まず学習資料をアップロードしてください。",
-        "warning_rag_not_ready": "RAGの準備ができていません。資料をアップロードし、分析開始ボタンを押してください。",
+        "warning_rag_not_ready": "RAGが準備されていません。資料をアップロードし、分析開始ボタンを押してください。",
         "quiz_fail_structure": "クイズのデータ構造が正しくありません。",
         "select_answer": "答えを選択してください",
         "check_answer": "答えを確認",
