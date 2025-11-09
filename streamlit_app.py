@@ -30,31 +30,43 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 
 
-# ================================
-# 1. Firebase 연동 및 직렬화/역직렬화 함수 (Admin SDK 사용 - JSON 통합)
-# ================================
 
-@st.cache_resource(ttl=None)
-def initialize_firestore():
-    """
-    Firebase Admin SDK 초기화 후 Firestore 클라이언트를 반환.
-    이미 초기화된 경우 재사용.
-    """
+# ==========================
+# 1. Firestore 초기화
+# ==========================
+if st.session_state.firestore_db is None:
+    db, error = initialize_firestore()
+    st.session_state.firestore_db = db
+    if error:
+        st.session_state.llm_init_error_msg = f"DB 초기화 오류: {error}"
+
+# ==========================
+# 2. LLM / Embeddings 초기화
+# ==========================
+API_KEY = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
+
+if API_KEY and st.session_state.firestore_db:
     try:
-        if not firebase_admin._apps:
-            # st.secrets에서 Service Account JSON 불러오기
-            sa_json_str = st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"].strip().replace('\\n','\n')
-            sa_info = json.loads(sa_json_str)
-            
-            # 인증서 객체 생성 후 앱 초기화
-            cred = credentials.Certificate(sa_info)
-            firebase_admin.initialize_app(cred)
-        
-        db = firestore.client()
-        return db, None
+        from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+
+        st.session_state.llm = ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash",
+            temperature=0.7,
+            google_api_key=API_KEY
+        )
+
+        st.session_state.embeddings = GoogleGenerativeAIEmbeddings(
+            model="models/embedding-001",
+            google_api_key=API_KEY
+        )
+
+        st.session_state.is_llm_ready = True
 
     except Exception as e:
-        return None, f"Firebase Admin 초기화 실패: {e}"
+        st.session_state.llm_init_error_msg = f"LLM 초기화 실패: {e}"
+        st.session_state.is_llm_ready = False
+else:
+    st.session_state.llm_init_error_msg = "⚠️ GEMINI API Key 또는 Firestore DB 초기화가 누락됨"
 
 
 def save_index_to_firestore(db, vector_store, index_id="user_portfolio_rag"):
