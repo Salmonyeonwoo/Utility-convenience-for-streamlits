@@ -38,32 +38,29 @@ from tensorflow.keras.layers import LSTM, Dense
 @st.cache_resource(ttl=None)
 def initialize_firestore_admin():
     """
-    Firebase Admin SDK를 사용하여 관리자 권한으로 Firestore 클라이언트를 초기화합니다.
     st.secrets를 통해 JSON 데이터를 딕셔너리로 자동 로드하여 오류를 방어합니다.
     """
     try:
-        # 1. Streamlit Secrets에서 값 로드 (st.secrets 사용)
-        # st.secrets는 Secrets.toml의 키를 속성으로 제공
+        # st.secrets 객체에 접근하여 키를 가져옵니다. 
+        # Streamlit이 secrets.toml 파일을 읽어와서 이 객체를 만듭니다.
         if "FIREBASE_SERVICE_ACCOUNT_JSON" not in st.secrets:
             return None, "FIREBASE_SERVICE_ACCOUNT_JSON Secret이 누락되었습니다."
         
+        # st.secrets는 JSON이나 TOML 구조를 파이썬 딕셔너리로 자동 파싱합니다.
         sa_info = st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"]
         
-        # 2. 데이터 형식 확인 및 정제
-        if isinstance(sa_info, str):
-            # 값이 문자열인 경우 (Secrets에 JSON 대신 문자열이 입력되었을 경우)
-            # 줄 바꿈 문자를 실제 '\n'으로 치환 (private_key 문제 해결)
-            sa_info_str = sa_info.strip().replace('\\n', '\n')
-            sa_info = json.loads(sa_info_str)
-        elif not isinstance(sa_info, dict):
-            # 딕셔너리도, 문자열도 아닌 알 수 없는 타입인 경우
-            return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 형식이 올바르지 않습니다. (Type: {type(sa_info)})"
-            
+        # 여기서 sa_info는 이미 딕셔너리여야 합니다. (파싱 오류 원천 차단)
+        if not isinstance(sa_info, dict):
+            # 문자열로 들어왔을 경우를 대비하여 한 번 더 안전하게 처리 (Optional)
+            if isinstance(sa_info, str):
+                sa_info = json.loads(sa_info.replace('\\n', '\n'))
+            else:
+                return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 형식이 올바르지 않습니다. (Type: {type(sa_info)})"
+
+
         # 3. Firebase Admin SDK 초기화
-        # Credential은 딕셔너리 형태의 서비스 계정 정보를 받습니다.
-        if not firebase_admin._apps:
+        if not firestore._app:
             cred = credentials.Certificate(sa_info)
-            # 앱 이름을 지정하여 초기화 충돌 방지
             initialize_app(cred, name="admin_app")
         
         # 4. Firestore 클라이언트 반환
