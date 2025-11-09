@@ -52,17 +52,15 @@ def initialize_firestore_admin():
         purified_str = service_account_json_str.strip()
         
         # 3. ast.literal_eval을 사용한 안전한 파이썬 객체 해석
-        # Secrets에 따옴표가 있든 없든, 이스케이프가 잘못되었든 최대한 원본 복원 시도
         try:
             # 먼저 파이썬 객체(문자열)로 해석하여, Secrets의 외부 따옴표와 이스케이프 문제를 해결
             sa_info_str = ast.literal_eval(purified_str)
         except (ValueError, TypeError, SyntaxError):
             # ast.literal_eval이 실패하면 (이미 순수 JSON 문자열인 경우) 원본 사용
             sa_info_str = purified_str
-            
-        # 4. 줄 바꿈 문자 처리: Final Pass (모든 '\\n'을 '\n'으로 치환)
+
+        # 4. 줄 바꿈 문자 처리: Final Pass
         # 'Invalid \escape' 오류의 핵심 원인인 백슬래시 문제를 최종적으로 해결
-        # 이 코드는 단일 백슬래시든 이중 백슬래시든 최종적으로 '\n'을 얻어내도록 합니다.
         sa_info_str = sa_info_str.replace('\\\\n', '\n').replace('\\n', '\n')
         
         # 5. JSON 로드 시도
@@ -449,7 +447,7 @@ LANG = {
         "quiz_complete": "クイズ完了!",
         "score": "スコア",
         "retake_quiz": "クイズを再試行",
-        "quiz_error_llm": "クイズ生成に失敗しました: LLMが有効なJSON形式を返しませんでした。LLM의オリジナル応答を確認してください。",
+        "quiz_error_llm": "퀴즈 생성 실패: LLM이 유효한 JSON 형식을 반환하지 않았습니다. LLM의オリジナル応答を確認してください。",
         "quiz_original_response": "LLMオリジナル応答"
     }
 }
@@ -725,75 +723,75 @@ Requested Format: {display_type_text}"""
 
 
 elif feature_selection == L["lstm_tab"]:
-    st.header(L["lstm_header"])
-    st.markdown(L["lstm_desc"])
+    st.header(L["lstm_header"])
+    st.markdown(L["lstm_desc"])
 
-    with st.spinner(f"LSTM model loading/training..." if st.session_state.language != 'ko' else "LSTM 모델을 로드/학습 중입니다..."):
-        try:
-            # 1. 모델 로드 및 데이터 생성
-            lstm_model, historical_scores = load_or_train_lstm()
-            st.success("LSTM Model Ready!")
+    with st.spinner(f"LSTM model loading/training..." if st.session_state.language != 'ko' else "LSTM 모델을 로드/학습 중입니다..."):
+        try:
+            # 1. 모델 로드 및 데이터 생성
+            lstm_model, historical_scores = load_or_train_lstm()
+            st.success("LSTM Model Ready!")
 
-            # 2. 예측 로직
-            look_back = 5
-            last_sequence = historical_scores[-look_back:]
-            input_sequence = np.reshape(last_sequence, (1, look_back, 1))
-            
-            future_predictions = []
-            current_input = input_sequence
+            # 2. 예측 로직
+            look_back = 5
+            last_sequence = historical_scores[-look_back:]
+            input_sequence = np.reshape(last_sequence, (1, look_back, 1))
+            
+            future_predictions = []
+            current_input = input_sequence
 
-            for i in range(5):
-                next_score = lstm_model.predict(current_input, verbose=0)[0]
-                future_predictions.append(next_score[0])
+            for i in range(5):
+                next_score = lstm_model.predict(current_input, verbose=0)[0]
+                future_predictions.append(next_score[0])
 
-                next_input = np.append(current_input[:, 1:, :], next_score[0]).reshape(1, look_back, 1)
-                current_input = next_input
+                next_input = np.append(current_input[:, 1:, :], next_score[0]).reshape(1, look_back, 1)
+                current_input = next_input
 
-            # 3. 시각화
-            fig, ax = plt.subplots(figsize=(10, 6))
+            # 3. 시각화
+            fig, ax = plt.subplots(figsize=(10, 6))
 
-            ax.plot(range(len(historical_scores)), historical_scores, label="Past Quiz Scores (Hypothetical)", marker='o', linestyle='-', color='blue')
-            future_indices = range(len(historical_scores), len(historical_scores) + len(future_predictions))
-            ax.plot(future_indices, future_predictions, label="Predicted Achievement (Next 5 Days)", marker='x', linestyle='--', color='red')
+            ax.plot(range(len(historical_scores)), historical_scores, label="Past Quiz Scores (Hypothetical)", marker='o', linestyle='-', color='blue')
+            future_indices = range(len(historical_scores), len(historical_scores) + len(future_predictions))
+            ax.plot(future_indices, future_predictions, label="Predicted Achievement (Next 5 Days)", marker='x', linestyle='--', color='red')
 
-            ax.set_title(L["lstm_header"])
-            ax.set_xlabel(L["topic_label"])
-            ax.set_ylabel("Achievement Score (0-100)")
-            ax.legend()
-            st.pyplot(fig)
+            ax.set_title(L["lstm_header"])
+            ax.set_xlabel(L["topic_label"])
+            ax.set_ylabel("Achievement Score (0-100)")
+            ax.legend()
+            st.pyplot(fig)
 
-            # 4. LLM 분석 코멘트
-            st.markdown("---")
-            st.markdown(f"#### {L.get('coach_analysis', 'AI Coach Analysis Comment')}")
-            
-            avg_recent = np.mean(historical_scores[-5:])
-            avg_predict = np.mean(future_predictions)
-            
-            if st.session_state.language == 'ko':
-                if avg_predict > avg_recent:
-                    comment = "최근 학습 데이터와 LSTM 예측 결과에 따르면, **앞으로의 학습 성취도가 긍정적으로 향상될 것으로 예측**됩니다. 현재 학습 방식을 유지하시거나, 난이도를 한 단계 높여 도전해 보세요!"
-                elif avg_predict < avg_recent - 5:
-                    comment = "LSTM 예측 결과, **성취도가 다소 하락할 수 있다는 신호**가 보입니다. 학습에 사용된 자료나 방법론에 대한 깊은 이해가 부족할 수 있습니다. RAG 챗봇 기능을 활용하여 기초 개념을 다시 확인해 보는 것을 추천합니다."
-                else:
-                    comment = "성취도는 현재 수준을 유지할 것으로 예측됩니다. 정체기가 될 수 있으니, **새로운 학습 콘텐츠 형식(예: 실습 예제 아이디어)을 생성**하여 학습에 활력을 더하는 것을 고려해 보세요。"
-            elif st.session_state.language == 'en': # English
-                if avg_predict > avg_recent:
-                    comment = "Based on recent learning data and LSTM prediction, **your achievement is projected to improve positively**. Maintain your current study methods or consider increasing the difficulty level."
-                elif avg_predict < avg_recent - 5:
-                    comment = "LSTM prediction suggests a **potential drop in achievement**. Your understanding of fundamental concepts may be lacking. Use the RAG Chatbot to review foundational knowledge."
-                else:
-                    comment = "Achievement is expected to remain stable. Consider generating **new content types (e.g., Practical Example Ideas)** to revitalize your learning during this plateau."
-            else: # Japanese
-                 if avg_predict > avg_recent:
-                    comment = "最近の学習データとLSTM予測結果に基づき、**今後の達成度はポジティブに向上すると予測**されます。現在の学習方法を維持するか、難易度を一段階上げて挑戦することを検討してください。"
-                 elif avg_predict < avg_recent - 5:
-                    comment = "LSTM予測の結果、**達成度がやや低下する可能性**が示されました。学習資料や方法論の基礎理解が不足しているかもしれません。RAGチャットボット機能を利用して、基本概念を再確認することをお勧めします。"
-                 else:
-                    comment = "達成度は現状維持と予測されます。停滞期になる可能性があります。**新しいコンテンツ形式（例：実践例のアイデア）を生成**し、学習に活力を与えることを検討してください。"
+            # 4. LLM 분석 코멘트
+            st.markdown("---")
+            st.markdown(f"#### {L.get('coach_analysis', 'AI Coach Analysis Comment')}")
+            
+            avg_recent = np.mean(historical_scores[-5:])
+            avg_predict = np.mean(future_predictions)
+            
+            if st.session_state.language == 'ko':
+                if avg_predict > avg_recent:
+                    comment = "최근 학습 데이터와 LSTM 예측 결과에 따르면, **앞으로의 학습 성취도가 긍정적으로 향상될 것으로 예측**됩니다. 현재 학습 방식을 유지하시거나, 난이도를 한 단계 높여 도전해 보세요!"
+                elif avg_predict < avg_recent - 5:
+                    comment = "LSTM 예측 결과, **성취도가 다소 하락할 수 있다는 신호**가 보입니다. 학습에 사용된 자료나 방법론에 대한 깊은 이해가 부족할 수 있습니다. RAG 챗봇 기능을 활용하여 기초 개념을 다시 확인해 보는 것을 추천합니다."
+                else:
+                    comment = "성취도는 현재 수준을 유지할 것으로 예측됩니다. 정체기가 될 수 있으니, **새로운 학습 콘텐츠 형식(예: 실습 예제 아이디어)을 생성**하여 학습에 활력을 더하는 것을 고려해 보세요。"
+            elif st.session_state.language == 'en': # English
+                if avg_predict > avg_recent:
+                    comment = "Based on recent learning data and LSTM prediction, **your achievement is projected to improve positively**. Maintain your current study methods or consider increasing the difficulty level."
+                elif avg_predict < avg_recent - 5:
+                    comment = "LSTM prediction suggests a **potential drop in achievement**. Your understanding of fundamental concepts may be lacking. Use the RAG Chatbot to review foundational knowledge."
+                else:
+                    comment = "Achievement is expected to remain stable. Consider generating **new content types (e.g., Practical Example Ideas)** to revitalize your learning during this plateau."
+            else: # Japanese
+                 if avg_predict > avg_recent:
+                    comment = "最近の学習データとLSTM予測結果に基づき、**今後の達成度はポジティブに向上すると予測**されます。現在の学習方法を維持するか、難易度を一段階上げて挑戦することを検討してください。"
+                 elif avg_predict < avg_recent - 5:
+                    comment = "LSTM予測の結果、**達成度がやや低下する可能性**が示されました。学習資料や方法論の基礎理解が不足しているかもしれません。RAGチャットボット機能を利用して、基本概念を再確認することをお勧めします。"
+                 else:
+                    comment = "達成度は現状維持と予測されます。停滞期になる可能性があります。**新しいコンテンツ形式（例：実践例のアイデア）を生成**し、学習に活力を与えることを検討してください。"
 
 
-            st.info(comment)
+            st.info(comment)
 
-        except Exception as e:
-            st.error(f"LSTM Model Processing Error: {e}")
-            st.markdown(f'<div style="background-color: #fce4e4; color: #cc0000; padding: 10px; border-radius: 5px;">{L["lstm_disabled_error"]}</div>', unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"LSTM Model Processing Error: {e}")
+            st.markdown(f'<div style="background-color: #fce4e4; color: #cc0000; padding: 10px; border-radius: 5px;">{L["lstm_disabled_error"]}</div>', unsafe_allow_html=True)
