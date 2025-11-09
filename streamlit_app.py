@@ -30,43 +30,57 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 
 
-
-# ==========================
-# 1. Firestore 초기화
-# ==========================
-if st.session_state.firestore_db is None:
-    db, error = initialize_firestore()
-    st.session_state.firestore_db = db
-    if error:
-        st.session_state.llm_init_error_msg = f"DB 초기화 오류: {error}"
-
-# ==========================
-# 2. LLM / Embeddings 초기화
-# ==========================
-API_KEY = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
-
-if API_KEY and st.session_state.firestore_db:
+# ================================
+# 1. Firebase 연동 및 직렬화/역직렬화 함수 (Admin SDK 사용 - JSON 통합)
+# ================================
+@st.cache_resource(ttl=None)
+def initialize_firestore_admin():
+    """
+    Firebase Admin SDK를 사용하여 관리자 권한으로 Firestore 클라이언트를 초기화합니다.
+    'FIREBASE_SERVICE_ACCOUNT_JSON' 키 하나만 사용하여 데이터를 추출합니다.
+    """
     try:
-        from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+        # 1. Secrets에서 JSON 데이터 로드
+        if "FIREBASE_SERVICE_ACCOUNT_JSON" not in st.secrets:
+            return None, "FIREBASE_SERVICE_ACCOUNT_JSON Secret이 누락되었습니다."
+        
+        # st.secrets를 통해 값을 가져옵니다. 
+        service_account_data = st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"]
+        
+        sa_info = None
+        
+        # 2. 데이터 형식 확인 및 정제 (최종 복구 로직)
+        if isinstance(service_account_data, str):
+            # 문자열인 경우: 유효하지 않은 이스케이프 문자 및 줄바꿈을 복구하여 JSON 로드
+            try:
+                # 1단계: Secrets UI의 Multi-line 입력 시 생기는 \n 문제를 복구
+                sa_info_str = service_account_data.strip().replace('\\n', '\n')
+                # 2단계: JSON 파싱 시도 (이전의 오류가 발생한 지점)
+                sa_info = json.loads(sa_info_str)
+            except json.JSONDecodeError:
+                return None, "FIREBASE_SERVICE_ACCOUNT_JSON의 JSON 구문 오류입니다. 값을 확인하세요."
+        elif not isinstance(sa_info, dict):
+            # 딕셔너리도, 문자열도 아닌 경우
+            return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 형식이 올바르지 않습니다. (현재 타입: {type(sa_info)})"
+            
+        # 3. 필수 필드 검사
+        if not sa_info.get("project_id") or not sa_info.get("private_key"):
+             return None, "JSON 내 'project_id' 또는 'private_key' 필드가 누락되었습니다."
 
-        st.session_state.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
-            temperature=0.7,
-            google_api_key=API_KEY
-        )
-
-        st.session_state.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001",
-            google_api_key=API_KEY
-        )
-
-        st.session_state.is_llm_ready = True
+        # 4. Firebase Admin SDK 초기화
+        import firebase_admin # 이 함수 내에서만 임포트하여 로컬 충돌 가능성 줄임
+        if not firebase_admin._apps:
+            cred = credentials.Certificate(sa_info)
+            initialize_app(cred, name="admin_app")
+        
+        # 5. Firestore 클라이언트 반환
+        db = firestore.client()
+        return db, None
 
     except Exception as e:
-        st.session_state.llm_init_error_msg = f"LLM 초기화 실패: {e}"
-        st.session_state.is_llm_ready = False
-else:
-    st.session_state.llm_init_error_msg = "⚠️ GEMINI API Key 또는 Firestore DB 초기화가 누락됨"
+        error_msg = f"Firebase Admin 초기화 실패: Admin SDK 인증 정보를 확인하세요. ({e})"
+        print(error_msg)
+        return None, error_msg
 
 
 def save_index_to_firestore(db, vector_store, index_id="user_portfolio_rag"):
@@ -418,7 +432,7 @@ LANG = {
         "lstm_header": "LSTMベース達成度予測ダッシュボード",
         "lstm_desc": "仮想の過去クイズスコアデータに基づき、LSTMモデルを訓練して将来の達成度を予測し表示します。",
         "lstm_disabled_error": "現在、ビルド環境の問題によりLSTM機能は一時的に無効化されています。「カスタムコンテンツ生成」機能を先にご利用ください。」",
-        "lang_select": "言語選択",
+        "lang_select": "언어 선택",
         "embed_success": "全{count}チャンクで学習DB構築完了!",
         "embed_fail": "埋め込み失敗: フリーティアのクォータ超過またはネットワークの問題。",
         "warning_no_files": "まず学習資料をアップロードしてください。",
