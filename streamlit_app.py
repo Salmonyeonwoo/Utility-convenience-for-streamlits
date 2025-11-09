@@ -474,7 +474,7 @@ API_KEY = os.environ.get("GEMINI_API_KEY")
 # 5. Streamlit UI 페이지 설정 (스크립트 내 첫 번째 ST 명령)
 # =======================================================
 # 이 라인이 st. 로 시작하는 함수 중 무조건 첫 번째로 실행되어야 합니다.
-st.set_page_config(page_title=L["title"], layout="wide") 
+st.set_page_config(page_title=L["title"], layout="wide")
 
 # =======================================================
 # 6. 서비스 초기화 및 LLM/DB 로직 (페이지 설정 후 안전하게 실행)
