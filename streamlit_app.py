@@ -467,7 +467,7 @@ if 'llm_init_error_msg' not in st.session_state: st.session_state.llm_init_error
 if 'firestore_load_success' not in st.session_state: st.session_state.firestore_load_success = False
 
 # 언어 설정 로드 (UI 출력 전 필수)
-L = LANG[st.session_state.language] 
+L = LANG[st.session_state.language]
 API_KEY = os.environ.get("GEMINI_API_KEY")
 
 # =======================================================
