@@ -29,3 +29,8 @@ This app requires the following two Secrets keys for deployment on Streamlit Clo
 GEMINI_API_KEY: The personal key for making Gemini API calls.
 
 FIREBASE_SERVICE_ACCOUNT_JSON: The complete Service Account JSON string for accessing Firestore via the Admin SDK.
+
+Script for Japansese RAG version
+
+<img width="1872" height="730" alt="image" src="https://github.com/user-attachments/assets/d4aaf6bc-168c-4ed9-8bb9-38dde0759a6c" />
+
