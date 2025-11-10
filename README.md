@@ -42,5 +42,9 @@ Utilizing LSTM
 
 <img width="1836" height="751" alt="image" src="https://github.com/user-attachments/assets/7f8c6ffd-a0f0-40da-994d-6f06859e2520" />
 
+Movies about my streamlit app
+
+"C:\Users\Admin\Downloads\녹음 2025-11-10 160017.mp4"
+
 
 
