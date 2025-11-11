@@ -34,7 +34,6 @@ from tensorflow.keras.layers import LSTM, Dense
 # 1. Firebase Admin SDK 초기화 및 Secrets 처리 함수
 # ================================
 
-# 이 함수는 초기화 객체 자체를 생성하는 용도로만 사용됩니다.
 def _get_admin_credentials():
     """
     Secrets에서 서비스 계정 정보를 안전하게 로드하고 딕셔너리로 반환합니다.
@@ -159,7 +158,6 @@ def load_index_from_firestore(db, embeddings, index_id="user_portfolio_rag"):
 
 # ================================
 # 2. JSON/RAG/LSTM 함수 정의
-# (이 섹션의 나머지 함수들은 기존 코드를 그대로 유지합니다.)
 # ================================
 def clean_and_load_json(text):
     """LLM 응답 텍스트에서 JSON 객체만 정규표현식으로 추출하여 로드"""
@@ -173,7 +171,6 @@ def clean_and_load_json(text):
             return None
     return None
 
-# ⭐ 퀴즈 데이터 내 한국어/영어/일본어 예시를 제공합니다.
 def get_mock_response_data(lang_key, customer_type):
     """API Key가 없을 때 사용할 가상 응대 데이터 (다국어 지원)"""
     
@@ -448,7 +445,7 @@ LANG = {
         "customer_type_options": ["일반적인 문의", "까다로운 고객", "매우 불만족스러운 고객"],
         "button_simulate": "응대 조언 요청",
         "simulation_warning_query": "고객 문의 내용을 입력해주세요。",
-        "simulation_no_key_warning": "⚠️ API Key가 없는 경우, 응답 생성은 실행되지 않습니다. (API Key가 없어도 UI 구성은 완료되었습니다.)", # 다국어화된 경고
+        "simulation_no_key_warning": "⚠️ API Key가 없는 경우, 응답 생성은 실행되지 않습니다. (API Key가 없어도 UI 구성은 완료되었습니다.)",
         "simulation_advice_ready": "AI의 응대 조언이 준비되었습니다!",
         "simulation_advice_header": "AI의 응대 가이드라인",
         "simulation_draft_header": "추천 응대 초안",
@@ -507,7 +504,7 @@ LANG = {
         "customer_type_options": ["General Inquiry", "Challenging Customer", "Highly Dissatisfied Customer"],
         "button_simulate": "Request Response Advice",
         "simulation_warning_query": "Please enter the customer's query.",
-        "simulation_no_key_warning": "⚠️ API Key is missing. Response generation cannot proceed. (UI configuration is complete.)", # 다국어화된 경고
+        "simulation_no_key_warning": "⚠️ API Key is missing. Response generation cannot proceed. (UI configuration is complete.)",
         "simulation_advice_ready": "AI's response advice is ready!",
         "simulation_advice_header": "AI Response Guidelines",
         "simulation_draft_header": "Recommended Response Draft",
@@ -566,7 +563,7 @@ LANG = {
         "customer_type_options": ["一般的な問い合わせ", "手ごわい顧客", "非常に不満な顧客"],
         "button_simulate": "対応アドバイスを要求",
         "simulation_warning_query": "顧客の問い合わせ内容を入力してください。",
-        "simulation_no_key_warning": "⚠️ APIキーが不足しています。応答の生成は続行できません。（UI設定は完了しています。）", # 다국어화된 경고
+        "simulation_no_key_warning": "⚠️ APIキーが不足しています。応答の生成は続行できません。（UI設定は完了しています。）",
         "simulation_advice_ready": "AIの対応アドバイスが利用可能です！",
         "simulation_advice_header": "AI対応ガイドライン",
         "simulation_draft_header": "推奨される対応草案",
@@ -577,18 +574,83 @@ LANG = {
 # ================================
 # 4. Streamlit 핵심 Config 설정 및 Session State 초기화 (CRITICAL ZONE)
 # ================================
-# (중략 - 기존 코드와 동일)
+
+if 'language' not in st.session_state: st.session_state.language = 'ko'
+if 'uploaded_files_state' not in st.session_state: st.session_state.uploaded_files_state = None
+if 'is_llm_ready' not in st.session_state: st.session_state.is_llm_ready = False
+if 'is_rag_ready' not in st.session_state: st.session_state.is_rag_ready = False
+if 'firestore_db' not in st.session_state: st.session_state.firestore_db = None
+if 'llm_init_error_msg' not in st.session_state: st.session_state.llm_init_error_msg = None
+if 'firestore_load_success' not in st.session_state: st.session_state.firestore_load_success = False
+
+# 언어 설정 로드 (UI 출력 전 필수)
+L = LANG[st.session_state.language] 
+API_KEY = os.environ.get("GEMINI_API_KEY")
+
+# =======================================================
+# 5. Streamlit UI 페이지 설정 (스크립트 내 첫 번째 ST 명령)
+# =======================================================
+st.set_page_config(page_title=L["title"], layout="wide")
 
 # =======================================================
 # 6. 서비스 초기화 및 LLM/DB 로직 (페이지 설정 후 안전하게 실행)
-# (중략 - 기존 코드와 동일)
+# =======================================================
+
+if 'llm' not in st.session_state: 
+    llm_init_error = None
+    if not API_KEY:
+        llm_init_error = L["llm_error_key"]
+    else:
+        try:
+            # LLM 및 Embeddings 초기화
+            st.session_state.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.7, google_api_key=API_KEY)
+            st.session_state.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=API_KEY)
+            st.session_state.is_llm_ready = True
+            
+            # Admin SDK 클라이언트 초기화 
+            sa_info, error_message = _get_admin_credentials()
+            
+            if error_message:
+                llm_init_error = f"{L['llm_error_init']} (DB Auth Error: {error_message})" 
+            elif sa_info:
+                db = initialize_firestore_admin() 
+                st.session_state.firestore_db = db
+                
+                if not db:
+                    llm_init_error = f"{L['llm_error_init']} (DB Client Error: Firebase Admin Init Failed)" 
+
+            # DB 로딩 로직
+            if st.session_state.firestore_db and 'conversation_chain' not in st.session_state:
+                # DB 로딩 시도
+                loaded_index = load_index_from_firestore(st.session_state.firestore_db, st.session_state.embeddings)
+                
+                if loaded_index:
+                    st.session_state.conversation_chain = get_rag_chain(loaded_index)
+                    st.session_state.is_rag_ready = True
+                    st.session_state.firestore_load_success = True
+                else:
+                    st.session_state.firestore_load_success = False
+            
+        except Exception as e:
+            llm_init_error = f"{L['llm_error_init']} {e}" 
+            st.session_state.is_llm_ready = False
+    
+    if llm_init_error:
+        st.session_state.is_llm_ready = False
+        st.session_state.llm_init_error_msg = llm_init_error # 메시지를 세션에 저장
+
+# 나머지 세션 상태 초기화
+if "memory" not in st.session_state:
+    st.session_state.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+
+if "embedding_cache" not in st.session_state:
+    st.session_state.embedding_cache = {}
 
 # ================================
 # 7. 초기화 오류 메시지 출력 및 DB 상태 알림
 # ================================
 
 if st.session_state.llm_init_error_msg:
-    # LLM 초기화 오류 메시지도 다국어 지원 딕셔너리의 키를 사용하도록 변경
     st.error(st.session_state.llm_init_error_msg)
     
 if st.session_state.get('firestore_db'):
@@ -600,7 +662,74 @@ if st.session_state.get('firestore_db'):
 
 # ================================
 # 8. Streamlit UI 시작
-# (중략 - 기존 코드와 동일)
+# ================================
+
+with st.sidebar:
+    selected_lang_key = st.selectbox(
+        L["lang_select"],
+        options=['ko', 'en', 'ja'],
+        index=['ko', 'en', 'ja'].index(st.session_state.language),
+        format_func=lambda x: {"ko": "한국어", "en": "English", "ja": "日本語"}[x],
+    )
+    
+    if selected_lang_key != st.session_state.language:
+        st.session_state.language = selected_lang_key
+        st.rerun() 
+    
+    L = LANG[st.session_state.language] 
+    
+    st.title(L["sidebar_title"])
+    st.markdown("---")
+    
+    uploaded_files_widget = st.file_uploader(
+        L["file_uploader"],
+        type=["pdf","txt","html"],
+        accept_multiple_files=True
+    )
+    
+    if uploaded_files_widget:
+        st.session_state.uploaded_files_state = uploaded_files_widget
+    elif 'uploaded_files_state' not in st.session_state:
+        st.session_state.uploaded_files_state = None
+    
+    files_to_process = st.session_state.uploaded_files_state if st.session_state.uploaded_files_state else []
+    
+    if files_to_process and st.session_state.is_llm_ready:
+        if st.button(L["button_start_analysis"], key="start_analysis"):
+            with st.spinner(f"자료 분석 및 학습 DB 구축 중..."):
+                text_chunks = get_document_chunks(files_to_process)
+                vector_store = get_vector_store(text_chunks)
+                
+                if vector_store:
+                    # RAG 인덱스가 성공적으로 생성되면 Firestore에 저장 시도
+                    db = st.session_state.firestore_db
+                    save_success = False
+                    if db:
+                        save_success = save_index_to_firestore(db, vector_store)
+                    
+                    if save_success:
+                        st.success(L["embed_success"].format(count=len(text_chunks)) + " (DB 저장 완료)")
+                    else:
+                        st.success(L["embed_success"].format(count=len(text_chunks)) + " (DB 저장 실패)")
+
+                    st.session_state.conversation_chain = get_rag_chain(vector_store)
+                    st.session_state.is_rag_ready = True
+                else:
+                    st.session_state.is_rag_ready = False
+                    st.error(L["embed_fail"])
+
+    else:
+        st.session_state.is_rag_ready = False
+        st.warning(L.get("warning_no_files", "먼저 학습 자료를 업로드하세요.")) 
+
+    st.markdown("---")
+    # ⭐ 새로운 탭(시뮬레이터)을 포함하여 라디오 버튼 업데이트
+    feature_selection = st.radio(
+        L["content_tab"], 
+        [L["rag_tab"], L["content_tab"], L["lstm_tab"], L["simulator_tab"]]
+    )
+
+st.title(L["title"])
 
 # ================================
 # 9. 기능별 페이지 구현
