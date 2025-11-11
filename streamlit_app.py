@@ -44,7 +44,7 @@ def _get_admin_credentials():
     
     service_account_data = st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"]
     
-    # 🌟🌟🌟 수정된 로직 시작: 딕셔너리(AttrDict) 타입을 표준 dict로 강제 변환 🌟🌟🌟
+    # 🌟🌟🌟 AttrDict 타입을 표준 dict로 강제 변환하는 최종 로직 🌟🌟🌟
     sa_info = None
 
     if isinstance(service_account_data, str):
@@ -55,14 +55,13 @@ def _get_admin_credentials():
             return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 JSON 구문 오류입니다. 값을 확인하세요. 상세 오류: {e}"
     elif hasattr(service_account_data, 'get'):
         # 2. AttrDict (secrets.toml 딕셔너리 형식)인 경우: dict로 변환
-        # Streamlit Secrets에서 AttrDict 타입으로 반환되는 것을 처리
         try:
             sa_info = dict(service_account_data) # AttrDict를 표준 dict로 변환
         except Exception:
              return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 딕셔너리 변환 실패. 타입: {type(service_account_data)}"
     else:
         return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 형식이 올바르지 않습니다. (Type: {type(service_account_data)})"
-    # 🌟🌟🌟 수정된 로직 끝 🌟🌟🌟
+    # 🌟🌟🌟 최종 로직 끝 🌟🌟🌟
     
     if not sa_info.get("project_id") or not sa_info.get("private_key"):
         return None, "JSON 내 'project_id' 또는 'private_key' 필드가 누락되었습니다."
@@ -73,7 +72,6 @@ def _get_admin_credentials():
 def initialize_firestore_admin():
     """
     Secrets에서 로드된 정보를 사용하여 Firebase Admin SDK를 초기화합니다.
-    (로컬 파일 로딩 방식 대신 Secret의 JSON 데이터를 사용하도록 수정)
     """
     sa_info, error_message = _get_admin_credentials()
 
@@ -196,7 +194,18 @@ def render_interactive_quiz(quiz_data, current_lang):
     
     st.subheader(f"{q_index + 1}. {q_data['question']}")
     
-    options_dict = {f"{opt['option']}": f"{opt['option']}) {opt['text']}" for opt in q_data['options']}
+    # 여기서 KeyError가 발생했었습니다. LLM이 'options' 내부에 'option' 키를 주지 않았을 경우입니다.
+    options_dict = {}
+    try:
+        # 안전하게 옵션 딕셔너리 생성 시도
+        options_dict = {f"{opt['option']}": f"{opt['option']}) {opt['text']}" for opt in q_data['options']}
+    except KeyError:
+        st.error(L["quiz_fail_structure"])
+        st.markdown(f"**{L['quiz_original_response']}**:")
+        if 'quiz_data_raw' in st.session_state:
+            st.code(st.session_state.quiz_data_raw, language="json")
+        return
+
     options_list = list(options_dict.values())
     
     selected_answer = st.radio(
@@ -365,7 +374,7 @@ LANG = {
         "level_label": "난이도",
         "content_type_label": "콘텐츠 형식",
         "level_options": ["초급", "중급", "고급"],
-        "content_options": ["핵심 요약 노트", "객관식 퀴즈 10문항", "실습 예제 아이디어"],
+        "content_options": ["핵심 요약 노트", "객관식 퀴즈 10문항", "실습 예제 아이디어"], # ⭐ 10문항으로 수정됨
         "button_generate": "콘텐츠 생성",
         "warning_topic": "학습 주제를 입력해 주세요。",
         "lstm_header": "LSTM 기반 학습 성취도 예측 대시보드",
@@ -410,7 +419,7 @@ LANG = {
         "level_label": "Difficulty",
         "content_type_label": "Content Type",
         "level_options": ["Beginner", "Intermediate", "Advanced"],
-        "content_options": ["Key Summary Note", "10 Multiple-Choice Questions", "Practical Example Idea"],
+        "content_options": ["Key Summary Note", "10 Multiple-Choice Questions", "Practical Example Idea"], # ⭐ 10문항으로 수정됨
         "button_generate": "Generate Content",
         "warning_topic": "Please enter a learning topic.",
         "lstm_header": "LSTM Based Achievement Prediction",
@@ -455,13 +464,13 @@ LANG = {
         "level_label": "難易度",
         "content_type_label": "コンテンツ形式",
         "level_options": ["初級", "中級", "上級"],
-        "content_options": ["核心要約ノート", "選択式クイズ10問", "実践例のアイデア"],
+        "content_options": ["核心要約ノート", "選択式クイズ10問", "実践例のアイデア"], # ⭐ 10문항으로 수정됨
         "button_generate": "コンテンツ生成",
         "warning_topic": "学習テーマを入力してください。",
         "lstm_header": "LSTMベース達成度予測ダッシュボード",
         "lstm_desc": "仮想の過去クイズスコアデータに基づき、LSTMモデルを訓練して将来の達成度を予測し表示します。",
         "lstm_disabled_error": "現在、ビルド環境の問題によりLSTM機能は一時的に無効化されています。「カスタムコンテンツ生成」機能を先にご利用ください。」",
-        "lang_select": "언어 선택",
+        "lang_select": "言語選択",
         "embed_success": "全{count}チャンクで学習DB構築完了!",
         "embed_fail": "埋め込み失敗: フリーティアのクォータ超過またはネットワークの問題。",
         "warning_no_files": "まず学習資料をアップロードしてください。",
@@ -478,7 +487,8 @@ LANG = {
         "score": "スコア",
         "retake_quiz": "クイズを再挑戦",
         "quiz_error_llm": "LLMが正しいJSONの形式を読み取れませんでしたので、クイズの生成が失敗しました。",
-        "quiz_original_response": "LLM 원본 응답"
+        "quiz_original_response": "LLM 原本応答",
+        "firestore_loading": "データベースからRAGインデックスをロード中...",
     }
 }
 
@@ -487,7 +497,6 @@ LANG = {
 # 4. Streamlit 핵심 Config 설정 및 Session State 초기화 (CRITICAL ZONE)
 # ================================
 
-# ⭐⭐ 세션 상태 변수 최소 초기화 (st.set_page_config 이전에 실행) ⭐⭐
 if 'language' not in st.session_state: st.session_state.language = 'ko'
 if 'uploaded_files_state' not in st.session_state: st.session_state.uploaded_files_state = None
 if 'is_llm_ready' not in st.session_state: st.session_state.is_llm_ready = False
@@ -503,7 +512,6 @@ API_KEY = os.environ.get("GEMINI_API_KEY")
 # =======================================================
 # 5. Streamlit UI 페이지 설정 (스크립트 내 첫 번째 ST 명령)
 # =======================================================
-# 이 라인이 st. 로 시작하는 함수 중 무조건 첫 번째로 실행되어야 합니다.
 st.set_page_config(page_title=L["title"], layout="wide")
 
 # =======================================================
@@ -521,8 +529,7 @@ if 'llm' not in st.session_state:
             st.session_state.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=API_KEY)
             st.session_state.is_llm_ready = True
             
-            # ⭐⭐ Admin SDK 클라이언트 초기화 (st.secrets 기반 최종 안전성) ⭐⭐
-            
+            # Admin SDK 클라이언트 초기화 
             sa_info, error_message = _get_admin_credentials()
             
             if error_message:
@@ -565,7 +572,6 @@ if "embedding_cache" not in st.session_state:
 # 7. 초기화 오류 메시지 출력 및 DB 상태 알림
 # ================================
 
-# ⭐⭐ 초기화 오류 메시지 출력 (st.set_page_config 이후에 안전하게) ⭐⭐
 if st.session_state.llm_init_error_msg:
     st.error(st.session_state.llm_init_error_msg)
     
@@ -698,8 +704,9 @@ elif feature_selection == L["content_tab"]:
                 target_lang = {"ko": "Korean", "en": "English", "ja": "Japanese"}[st.session_state.language]
                 
                 if content_type == 'quiz':
+                    # ⭐ 10문항으로 수정된 프롬프트 ⭐
                     full_prompt = f"""You are a professional AI coach at the {level} level.
-Please generate exactly 3 multiple-choice questions about the topic in {target_lang}.
+Please generate exactly 10 multiple-choice questions about the topic in {target_lang}.
 Your entire response MUST be a valid JSON object wrapped in ```json tags.
 The JSON must have a single key named 'quiz_questions', which is an array of objects.
 Each question object must contain: 'question' (string), 'options' (array of objects with 'option' (A,B,C,D) and 'text' (string)), 'correct_answer' (A,B,C, or D), and 'explanation' (string).
@@ -721,11 +728,12 @@ Requested Format: {display_type_text}"""
                     try:
                         response = st.session_state.llm.invoke(full_prompt)
                         quiz_data_raw = response.content
+                        st.session_state.quiz_data_raw = quiz_data_raw # 디버깅을 위해 raw data 저장
                         
                         if content_type == 'quiz':
                             quiz_data = clean_and_load_json(quiz_data_raw)
                             
-                            if quiz_data:
+                            if quiz_data and 'quiz_questions' in quiz_data:
                                 st.session_state.quiz_data = quiz_data
                                 st.session_state.current_question = 0
                                 st.session_state.quiz_submitted = False
@@ -817,11 +825,11 @@ elif feature_selection == L["lstm_tab"]:
                 else:
                     comment = "Achievement is expected to remain stable. Consider generating **new content types (e.g., Practical Example Ideas)** to revitalize your learning during this plateau."
             else: # Japanese
-                 if avg_predict > avg_recent:
+                if avg_predict > avg_recent:
                     comment = "最近の学習データとLSTM予測結果に基づき、**今後の達成度はポジティブに向上すると予測**されます。現在の学習方法を維持するか、難易度を一段階上げて挑戦することを検討してください。"
-                 elif avg_predict < avg_recent - 5:
+                elif avg_predict < avg_recent - 5:
                     comment = "LSTM予測の結果、**達成度がやや低下する可能性**が示されました。学習資料や方法論の基礎理解が不足しているかもしれません。RAGチャットボット機能を利用して、基本概念を再確認することをお勧めします。"
-                 else:
+                else:
                     comment = "達成度は現状維持と予測されます。停滞期になる可能性があります。**新しいコンテンツ形式（例：実践例のアイデア）を生成**し、学習に活力を与えることを検討してください。"
 
 
