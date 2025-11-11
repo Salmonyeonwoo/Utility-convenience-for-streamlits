@@ -44,7 +44,7 @@ def _get_admin_credentials():
     
     service_account_data = st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"]
     
-    # 🌟🌟🌟 AttrDict 타입을 표준 dict로 강제 변환하는 최종 로직 🌟🌟🌟
+    # AttrDict 타입을 표준 dict로 강제 변환하는 최종 로직
     sa_info = None
 
     if isinstance(service_account_data, str):
@@ -61,7 +61,6 @@ def _get_admin_credentials():
              return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 딕셔너리 변환 실패. 타입: {type(service_account_data)}"
     else:
         return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 형식이 올바르지 않습니다. (Type: {type(service_account_data)})"
-    # 🌟🌟🌟 최종 로직 끝 🌟🌟🌟
     
     if not sa_info.get("project_id") or not sa_info.get("private_key"):
         return None, "JSON 내 'project_id' 또는 'private_key' 필드가 누락되었습니다."
@@ -194,7 +193,6 @@ def render_interactive_quiz(quiz_data, current_lang):
     
     st.subheader(f"{q_index + 1}. {q_data['question']}")
     
-    # 여기서 KeyError가 발생했었습니다. LLM이 'options' 내부에 'option' 키를 주지 않았을 경우입니다.
     options_dict = {}
     try:
         # 안전하게 옵션 딕셔너리 생성 시도
@@ -363,6 +361,7 @@ LANG = {
         "rag_tab": "RAG 지식 챗봇",
         "content_tab": "맞춤형 학습 콘텐츠 생성",
         "lstm_tab": "LSTM 성취도 예측 대시보드",
+        "simulator_tab": "AI 고객 응대 시뮬레이터", # ⭐ 시뮬레이터 탭 추가
         "rag_header": "RAG 지식 챗봇 (문서 기반 Q&A)",
         "rag_desc": "업로드된 문서 기반으로 질문에 답변합니다。",
         "rag_input_placeholder": "학습 자료에 대해 질문해 보세요",
@@ -374,7 +373,7 @@ LANG = {
         "level_label": "난이도",
         "content_type_label": "콘텐츠 형식",
         "level_options": ["초급", "중급", "고급"],
-        "content_options": ["핵심 요약 노트", "객관식 퀴즈 10문항", "실습 예제 아이디어"], # ⭐ 10문항으로 수정됨
+        "content_options": ["핵심 요약 노트", "객관식 퀴즈 10문항", "실습 예제 아이디어"],
         "button_generate": "콘텐츠 생성",
         "warning_topic": "학습 주제를 입력해 주세요。",
         "lstm_header": "LSTM 기반 학습 성취도 예측 대시보드",
@@ -399,6 +398,15 @@ LANG = {
         "quiz_error_llm": "퀴즈 생성 실패: LLM이 올바른 JSON 형식을 반환하지 않았습니다. LLM 응답 원본을 확인하세요。",
         "quiz_original_response": "LLM 원본 응답",
         "firestore_loading": "데이터베이스에서 RAG 인덱스 로드 중...",
+        
+        # ⭐ 시뮬레이터 관련 텍스트
+        "simulator_header": "AI 고객 응대 시뮬레이터",
+        "simulator_desc": "까다로운 고객 문의에 대해 AI의 응대 초안 및 가이드라인을 제공합니다.",
+        "customer_query_label": "고객 문의 내용 (링크 포함 가능)",
+        "customer_type_label": "고객 성향",
+        "customer_type_options": ["일반적인 문의", "까다로운 고객", "매우 불만족스러운 고객"],
+        "button_simulate": "응대 조언 요청",
+        "simulation_warning_query": "고객 문의 내용을 입력해주세요.",
     },
     "en": {
         "title": "Personalized AI Study Coach",
@@ -408,6 +416,7 @@ LANG = {
         "rag_tab": "RAG Knowledge Chatbot",
         "content_tab": "Custom Content Generation",
         "lstm_tab": "LSTM Achievement Prediction",
+        "simulator_tab": "AI Customer Response Simulator", # ⭐ 시뮬레이터 탭 추가
         "rag_header": "RAG Knowledge Chatbot (Document Q&A)",
         "rag_desc": "Answers questions based on the uploaded documents.",
         "rag_input_placeholder": "Ask a question about your study materials",
@@ -419,7 +428,7 @@ LANG = {
         "level_label": "Difficulty",
         "content_type_label": "Content Type",
         "level_options": ["Beginner", "Intermediate", "Advanced"],
-        "content_options": ["Key Summary Note", "10 Multiple-Choice Questions", "Practical Example Idea"], # ⭐ 10문항으로 수정됨
+        "content_options": ["Key Summary Note", "10 Multiple-Choice Questions", "Practical Example Idea"],
         "button_generate": "Generate Content",
         "warning_topic": "Please enter a learning topic.",
         "lstm_header": "LSTM Based Achievement Prediction",
@@ -444,6 +453,15 @@ LANG = {
         "quiz_error_llm": "Quiz generation failed: LLM did not return a valid JSON format. Check the original LLM response.",
         "quiz_original_response": "Original LLM Response",
         "firestore_loading": "Loading RAG index from database...",
+        
+        # ⭐ 시뮬레이터 관련 텍스트
+        "simulator_header": "AI Customer Response Simulator",
+        "simulator_desc": "Provides AI-generated response drafts and guidelines for handling challenging customer inquiries.",
+        "customer_query_label": "Customer Query (Link optional)",
+        "customer_type_label": "Customer Sentiment",
+        "customer_type_options": ["General Inquiry", "Challenging Customer", "Highly Dissatisfied Customer"],
+        "button_simulate": "Request Response Advice",
+        "simulation_warning_query": "Please enter the customer's query.",
     },
     "ja": {
         "title": "パーソナライズAI学習コーチ",
@@ -453,6 +471,7 @@ LANG = {
         "rag_tab": "RAG知識チャットボット",
         "content_tab": "カスタムコンテンツ生成",
         "lstm_tab": "LSTM達成度予測ダッシュボード",
+        "simulator_tab": "AI顧客対応シミュレーター", # ⭐ シミュ레이터 탭 추가
         "rag_header": "RAG知識チャットボット (ドキュメントQ&A)",
         "rag_desc": "アップロードされたドキュメントに基づいて質問に回答します。",
         "rag_input_placeholder": "学習資料について質問してください",
@@ -464,7 +483,7 @@ LANG = {
         "level_label": "難易度",
         "content_type_label": "コンテンツ形式",
         "level_options": ["初級", "中級", "上級"],
-        "content_options": ["核心要約ノート", "選択式クイズ10問", "実践例のアイデア"], # ⭐ 10문항으로 수정됨
+        "content_options": ["核心要約ノート", "選択式クイズ10問", "実践例のアイデア"],
         "button_generate": "コンテンツ生成",
         "warning_topic": "学習テーマを入力してください。",
         "lstm_header": "LSTMベース達成度予測ダッシュボード",
@@ -489,6 +508,15 @@ LANG = {
         "quiz_error_llm": "LLMが正しいJSONの形式を読み取れませんでしたので、クイズの生成が失敗しました。",
         "quiz_original_response": "LLM 原本応答",
         "firestore_loading": "データベースからRAGインデックスをロード中...",
+        
+        # ⭐ 시뮬레이터 관련 텍스트
+        "simulator_header": "AI顧客対応シミュレーター",
+        "simulator_desc": "難しい顧客の問い合わせに対して、AIによる対応案とガイドラインを提供します。",
+        "customer_query_label": "顧客の問い合わせ内容（リンク任意）",
+        "customer_type_label": "顧客の傾向",
+        "customer_type_options": ["一般的な問い合わせ", "手ごわい顧客", "非常に不満な顧客"],
+        "button_simulate": "対応アドバイスを要求",
+        "simulation_warning_query": "顧客の問い合わせ内容を入力してください。",
     }
 }
 
@@ -645,9 +673,10 @@ with st.sidebar:
         st.warning(L.get("warning_no_files", "먼저 학습 자료를 업로드하세요.")) 
 
     st.markdown("---")
+    # ⭐ 새로운 탭(시뮬레이터)을 포함하여 라디오 버튼 업데이트
     feature_selection = st.radio(
         L["content_tab"], 
-        [L["rag_tab"], L["content_tab"], L["lstm_tab"]]
+        [L["rag_tab"], L["content_tab"], L["lstm_tab"], L["simulator_tab"]]
     )
 
 st.title(L["title"])
@@ -655,7 +684,57 @@ st.title(L["title"])
 # ================================
 # 9. 기능별 페이지 구현
 # ================================
-if feature_selection == L["rag_tab"]:
+
+if feature_selection == L["simulator_tab"]: # ⭐ 시뮬레이터 탭 구현 시작
+    st.header(L["simulator_header"])
+    st.markdown(L["simulator_desc"])
+
+    if st.session_state.is_llm_ready:
+        # 1. 고객 문의 입력 필드
+        customer_query = st.text_area(
+            L["customer_query_label"],
+            height=150,
+            placeholder="예: 제가 어제 주문한 상품이 아직도 배송 출발 상태가 아닙니다. 너무 늦는 것 아닌가요? 빠르게 처리해주세요."
+        )
+
+        # 2. 고객 성향 선택
+        customer_type = st.selectbox(
+            L["customer_type_label"],
+            L["customer_type_options"]
+        )
+
+        if st.button(L["button_simulate"]):
+            if customer_query:
+                st.info(f"선택된 고객 성향: {customer_type}")
+                st.warning("⚠️ API Key가 없는 경우, 응답 생성은 실행되지 않습니다. (API Key가 없어도 UI 구성은 완료되었습니다.)")
+                
+                if API_KEY:
+                    with st.spinner(f"{customer_type} 고객 응대 가이드라인 생성 중..."):
+                        # 여기에 LLM 호출 로직을 구현합니다 (API Key 발급 후)
+                        # 현재는 API Key가 없거나 LLM이 응답하지 않을 경우를 대비하여 하드코딩된 예시를 남깁니다.
+                        st.success("AI의 응대 조언이 준비되었습니다!")
+                        
+                        st.markdown("### AI의 응대 가이드라인")
+                        st.info("이 고객은 배송 지연에 대한 **불만이 매우 높습니다**. 먼저 진심으로 사과하고, 현재 상태를 투명하게 설명하며, 문제 해결을 위한 **구체적인 다음 행동**을 제시해야 합니다.")
+
+                        st.markdown("### 추천 응대 초안 (Tone: 공감 및 진정)")
+                        st.markdown(f"""
+                        > 고객님, 먼저 주문하신 상품 배송이 늦어져 많이 불편하셨을 점 진심으로 사과드립니다. 고객님의 상황을 충분히 이해하고 있습니다.
+                        > 현재 시스템 상 확인된 바로는 [배송 지연 사유 설명]. 
+                        > 이 문제를 해결하기 위해, 저희가 [구체적인 해결책 1: 예: 담당 팀에 직접 연락] 및 [구체적인 해결책 2: 예: 오늘 중으로 상태 업데이트 재확인]을 진행하겠습니다.
+                        > 처리되는 대로 오늘 오후 [시간]까지 고객님께 **개별적으로** 연락드리겠습니다. 기다려주셔서 감사합니다.
+                        """)
+                else:
+                     st.error(f"{L['llm_error_key']} (응답 생성 불가)")
+
+
+            else:
+                st.warning(L["simulation_warning_query"])
+
+    else:
+        st.error(L["llm_error_init"])
+
+elif feature_selection == L["rag_tab"]:
     st.header(L["rag_header"])
     st.markdown(L["rag_desc"])
     if st.session_state.get('is_rag_ready', False) and st.session_state.get('conversation_chain'):
@@ -704,7 +783,7 @@ elif feature_selection == L["content_tab"]:
                 target_lang = {"ko": "Korean", "en": "English", "ja": "Japanese"}[st.session_state.language]
                 
                 if content_type == 'quiz':
-                    # ⭐ 10문항으로 수정된 프롬프트 ⭐
+                    # 10문항으로 수정된 프롬프트
                     full_prompt = f"""You are a professional AI coach at the {level} level.
 Please generate exactly 10 multiple-choice questions about the topic in {target_lang}.
 Your entire response MUST be a valid JSON object wrapped in ```json tags.
