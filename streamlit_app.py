@@ -164,21 +164,35 @@ def synthesize_and_play_audio(current_lang_key):
     
     lang_code = {"ko": "ko-KR", "en": "en-US", "ja": "ja-JP"}.get(current_lang_key, "en-US")
     
+    # 템플릿 리터럴 내부에서 L 딕셔너리를 직접 참조할 수 없으므로, 하드코딩된 값 사용
+    ko_ready = "음성으로 듣기 준비됨"
+    en_ready = "Ready to listen"
+    ja_ready = "音声再生の準備ができました"
+
     tts_js_code = f"""
     <script>
-    // Web Speech API는 navigator/window 객체에 존재합니다.
     if (!window.speechSynthesis) {{
         document.getElementById('tts_status').innerText = '❌ TTS Not Supported';
     }}
 
-    window.speakText = function(text) {{
+    window.speakText = function(text, langKey) {{
         if (!window.speechSynthesis || !text) return;
 
         const statusElement = document.getElementById('tts_status');
         const utterance = new SpeechSynthesisUtterance(text);
         
-        utterance.lang = '{lang_code}'; 
+        // 동적으로 언어 코드 설정
+        const langCode = {{ "ko": "ko-KR", "en": "en-US", "ja": "ja-JP" }}[langKey] || "en-US";
+        utterance.lang = langCode; 
         
+        // 동적으로 준비 상태 메시지 설정
+        const getReadyText = (key) => {{
+            if (key === 'ko') return '{ko_ready}';
+            if (key === 'en') return '{en_ready}';
+            if (key === 'ja') return '{ja_ready}';
+            return '{en_ready}';
+        }};
+
         utterance.onstart = () => {{
             statusElement.innerText = '{LANG[current_lang_key].get("tts_status_generating", "오디오 생성 중...")}';
             statusElement.style.backgroundColor = '#fff3e0';
@@ -188,7 +202,7 @@ def synthesize_and_play_audio(current_lang_key):
             statusElement.innerText = '{LANG[current_lang_key].get("tts_status_success", "✅ 오디오 재생 완료!")}';
             statusElement.style.backgroundColor = '#e8f5e9';
              setTimeout(() => {{ 
-                 statusElement.innerText = '{LANG[current_lang_key].get("tts_status_ready", "음성으로 듣기 준비됨")}';
+                 statusElement.innerText = getReadyText(langKey);
                  statusElement.style.backgroundColor = '#f0f0f0';
              }}, 3000);
         }};
@@ -198,7 +212,7 @@ def synthesize_and_play_audio(current_lang_key):
             statusElement.style.backgroundColor = '#ffebee';
             console.error("SpeechSynthesis Error:", event);
              setTimeout(() => {{ 
-                 statusElement.innerText = '{LANG[current_lang_key].get("tts_status_ready", "음성으로 듣기 준비됨")}';
+                 statusElement.innerText = getReadyText(langKey);
                  statusElement.style.backgroundColor = '#f0f0f0';
              }}, 3999);
         }};
@@ -217,8 +231,11 @@ def render_tts_button(text_to_speak, current_lang_key):
     # 줄 바꿈을 공백으로 변환하고, 따옴표를 이스케이프 처리
     safe_text = text_to_speak.replace('\n', ' ').replace('"', '\\"').replace("'", "\\'")
     
+    # ⭐ JS 함수에 언어 키도 함께 전달
+    js_call = f"window.speakText('{safe_text}', '{current_lang_key}')"
+
     st.markdown(f"""
-        <button onclick="window.speakText('{safe_text}')"
+        <button onclick="{js_call}"
                 style="background-color: #4338CA; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; border: none; width: 100%; font-weight: bold; margin-bottom: 10px;">
             {LANG[current_lang_key].get("button_listen_audio", "음성으로 듣기")} 🎧
         </button>
@@ -753,9 +770,7 @@ if 'llm' not in st.session_state:
             # 1. 시뮬레이터 전용 프롬프트 템플릿 정의
             SIMULATOR_PROMPT = PromptTemplate.from_template(
                 template="The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context.\n\n{chat_history}\nHuman: {input}\nAI:",
-                # PromptTemplate.from_template은 input_variables를 자동으로 유추하므로,
-                # 이 템플릿에서는 input_variables가 ["input", "chat_history"]가 됩니다.
-                # 이 이름을 메모리와 ConversationChain이 사용하도록 연결합니다.
+                input_variables=["input", "chat_history"]
             )
             
             # 2. ConversationChain 초기화
@@ -763,7 +778,7 @@ if 'llm' not in st.session_state:
                 llm=st.session_state.llm,
                 memory=st.session_state.simulator_memory,
                 prompt=SIMULATOR_PROMPT,
-                input_key="input", # input_key 명시
+                input_key="input", 
                 # memory_key는 ConversationBufferMemory에서 이미 chat_history로 설정했으므로
                 # ConversationChain은 자동으로 {chat_history} 변수에 메모리를 연결합니다.
             )
