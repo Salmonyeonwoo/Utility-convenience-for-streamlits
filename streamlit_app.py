@@ -171,7 +171,7 @@ def synthesize_and_play_audio(text_to_speak, api_key, current_lang_key):
     
     lang = LANG[current_lang_key]
     
-    # TTS JS 코드는 버튼이 눌릴 때마다 삽입되어야 합니다.
+    # TTS JS 코드는 페이지 로드 시 삽입되어야 합니다.
     tts_js_code = f"""
     <script>
     // Utility functions (Base64 to ArrayBuffer, PCM to WAV header)
@@ -785,7 +785,7 @@ st.set_page_config(page_title=L["title"], layout="wide")
 # =======================================================
 
 if 'llm' not in st.session_state: 
-    llm_init_error = None
+    llm_init_error = None # ⭐ safety initialization
     if not API_KEY:
         llm_init_error = L["llm_error_key"]
     else:
@@ -805,7 +805,7 @@ if 'llm' not in st.session_state:
                 st.session_state.firestore_db = db
                 
                 if not db:
-                    llm_init_error = f"{L['llm_init_error']} (DB Client Error: Firebase Admin Init Failed)" 
+                    llm_init_error = f"{L['llm_error_init']} (DB Client Error: Firebase Admin Init Failed)" 
 
             # DB 로딩 로직
             if st.session_state.firestore_db and 'conversation_chain' not in st.session_state:
@@ -827,7 +827,8 @@ if 'llm' not in st.session_state:
             )
 
         except Exception as e:
-            llm_init_error = f"{L['llm_init_error']} {e}" 
+            # 810행 근처의 KeyError를 해결하기 위해 llm_init_error를 사용
+            llm_init_error = f"{L['llm_error_init']} {e}" 
             st.session_state.is_llm_ready = False
     
     if llm_init_error:
@@ -877,7 +878,7 @@ with st.sidebar:
 
     # ⭐ STT 라이브러리 설치 경고를 사이드바에서 안전하게 표시
     if not STT_AVAILABLE:
-        st.warning(L["button_mic_input"] + " " + L["llm_error_init"] + " ('streamlit-mic-recorder' " + L["llm_error_init"].split(':')[0] + "를 확인하세요.)")
+        st.warning(f"{L['button_mic_input']} {L['llm_error_init'].split(':')[0]} ('streamlit-mic-recorder' 라이브러리 설치 필요)")
     
     st.markdown("---")
     
