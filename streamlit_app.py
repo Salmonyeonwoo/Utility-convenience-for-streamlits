@@ -336,6 +336,7 @@ def get_vector_store(text_chunks):
 def get_rag_chain(vector_store):
     """검색 체인(ConversationalRetrievalChain)을 생성합니다."""
     if vector_store is None: return None
+    # ⭐ RAG 체인에 memory_key를 명시적으로 전달
     return ConversationalRetrievalChain.from_llm(
         llm=st.session_state.llm,
         retriever=vector_store.as_retriever(),
@@ -686,6 +687,7 @@ if 'firestore_load_success' not in st.session_state: st.session_state.firestore_
 
 # ⭐ 시뮬레이터 전용 상태 초기화 추가
 if "simulator_memory" not in st.session_state:
+    # ConversationChain에서 사용할 메모리 초기화
     st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 if "simulator_messages" not in st.session_state:
     st.session_state.simulator_messages = []
@@ -725,7 +727,7 @@ if 'llm' not in st.session_state:
             sa_info, error_message = _get_admin_credentials()
             
             if error_message:
-                llm_init_error = f"{L['llm_init_error']} (DB Auth Error: {error_message})" 
+                llm_init_error = f"{L['llm_error_init']} (DB Auth Error: {error_message})" 
             elif sa_info:
                 db = initialize_firestore_admin() 
                 st.session_state.firestore_db = db
@@ -733,7 +735,7 @@ if 'llm' not in st.session_state:
                 if not db:
                     llm_init_error = f"{L['llm_init_error']} (DB Client Error: Firebase Admin Init Failed)" 
 
-            # DB 로딩 로직
+            # DB 로딩 로직 (RAG 챗봇용)
             if st.session_state.firestore_db and 'conversation_chain' not in st.session_state:
                 # DB 로딩 시도
                 loaded_index = load_index_from_firestore(st.session_state.firestore_db, st.session_state.embeddings)
@@ -745,10 +747,13 @@ if 'llm' not in st.session_state:
                 else:
                     st.session_state.firestore_load_success = False
             
-            # 시뮬레이터 체인 초기화 (순수 ConversationChain 사용)
+            # ⭐ 시뮬레이터 체인 초기화 (LangChain Prompt Variable Error 해결)
             st.session_state.simulator_chain = ConversationChain(
                 llm=st.session_state.llm,
-                memory=st.session_state.simulator_memory
+                memory=st.session_state.simulator_memory,
+                # 메모리에서 사용하는 chat_history를 프롬프트에서 history 변수로 사용하도록 지정
+                prompt_input_key="input", 
+                memory_key="chat_history" # 이 메모리 키가 ConversationChain의 프롬프트에서 history 변수 이름과 다름
             )
 
         except Exception as e:
@@ -762,6 +767,7 @@ if 'llm' not in st.session_state:
 
 # 나머지 세션 상태 초기화
 if "memory" not in st.session_state:
+    # RAG 체인용 메모리 초기화
     st.session_state.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
 if "embedding_cache" not in st.session_state:
