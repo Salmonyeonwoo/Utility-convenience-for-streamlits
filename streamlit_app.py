@@ -10,8 +10,6 @@ import re
 import base64
 import io
 
-# ⭐ STT 기능은 Streamlit Cloud 환경 문제로 인해 제거되었습니다.
-
 # ⭐ Admin SDK 관련 라이브러리 임포트
 from firebase_admin import credentials, firestore, initialize_app, get_app
 # Admin SDK의 firestore와 Google Cloud SDK의 firestore를 구분하기 위해 alias 사용
@@ -159,137 +157,76 @@ def clean_and_load_json(text):
             return None
     return None
 
-def synthesize_and_play_audio(text_to_speak, api_key, current_lang_key):
-    """TTS API를 호출하고 오디오를 재생하는 JS 유틸리티를 Streamlit에 삽입합니다."""
+# ⭐ TTS 기능: Web Speech API (클라이언트 기반 TTS)로 교체됨 (API Key 불필요)
+def synthesize_and_play_audio(current_lang_key):
+    """TTS API 대신 Web Speech API를 위한 JS 유틸리티를 Streamlit에 삽입합니다."""
     
-    lang = LANG[current_lang_key]
+    lang_code = {"ko": "ko-KR", "en": "en-US", "ja": "ja-JP"}.get(current_lang_key, "en-US")
     
-    # TTS JS 코드는 페이지 로드 시 삽입되어야 합니다.
     tts_js_code = f"""
     <script>
-    // Utility functions (Base64 to ArrayBuffer, PCM to WAV header)
-    window.base64ToArrayBuffer = (base64) => {{
-        const binaryString = atob(base64);
-        const len = binaryString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {{ bytes[i] = binaryString.charCodeAt(i); }}
-        return bytes.buffer;
-    }};
+    if (!window.speechSynthesis) {{
+        document.getElementById('tts_status').innerText = '❌ TTS Not Supported';
+    }}
 
-    window.pcmToWav = (pcm16, sampleRate = 24000) => {{
-        const numChannels = 1;
-        const bitsPerSample = 16;
-        const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
-        const blockAlign = numChannels * (bitsPerSample / 8);
-        const dataSize = pcm16.length * 2;
-        const buffer = new ArrayBuffer(44 + dataSize);
-        const view = new DataView(buffer);
-        let offset = 0;
-        
-        // Write WAV header (RIFF, WAVE, fmt, data chunks)
-        view.setUint32(offset, 0x46464952, true); offset += 4; // "RIFF"
-        view.setUint32(offset, 36 + dataSize, true); offset += 4; 
-        view.setUint32(offset, 0x45564157, true); offset += 4; // "WAVE"
-        view.setUint32(offset, 0x20746d66, true); offset += 4; // "fmt "
-        view.setUint32(offset, 16, true); offset += 4; 
-        view.setUint16(offset, 1, true); offset += 2; 
-        view.setUint16(offset, numChannels, true); offset += 2; 
-        view.setUint32(offset, sampleRate, true); offset += 4; 
-        view.setUint32(offset, byteRate, true); offset += 4; 
-        view.setUint16(offset, blockAlign, true); offset += 2; 
-        view.setUint16(offset, bitsPerSample, true); offset += 2; 
-        view.setUint32(offset, 0x61746164, true); offset += 4; // "data"
-        view.setUint32(offset, dataSize, true); offset += 4; 
+    window.speakText = function(text) {{
+        if (!window.speechSynthesis || !text) return;
 
-        for (let i = 0; i < pcm16.length; i++) {{
-            view.setInt16(offset, pcm16[i], true);
-            offset += 2;
-        }}
-
-        return new Blob([view], {{ type: 'audio/wav' }});
-    }};
-    
-    // API call wrapper
-    window.speakText = async function(text) {{
-        const apiKey = "{api_key}";
-        const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=" + apiKey;
         const statusElement = document.getElementById('tts_status');
+        const utterance = new SpeechSynthesisUtterance(text);
         
-        const payload = {{
-            contents: [{{ parts: [{{ text: text }}] }}],
-            generationConfig: {{
-                responseModalities: ["AUDIO"],
-                speechConfig: {{ voiceConfig: {{ prebuiltVoiceConfig: {{ voiceName: "Kore" }} }} }}
-            }},
-            model: "gemini-2.5-flash-preview-tts"
+        utterance.lang = '{lang_code}'; 
+        
+        // Use a specific voice if available (optional)
+        // const voices = window.speechSynthesis.getVoices();
+        // utterance.voice = voices.find(v => v.lang === '{lang_code}') || voices[0];
+
+        utterance.onstart = () => {{
+            statusElement.innerText = '{LANG[current_lang_key].get("tts_status_generating", "오디오 생성 중...")}';
+            statusElement.style.backgroundColor = '#fff3e0';
         }};
         
-        statusElement.innerText = '{lang.get("tts_status_generating", "오디오 생성 중...")}';
-        statusElement.style.backgroundColor = '#fff3e0';
-
-        try {{
-            const response = await fetch(apiUrl, {{
-                method: 'POST',
-                headers: {{ 'Content-Type': 'application/json' }},
-                body: JSON.stringify(payload)
-            }});
-
-            const result = await response.json();
-            const audioDataB64 = result?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-
-            if (audioDataB64) {{
-                const pcmData = window.base64ToArrayBuffer(audioDataB64);
-                const pcm16 = new Int16Array(pcmData);
-                const wavBlob = window.pcmToWav(pcm16, 24000);
-                
-                const audio = new Audio(URL.createObjectURL(wavBlob));
-                audio.play();
-
-                statusElement.innerText = '{lang.get("tts_status_success", "✅ 오디오 재생 완료!")}';
-                statusElement.style.backgroundColor = '#e8f5e9';
-
-            }} else {{
-                statusElement.innerText = '{lang.get("tts_status_fail", "❌ TTS 생성 실패 (데이터 없음)")}';
-                statusElement.style.backgroundColor = '#ffebee';
-                console.error("TTS API did not return audio data:", result);
-            }}
-
-        }} catch (error) {{
-            statusElement.innerText = '{lang.get("tts_status_error", "❌ TTS API 오류 발생")}';
-            statusElement.style.backgroundColor = '#ffebee';
-            console.error("TTS API Error:", error);
-        }} finally {{
+        utterance.onend = () => {{
+            statusElement.innerText = '{LANG[current_lang_key].get("tts_status_success", "✅ 오디오 재생 완료!")}';
+            statusElement.style.backgroundColor = '#e8f5e9';
              setTimeout(() => {{ 
-                 statusElement.innerText = '{lang.get("tts_status_ready", "음성으로 듣기 준비됨")}';
+                 statusElement.innerText = '{LANG[current_lang_key].get("tts_status_ready", "음성으로 듣기 준비됨")}';
                  statusElement.style.backgroundColor = '#f0f0f0';
              }}, 3000);
-        }}
-    }}
+        }};
+        
+        utterance.onerror = (event) => {{
+            statusElement.innerText = '{LANG[current_lang_key].get("tts_status_error", "❌ TTS 오류 발생")}';
+            statusElement.style.backgroundColor = '#ffebee';
+            console.error("SpeechSynthesis Error:", event);
+             setTimeout(() => {{ 
+                 statusElement.innerText = '{LANG[current_lang_key].get("tts_status_ready", "음성으로 듣기 준비됨")}';
+                 statusElement.style.backgroundColor = '#f0f0f0';
+             }}, 3000);
+        }};
+
+        window.speechSynthesis.cancel(); // Stop any current speech
+        window.speechSynthesis.speak(utterance);
+    }};
     </script>
     """
     # JS 유틸리티를 Streamlit 앱에 컴포넌트로 삽입 (높이 조정하여 상태창만 보이도록)
     st.components.v1.html(tts_js_code, height=5, width=0)
 
-def render_tts_button(text_to_speak, api_key, current_lang_key):
+def render_tts_button(text_to_speak, current_lang_key):
     """TTS 버튼 UI를 렌더링하고 클릭 시 JS 함수를 호출합니다."""
     
-    # TTS JS 코드가 삽입되도록 함수 호출
-    # synthesize_and_play_audio(text_to_speak, api_key, current_lang_key) # 이미 초기 로드 시 삽입됨
+    # TTS는 이제 API Key 없이 클라이언트에서 작동합니다.
     
-    # TTS 버튼 표시 로직 수정: API Key가 있어야 버튼이 표시됩니다.
-    if api_key:
-        # 줄 바꿈을 공백으로 변환하고, 따옴표를 이스케이프 처리
-        safe_text = text_to_speak.replace('\n', ' ').replace('"', '\\"').replace("'", "\\'")
-        
-        st.markdown(f"""
-            <button onclick="window.speakText('{safe_text}')"
-                    style="background-color: #4338CA; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; border: none; width: 100%; font-weight: bold; margin-bottom: 10px;">
-                {LANG[current_lang_key].get("button_listen_audio", "음성으로 듣기")} 🎧
-            </button>
-        """, unsafe_allow_html=True)
-    # API Key가 없는 경우, 버튼 대신 경고 표시 (TTS 버튼 미표시 문제 해결)
-    else:
-        st.info(LANG[current_lang_key]["simulation_no_key_warning"] + " (TTS 버튼은 Key 발급 시 나타납니다)")
+    # 줄 바꿈을 공백으로 변환하고, 따옴표를 이스케이프 처리
+    safe_text = text_to_speak.replace('\n', ' ').replace('"', '\\"').replace("'", "\\'")
+    
+    st.markdown(f"""
+        <button onclick="window.speakText('{safe_text}')"
+                style="background-color: #4338CA; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; border: none; width: 100%; font-weight: bold; margin-bottom: 10px;">
+            {LANG[current_lang_key].get("button_listen_audio", "음성으로 듣기")} 🎧
+        </button>
+    """, unsafe_allow_html=True)
 
 
 def get_mock_response_data(lang_key, customer_type):
@@ -581,7 +518,7 @@ LANG = {
         "tts_status_generating": "오디오 생성 중...",
         "tts_status_success": "✅ 오디오 재생 완료!",
         "tts_status_fail": "❌ TTS 생성 실패 (데이터 없음)",
-        "tts_status_error": "❌ TTS API 오류 발생",
+        "tts_status_error": "❌ TTS 오류 발생",
         
         # ⭐ 대화형/종료 메시지
         "button_mic_input": "음성 입력",
@@ -677,7 +614,7 @@ LANG = {
         "rag_desc": "アップロードされたドキュメントに基づいて質問に回答します。",
         "rag_input_placeholder": "学習資料について質問してください",
         "llm_error_key": "⚠️ 警告: GEMINI APIキーが設定されていません。Streamlit Secretsに'GEMINI_API_KEY'를 설정해주세요。",
-        "llm_error_init": "LLM 초기화 오류: APIキーを確認してください。",
+        "llm_error_init": "LLM初期化エラー：APIキーを確認してください。",
         "content_header": "カスタム学習コンテンツ生成",
         "content_desc": "学習テーマと難易度に合わせてコンテンツを生成します。",
         "topic_label": "学習テーマ",
@@ -814,7 +751,7 @@ if 'llm' not in st.session_state:
                     st.session_state.firestore_load_success = False
             
             # 시뮬레이터 체인 초기화
-            # Retriever는 일단 임베딩으로 임시 설정 (RAG DB는 학습 자료 업로드 시 생성됨)
+            # Retriever는 일단 임베딩으로 임시 설정 (API Key가 없으면 이 체인 호출에서 에러 발생)
             st.session_state.simulator_chain = ConversationalRetrievalChain.from_llm(
                 llm=st.session_state.llm,
                 retriever=st.session_state.embeddings.as_retriever(), 
@@ -870,8 +807,6 @@ with st.sidebar:
     L = LANG[st.session_state.language] 
     
     st.title(L["sidebar_title"])
-
-    # ⭐ STT 기능 제거 후 경고는 제거됨
     
     st.markdown("---")
     
@@ -938,11 +873,12 @@ if feature_selection == L["simulator_tab"]:
     
     # TTS JS 유틸리티를 페이지 로드 시 단 한 번만 삽입 (TTS 함수가 글로벌로 정의되도록)
     if "tts_js_loaded" not in st.session_state:
-         synthesize_and_play_audio("", API_KEY, st.session_state.language) # 초기화 목적으로 빈 텍스트 전송
+         synthesize_and_play_audio(st.session_state.language) # API Key 제거됨
          st.session_state.tts_js_loaded = True
 
 
-    if st.session_state.is_llm_ready:
+    # ⭐ LLM 초기화가 되어있지 않아도 (API Key가 없어도) UI가 작동해야 함
+    if st.session_state.is_llm_ready or not API_KEY:
         if st.session_state.is_chat_ended:
             st.success(L["prompt_customer_end"] + " " + L["prompt_survey"])
             
@@ -973,8 +909,6 @@ if feature_selection == L["simulator_tab"]:
             disabled=st.session_state.initial_advice_provided
         )
         
-        # 3. 음성 입력 (STT) 제거됨 (환경적 제약)
-
         # 선택된 언어 키
         current_lang_key = st.session_state.language 
 
@@ -1004,6 +938,7 @@ if feature_selection == L["simulator_tab"]:
             """
             
             if not API_KEY:
+                # API Key가 없을 경우 모의(Mock) 데이터 사용
                 mock_data = get_mock_response_data(current_lang_key, customer_type_display)
                 ai_advice_text = f"### {mock_data['advice_header']}\n\n{mock_data['advice']}\n\n### {mock_data['draft_header']}\n\n{mock_data['draft']}"
                 st.session_state.simulator_messages.append({"role": "supervisor", "content": ai_advice_text})
@@ -1012,9 +947,15 @@ if feature_selection == L["simulator_tab"]:
                 st.rerun() 
             
             if API_KEY:
+                # API Key가 있을 경우 LLM 호출
                 with st.spinner("AI 슈퍼바이저 조언 생성 중..."):
                     try:
-                        response = st.session_state.llm.invoke(initial_prompt)
+                        # simulator_chain이 None이 아닌지 확인 (AttributeError 방지)
+                        if st.session_state.simulator_chain is None:
+                            st.error(L['llm_error_init'] + " (시뮬레이터 체인 초기화 실패)")
+                            st.stop()
+
+                        response = st.session_state.simulator_chain.invoke({"question": initial_prompt})
                         ai_advice_text = response.content
                         st.session_state.simulator_messages.append({"role": "supervisor", "content": ai_advice_text})
                         st.session_state.initial_advice_provided = True
@@ -1033,7 +974,8 @@ if feature_selection == L["simulator_tab"]:
             elif message["role"] == "supervisor":
                 with st.chat_message("assistant", avatar="🤖"):
                     st.markdown(message["content"])
-                    render_tts_button(message["content"], API_KEY, st.session_state.language)
+                    # TTS 버튼은 API Key 없이 작동하도록 수정됨
+                    render_tts_button(message["content"], st.session_state.language) 
             elif message["role"] == "agent_response":
                  with st.chat_message("user", avatar="🧑‍💻"):
                     st.markdown(message["content"])
@@ -1061,8 +1003,8 @@ if feature_selection == L["simulator_tab"]:
                 if col_end.button(L["button_end_chat"], key="end_chat"):
                     closing_messages = get_closing_messages(current_lang_key)
                     
-                    st.session_state.simulator_messages.append({"role": "supervisor", "content": closing_messages["customer_closing_confirm"]})
-                    st.session_state.simulator_messages.append({"role": "system_end", "content": closing_messages["prompt_customer_end"] + " " + closing_messages["prompt_survey"]})
+                    st.session_state.simulator_messages.append({"role": "supervisor", "content": closing_messages["additional_query"]}) # 매너 질문
+                    st.session_state.simulator_messages.append({"role": "system_end", "content": closing_messages["chat_closing"]}) # 최종 종료 인사
                     st.session_state.is_chat_ended = True
                     st.rerun()
 
@@ -1072,6 +1014,11 @@ if feature_selection == L["simulator_tab"]:
                         st.warning("API Key가 없기 때문에 LLM을 통한 대화형 시뮬레이션은 불가능합니다.")
                         st.stop()
                     
+                    # LLM 호출 시 simulator_chain이 None이 아닌지 다시 확인
+                    if st.session_state.simulator_chain is None:
+                        st.error(L['llm_error_init'] + " (시뮬레이터 체인 초기화 실패)")
+                        st.stop()
+                        
                     next_reaction_prompt = f"""
                     Analyze the entire chat history. Roleplay as the customer ({customer_type_display}). 
                     Based on the agent's last message, generate ONE of the following responses in the customer's voice:
@@ -1087,8 +1034,9 @@ if feature_selection == L["simulator_tab"]:
                         response = st.session_state.simulator_chain.invoke({"question": next_reaction_prompt})
                         customer_reaction = response.get('answer', L['tts_status_error'])
                         
-                        is_positive_close = any(keyword in customer_reaction.lower() for keyword in 
-                                                ["감사", "thank you", "ありがとう", L['customer_positive_response'].lower().split('/')[-1].strip()])
+                        # 긍정적 종료 키워드 확인 (대소문자 무시)
+                        positive_keywords = ["감사", "thank you", "ありがとう", L['customer_positive_response'].lower().split('/')[-1].strip()]
+                        is_positive_close = any(keyword in customer_reaction.lower() for keyword in positive_keywords)
                         
                         if is_positive_close:
                             role = "customer_end" # 긍정적 종료
