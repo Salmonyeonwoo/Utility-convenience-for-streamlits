@@ -171,6 +171,7 @@ def synthesize_and_play_audio(current_lang_key):
 
     tts_js_code = f"""
     <script>
+    // Web Speech API는 navigator/window 객체에 존재합니다.
     if (!window.speechSynthesis) {{
         document.getElementById('tts_status').innerText = '❌ TTS Not Supported';
     }}
@@ -768,7 +769,7 @@ if 'llm' not in st.session_state:
             # ⭐ 시뮬레이터 체인 초기화 (LangChain Prompt Variable Error 해결)
             
             # 1. 시뮬레이터 전용 프롬프트 템플릿 정의
-            SIMULATOR_PROMPT = PromptTemplate.from_template(
+            SIMULATOR_PROMPT = PromptTemplate(
                 template="The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context.\n\n{chat_history}\nHuman: {input}\nAI:",
                 input_variables=["input", "chat_history"]
             )
@@ -779,8 +780,6 @@ if 'llm' not in st.session_state:
                 memory=st.session_state.simulator_memory,
                 prompt=SIMULATOR_PROMPT,
                 input_key="input", 
-                # memory_key는 ConversationBufferMemory에서 이미 chat_history로 설정했으므로
-                # ConversationChain은 자동으로 {chat_history} 변수에 메모리를 연결합니다.
             )
 
 
