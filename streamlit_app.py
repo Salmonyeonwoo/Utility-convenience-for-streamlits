@@ -276,6 +276,7 @@ def render_tts_button(text_to_speak, api_key, current_lang_key):
     # TTS JS 코드가 삽입되도록 함수 호출
     # synthesize_and_play_audio(text_to_speak, api_key, current_lang_key) # 이미 초기 로드 시 삽입됨
     
+    # TTS 버튼 표시 로직 수정: API Key가 있어야 버튼이 표시됩니다.
     if api_key:
         # 줄 바꿈을 공백으로 변환하고, 따옴표를 이스케이프 처리
         safe_text = text_to_speak.replace('\n', ' ').replace('"', '\\"').replace("'", "\\'")
@@ -286,9 +287,9 @@ def render_tts_button(text_to_speak, api_key, current_lang_key):
                 {LANG[current_lang_key].get("button_listen_audio", "음성으로 듣기")} 🎧
             </button>
         """, unsafe_allow_html=True)
+    # API Key가 없는 경우, 버튼 대신 경고 표시 (TTS 버튼 미표시 문제 해결)
     else:
-        # TTS 불가 경고 (버튼 대신 표시)
-        st.warning(LANG[current_lang_key]["simulation_no_key_warning"] + " (TTS 불가)")
+        st.info(LANG[current_lang_key]["simulation_no_key_warning"] + " (TTS 버튼은 Key 발급 시 나타납니다)")
 
 
 def get_mock_response_data(lang_key, customer_type):
@@ -676,7 +677,7 @@ LANG = {
         "rag_desc": "アップロードされたドキュメントに基づいて質問に回答します。",
         "rag_input_placeholder": "学習資料について質問してください",
         "llm_error_key": "⚠️ 警告: GEMINI APIキーが設定されていません。Streamlit Secretsに'GEMINI_API_KEY'를 설정해주세요。",
-        "llm_error_init": "LLM初期化エラー：APIキーを確認してください。",
+        "llm_error_init": "LLM 초기화 오류: APIキーを確認してください。",
         "content_header": "カスタム学習コンテンツ生成",
         "content_desc": "学習テーマと難易度に合わせてコンテンツを生成します。",
         "topic_label": "学習テーマ",
@@ -792,7 +793,7 @@ if 'llm' not in st.session_state:
             sa_info, error_message = _get_admin_credentials()
             
             if error_message:
-                llm_init_error = f"{L['llm_init_error']} (DB Auth Error: {error_message})" 
+                llm_init_error = f"{L['llm_error_init']} (DB Auth Error: {error_message})" 
             elif sa_info:
                 db = initialize_firestore_admin() 
                 st.session_state.firestore_db = db
