@@ -15,7 +15,8 @@ from firebase_admin import credentials, firestore, initialize_app, get_app
 # Admin SDK의 firestore와 Google Cloud SDK의 firestore를 구분하기 위해 alias 사용
 from google.cloud import firestore as gcp_firestore
 
-from langchain.chains import ConversationalRetrievalChain
+# ConversationChain 사용을 위해 import 추가 (ConversationalRetrievalChain 대신)
+from langchain.chains import ConversationalRetrievalChain, ConversationChain
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
@@ -157,7 +158,6 @@ def clean_and_load_json(text):
             return None
     return None
 
-# ⭐ TTS 기능: Web Speech API (클라이언트 기반 TTS)로 교체됨 (API Key 불필요)
 def synthesize_and_play_audio(current_lang_key):
     """TTS API 대신 Web Speech API를 위한 JS 유틸리티를 Streamlit에 삽입합니다."""
     
@@ -750,11 +750,9 @@ if 'llm' not in st.session_state:
                 else:
                     st.session_state.firestore_load_success = False
             
-            # 시뮬레이터 체인 초기화
-            # Retriever는 일단 임베딩으로 임시 설정 (API Key가 없으면 이 체인 호출에서 에러 발생)
-            st.session_state.simulator_chain = ConversationalRetrievalChain.from_llm(
+            # 시뮬레이터 체인 초기화 (ConversationalRetrievalChain 대신 Pure ConversationChain 사용)
+            st.session_state.simulator_chain = ConversationChain(
                 llm=st.session_state.llm,
-                retriever=st.session_state.embeddings.as_retriever(), 
                 memory=st.session_state.simulator_memory
             )
 
@@ -955,8 +953,10 @@ if feature_selection == L["simulator_tab"]:
                             st.error(L['llm_error_init'] + " (시뮬레이터 체인 초기화 실패)")
                             st.stop()
 
-                        response = st.session_state.simulator_chain.invoke({"question": initial_prompt})
-                        ai_advice_text = response.content
+                        # ConversationChain의 invoke는 'input' 키를 사용합니다.
+                        response = st.session_state.simulator_chain.invoke({"input": initial_prompt})
+                        ai_advice_text = response.get('response', L['tts_status_error'])
+                        
                         st.session_state.simulator_messages.append({"role": "supervisor", "content": ai_advice_text})
                         st.session_state.initial_advice_provided = True
                         st.rerun() 
@@ -1031,8 +1031,9 @@ if feature_selection == L["simulator_tab"]:
                     """
                     
                     with st.spinner("고객의 반응 생성 중..."):
-                        response = st.session_state.simulator_chain.invoke({"question": next_reaction_prompt})
-                        customer_reaction = response.get('answer', L['tts_status_error'])
+                        # ConversationChain의 invoke는 'input' 키를 사용합니다.
+                        response = st.session_state.simulator_chain.invoke({"input": next_reaction_prompt})
+                        customer_reaction = response.get('response', L['tts_status_error'])
                         
                         # 긍정적 종료 키워드 확인 (대소문자 무시)
                         positive_keywords = ["감사", "thank you", "ありがとう", L['customer_positive_response'].lower().split('/')[-1].strip()]
