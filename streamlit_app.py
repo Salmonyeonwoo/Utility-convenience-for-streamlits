@@ -499,13 +499,16 @@ if 'llm' not in st.session_state:
             sa_info, error_message = _get_admin_credentials()
             
             if error_message:
-                llm_init_error = f"{L['llm_error_init']} (DB Auth Error: {error_message})"
+                llm_init_error = f"{L['llm_error_init']} (DB Auth Error: {error_message})" # ⭐⭐ 'llm_error_init'로 수정
             elif sa_info:
-                db, error_message = initialize_firestore_client(sa_info)
+                # initialize_firestore_client 함수가 정의되어 있지 않아 오류를 방지하기 위해 임시로 initialize_firestore_admin을 재활용합니다.
+                # 참고: 현재 코드에는 initialize_firestore_client가 정의되지 않았습니다.
+                # 임시로 initialize_firestore_admin()을 호출하여 DB 클라이언트를 설정합니다.
+                db = initialize_firestore_admin() 
                 st.session_state.firestore_db = db
                 
-                if error_message:
-                    llm_init_error = f"{L['llm_init_error']} (DB Client Error: {error_message})"
+                if not db:
+                    llm_init_error = f"{L['llm_error_init']} (DB Client Error: Firebase Admin Init Failed)" # ⭐⭐ 'llm_error_init'로 수정
 
             # DB 로딩 로직
             if st.session_state.firestore_db and 'conversation_chain' not in st.session_state:
@@ -520,7 +523,7 @@ if 'llm' not in st.session_state:
                     st.session_state.firestore_load_success = False
             
         except Exception as e:
-            llm_init_error = f"{L['llm_init_error']} {e}"
+            llm_init_error = f"{L['llm_error_init']} {e}" # ⭐⭐ 'llm_error_init'로 수정
             st.session_state.is_llm_ready = False
     
     if llm_init_error:
