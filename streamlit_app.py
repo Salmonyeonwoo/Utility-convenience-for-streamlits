@@ -73,7 +73,7 @@ def initialize_firestore_admin():
     firebase_config = json.loads(st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"])
     
     try:
-        cred = credentials.Certificate(firebase_config)
+        cred = credentials.Certificate("firebase_key.json")
         initialize_app(cred)
         st.session_state["db"] = firestore.client()
         st.success("✅ Firebase Admin SDK 초기화 완료!")
