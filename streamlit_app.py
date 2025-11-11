@@ -749,15 +749,23 @@ if 'llm' not in st.session_state:
                     st.session_state.firestore_load_success = False
             
             # ⭐ 시뮬레이터 체인 초기화 (LangChain Prompt Variable Error 해결)
+            
+            # 1. 시뮬레이터 전용 프롬프트 템플릿 정의
+            SIMULATOR_PROMPT = PromptTemplate.from_template(
+                template="The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context.\n\n{chat_history}\nHuman: {input}\nAI:",
+                # PromptTemplate.from_template은 input_variables를 자동으로 유추하므로,
+                # 이 템플릿에서는 input_variables가 ["input", "chat_history"]가 됩니다.
+                # 이 이름을 메모리와 ConversationChain이 사용하도록 연결합니다.
+            )
+            
+            # 2. ConversationChain 초기화
             st.session_state.simulator_chain = ConversationChain(
                 llm=st.session_state.llm,
                 memory=st.session_state.simulator_memory,
-                # LangChain의 ConversationChain은 chat_history와 input 변수를 사용하도록 명시
-                prompt=PromptTemplate.from_template(
-                    template="The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context.\n\n{chat_history}\nHuman: {input}\nAI:",
-                    input_variables=["input", "chat_history"]
-                ),
-                input_key="input", # input_key 명시 (선택적이지만 명시적으로 유지)
+                prompt=SIMULATOR_PROMPT,
+                input_key="input", # input_key 명시
+                # memory_key는 ConversationBufferMemory에서 이미 chat_history로 설정했으므로
+                # ConversationChain은 자동으로 {chat_history} 변수에 메모리를 연결합니다.
             )
 
 
