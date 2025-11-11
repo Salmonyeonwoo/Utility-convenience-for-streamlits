@@ -64,23 +64,24 @@ def _get_admin_credentials():
     return sa_info, None
 
 @st.cache_resource(ttl=None)
-def initialize_firestore_client(sa_info):
-    """
-    캐시 가능한 Firestore 클라이언트 객체를 생성합니다.
-    """
-    try:
-        # Firebase Admin SDK 초기화
-        import firebase_admin
-        if not firebase_admin._apps:
-            cred = credentials.Certificate(sa_info)
-            # 이름 없이 default 앱으로 초기화
-            initialize_app(cred) 
-            
-        # Firestore 클라이언트 반환 (default 앱 사용)
-        return firestore.client(), None
+def initialize_firestore_admin():
+    if "FIREBASE_SERVICE_ACCOUNT_JSON" not in st.secrets:
+        st.error("❌ Firebase Secret 누락: FIREBASE_SERVICE_ACCOUNT_JSON")
+        return None
 
+    # ✅ 문자열을 JSON으로 변환
+    firebase_config = json.loads(st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"])
+    
+    try:
+        cred = credentials.Certificate(firebase_config)
+        initialize_app(cred)
+        st.session_state["db"] = firestore.client()
+        st.success("✅ Firebase Admin SDK 초기화 완료!")
+        return firestore.client()
     except Exception as e:
-        return None, f"Firebase Admin 초기화 실패: {e}"
+        st.error(f"🔥 Firebase 초기화 실패: {e}")
+        return None
+
 
 
 def save_index_to_firestore(db, vector_store, index_id="user_portfolio_rag"):
