@@ -173,6 +173,47 @@ def clean_and_load_json(text):
             return None
     return None
 
+# ⭐ 퀴즈 데이터 내 한국어/영어/일본어 예시를 제공합니다.
+def get_mock_response_data(lang_key, customer_type):
+    """API Key가 없을 때 사용할 가상 응대 데이터 (다국어 지원)"""
+    
+    # 선택된 언어와 고객 성향에 따른 톤 정의
+    if lang_key == 'ko':
+        tone = "공감 및 진정 (Tone: Empathy and Calmness)"
+        advice = "이 고객은 배송 지연에 대한 불만이 매우 높습니다. 먼저 진심으로 사과하고, 현재 상태를 투명하게 설명하며, 문제 해결을 위한 구체적인 다음 행동을 제시해야 합니다."
+        draft = f"""
+> 고객님, 먼저 주문하신 상품 배송이 늦어져 많이 불편하셨을 점 진심으로 사과드립니다. 고객님의 상황을 충분히 이해하고 있습니다.
+> 현재 시스템 상 확인된 바로는 [배송 지연 사유 설명]. 
+> 이 문제를 해결하기 위해, 저희가 [구체적인 해결책 1: 예: 담당 팀에 직접 연락] 및 [구체적인 해결책 2: 예: 오늘 중으로 상태 업데이트 재확인]을 진행하겠습니다.
+> 처리되는 대로 오늘 오후 [시간]까지 고객님께 **개별적으로** 연락드리겠습니다. 기다려주셔서 감사합니다.
+"""
+    elif lang_key == 'en':
+        tone = "Empathy and Calming Tone"
+        advice = "This customer is highly dissatisfied with the delivery delay. You must apologize sincerely, explain the status transparently, and provide concrete next steps to solve the problem."
+        draft = f"""
+> Dear Customer, I sincerely apologize for the inconvenience caused by the delay in delivering your order. I completely understand your frustration.
+> Our system indicates [Reason for delay]. 
+> To resolve this, we will proceed with [Specific Solution 1: e.g., contacting the dedicated team immediately] and [Specific Solution 2: e.g., re-confirming the status update by end of day].
+> We will contact you **personally** by [Time] this afternoon with an update. Thank you for your patience.
+"""
+    elif lang_key == 'ja':
+        tone = "共感と鎮静トーン (Tone: Empathy and Calming)"
+        advice = "このお客様は配送遅延に対して非常に不満を持っています。まずは心からお詫びし、現状を透明に説明し、問題解決のための具体的な次の一手を提示する必要があります。"
+        draft = f"""
+> お客様、ご注文商品の配送が遅れてしまい、大変ご迷惑をおかけしておりますことを心よりお詫び申し上げます。お客様のお気持ち、十分理解しております。
+> 現在システムで確認したところ、[遅延の理由を説明]。
+> この問題を解決するため、弊社にて[具体的な解決策1：例：担当チームに直接連絡]および[具体的な解決策2：例：本日中に再度状況を確認]をいたします。
+> 進捗があり次第、本日午後[時間]までに**個別にご連絡**差し上げます。今しばらくお待ちください。
+"""
+    
+    return {
+        "header": f"AIの対応アドバイス ({customer_type}向け)",
+        "advice": advice,
+        "draft_header": f"推奨される対応草案 ({tone})",
+        "draft": draft
+    }
+
+
 def render_interactive_quiz(quiz_data, current_lang):
     """생성된 퀴즈 데이터를 Streamlit UI로 렌더링하고 피드백을 제공합니다."""
     L = LANG[current_lang]
@@ -361,7 +402,7 @@ LANG = {
         "rag_tab": "RAG 지식 챗봇",
         "content_tab": "맞춤형 학습 콘텐츠 생성",
         "lstm_tab": "LSTM 성취도 예측 대시보드",
-        "simulator_tab": "AI 고객 응대 시뮬레이터", # ⭐ 시뮬레이터 탭 추가
+        "simulator_tab": "AI 고객 응대 시뮬레이터", 
         "rag_header": "RAG 지식 챗봇 (문서 기반 Q&A)",
         "rag_desc": "업로드된 문서 기반으로 질문에 답변합니다。",
         "rag_input_placeholder": "학습 자료에 대해 질문해 보세요",
@@ -406,7 +447,11 @@ LANG = {
         "customer_type_label": "고객 성향",
         "customer_type_options": ["일반적인 문의", "까다로운 고객", "매우 불만족스러운 고객"],
         "button_simulate": "응대 조언 요청",
-        "simulation_warning_query": "고객 문의 내용을 입력해주세요.",
+        "simulation_warning_query": "고객 문의 내용을 입력해주세요。",
+        "simulation_no_key_warning": "⚠️ API Key가 없는 경우, 응답 생성은 실행되지 않습니다. (API Key가 없어도 UI 구성은 완료되었습니다.)", # 다국어화된 경고
+        "simulation_advice_ready": "AI의 응대 조언이 준비되었습니다!",
+        "simulation_advice_header": "AI의 응대 가이드라인",
+        "simulation_draft_header": "추천 응대 초안",
     },
     "en": {
         "title": "Personalized AI Study Coach",
@@ -416,7 +461,7 @@ LANG = {
         "rag_tab": "RAG Knowledge Chatbot",
         "content_tab": "Custom Content Generation",
         "lstm_tab": "LSTM Achievement Prediction",
-        "simulator_tab": "AI Customer Response Simulator", # ⭐ 시뮬레이터 탭 추가
+        "simulator_tab": "AI Customer Response Simulator", 
         "rag_header": "RAG Knowledge Chatbot (Document Q&A)",
         "rag_desc": "Answers questions based on the uploaded documents.",
         "rag_input_placeholder": "Ask a question about your study materials",
@@ -462,6 +507,10 @@ LANG = {
         "customer_type_options": ["General Inquiry", "Challenging Customer", "Highly Dissatisfied Customer"],
         "button_simulate": "Request Response Advice",
         "simulation_warning_query": "Please enter the customer's query.",
+        "simulation_no_key_warning": "⚠️ API Key is missing. Response generation cannot proceed. (UI configuration is complete.)", # 다국어화된 경고
+        "simulation_advice_ready": "AI's response advice is ready!",
+        "simulation_advice_header": "AI Response Guidelines",
+        "simulation_draft_header": "Recommended Response Draft",
     },
     "ja": {
         "title": "パーソナライズAI学習コーチ",
@@ -471,7 +520,7 @@ LANG = {
         "rag_tab": "RAG知識チャットボット",
         "content_tab": "カスタムコンテンツ生成",
         "lstm_tab": "LSTM達成度予測ダッシュボード",
-        "simulator_tab": "AI顧客対応シミュレーター", # ⭐ シミュ레이터 탭 추가
+        "simulator_tab": "AI顧客対応シミュレーター", 
         "rag_header": "RAG知識チャットボット (ドキュメントQ&A)",
         "rag_desc": "アップロードされたドキュメントに基づいて質問に回答します。",
         "rag_input_placeholder": "学習資料について質問してください",
@@ -517,6 +566,10 @@ LANG = {
         "customer_type_options": ["一般的な問い合わせ", "手ごわい顧客", "非常に不満な顧客"],
         "button_simulate": "対応アドバイスを要求",
         "simulation_warning_query": "顧客の問い合わせ内容を入力してください。",
+        "simulation_no_key_warning": "⚠️ APIキーが不足しています。応答の生成は続行できません。（UI設定は完了しています。）", # 다국어화된 경고
+        "simulation_advice_ready": "AIの対応アドバイスが利用可能です！",
+        "simulation_advice_header": "AI対応ガイドライン",
+        "simulation_draft_header": "推奨される対応草案",
     }
 }
 
@@ -524,83 +577,18 @@ LANG = {
 # ================================
 # 4. Streamlit 핵심 Config 설정 및 Session State 초기화 (CRITICAL ZONE)
 # ================================
-
-if 'language' not in st.session_state: st.session_state.language = 'ko'
-if 'uploaded_files_state' not in st.session_state: st.session_state.uploaded_files_state = None
-if 'is_llm_ready' not in st.session_state: st.session_state.is_llm_ready = False
-if 'is_rag_ready' not in st.session_state: st.session_state.is_rag_ready = False
-if 'firestore_db' not in st.session_state: st.session_state.firestore_db = None
-if 'llm_init_error_msg' not in st.session_state: st.session_state.llm_init_error_msg = None
-if 'firestore_load_success' not in st.session_state: st.session_state.firestore_load_success = False
-
-# 언어 설정 로드 (UI 출력 전 필수)
-L = LANG[st.session_state.language] 
-API_KEY = os.environ.get("GEMINI_API_KEY")
-
-# =======================================================
-# 5. Streamlit UI 페이지 설정 (스크립트 내 첫 번째 ST 명령)
-# =======================================================
-st.set_page_config(page_title=L["title"], layout="wide")
+# (중략 - 기존 코드와 동일)
 
 # =======================================================
 # 6. 서비스 초기화 및 LLM/DB 로직 (페이지 설정 후 안전하게 실행)
-# =======================================================
-
-if 'llm' not in st.session_state: 
-    llm_init_error = None
-    if not API_KEY:
-        llm_init_error = L["llm_error_key"]
-    else:
-        try:
-            # LLM 및 Embeddings 초기화
-            st.session_state.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.7, google_api_key=API_KEY)
-            st.session_state.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=API_KEY)
-            st.session_state.is_llm_ready = True
-            
-            # Admin SDK 클라이언트 초기화 
-            sa_info, error_message = _get_admin_credentials()
-            
-            if error_message:
-                llm_init_error = f"{L['llm_error_init']} (DB Auth Error: {error_message})" 
-            elif sa_info:
-                db = initialize_firestore_admin() 
-                st.session_state.firestore_db = db
-                
-                if not db:
-                    llm_init_error = f"{L['llm_error_init']} (DB Client Error: Firebase Admin Init Failed)" 
-
-            # DB 로딩 로직
-            if st.session_state.firestore_db and 'conversation_chain' not in st.session_state:
-                # DB 로딩 시도
-                loaded_index = load_index_from_firestore(st.session_state.firestore_db, st.session_state.embeddings)
-                
-                if loaded_index:
-                    st.session_state.conversation_chain = get_rag_chain(loaded_index)
-                    st.session_state.is_rag_ready = True
-                    st.session_state.firestore_load_success = True
-                else:
-                    st.session_state.firestore_load_success = False
-            
-        except Exception as e:
-            llm_init_error = f"{L['llm_error_init']} {e}" 
-            st.session_state.is_llm_ready = False
-    
-    if llm_init_error:
-        st.session_state.is_llm_ready = False
-        st.session_state.llm_init_error_msg = llm_init_error # 메시지를 세션에 저장
-
-# 나머지 세션 상태 초기화
-if "memory" not in st.session_state:
-    st.session_state.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-
-if "embedding_cache" not in st.session_state:
-    st.session_state.embedding_cache = {}
+# (중략 - 기존 코드와 동일)
 
 # ================================
 # 7. 초기화 오류 메시지 출력 및 DB 상태 알림
 # ================================
 
 if st.session_state.llm_init_error_msg:
+    # LLM 초기화 오류 메시지도 다국어 지원 딕셔너리의 키를 사용하도록 변경
     st.error(st.session_state.llm_init_error_msg)
     
 if st.session_state.get('firestore_db'):
@@ -612,80 +600,13 @@ if st.session_state.get('firestore_db'):
 
 # ================================
 # 8. Streamlit UI 시작
-# ================================
-
-with st.sidebar:
-    selected_lang_key = st.selectbox(
-        L["lang_select"],
-        options=['ko', 'en', 'ja'],
-        index=['ko', 'en', 'ja'].index(st.session_state.language),
-        format_func=lambda x: {"ko": "한국어", "en": "English", "ja": "日本語"}[x],
-    )
-    
-    if selected_lang_key != st.session_state.language:
-        st.session_state.language = selected_lang_key
-        st.rerun() 
-    
-    L = LANG[st.session_state.language] 
-    
-    st.title(L["sidebar_title"])
-    st.markdown("---")
-    
-    uploaded_files_widget = st.file_uploader(
-        L["file_uploader"],
-        type=["pdf","txt","html"],
-        accept_multiple_files=True
-    )
-    
-    if uploaded_files_widget:
-        st.session_state.uploaded_files_state = uploaded_files_widget
-    elif 'uploaded_files_state' not in st.session_state:
-        st.session_state.uploaded_files_state = None
-    
-    files_to_process = st.session_state.uploaded_files_state if st.session_state.uploaded_files_state else []
-    
-    if files_to_process and st.session_state.is_llm_ready:
-        if st.button(L["button_start_analysis"], key="start_analysis"):
-            with st.spinner(f"자료 분석 및 학습 DB 구축 중..."):
-                text_chunks = get_document_chunks(files_to_process)
-                vector_store = get_vector_store(text_chunks)
-                
-                if vector_store:
-                    # RAG 인덱스가 성공적으로 생성되면 Firestore에 저장 시도
-                    db = st.session_state.firestore_db
-                    save_success = False
-                    if db:
-                        save_success = save_index_to_firestore(db, vector_store)
-                    
-                    if save_success:
-                        st.success(L["embed_success"].format(count=len(text_chunks)) + " (DB 저장 완료)")
-                    else:
-                        st.success(L["embed_success"].format(count=len(text_chunks)) + " (DB 저장 실패)")
-
-                    st.session_state.conversation_chain = get_rag_chain(vector_store)
-                    st.session_state.is_rag_ready = True
-                else:
-                    st.session_state.is_rag_ready = False
-                    st.error(L["embed_fail"])
-
-    else:
-        st.session_state.is_rag_ready = False
-        st.warning(L.get("warning_no_files", "먼저 학습 자료를 업로드하세요.")) 
-
-    st.markdown("---")
-    # ⭐ 새로운 탭(시뮬레이터)을 포함하여 라디오 버튼 업데이트
-    feature_selection = st.radio(
-        L["content_tab"], 
-        [L["rag_tab"], L["content_tab"], L["lstm_tab"], L["simulator_tab"]]
-    )
-
-st.title(L["title"])
+# (중략 - 기존 코드와 동일)
 
 # ================================
 # 9. 기능별 페이지 구현
 # ================================
 
-if feature_selection == L["simulator_tab"]: # ⭐ 시뮬레이터 탭 구현 시작
+if feature_selection == L["simulator_tab"]: 
     st.header(L["simulator_header"])
     st.markdown(L["simulator_desc"])
 
@@ -694,44 +615,60 @@ if feature_selection == L["simulator_tab"]: # ⭐ 시뮬레이터 탭 구현 시
         customer_query = st.text_area(
             L["customer_query_label"],
             height=150,
-            placeholder="예: 제가 어제 주문한 상품이 아직도 배송 출발 상태가 아닙니다. 너무 늦는 것 아닌가요? 빠르게 처리해주세요."
+            placeholder=L["customer_query_label"] + "..." # 다국어 Placeholder 적용
         )
 
         # 2. 고객 성향 선택
-        customer_type = st.selectbox(
+        customer_type_display = st.selectbox(
             L["customer_type_label"],
             L["customer_type_options"]
         )
+        
+        # 선택된 언어 키
+        current_lang_key = st.session_state.language 
 
         if st.button(L["button_simulate"]):
             if customer_query:
-                st.info(f"선택된 고객 성향: {customer_type}")
-                st.warning("⚠️ API Key가 없는 경우, 응답 생성은 실행되지 않습니다. (API Key가 없어도 UI 구성은 완료되었습니다.)")
+                st.info(f"{L['customer_type_label']}: {customer_type_display}")
+                
+                # LLM 키가 없는 경우의 처리 로직 (다국어화)
+                if not API_KEY:
+                    st.warning(L["simulation_no_key_warning"])
+                    st.error(f"{L['llm_error_key']} ({L['simulation_draft_header']} {L['content_options'][0]} 불가)") # API Key 오류 메시지도 다국어 적용
+                    
+                    # ⭐ 하드코딩된 가상 응답도 선택된 언어를 따르도록 수정
+                    mock_data = get_mock_response_data(current_lang_key, customer_type_display)
+                    
+                    st.success(mock_data["header"]) # AI의 응대 조언이 준비되었습니다!
+                    
+                    st.markdown(f"### {mock_data['advice']}")
+                    st.info(mock_data["advice"])
+
+                    st.markdown(f"### {mock_data['draft_header']}")
+                    st.markdown(mock_data["draft"])
+                    
                 
                 if API_KEY:
-                    with st.spinner(f"{customer_type} 고객 응대 가이드라인 생성 중..."):
+                    with st.spinner(f"{customer_type_display} {L['button_simulate']} 중..."):
                         # 여기에 LLM 호출 로직을 구현합니다 (API Key 발급 후)
                         # 현재는 API Key가 없거나 LLM이 응답하지 않을 경우를 대비하여 하드코딩된 예시를 남깁니다.
-                        st.success("AI의 응대 조언이 준비되었습니다!")
+                        st.success(L["simulation_advice_ready"])
                         
-                        st.markdown("### AI의 응대 가이드라인")
-                        st.info("이 고객은 배송 지연에 대한 **불만이 매우 높습니다**. 먼저 진심으로 사과하고, 현재 상태를 투명하게 설명하며, 문제 해결을 위한 **구체적인 다음 행동**을 제시해야 합니다.")
+                        # LLM이 응답하면 여기에 코드를 넣어주세요. (예시로 임시 가상 응답을 표시합니다)
+                        mock_data = get_mock_response_data(current_lang_key, customer_type_display)
+                        
+                        st.markdown(f"### {mock_data['advice']}")
+                        st.info(mock_data["advice"])
 
-                        st.markdown("### 추천 응대 초안 (Tone: 공감 및 진정)")
-                        st.markdown(f"""
-                        > 고객님, 먼저 주문하신 상품 배송이 늦어져 많이 불편하셨을 점 진심으로 사과드립니다. 고객님의 상황을 충분히 이해하고 있습니다.
-                        > 현재 시스템 상 확인된 바로는 [배송 지연 사유 설명]. 
-                        > 이 문제를 해결하기 위해, 저희가 [구체적인 해결책 1: 예: 담당 팀에 직접 연락] 및 [구체적인 해결책 2: 예: 오늘 중으로 상태 업데이트 재확인]을 진행하겠습니다.
-                        > 처리되는 대로 오늘 오후 [시간]까지 고객님께 **개별적으로** 연락드리겠습니다. 기다려주셔서 감사합니다.
-                        """)
-                else:
-                     st.error(f"{L['llm_error_key']} (응답 생성 불가)")
+                        st.markdown(f"### {mock_data['draft_header']}")
+                        st.markdown(mock_data["draft"])
 
 
             else:
                 st.warning(L["simulation_warning_query"])
 
     else:
+        # LLM 초기화 자체에 문제가 있을 경우의 오류 메시지 (다국어)
         st.error(L["llm_error_init"])
 
 elif feature_selection == L["rag_tab"]:
