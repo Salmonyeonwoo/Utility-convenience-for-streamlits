@@ -123,7 +123,9 @@ def save_index_to_firestore(db, vector_store, index_id="user_portfolio_rag"):
         return True
     
     except Exception as e:
-        print(f"Error saving index to Firestore: {e}")
+        # ⭐ 이 줄을 수정합니다: 실제 오류를 Streamlit 콘솔에 출력합니다.
+        print(f"Error saving index to Firestore: {e}") 
+        st.error(f"DB 저장 시도 중 오류 발생: {e}") # ⭐ 사용자에게도 오류 표시
         return False
 
 def load_index_from_firestore(db, embeddings, index_id="user_portfolio_rag"):
