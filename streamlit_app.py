@@ -23,6 +23,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmb
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.memory import ConversationBufferMemory
 from langchain.schema.document import Document
+from langchain.prompts import PromptTemplate # ⭐ PromptTemplate 임포트
 import numpy as np
 from bs4 import BeautifulSoup
 import matplotlib.pyplot as plt
@@ -751,10 +752,16 @@ if 'llm' not in st.session_state:
             st.session_state.simulator_chain = ConversationChain(
                 llm=st.session_state.llm,
                 memory=st.session_state.simulator_memory,
-                # 메모리에서 사용하는 chat_history를 프롬프트에서 history 변수로 사용하도록 지정
-                prompt_input_key="input", 
-                memory_key="chat_history" # 이 메모리 키가 ConversationChain의 프롬프트에서 history 변수 이름과 다름
+                # Simple ConversationChain은 기본적으로 input/history를 사용합니다.
+                # memory_key가 "chat_history"이므로, prompt_input_key는 제거하고 memory_key를 history 변수에 연결해야 합니다.
+                # 기본 템플릿을 사용하여 history 변수 이름을 chat_history로 변경합니다.
+                prompt=PromptTemplate.from_template(
+                    template="The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context.\n\n{chat_history}\nHuman: {input}\nAI:",
+                    input_variables=["input", "chat_history"]
+                ),
+                input_key="input", # input_key 명시
             )
+
 
         except Exception as e:
             # LLM 초기화 오류 처리 
@@ -996,7 +1003,7 @@ if feature_selection == L["simulator_tab"]:
             last_role = st.session_state.simulator_messages[-1]['role'] if st.session_state.simulator_messages else None
             
             # --- 고객의 다음 반응 요청 버튼 ---
-            if last_role in ["agent_response", "customer"]:
+            if last_role in ["agent_response", "customer", "customer_end", "supervisor"]: # 모든 메시지 후 다음 버튼을 누를 수 있도록 수정
                 
                 col_end, col_next = st.columns([1, 2])
                 
@@ -1033,6 +1040,7 @@ if feature_selection == L["simulator_tab"]:
                     
                     with st.spinner("고객의 반응 생성 중..."):
                         # ConversationChain의 predict는 'input' 키를 사용합니다.
+                        # LangChain은 history와 input을 자동으로 조합하여 프롬프트를 구성합니다.
                         customer_reaction = st.session_state.simulator_chain.predict(input=next_reaction_prompt)
                         
                         # 긍정적 종료 키워드 확인 (대소문자 무시)
@@ -1053,6 +1061,7 @@ if feature_selection == L["simulator_tab"]:
                         st.rerun()
             
             # 에이전트(사용자)가 고객에게 응답할 차례 (재반박, 추가 질문 후)
+            # 고객의 마지막 반응이 'rebuttal' 또는 'end'였거나, 'supervisor'(매너 질문)인 경우
             if last_role in ["customer_rebuttal", "customer_end", "supervisor"]:
                 agent_response = st.chat_input("에이전트로서 고객에게 응답하세요 (재반박 대응)")
                 if agent_response:
