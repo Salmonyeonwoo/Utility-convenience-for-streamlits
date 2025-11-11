@@ -1,5 +1,5 @@
 # ========================================
-# Streamlit AI 학습 코치 (최종 Firebase 영구 저장소 통합)
+# Streamlit AI 학습 코치 (최종 Firebase 영구 저장소 통합 및 시뮬레이터 확장)
 # ========================================
 import streamlit as st
 import os
@@ -15,7 +15,6 @@ try:
     from streamlit_mic_recorder import mic_recorder
     STT_AVAILABLE = True
 except ImportError:
-    # 라이브러리가 없을 경우 경고 메시지 처리를 위해 None으로 설정
     mic_recorder = None
     STT_AVAILABLE = False
 
@@ -193,7 +192,8 @@ def synthesize_and_play_audio(text_to_speak, api_key, current_lang_key):
         const buffer = new ArrayBuffer(44 + dataSize);
         const view = new DataView(buffer);
         let offset = 0;
-        // WAV header writing... (Omitted for brevity in this comment block)
+        
+        // Write WAV header (RIFF, WAVE, fmt, data chunks)
         view.setUint32(offset, 0x46464952, true); offset += 4; // "RIFF"
         view.setUint32(offset, 36 + dataSize, true); offset += 4; 
         view.setUint32(offset, 0x45564157, true); offset += 4; // "WAVE"
@@ -280,11 +280,13 @@ def synthesize_and_play_audio(text_to_speak, api_key, current_lang_key):
 def render_tts_button(text_to_speak, api_key, current_lang_key):
     """TTS 버튼 UI를 렌더링하고 클릭 시 JS 함수를 호출합니다."""
     
+    # TTS JS 코드가 삽입되도록 함수 호출
+    synthesize_and_play_audio(text_to_speak, api_key, current_lang_key)
+    
     if api_key:
         # 줄 바꿈을 공백으로 변환하고, 따옴표를 이스케이프 처리
         safe_text = text_to_speak.replace('\n', ' ').replace('"', '\\"').replace("'", "\\'")
         
-        # TTS JS 코드는 이미 페이지 로드 시 삽입되었습니다.
         st.markdown(f"""
             <button onclick="window.speakText('{safe_text}')"
                     style="background-color: #4338CA; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; border: none; width: 100%; font-weight: bold; margin-bottom: 10px;">
@@ -292,6 +294,7 @@ def render_tts_button(text_to_speak, api_key, current_lang_key):
             </button>
         """, unsafe_allow_html=True)
     else:
+        # TTS 불가 경고 (버튼 대신 표시)
         st.warning(LANG[current_lang_key]["simulation_no_key_warning"] + " (TTS 불가)")
 
 
@@ -413,6 +416,7 @@ def get_rag_chain(vector_store):
         memory=st.session_state.memory
     )
 
+@st.cache_resource
 def load_or_train_lstm():
     """가상의 학습 성취도 예측을 위한 LSTM 모델을 생성하고 학습합니다."""
     np.random.seed(42)
@@ -518,7 +522,6 @@ def render_interactive_quiz(quiz_data, current_lang):
 
 # ================================
 # 3. 다국어 지원 딕셔너리 (Language Dictionary)
-# (이 부분은 이전과 동일하게 유지됩니다.)
 # ================================
 LANG = {
     "ko": {
@@ -679,7 +682,7 @@ LANG = {
         "rag_header": "RAG知識チャットボット (ドキュメントQ&A)",
         "rag_desc": "アップロードされたドキュメントに基づいて質問に回答します。",
         "rag_input_placeholder": "学習資料について質問してください",
-        "llm_error_key": "⚠️ 警告: GEMINI APIキーが設定されていません。Streamlit Secretsに'GEMINI_API_KEY'を設定してください。",
+        "llm_error_key": "⚠️ 警告: GEMINI APIキーが設定されていません。Streamlit Secretsに'GEMINI_API_KEY'를 설정해주세요。",
         "llm_error_init": "LLM初期化エラー：APIキーを確認してください。",
         "content_header": "カスタム学習コンテンツ生成",
         "content_desc": "学習テーマと難易度に合わせてコンテンツを生成します。",
@@ -802,7 +805,7 @@ if 'llm' not in st.session_state:
                 st.session_state.firestore_db = db
                 
                 if not db:
-                    llm_init_error = f"{L['llm_error_init']} (DB Client Error: Firebase Admin Init Failed)" 
+                    llm_init_error = f"{L['llm_init_error']} (DB Client Error: Firebase Admin Init Failed)" 
 
             # DB 로딩 로직
             if st.session_state.firestore_db and 'conversation_chain' not in st.session_state:
@@ -824,7 +827,7 @@ if 'llm' not in st.session_state:
             )
 
         except Exception as e:
-            llm_init_error = f"{L['llm_error_init']} {e}" 
+            llm_init_error = f"{L['llm_init_error']} {e}" 
             st.session_state.is_llm_ready = False
     
     if llm_init_error:
@@ -874,7 +877,7 @@ with st.sidebar:
 
     # ⭐ STT 라이브러리 설치 경고를 사이드바에서 안전하게 표시
     if not STT_AVAILABLE:
-        st.error(L["button_mic_input"] + L["llm_error_init"] + "streamlit-mic-recorder")
+        st.warning(L["button_mic_input"] + " " + L["llm_error_init"] + " ('streamlit-mic-recorder' " + L["llm_error_init"].split(':')[0] + "를 확인하세요.)")
     
     st.markdown("---")
     
@@ -941,7 +944,7 @@ if feature_selection == L["simulator_tab"]:
     
     # TTS JS 유틸리티를 페이지 로드 시 단 한 번만 삽입 (TTS 함수가 글로벌로 정의되도록)
     if "tts_js_loaded" not in st.session_state:
-         synthesize_and_play_audio("Initialization complete.", API_KEY, st.session_state.language)
+         synthesize_and_play_audio("", API_KEY, st.session_state.language) # 초기화 목적으로 빈 텍스트 전송
          st.session_state.tts_js_loaded = True
 
 
@@ -958,7 +961,6 @@ if feature_selection == L["simulator_tab"]:
             st.stop()
         
         # 1. 고객 문의 입력 필드
-        # 음성 입력 결과를 여기에 저장
         if 'customer_query_text_area' not in st.session_state:
             st.session_state.customer_query_text_area = ""
 
@@ -982,7 +984,6 @@ if feature_selection == L["simulator_tab"]:
             col_mic, col_temp = st.columns([1, 4])
             with col_mic:
                 st.markdown(f"**{L['button_mic_input']}**")
-                # Streamlit-mic-recorder 컴포넌트를 사용하여 음성 녹음 후 Base64 데이터 반환
                 audio_data = mic_recorder(
                     start_prompt="🎙️",
                     stop_prompt="⏹️",
@@ -991,7 +992,6 @@ if feature_selection == L["simulator_tab"]:
                 )
             
             if audio_data and 'text' in audio_data and audio_data['text']:
-                # 녹음된 텍스트를 입력창에 삽입
                 st.session_state.customer_query_text_area = audio_data['text']
                 st.info(f"음성 입력 완료: {audio_data['text']}")
                 st.rerun()
@@ -1010,10 +1010,8 @@ if feature_selection == L["simulator_tab"]:
             st.session_state.simulator_messages = []
             st.session_state.is_chat_ended = False
             
-            # 가상 고객의 첫 문의 메시지를 채팅 기록에 추가 (고객 역할)
             st.session_state.simulator_messages.append({"role": "customer", "content": customer_query})
             
-            # LLM 호출을 위한 프롬프트 구성 (초기 조언 요청)
             initial_prompt = f"""
             You are an AI Customer Support Supervisor. Your task is to provide expert guidance to a customer support agent.
             The customer sentiment is: {customer_type_display}.
@@ -1056,7 +1054,6 @@ if feature_selection == L["simulator_tab"]:
             elif message["role"] == "supervisor":
                 with st.chat_message("assistant", avatar="🤖"):
                     st.markdown(message["content"])
-                    # TTS 버튼 추가 (AI 조언 부분만)
                     render_tts_button(message["content"], API_KEY, st.session_state.language)
             elif message["role"] == "agent_response":
                  with st.chat_message("user", avatar="🧑‍💻"):
@@ -1074,7 +1071,6 @@ if feature_selection == L["simulator_tab"]:
         # 6. 대화형 시뮬레이션 진행 (추가 채팅)
         if st.session_state.initial_advice_provided and not st.session_state.is_chat_ended:
             
-            # 마지막 메시지가 에이전트의 응답일 때만 다음 단계(고객의 반응 요청) 표시
             last_role = st.session_state.simulator_messages[-1]['role'] if st.session_state.simulator_messages else None
             
             # --- 고객의 다음 반응 요청 버튼 ---
@@ -1097,7 +1093,6 @@ if feature_selection == L["simulator_tab"]:
                         st.warning("API Key가 없기 때문에 LLM을 통한 대화형 시뮬레이션은 불가능합니다.")
                         st.stop()
                     
-                    # LLM에게 다음 반응을 생성하도록 요청 (재반박, 추가 질문, 긍정적 종료 3가지 중 하나)
                     next_reaction_prompt = f"""
                     Analyze the entire chat history. Roleplay as the customer ({customer_type_display}). 
                     Based on the agent's last message, generate ONE of the following responses in the customer's voice:
@@ -1110,17 +1105,14 @@ if feature_selection == L["simulator_tab"]:
                     """
                     
                     with st.spinner("고객의 반응 생성 중..."):
-                        # Langchain Memory가 전체 대화를 관리하도록 요청
                         response = st.session_state.simulator_chain.invoke({"question": next_reaction_prompt})
                         customer_reaction = response.get('answer', L['tts_status_error'])
                         
-                        # 긍정적 종료 확인 (다국어 포함)
                         is_positive_close = any(keyword in customer_reaction.lower() for keyword in 
-                                                ["감사", "thank you", "ありがとう", L['customer_positive_response'].lower()])
+                                                ["감사", "thank you", "ありがとう", L['customer_positive_response'].lower().split('/')[-1].strip()])
                         
                         if is_positive_close:
                             role = "customer_end" # 긍정적 종료
-                            # 긍정적 종료일 경우, 상담원에게 매너 종료 요청
                             st.session_state.simulator_messages.append({"role": role, "content": customer_reaction})
                             st.session_state.simulator_memory.chat_memory.add_ai_message(customer_reaction)
                             st.session_state.simulator_messages.append({"role": "supervisor", "content": L["customer_closing_confirm"]})
@@ -1134,7 +1126,6 @@ if feature_selection == L["simulator_tab"]:
             
             # 에이전트(사용자)가 고객에게 응답할 차례 (재반박, 추가 질문 후)
             if last_role in ["customer_rebuttal", "customer_end", "supervisor"]:
-                 # TTS/STT 기능은 입력창 바로 위에서 제공되므로, 입력창만 표시
                 agent_response = st.chat_input("에이전트로서 고객에게 응답하세요 (재반박 대응)")
                 if agent_response:
                     st.session_state.simulator_messages.append({"role": "agent_response", "content": agent_response})
