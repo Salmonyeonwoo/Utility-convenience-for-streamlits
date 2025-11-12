@@ -3373,12 +3373,71 @@ if feature_selection == L["simulator_tab"]:
             
             # 에이전트(사용자)가 고객에게 응답할 차례 (재반박, 추가 질문 후)
             # 고객의 마지막 반응이 'rebuttal' 또는 'end'였거나, 'supervisor'(매너 질문)인 경우
-            if last_role in ["customer_rebuttal", "customer_end", "supervisor"]:
-                agent_response = st.chat_input("에이전트로서 고객에게 응답하세요 (재반박 대응)")
-                if agent_response:
-                    st.session_state.simulator_messages.append({"role": "agent_response", "content": agent_response})
-                    st.session_state.simulator_memory.chat_memory.add_user_message(agent_response) # 에이전트 응답을 메모리에 추가
-                    st.rerun()
+            # --- 음성 입력(선택) + 텍스트 입력 폼 (agent 응답) ---
+import tempfile
+import speech_recognition as sr  # 설치 필요: pip install SpeechRecognition
+from pydub import AudioSegment      # 설치 필요: pip install pydub (ffmpeg 필요)
+
+# 에이전트가 응답할 차례라면, 음성 입력 위젯 + 텍스트 입력을 모두 표시
+if last_role in ["customer_rebuttal", "customer_end", "supervisor"]:
+    st.markdown("### 🎤 에이전트 응답 (음성 또는 텍스트 입력)")
+    col_audio, col_text = st.columns([1, 3])
+
+    # 1️⃣ 음성 녹음 위젯
+    with col_audio:
+        st.markdown("**🔊 음성으로 응답 (선택)**")
+        audio_value = st.audio_input(L["button_mic_input"], key="simulator_audio_input")
+        st.caption("녹음 후 전사 결과를 확인하고, 필요하면 편집한 뒤 전송하세요.")
+
+    transcript = ""
+    # 2️⃣ 오디오가 들어오면 임시 파일로 저장하고 전사 시도
+    if audio_value:
+        tmp_dir = tempfile.mkdtemp()
+        tmp_path = f"{tmp_dir}/sim_audio.wav"
+        with open(tmp_path, "wb") as f:
+            f.write(audio_value.getvalue())
+
+        try:
+            r = sr.Recognizer()
+            # WAV 파일을 표준화(16kHz, 모노)로 변환
+            audio_seg = AudioSegment.from_file(tmp_path)
+            audio_seg = audio_seg.set_frame_rate(16000).set_channels(1)
+            converted_path = f"{tmp_dir}/sim_audio_conv.wav"
+            audio_seg.export(converted_path, format="wav")
+
+            with sr.AudioFile(converted_path) as source:
+                audio_data = r.record(source)
+                lang = (
+                    "ko-KR" if st.session_state.language == "ko"
+                    else "ja-JP" if st.session_state.language == "ja"
+                    else "en-US"
+                )
+                transcript = r.recognize_google(audio_data, language=lang)
+                st.success("🎙️ 전사 성공! 텍스트로 변환되었습니다.")
+        except Exception as e:
+            st.warning(f"⚠️ 음성 전사 중 오류가 발생했습니다: {e}")
+            transcript = ""
+
+    # 3️⃣ 전사된 텍스트(있으면) 보여주고, 사용자가 편집해서 보낼 수 있게 입력란 제공
+    with col_text:
+        st.markdown("**✍️ 에이전트 응답 (음성 전사 또는 직접 입력)**")
+        agent_response = st.text_area(
+            "에이전트로서 고객에게 응답하세요 (재반박 대응)",
+            value=transcript,
+            key="agent_response_area",
+            height=150
+        )
+
+        if st.button("응답 전송", key="send_agent_response"):
+            if agent_response.strip():
+                st.session_state.simulator_messages.append(
+                    {"role": "agent_response", "content": agent_response}
+                )
+                st.session_state.simulator_memory.chat_memory.add_user_message(agent_response)
+                st.experimental_rerun()
+            else:
+                st.warning("응답 내용이 비어 있습니다.")
+
 
     else:
         # LLM 초기화 자체에 문제가 있을 경우의 오류 메시지 (다국어)
