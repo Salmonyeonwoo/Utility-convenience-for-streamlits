@@ -14,6 +14,7 @@ import io
 from firebase_admin import credentials, firestore, initialize_app, get_app
 # Admin SDK의 firestore와 Google Cloud SDK의 firestore를 구분하기 위해 alias 사용
 from google.cloud import firestore as gcp_firestore
+from google.cloud.firestore import Query # Firestore 쿼리용 import 추가
 
 # ConversationChain 사용을 위해 import 추가
 from langchain.chains import ConversationalRetrievalChain, ConversationChain
@@ -143,6 +144,57 @@ def load_index_from_firestore(db, embeddings, index_id="user_portfolio_rag"):
     except Exception as e:
         print(f"Error loading index from Firestore: {e}")
         return None
+
+# ⭐ 상담 이력 저장 함수 추가
+def save_simulation_history(db, initial_query, customer_type, messages):
+    """Firestore에 상담 이력을 저장합니다."""
+    if not db: return False
+    
+    # 메시지 리스트를 JSON 직렬화 가능한 형태로 변환
+    history_data = [{k: v for k, v in msg.items()} for msg in messages]
+
+    data = {
+        "initial_query": initial_query,
+        "customer_type": customer_type,
+        "messages": history_data,
+        "timestamp": firestore.SERVER_TIMESTAMP
+    }
+    
+    try:
+        db.collection("simulation_histories").add(data)
+        st.sidebar.success("✅ 상담 이력이 저장되었습니다.")
+        return True
+    except Exception as e:
+        st.sidebar.error(f"❌ 상담 이력 저장 실패: {e}")
+        return False
+
+# ⭐ 상담 이력 로드 함수 추가
+def load_simulation_histories(db):
+    """Firestore에서 최근 상담 이력을 로드합니다 (최대 10개)."""
+    if not db: return []
+    
+    try:
+        # 최근 10개 이력을 시간 순으로 정렬하여 가져옴
+        histories = (
+            db.collection("simulation_histories")
+            .order_by("timestamp", direction=Query.DESCENDING)
+            .limit(10)
+            .stream()
+        )
+        
+        results = []
+        for doc in histories:
+            data = doc.to_dict()
+            data['id'] = doc.id
+            
+            # 메시지 데이터가 직렬화된 리스트인지 확인
+            if 'messages' in data and isinstance(data['messages'], list):
+                results.append(data)
+
+        return results
+    except Exception as e:
+        st.error(f"❌ 이력 로드 실패: {e}")
+        return []
 
 # ================================
 # 2. JSON/RAG/LSTM/TTS 함수 정의
@@ -893,7 +945,7 @@ LANG = {
         "rag_desc": "アップロードされたドキュメントに基づいて質問に回答します。",
         "rag_input_placeholder": "学習資料について質問してください",
         "llm_error_key": "⚠️ 警告: GEMINI APIキーが設定されていません。Streamlit Secretsに'GEMINI_API_KEY'를 설정해주세요。",
-        "llm_error_init": "LLM 초기화 오류: APIキーを確認してください。",
+        "llm_error_init": "LLM初期化エラー：APIキーを確認してください。",
         "content_header": "カスタム学習コンテンツ生成",
         "content_desc": "学習テーマと難易度に合わせてコンテンツを生成します。",
         "topic_label": "学習テーマ",
@@ -1049,7 +1101,7 @@ if 'llm' not in st.session_state:
 
         except Exception as e:
             # LLM 초기화 오류 처리 
-            llm_init_error = f"{L['llm_init_error']} {e}" 
+            llm_init_error = f"{L['llm_error_init']} {e}" 
             st.session_state.is_llm_ready = False
     
     if llm_init_error:
@@ -1162,11 +1214,49 @@ if feature_selection == L["simulator_tab"]:
     st.markdown(f'<div id="tts_status" style="padding: 5px; text-align: center; border-radius: 5px; background-color: #f0f0f0; margin-bottom: 10px;">{L["tts_status_ready"]}</div>', unsafe_allow_html=True)
     
     # TTS JS 유틸리티를 페이지 로드 시 단 한 번만 삽입 (TTS 함수가 글로벌로 정의되도록)
-    # ⭐ TTS는 API Key 없이 작동 (Web Speech API)
+    # ⭐ TTS는 API Key 없이 작동
     if "tts_js_loaded" not in st.session_state:
          synthesize_and_play_audio(st.session_state.language) 
          st.session_state.tts_js_loaded = True
 
+    # ⭐ Firebase 상담 이력 로드 및 선택 섹션
+    db = st.session_state.get('firestore_db')
+    if db:
+        with st.expander("📝 이전 상담 이력 로드 (최근 10개)"):
+            histories = load_simulation_histories(db)
+            if histories:
+                history_options = {
+                    f"[{h['timestamp'].strftime('%m-%d %H:%M')}] {h['customer_type']} - {h['initial_query'][:30]}...": h
+                    for h in histories
+                }
+                
+                selected_key = st.selectbox(
+                    "로드할 이력을 선택하세요:",
+                    options=list(history_options.keys())
+                )
+                
+                if st.button("선택된 이력 로드"):
+                    selected_history = history_options[selected_key]
+                    
+                    # 상태 복원
+                    st.session_state.customer_query_text_area = selected_history['initial_query']
+                    st.session_state.initial_advice_provided = True
+                    st.session_state.simulator_messages = selected_history['messages']
+                    st.session_state.is_chat_ended = selected_history.get('is_chat_ended', False)
+                    
+                    # 메모리 초기화 및 메시지 재구성 (LangChain 호환성을 위해)
+                    st.session_state.simulator_memory.clear()
+                    
+                    # LLM 메모리에 대화 이력 재주입 (실제 LLM이 응대할 수 있도록)
+                    for i, msg in enumerate(selected_history['messages']):
+                         if msg['role'] == 'agent_response':
+                             st.session_state.simulator_memory.chat_memory.add_user_message(msg['content'])
+                         elif msg['role'] in ['supervisor', 'customer_rebuttal', 'customer_end']:
+                             # supervisor의 advice와 customer의 반박은 LLM 응답으로 간주
+                             if i > 0 and selected_history['messages'][i-1]['role'] == 'customer': continue # 초기 조언은 고객 메시지 이후에만 추가
+                             st.session_state.simulator_memory.chat_memory.add_ai_message(msg['content'])
+                    
+                    st.rerun()
 
     # ⭐ LLM 초기화가 되어있지 않아도 (API Key가 없어도) UI가 작동해야 함
     if st.session_state.is_llm_ready or not API_KEY:
@@ -1235,6 +1325,10 @@ if feature_selection == L["simulator_tab"]:
                 st.session_state.simulator_messages.append({"role": "supervisor", "content": ai_advice_text})
                 
                 st.session_state.initial_advice_provided = True
+                
+                # ⭐ Firebase 이력 저장 (API Key 없이도 UI는 시작 가능)
+                save_simulation_history(db, customer_query, customer_type_display, st.session_state.simulator_messages)
+                
                 st.rerun() 
             
             if API_KEY:
@@ -1252,6 +1346,10 @@ if feature_selection == L["simulator_tab"]:
                         
                         st.session_state.simulator_messages.append({"role": "supervisor", "content": ai_advice_text})
                         st.session_state.initial_advice_provided = True
+                        
+                        # ⭐ Firebase 이력 저장 (API Key 있을 때)
+                        save_simulation_history(db, customer_query, customer_type_display, st.session_state.simulator_messages)
+                        
                         st.rerun() 
                     except Exception as e:
                         st.error(f"AI 조언 생성 중 오류 발생: {e}")
@@ -1299,6 +1397,10 @@ if feature_selection == L["simulator_tab"]:
                     st.session_state.simulator_messages.append({"role": "supervisor", "content": closing_messages["additional_query"]}) # 매너 질문
                     st.session_state.simulator_messages.append({"role": "system_end", "content": closing_messages["chat_closing"]}) # 최종 종료 인사
                     st.session_state.is_chat_ended = True
+                    
+                    # ⭐ Firebase 이력 업데이트: 최종 종료 상태 저장
+                    # save_simulation_history(db, customer_query, customer_type_display, st.session_state.simulator_messages) # 이 부분은 다음 응대 시 저장되도록 설계
+                    
                     st.rerun()
 
                 # B) 고객의 다음 반응 요청 (LLM 호출)
@@ -1541,5 +1643,3 @@ elif feature_selection == L["lstm_tab"]:
         except Exception as e:
             st.error(f"LSTM Model Processing Error: {e}")
             st.markdown(f'<div style="background-color: #fce4e4; color: #cc0000; padding: 10px; border-radius: 5px;">{L["lstm_disabled_error"]}</div>', unsafe_allow_html=True)
-
-
