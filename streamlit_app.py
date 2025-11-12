@@ -3,37 +3,13 @@
 # ========================================
 import streamlit as st
 import os
-import tempfile
-import time
-import json
-import re
-import base64
-import io
-
-# ⭐ Admin SDK 관련 라이브러리 임포트
+# ... (중략: 필요한 import 구문)
 from firebase_admin import credentials, firestore, initialize_app, get_app
 # Admin SDK의 firestore와 Google Cloud SDK의 firestore를 구분하기 위해 alias 사용
 from google.cloud import firestore as gcp_firestore
 from google.cloud.firestore import Query # Firestore 쿼리용 import 추가
 
-# ConversationChain 사용을 위해 import 추가
-from langchain.chains import ConversationalRetrievalChain, ConversationChain
-from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from langchain_community.vectorstores import FAISS
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.memory import ConversationBufferMemory
-from langchain.schema.document import Document
-from langchain.prompts import PromptTemplate # ⭐ PromptTemplate 임포트
-import numpy as np
-from bs4 import BeautifulSoup
-import matplotlib.pyplot as plt
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
-
-# 음성 입력 관련 라이브러리 (필요 시 주석 해제)
-import speech_recognition as sr
-from pydub import AudioSegment 
+# ... (중략: 나머지 import 구문)
 
 
 # ================================
@@ -41,62 +17,62 @@ from pydub import AudioSegment
 # ================================
 
 def _get_admin_credentials():
-    """Secrets에서 서비스 계정 정보를 안전하게 로드하고 딕셔너리로 반환합니다."""
-    if "FIREBASE_SERVICE_ACCOUNT_JSON" not in st.secrets:
-        return None, "FIREBASE_SERVICE_ACCOUNT_JSON Secret이 누락되었습니다."
-    
-    service_account_data = st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"]
-    sa_info = None
+    """Secrets에서 서비스 계정 정보를 안전하게 로드하고 딕셔너리로 반환합니다."""
+    if "FIREBASE_SERVICE_ACCOUNT_JSON" not in st.secrets:
+        return None, "FIREBASE_SERVICE_ACCOUNT_JSON Secret이 누락되었습니다."
+    
+    service_account_data = st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"]
+    sa_info = None
 
-    if isinstance(service_account_data, str):
-        try:
-            sa_info = json.loads(service_account_data.strip())
-        except json.JSONDecodeError as e:
-            return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 JSON 구문 오류입니다. 값을 확인하세요. 상세 오류: {e}"
-    elif hasattr(service_account_data, 'get'):
-        try:
-            sa_info = dict(service_account_data) # AttrDict를 표준 dict로 변환
-        except Exception:
-             return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 딕셔너리 변환 실패. 타입: {type(service_account_data)}"
-    else:
-        return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 형식이 올바르지 않습니다. (Type: {type(service_account_data)})"
-    
-    if not sa_info.get("project_id") or not sa_info.get("private_key"):
-        return None, "JSON 내 'project_id' 또는 'private_key' 필드가 누락되었습니다."
+    if isinstance(service_account_data, str):
+        try:
+            sa_info = json.loads(service_account_data.strip())
+        except json.JSONDecodeError as e:
+            return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 JSON 구문 오류입니다. 값을 확인하세요. 상세 오류: {e}"
+    elif hasattr(service_account_data, 'get'):
+        try:
+            sa_info = dict(service_account_data) # AttrDict를 표준 dict로 변환
+        except Exception:
+            return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 딕셔너리 변환 실패. 타입: {type(service_account_data)}"
+    else:
+        return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 형식이 올바르지 않습니다. (Type: {type(service_account_data)})"
+    
+    if not sa_info.get("project_id") or not sa_info.get("private_key"):
+        return None, "JSON 내 'project_id' 또는 'private_key' 필드가 누락되었습니다."
 
-    return sa_info, None
+    return sa_info, None
 
 @st.cache_resource(ttl=None)
 def initialize_firestore_admin():
-    """Secrets에서 로드된 정보를 사용하여 Firebase Admin SDK를 초기화합니다."""
-    sa_info, error_message = _get_admin_credentials()
+    """Secrets에서 로드된 정보를 사용하여 Firebase Admin SDK를 초기화합니다."""
+    sa_info, error_message = _get_admin_credentials()
 
-    if error_message:
-        st.error(f"❌ Firebase Secret 오류: {error_message}")
-        return None
+    if error_message:
+        st.error(f"❌ Firebase Secret 오류: {error_message}")
+        return None
 
-    try:
-        get_app()
-    except ValueError:
-        pass 
-    else:
-        try:
-            return firestore.client()
-        except Exception as e:
-            st.error(f"🔥 Firebase 클라이언트 로드 실패: {e}")
-            return None
+    try:
+        get_app()
+    except ValueError:
+        pass 
+    else:
+        try:
+            return firestore.client()
+        except Exception as e:
+            st.error(f"🔥 Firebase 클라이언트 로드 실패: {e}")
+            return None
 
-    try:
-        cred = credentials.Certificate(sa_info) 
-        initialize_app(cred)
-        
-        db_client = firestore.client()
-        st.session_state["db"] = db_client
-        st.success("✅ Firebase Admin SDK 초기화 완료! (Secrets 기반)")
-        return db_client
-    except Exception as e:
-        st.error(f"🔥 Firebase 초기화 실패: 서비스 계정 정보 문제. 오류: {e}")
-        return None
+    try:
+        cred = credentials.Certificate(sa_info) 
+        initialize_app(cred)
+        
+        db_client = firestore.client()
+        st.session_state["db"] = db_client
+        st.success("✅ Firebase Admin SDK 초기화 완료! (Secrets 기반)")
+        return db_client
+    except Exception as e:
+        st.error(f"🔥 Firebase 초기화 실패: 서비스 계정 정보 문제. 오류: {e}")
+        return None
 
 
 def save_index_to_firestore(db, vector_store, index_id="user_portfolio_rag"):
