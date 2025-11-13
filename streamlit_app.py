@@ -516,14 +516,14 @@ def render_interactive_quiz(quiz_data, current_lang):
     options_list = list(options_dict.values())
     
     selected_answer = st.radio(
-        L.get("select_answer", "正解を選択してください"),
+        L.get("select_answer", "정답을 선택하세요"),
         options=options_list,
         key=f"q_radio_{q_index}"
     )
 
     col1, col2 = st.columns(2)
 
-    if col1.button(L.get("check_answer", "正解確認"), key=f"check_btn_{q_index}", disabled=st.session_state.quiz_submitted):
+    if col1.button(L.get("check_answer", "정답 확인"), key=f"check_btn_{q_index}", disabled=st.session_state.quiz_submitted):
         user_choice_letter = selected_answer.split(')')[0] if selected_answer else None
         correct_answer_letter = q_data['correct_answer']
 
@@ -533,24 +533,24 @@ def render_interactive_quiz(quiz_data, current_lang):
         st.session_state.quiz_submitted = True
         
         if is_correct:
-            st.success(L.get("correct_answer", "正解です！ 🎉"))
+            st.success(L.get("correct_answer", "정답입니다! 🎉"))
         else:
-            st.error(L.get("incorrect_answer", "不正解です。😞"))
+            st.error(L.get("incorrect_answer", "오답입니다.😞"))
         
-        st.markdown(f"**{L.get('correct_is', '正解')}**: {correct_answer_letter}")
-        st.info(f"**{L.get('explanation', '解説')}**: {q_data['explanation']}")
+        st.markdown(f"**{L.get('correct_is', '정답')}: {correct_answer_letter}**")
+        st.info(f"**{L.get('explanation', '해설')}:** {q_data['explanation']}")
 
     if st.session_state.quiz_submitted:
         if q_index < num_questions - 1:
-            if col2.button(L.get("next_question", "次の質問"), key=f"next_btn_{q_index}"):
+            if col2.button(L.get("next_question", "다음 문항"), key=f"next_btn_{q_index}"):
                 st.session_state.current_question += 1
                 st.session_state.quiz_submitted = False
                 st.rerun()
         else:
             total_correct = st.session_state.quiz_results.count(True)
             total_questions = len(st.session_state.quiz_results)
-            st.success(f"**{L.get('quiz_complete', 'クイズ完了!')}** {L.get('score', 'スコア')}: {total_correct}/{total_questions}")
-            if st.button(L.get("retake_quiz", "クイズを再挑戦"), key="retake"):
+            st.success(f"**{L.get('quiz_complete', '퀴즈 완료!')}** {L.get('score', '점수')}: {total_correct}/{total_questions}")
+            if st.button(L.get("retake_quiz", "퀴즈 다시 풀기"), key="retake"):
                 st.session_state.current_question = 0
                 st.session_state.quiz_results = [None] * num_questions
                 st.session_state.quiz_submitted = False
@@ -637,7 +637,7 @@ LANG = {
         
         # ⭐ 대화형/종료 메시지
         "button_mic_input": "음성 입력",
-        "prompt_customer_end": "고객님의 추가 문의 사항이 없어, 이 상담 채팅을 종료하겠습니다.",
+        "prompt_customer_end": "고객님의 추가 문의 사항이 없어, 이 상담 채팅을 종료하겠습니다。",
         "prompt_survey": "고객 문의 센터에 연락 주셔서 감사드리며, 추가로 저희 응대 솔루션에 대한 설문 조사에 응해 주시면 감사하겠습니다. 추가 문의 사항이 있으시면 언제든지 연락 주십시오。",
         "customer_closing_confirm": "또 다른 문의 사항은 없으신가요?",
         "customer_positive_response": "좋은 말씀/친절한 상담 감사드립니다。",
