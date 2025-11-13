@@ -209,7 +209,7 @@ def delete_all_history(db):
     L = LANG[st.session_state.language] # 함수 내에서 L을 다시 정의
     
     if not db:
-        st.error(L.get("firestore_no_index", "DB 연결 오류"))
+        st.error(L["firestore_no_index"])
         return
     
     try:
@@ -217,7 +217,7 @@ def delete_all_history(db):
         docs = db.collection("simulation_histories").stream()
         
         # 삭제 작업 실행
-        with st.spinner(L.get("deleting_history_progress", "이력 삭제 중...")): 
+        with st.spinner(L["deleting_history_progress"]): 
             for doc in docs:
                 doc.reference.delete()
         
@@ -226,7 +226,7 @@ def delete_all_history(db):
         st.session_state.simulator_memory.clear()
         st.session_state.initial_advice_provided = False
         st.session_state.show_delete_confirm = False
-        st.success(L.get("delete_success", "✅ 삭제 완료!")) # ⭐ 다국어 적용
+        st.success(L["delete_success"]) # ⭐ 다국어 적용
         st.rerun()
         
     except Exception as e:
@@ -683,15 +683,18 @@ LANG = {
         "new_simulation_button": "새 시뮬레이션 시작",
         "history_selectbox_label": "로드할 이력을 선택하세요:",
         "history_load_button": "선택된 이력 로드",
-        "delete_history_button": "❌ 모든 이력 삭제", # ⭐ 다국어 키 추가
-        "delete_confirm_message": "정말로 모든 상담 이력을 삭제하시겠습니까? 되돌릴 수 없습니다。", # ⭐ 다국어 키 추가
-        "delete_confirm_yes": "예, 삭제합니다", # ⭐ 다국어 키 추가
-        "delete_confirm_no": "아니오, 유지합니다", # ⭐ 다국어 키 추가
-        "delete_success": "✅ 모든 상담 이력 삭제 완료!", # ⭐ 다국어 키 추가
-        "deleting_history_progress": "이력 삭제 중...", # ⭐ 다국어 키 추가
-        "search_history_label": "이력 키워드 검색", # ⭐ 다국어 키 추가
-        "date_range_label": "날짜 범위 필터", # ⭐ 다국어 키 추가
-        "no_history_found": "검색 조건에 맞는 이력이 없습니다。" # ⭐ 다국어 키 추가
+        "delete_history_button": "❌ 모든 이력 삭제", 
+        "delete_confirm_message": "정말로 모든 상담 이력을 삭제하시겠습니까? 되돌릴 수 없습니다。", 
+        "delete_confirm_yes": "예, 삭제합니다", 
+        "delete_confirm_no": "아니오, 유지합니다", 
+        "delete_success": "✅ 모든 상담 이력 삭제 완료!",
+        "deleting_history_progress": "이력 삭제 중...", 
+        "search_history_label": "이력 키워드 검색", 
+        "date_range_label": "날짜 범위 필터", 
+        "no_history_found": "검색 조건에 맞는 이력이 없습니다。",
+        "all_label": "모두",
+        "filter_suffix": " (필터)",
+        "empty_response_warning": "응답 내용이 비어 있습니다."
     },
     "en": {
         "title": "Personalized AI Study Coach",
@@ -875,7 +878,7 @@ LANG = {
         "customer_positive_response": "親切なご対応ありがとうございました。",
         "button_end_chat": "対応終了 (アンケートを依頼)",
         "agent_response_header": "✍️ エージェント応答",
-        "agent_response_placeholder": "顧客に返信 (必須情報の要求/確認、または解決策の提示)",
+        "agent_response_placeholder": "顧客に返信 (必須情報の要求/확인、または解決策の提示)",
         "send_response_button": "応答送信",
         "request_rebuttal_button": "顧客の次の反応を要求", 
         "new_simulation_button": "新しいシミュレーションを開始",
@@ -1165,17 +1168,20 @@ if feature_selection == L["simulator_tab"]:
             histories = load_simulation_histories(db, st.session_state.language) 
             
             # 2-1. 검색 필터
-            search_query = st.text_input(L.get("search_history_label", "이력 키워드 검색"), key="history_search")
+            col1, col2 = st.columns(2)
+            with col1:
+                search_query = st.text_input(L["search_history_label"], key="history_search")
             
             # 2-2. 고객 성향 필터
             all_customer_types = list(set([h['customer_type'] for h in histories]))
-            customer_type_filter_options = [L.get("all_label", "모두")] + all_customer_types
-
-            selected_type_filter = st.selectbox(
-                L["customer_type_label"] + L.get("filter_suffix", " (필터)"),
-                options=customer_type_filter_options,
-                key="customer_type_filter"
-            )
+            customer_type_filter_options = [L.get("all_label", "모두")] + customer_type_options_list # L["customer_type_options"] 사용
+            
+            with col2:
+                selected_type_filter = st.selectbox(
+                    L["customer_type_label"] + L.get("filter_suffix", " (필터)"),
+                    options=customer_type_filter_options,
+                    key="customer_type_filter"
+                )
             
             # 2-3. 날짜 필터 (st.date_input은 브라우저 로케일을 사용하므로 요일/월은 그대로 두고, 날짜만 사용)
             today = datetime.now().date()
@@ -1457,7 +1463,7 @@ if feature_selection == L["simulator_tab"]:
                         save_simulation_history(db, st.session_state.customer_query_text_area, customer_type_display, st.session_state.simulator_messages)
                         st.rerun()
                     else:
-                        st.warning("응답 내용이 비어 있습니다.")
+                        st.warning(L.get("empty_response_warning", "응답 내용이 비어 있습니다."))
             
             # 2. 고객의 다음 반응 요청 (LLM 호출) 또는 종료 버튼 표시
             # 에이전트의 응답 후, 고객 반응 요청 버튼 또는 종료 버튼 표시
@@ -1493,14 +1499,12 @@ if feature_selection == L["simulator_tab"]:
                         st.error(L['llm_error_init'] + " (시뮬레이터 체인 초기화 실패)")
                         st.stop()
                         
-                    # ⭐ 핵심 수정된 프롬프트 (협조적인 고객이 여러 정보를 한 번에 제공하도록 유도)
+                    # ⭐ 핵심 수정된 프롬프트 (강력하게 협조적인 고객을 유도)
                     next_reaction_prompt = f"""
                     Analyze the entire chat history. Roleplay as the customer ({customer_type_display}). 
-                    Based on the agent's last message, determine if the agent has requested multiple essential troubleshooting details (Model, Location, Last Step).
-                    
-                    If the agent requested multiple details, the customer MUST provide ALL of the requested details in a single, cooperative message. 
-                    If the agent requested only one detail, the customer MUST provide only that detail.
-                    If all essential details (Model, Location, Last Step) have been provided, the customer should generate a polite closing remark (e.g., "{L['customer_positive_response']}").
+                    Based on the agent's last message, generate ONE of the following responses in the customer's voice:
+                    1. Provide **ALL** requested troubleshooting details in a single, cooperative message.
+                    2. A short, positive closing remark (e.g., "{L['customer_positive_response']}").
                     
                     Crucially, the customer MUST be highly cooperative. If the agent asks for information, the customer MUST provide the detail requested (Model, Location, or Last Step) without arguing or asking why. The purpose of this simulation is for the agent (human user) to practice systematically collecting information and troubleshooting.
                     
