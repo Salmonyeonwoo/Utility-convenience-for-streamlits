@@ -606,9 +606,9 @@ LANG = {
         "quiz_original_response": "LLM 원본 응답",
         "firestore_loading": "데이터베이스에서 RAG 인덱스 로드 중...",
         "firestore_no_index": "데이터베이스에서 기존 RAG 인덱스를 찾을 수 없습니다. 파일을 업로드하여 새로 만드세요。", 
-        "db_save_complete": "(DB 저장 완료)",
-        "data_analysis_progress": "자료 분석 및 학습 DB 구축 중...",
-        "response_generating": "답변 생성 중...",
+        "db_save_complete": "(DB 저장 완료)", # ⭐ 다국어 키 추가
+        "data_analysis_progress": "자료 분석 및 학습 DB 구축 중...", # ⭐ 다국어 키 추가
+        "response_generating": "답변 생성 중...", # ⭐ 다국어 키 추가
         "lstm_result_header": "학습 성취도 예측 결과",
         "lstm_score_metric": "현재 예측 성취도",
         "lstm_score_info": "다음 퀴즈 예상 점수는 약 **{predicted_score:.1f}점**입니다. 학습 성과를 유지하거나 개선하세요!",
@@ -744,11 +744,11 @@ LANG = {
         "new_simulation_button": "Start New Simulation",
         "history_selectbox_label": "Select history to load:",
         "history_load_button": "Load Selected History",
-        "delete_history_button": "❌ Delete All History", # ⭐ 다국어 키 추가
-        "delete_confirm_message": "Are you sure you want to delete ALL simulation history? This action cannot be undone.", # ⭐ 다국어 키 추가
-        "delete_confirm_yes": "Yes, Delete", # ⭐ 다국어 키 추가
-        "delete_confirm_no": "No, Keep", # ⭐ 다국어 키 추가
-        "delete_success": "✅ Successfully deleted!" # ⭐ 다국어 키 추가
+        "delete_history_button": "❌ Delete All History", 
+        "delete_confirm_message": "Are you sure you want to delete ALL simulation history? This action cannot be undone.", 
+        "delete_confirm_yes": "Yes, Delete", 
+        "delete_confirm_no": "No, Keep", 
+        "delete_success": "✅ All simulation history deleted!" 
     },
     "ja": {
         "title": "パーソナライズAI学習コーチ",
@@ -835,15 +835,10 @@ LANG = {
         "agent_response_header": "✍️ エージェント応答",
         "agent_response_placeholder": "顧客に返信 (必須情報の要求/確認、または解決策の提示)",
         "send_response_button": "応答送信",
-        "request_rebuttal_button": "顧客の次の反応を要求", # ⭐ LLM 호출 텍스트 제거
+        "request_rebuttal_button": "顧客の次の反応を要求", 
         "new_simulation_button": "新しいシミュレーションを開始",
         "history_selectbox_label": "履歴を選択してロード:",
-        "history_load_button": "選択された履歴をロード",
-        "delete_history_button": "❌ 全履歴を削除", # ⭐ 다국어 키 추가
-        "delete_confirm_message": "本当にすべてのシミュレーション履歴を削除してもよろしいですか？この操作は元に戻せません。", # ⭐ 다국어 키 추가
-        "delete_confirm_yes": "はい、削除します", # ⭐ 다국어 키 추가
-        "delete_confirm_no": "いいえ、維持します", # ⭐ 다국어 키 추가
-        "delete_success": "✅ 削除が完了されました!" # ⭐ 다국어 키 추가
+        "history_load_button": "選択された履歴をロード"
     }
 }
 
@@ -1100,8 +1095,7 @@ if feature_selection == L["simulator_tab"]:
             st.warning(L["delete_confirm_message"])
             col_yes, col_no = st.columns(2)
             if col_yes.button(L["delete_confirm_yes"], key="confirm_delete_yes", type="primary"):
-                with st.spinner(L["deleting_history_progress"]): # ⭐ 삭제 로딩 스피너 추가
-                    delete_all_history(db)
+                delete_all_history(db)
             if col_no.button(L["delete_confirm_no"], key="confirm_delete_no"):
                 st.session_state.show_delete_confirm = False
                 st.rerun()
