@@ -315,45 +315,52 @@ def get_mock_response_data(lang_key, customer_type):
     
     L = LANG[lang_key]
     
+    # ⭐ Mock 데이터 수정: 문의 내용과 상관없는 eSIM/루브르 박물관 등의 내용 제거 및 중립화
+    
     if lang_key == 'ko':
-        # ⭐ 수정된 중립적인 목업 데이터 템플릿
         initial_check = "고객님의 성함, 전화번호, 이메일 등 정확한 연락처 정보를 확인해 주시면 감사하겠습니다."
         tone = "공감 및 해결 중심"
-        advice = "이 고객은 {customer_type} 성향이지만, 문제 해결을 간절히 원합니다. 공감과 함께, 문제 해결에 필수적인 3가지 정보(기종명, 위치, 진행 단계)를 명확하게 요청해야 합니다. 불필요한 사족을 피하고 신뢰를 주도록 하세요."
+        advice = "이 고객은 {customer_type} 성향이지만, 문제 해결을 간절히 원합니다. 공감과 함께, 문제 해결에 필수적인 정보를 명확하게 요청해야 합니다. 불필요한 사족을 피하고 신뢰를 주도록 하세요."
         draft = f"""
 {initial_check}
 
 > 고객님, 불편을 겪게 해드려 죄송합니다. 고객님의 상황을 충분히 이해하고 있습니다.
 > 문제 해결을 위해, 아래 세 가지 필수 정보를 확인해 주시면 감사하겠습니다. 이 정보가 있어야 고객님 상황에 맞는 정확한 해결책을 제시할 수 있습니다.
-> 1. 이용하시는 휴대폰의 **정확한 기종명** (예: iPhone 14 Pro, Samsung Galaxy S23 Ultra)
-> 2. 현재 **체류하고 계신 국가/도시** (예: 프랑스 파리, 아직 한국 등)
-> 3. 문제 발생 전 **마지막으로 시도한 단계** (예: eSIM 설치 QR 코드를 스캔했지만 오류가 났습니다, 데이터 로밍을 켰지만 안 됩니다 등)
+> 1. 문제 발생과 관련된 상품/서비스의 **정확한 명칭 및 예약 번호** (예: 파리 eSIM, 예약번호 1234567)
+> 2. 현재 **문제 상황**에 대한 구체적인 설명 (예: 휴대폰이 안 됨, 환불 요청, 정보 문의)
+> 3. 이미 **시도하신 해결 단계** (예: 기기 재부팅, 설정 확인 등)
+
+> 고객님과의 원활한 소통을 통해 신속하게 문제 해결을 돕겠습니다. 답변 기다리겠습니다.
 """
     elif lang_key == 'en':
         initial_check = "Could you please confirm your accurate contact details, such as your full name, phone number, and email address?"
         tone = "Empathy and Solution-Focused"
-        advice = "This customer is {customer_type} but desperately wants a solution. Show empathy, but clearly request the three essential pieces of information (Model, Location, Last Step) needed for troubleshooting. Be direct and build trust."
+        advice = "This customer is {customer_type} but desperately wants a solution. Show empathy, but clearly request the essential information needed for troubleshooting. Be direct and build trust."
         draft = f"""
 {initial_check}
 
 > Dear Customer, I sincerely apologize for the inconvenience you are facing. I completely understand your frustration.
 > To proceed with troubleshooting, please confirm the three essential pieces of information below. This data is critical for providing you with the correct, tailored solution:
-> 1. The **exact model name** of your smartphone (e.g., iPhone 14 Pro, Samsung Galaxy S23 Ultra).
-> 2. Your **current location/city** (e.g., Paris, France, or still in your home country).
-> 3. The **last successful/attempted step** before the issue occurred (e.g., Scanned QR code but got an error, enabled data roaming but no connection, etc.).
+> 1. The **exact name and booking number** of the product/service concerned (e.g., Paris eSIM, Booking #1234567).
+> 2. A specific description of the **current issue** (e.g., phone not connecting, refund request, information inquiry).
+> 3. Any **troubleshooting steps already attempted** (e.g., device rebooted, settings checked, etc.).
+
+> We aim to resolve your issue as quickly as possible with your cooperation. We await your response.
 """
     elif lang_key == 'ja':
         initial_check = "お客様の氏名、お電話番号、Eメールアドレスなど、正確な連絡先情報を確認させていただけますでしょうか。"
         tone = "共感と解決中心"
-        advice = "このお客様は{customer_type}傾向ですが、問題の解決を強く望んでいます。共感を示しつつも、問題解決に不可欠な3つの情報（機種名、所在地、進行段階）を明確に尋ねる必要があります。冗長な説明を避け、信頼感を与える対応を心がけてください。"
+        advice = "このお客様は{customer_type}傾向ですが、問題の解決を強く望んでいます。共感を示しつつも、問題解決に不可欠な情報を明確に尋ねる必要があります。冗長な説明を避け、信頼感を与える対応を心がけてください。"
         draft = f"""
 {initial_check}
 
 > お客様、ご不便をおかけし、誠に申し訳ございません。現在の状況、十分承知いたしました。
 > 問題を迅速に解決するため、恐れ入りますが、以下の3点の必須情報についてご確認いただけますでしょうか。この情報がないと、お客様の状況に合わせた的確な解決策をご案内できません。
-> 1. ご利用のスマートフォンの**正確な機種名** (例: iPhone 14 Pro, Samsung Galaxy S23 Ultra など)。
-> 2. 現在**ご滞在の国・都市** (例: フランス・パリ、まだ日本国内、など)。
-> 3. 問題発生前に**最後に試された手順** (例: eSIMのQRコードをスキャンしたがエラーになった、データローミングを有効にしたが接続しない、など)。
+> 1. 問題の対象となる**商品・サービスの正確な名称と予約番号** (例: パリeSIM、予約番号1234567)
+> 2. 現在の**具体的な問題状況** (例: 携帯電話が使えない、返金を希望する、情報が知りたい)
+> 3. 既に**お試しいただいた解決手順** (例: 端末の再起動、設定確認など)
+
+> お客様との円滑なコミュニケーションを通じて、迅速に問題解決をサポートさせていただきます。ご返信をお待ちしております。
 """
     
     # advice 문자열 내부의 {customer_type}을 실제 선택 값으로 대체
@@ -410,7 +417,7 @@ def get_document_chunks(files):
         else:
             print(f"File '{uploaded_file.name}' not supported.")
             continue
-    text_splitter = RecursiveCharacterSplitter(chunk_size=1000, chunk_overlap=100)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
     return text_splitter.split_documents(documents)
 
 def get_vector_store(text_chunks):
@@ -441,8 +448,7 @@ def get_rag_chain(vector_store):
 @st.cache_resource
 def load_or_train_lstm():
     """가상의 학습 성취도 예측을 위한 LSTM 모델을 생성하고 학습합니다."""
-    # ⭐ LSTM 결과를 랜덤화하기 위해 시드에 현재 시간을 사용
-    np.random.seed(int(time.time())) 
+    np.random.seed(int(time.time())) # ⭐ LSTM 결과를 랜덤화하기 위해 시드에 현재 시간을 사용
     data = np.cumsum(np.random.normal(loc=5, scale=5, size=50)) + 60
     data = np.clip(data, 50, 95)
     def create_dataset(dataset, look_back=3):
@@ -601,9 +607,9 @@ LANG = {
         "quiz_original_response": "LLM 원본 응답",
         "firestore_loading": "데이터베이스에서 RAG 인덱스 로드 중...",
         "firestore_no_index": "데이터베이스에서 기존 RAG 인덱스를 찾을 수 없습니다. 파일을 업로드하여 새로 만드세요.", 
-        "db_save_complete": "(DB 저장 완료)", # ⭐ 다국어 키 추가
-        "data_analysis_progress": "자료 분석 및 학습 DB 구축 중...", # ⭐ 다국어 키 추가
-        "response_generating": "답변 생성 중...", # ⭐ 다국어 키 추가
+        "db_save_complete": "(DB 저장 완료)",
+        "data_analysis_progress": "자료 분석 및 학습 DB 구축 중...",
+        "response_generating": "답변 생성 중...",
         "lstm_result_header": "학습 성취도 예측 결과",
         "lstm_score_metric": "현재 예측 성취도",
         "lstm_score_info": "다음 퀴즈 예상 점수는 약 **{predicted_score:.1f}점**입니다. 학습 성과를 유지하거나 개선하세요!",
@@ -643,7 +649,12 @@ LANG = {
         "request_rebuttal_button": "고객의 다음 반응 요청",
         "new_simulation_button": "새 시뮬레이션 시작",
         "history_selectbox_label": "로드할 이력을 선택하세요:",
-        "history_load_button": "선택된 이력 로드"
+        "history_load_button": "선택된 이력 로드",
+        "delete_history_button": "❌ 모든 이력 삭제", # ⭐ 다국어 키 추가
+        "delete_confirm_message": "정말로 모든 상담 이력을 삭제하시겠습니까? 되돌릴 수 없습니다.", # ⭐ 다국어 키 추가
+        "delete_confirm_yes": "예, 삭제합니다", # ⭐ 다국어 키 추가
+        "delete_confirm_no": "아니오, 유지합니다", # ⭐ 다국어 키 추가
+        "delete_success": "✅ 모든 상담 이력 삭제 완료!" # ⭐ 다국어 키 추가
     },
     "en": {
         "title": "Personalized AI Study Coach",
@@ -691,9 +702,9 @@ LANG = {
         "quiz_original_response": "Original LLM Response",
         "firestore_loading": "Loading RAG index from database...",
         "firestore_no_index": "Could not find existing RAG index in database. Please upload files and create a new one.", 
-        "db_save_complete": "(DB Save Complete)", # ⭐ 다국어 키 추가
-        "data_analysis_progress": "Analyzing materials and building learning DB...", # ⭐ 다국어 키 추가
-        "response_generating": "Generating response...", # ⭐ 다국어 키 추가
+        "db_save_complete": "(DB Save Complete)", 
+        "data_analysis_progress": "Analyzing materials and building learning DB...", 
+        "response_generating": "Generating response...", 
         "lstm_result_header": "Prediction Results",
         "lstm_score_metric": "Current Predicted Achievement",
         "lstm_score_info": "Your next estimated quiz score is **{predicted_score:.1f}**. Maintain or improve your learning progress!",
@@ -730,10 +741,15 @@ LANG = {
         "agent_response_header": "✍️ Agent Response",
         "agent_response_placeholder": "Respond to the customer (Request/confirm essential information or provide solution steps)",
         "send_response_button": "Send Response",
-        "request_rebuttal_button": "Request Customer's Next Reaction", # ⭐ LLM 호출 텍스트 제거
+        "request_rebuttal_button": "Request Customer's Next Reaction",
         "new_simulation_button": "Start New Simulation",
         "history_selectbox_label": "Select history to load:",
-        "history_load_button": "Load Selected History"
+        "history_load_button": "Load Selected History",
+        "delete_history_button": "❌ Delete All History", # ⭐ 다국어 키 추가
+        "delete_confirm_message": "Are you sure you want to delete ALL simulation history? This action cannot be undone.", # ⭐ 다국어 키 추가
+        "delete_confirm_yes": "Yes, Delete", # ⭐ 다국어 키 추가
+        "delete_confirm_no": "No, Keep", # ⭐ 다국어 키 추가
+        "delete_success": "✅ All simulation history deleted!" # ⭐ 다국어 키 추가
     },
     "ja": {
         "title": "パーソナライズAI学習コーチ",
@@ -820,10 +836,15 @@ LANG = {
         "agent_response_header": "✍️ エージェント応答",
         "agent_response_placeholder": "顧客に返信 (必須情報の要求/確認、または解決策の提示)",
         "send_response_button": "応答送信",
-        "request_rebuttal_button": "顧客の次の反応を要求", # ⭐ LLM 호출 텍스트 제거
+        "request_rebuttal_button": "顧客の次の反応を要求", 
         "new_simulation_button": "新しいシミュレーションを開始",
         "history_selectbox_label": "履歴を選択してロード:",
-        "history_load_button": "選択された履歴をロード"
+        "history_load_button": "選択された履歴をロード",
+        "delete_history_button": "❌ 全履歴を削除", # ⭐ 다국어 키 추가
+        "delete_confirm_message": "本当にすべてのシミュレーション履歴を削除してもよろしいですか？この操作は元に戻せません。", # ⭐ 다국어 키 추가
+        "delete_confirm_yes": "はい、削除します", # ⭐ 다국어 키 추가
+        "delete_confirm_no": "いいえ、維持します", # ⭐ 다국어 키 추가
+        "delete_success": "✅ すべてのシミュレーション履歴が削除されました!" # ⭐ 다국어 키 추가
     }
 }
 
@@ -853,6 +874,10 @@ if "simulator_chain" not in st.session_state:
 # ⭐ 시뮬레이터 진행 상태 추가
 if "is_chat_ended" not in st.session_state:
     st.session_state.is_chat_ended = False
+
+# ⭐ 이력 삭제 확인 모달 상태
+if "show_delete_confirm" not in st.session_state:
+    st.session_state.show_delete_confirm = False
 
 # 언어 설정 로드 (UI 출력 전 필수)
 L = LANG[st.session_state.language] 
@@ -1027,6 +1052,30 @@ st.title(L["title"])
 # 9. 기능별 페이지 구현
 # ================================
 
+# ⭐ 이력 삭제 함수 (Firestore 연동)
+def delete_all_history(db):
+    """Firestore의 모든 상담 이력을 삭제합니다."""
+    if not db:
+        st.error(L["firestore_no_index"])
+        return
+    
+    try:
+        docs = db.collection("simulation_histories").stream()
+        for doc in docs:
+            doc.reference.delete()
+        
+        # 세션 상태도 초기화
+        st.session_state.simulator_messages = []
+        st.session_state.simulator_memory.clear()
+        st.session_state.initial_advice_provided = False
+        st.session_state.is_chat_ended = False
+        st.session_state.show_delete_confirm = False
+        st.success(L["delete_success"])
+        st.rerun()
+        
+    except Exception as e:
+        st.error(f"이력 삭제 중 오류 발생: {e}")
+
 if feature_selection == L["simulator_tab"]: 
     st.header(L["simulator_header"])
     st.markdown(L["simulator_desc"])
@@ -1038,6 +1087,22 @@ if feature_selection == L["simulator_tab"]:
     if "tts_js_loaded" not in st.session_state:
          synthesize_and_play_audio(st.session_state.language) 
          st.session_state.tts_js_loaded = True
+
+    # 1.5 이력 삭제 버튼 및 모달
+    col_delete, _ = st.columns([1, 4])
+    with col_delete:
+        if st.button(L["delete_history_button"], key="trigger_delete_history"):
+            st.session_state.show_delete_confirm = True
+
+    if st.session_state.show_delete_confirm:
+        with st.container(border=True):
+            st.warning(L["delete_confirm_message"])
+            col_yes, col_no = st.columns(2)
+            if col_yes.button(L["delete_confirm_yes"], key="confirm_delete_yes", type="primary"):
+                delete_all_history(db)
+            if col_no.button(L["delete_confirm_no"], key="confirm_delete_no"):
+                st.session_state.show_delete_confirm = False
+                st.rerun()
 
     # ⭐ Firebase 상담 이력 로드 및 선택 섹션
     db = st.session_state.get('firestore_db')
@@ -1135,24 +1200,24 @@ if feature_selection == L["simulator_tab"]:
             st.session_state.simulator_messages.append({"role": "customer", "content": customer_query})
             st.session_state.simulator_memory.chat_memory.add_user_message(customer_query)
             
-            # ⭐ 핵심 수정: LLM 프롬프트에 협조적인 고객 역할을 부여하고, 정보 요청의 중요성을 강조
+            # ⭐ 핵심 수정: LLM 프롬프트에 컨텍스트 분리 및 협조적인 고객 역할을 부여
             initial_prompt = f"""
             You are an AI Customer Support Supervisor. Your task is to provide expert guidance to a customer support agent.
             The customer sentiment is: {customer_type_display}.
             The customer's initial inquiry is: "{customer_query}"
             
-            Based on this, provide:
-            1. Crucial advice on the tone and strategy for dealing with this specific sentiment. 
-            2. A concise and compassionate recommended response draft.
+            Based on the customer's inquiry:
             
-            The recommended draft MUST be strictly in {LANG[current_lang_key]['lang_select']} and MUST politely request the following **ESSENTIAL TROUBLESHOOTING INFORMATION** from the customer:
-            1. Smartphone Model Name (e.g., iPhone 14 Pro, Samsung Galaxy S23 Ultra) - This is critical for compatibility check.
-            2. Current location status (e.g., In Paris, France or Still in Korea) - This is critical for connection issues.
-            3. The last successful step completed based on the relevant guide (e.g., scanned QR code, 'Add eSIM' failed, activated data roaming, etc.) - This determines the troubleshooting path.
-            
-            Do NOT mention the eSIM product (Klook, Orange, SFR) specifically in the draft unless the customer query strictly demands it. Frame the information request as a standard procedure for efficient resolution.
+            1. **Determine Core Topic:** Identify the main subject of the inquiry (e.g., eSIM troubleshooting, Louvre tickets, refund request, general info).
+            2. **Generate Advice & Draft:** Provide crucial advice (tone, strategy) and a compassionate recommended response draft.
 
-            When the Agent subsequently asks for this information, **Roleplay as the Customer** who is slightly frustrated but **MUST BE HIGHLY COOPERATIVE** and provide the requested details piece by piece (not all at once). The customer MUST NOT argue or ask why the information is needed; they MUST immediately provide the requested detail to help the agent provide a solution quickly.
+            The recommended draft MUST be strictly in {LANG[current_lang_key]['lang_select']}.
+            
+            **CRITICAL RULE FOR DRAFT CONTENT:**
+            - **If the Core Topic is NOT eSIM/Technical connection issues:** The draft MUST only address the core topic (e.g., ticket price, refund process) and MUST NOT include any irrelevant technical requests (Smartphone model, Location, Last Step of troubleshooting).
+            - **If the Core Topic IS eSIM/Technical connection issues (like "won't activate" or "no connection"):** The draft MUST politely request the following **ESSENTIAL TROUBLESHOOTING INFORMATION** (Smartphone Model, Location, Last Step).
+            
+            When the Agent subsequently asks for information, **Roleplay as the Customer** who is frustrated but **MUST BE HIGHLY COOPERATIVE** and provide the requested details piece by piece (not all at once). The customer MUST NOT argue or ask why the information is needed.
             """
             
             if not API_KEY:
