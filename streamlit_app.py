@@ -37,12 +37,19 @@ from langchain.prompts import PromptTemplate # ⭐ PromptTemplate 임포트
 # 1. Firebase Admin SDK 초기화 및 Secrets 처리 함수
 # ================================
 
+# ================================
+# 1. Firebase Admin SDK 초기화 및 Secrets 처리 함수
+# ================================
+
 def _get_admin_credentials():
     """Secrets에서 서비스 계정 정보를 안전하게 로드하고 딕셔너리로 반환합니다."""
     # Secrets 키를 'FIREBASE_SERVICE_ACCOUNT_JSON'으로 표준화
-    FIREBASE_SECRET_KEY = "FIREBASE_SERVICE_ACCOUNT_JSON"
-    if "FIREBASE_SERVICE_ACCOUNT_JSON" not in st.secrets:
-        return None, "FIREBASE_SERVICE_ACCOUNT_JSON Secret이 누락되었습니다."
+    FIREBASE_SECRET_KEY = "FIREBASE_SERVICE_ACCOUNT_JSON" # <--- 변수명 정의
+    
+    if FIREBASE_SECRET_KEY not in st.secrets:
+        # 오류 메시지를 명확하게 수정
+        return None, f"'{FIREBASE_SECRET_KEY}' Secret이 누락되었습니다."
+
     
     service_account_data = st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"]
     sa_info = None
