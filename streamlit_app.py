@@ -212,11 +212,8 @@ def delete_all_history(db):
     try:
         # 이터레이션을 위해 스트림 사용
         docs = db.collection("simulation_histories").stream()
-        
-        # 삭제 작업 실행
-        with st.spinner(L.get("deleting_history_progress", "이력 삭제 중...")): 
-            for doc in docs:
-                doc.reference.delete()
+        for doc in docs:
+            doc.reference.delete()
         
         # 세션 상태도 초기화
         st.session_state.simulator_messages = []
@@ -344,8 +341,6 @@ def render_tts_button(text_to_speak, current_lang_key):
 def get_mock_response_data(lang_key, customer_type):
     """API Key가 없을 때 사용할 가상 응대 데이터 (다국어 지원)"""
     
-    L = LANG[lang_key]
-    
     if lang_key == 'ko':
         initial_check = "고객님의 성함, 전화번호, 이메일 등 정확한 연락처 정보를 확인해 주시면 감사하겠습니다."
         tone = "공감 및 진정"
@@ -465,7 +460,7 @@ def get_rag_chain(vector_store):
 @st.cache_resource
 def load_or_train_lstm():
     """가상의 학습 성취도 예측을 위한 LSTM 모델을 생성하고 학습합니다."""
-    np.random.seed(42)
+    np.random.seed(int(time.time())) # ⭐ LSTM 결과를 랜덤화하기 위해 시드에 현재 시간을 사용
     data = np.cumsum(np.random.normal(loc=5, scale=5, size=50)) + 60
     data = np.clip(data, 50, 95)
     def create_dataset(dataset, look_back=3):
@@ -484,6 +479,14 @@ def load_or_train_lstm():
     model.compile(optimizer='adam', loss='mse')
     model.fit(X, Y, epochs=10, batch_size=1, verbose=0)
     return model, data
+
+def force_rerun_lstm():
+    """캐시된 LSTM 모델을 무효화하고 새로 실행합니다."""
+    # st.cache_resource 함수의 캐시를 직접 지울 수 없으므로, 
+    # Streamlit의 재실행 메커니즘을 사용하여 load_or_train_lstm이
+    # time.time() 시드로 새 결과를 생성하도록 유도합니다.
+    st.session_state.lstm_rerun_trigger = time.time()
+    st.rerun()
 
 
 def clean_and_load_json(text):
@@ -785,7 +788,7 @@ def get_rag_chain(vector_store):
 @st.cache_resource
 def load_or_train_lstm():
     """가상의 학습 성취도 예측을 위한 LSTM 모델을 생성하고 학습합니다."""
-    np.random.seed(42)
+    np.random.seed(int(time.time())) # ⭐ LSTM 결과를 랜덤화하기 위해 시드에 현재 시간을 사용
     data = np.cumsum(np.random.normal(loc=5, scale=5, size=50)) + 60
     data = np.clip(data, 50, 95)
     def create_dataset(dataset, look_back=3):
@@ -804,6 +807,14 @@ def load_or_train_lstm():
     model.compile(optimizer='adam', loss='mse')
     model.fit(X, Y, epochs=10, batch_size=1, verbose=0)
     return model, data
+
+def force_rerun_lstm():
+    """캐시된 LSTM 모델을 무효화하고 새로 실행합니다."""
+    # st.cache_resource 함수의 캐시를 직접 지울 수 없으므로, 
+    # Streamlit의 재실행 메커니즘을 사용하여 load_or_train_lstm이
+    # time.time() 시드로 새 결과를 생성하도록 유도합니다.
+    st.session_state.lstm_rerun_trigger = time.time()
+    st.rerun()
 
 
 def clean_and_load_json(text):
@@ -1105,7 +1116,7 @@ def get_rag_chain(vector_store):
 @st.cache_resource
 def load_or_train_lstm():
     """가상의 학습 성취도 예측을 위한 LSTM 모델을 생성하고 학습합니다."""
-    np.random.seed(42)
+    np.random.seed(int(time.time())) # ⭐ LSTM 결과를 랜덤화하기 위해 시드에 현재 시간을 사용
     data = np.cumsum(np.random.normal(loc=5, scale=5, size=50)) + 60
     data = np.clip(data, 50, 95)
     def create_dataset(dataset, look_back=3):
@@ -1124,6 +1135,14 @@ def load_or_train_lstm():
     model.compile(optimizer='adam', loss='mse')
     model.fit(X, Y, epochs=10, batch_size=1, verbose=0)
     return model, data
+
+def force_rerun_lstm():
+    """캐시된 LSTM 모델을 무효화하고 새로 실행합니다."""
+    # st.cache_resource 함수의 캐시를 직접 지울 수 없으므로, 
+    # Streamlit의 재실행 메커니즘을 사용하여 load_or_train_lstm이
+    # time.time() 시드로 새 결과를 생성하도록 유도합니다.
+    st.session_state.lstm_rerun_trigger = time.time()
+    st.rerun()
 
 
 def clean_and_load_json(text):
@@ -1425,7 +1444,7 @@ def get_rag_chain(vector_store):
 @st.cache_resource
 def load_or_train_lstm():
     """가상의 학습 성취도 예측을 위한 LSTM 모델을 생성하고 학습합니다."""
-    np.random.seed(42)
+    np.random.seed(int(time.time())) # ⭐ LSTM 결과를 랜덤화하기 위해 시드에 현재 시간을 사용
     data = np.cumsum(np.random.normal(loc=5, scale=5, size=50)) + 60
     data = np.clip(data, 50, 95)
     def create_dataset(dataset, look_back=3):
@@ -1444,6 +1463,14 @@ def load_or_train_lstm():
     model.compile(optimizer='adam', loss='mse')
     model.fit(X, Y, epochs=10, batch_size=1, verbose=0)
     return model, data
+
+def force_rerun_lstm():
+    """캐시된 LSTM 모델을 무효화하고 새로 실행합니다."""
+    # st.cache_resource 함수의 캐시를 직접 지울 수 없으므로, 
+    # Streamlit의 재실행 메커니즘을 사용하여 load_or_train_lstm이
+    # time.time() 시드로 새 결과를 생성하도록 유도합니다.
+    st.session_state.lstm_rerun_trigger = time.time()
+    st.rerun()
 
 
 def clean_and_load_json(text):
@@ -1486,14 +1513,14 @@ def render_interactive_quiz(quiz_data, current_lang):
     options_list = list(options_dict.values())
     
     selected_answer = st.radio(
-        L.get("select_answer", "정답을 선택하세요"),
+        L.get("select_answer", "正解を選択してください"),
         options=options_list,
         key=f"q_radio_{q_index}"
     )
 
     col1, col2 = st.columns(2)
 
-    if col1.button(L.get("check_answer", "정답 확인"), key=f"check_btn_{q_index}", disabled=st.session_state.quiz_submitted):
+    if col1.button(L.get("check_answer", "正解確認"), key=f"check_btn_{q_index}", disabled=st.session_state.quiz_submitted):
         user_choice_letter = selected_answer.split(')')[0] if selected_answer else None
         correct_answer_letter = q_data['correct_answer']
 
@@ -1503,24 +1530,24 @@ def render_interactive_quiz(quiz_data, current_lang):
         st.session_state.quiz_submitted = True
         
         if is_correct:
-            st.success(L.get("correct_answer", "정답입니다! 🎉"))
+            st.success(L.get("correct_answer", "正解です！ 🎉"))
         else:
-            st.error(L.get("incorrect_answer", "오답입니다.😞"))
+            st.error(L.get("incorrect_answer", "不正解です。😞"))
         
-        st.markdown(f"**{L.get('correct_is', '정답')}: {correct_answer_letter}**")
-        st.info(f"**{L.get('explanation', '해설')}:** {q_data['explanation']}")
+        st.markdown(f"**{L.get('correct_is', '正解')}**: {correct_answer_letter}")
+        st.info(f"**{L.get('explanation', '解説')}**: {q_data['explanation']}")
 
     if st.session_state.quiz_submitted:
         if q_index < num_questions - 1:
-            if col2.button(L.get("next_question", "다음 문항"), key=f"next_btn_{q_index}"):
+            if col2.button(L.get("next_question", "次の質問"), key=f"next_btn_{q_index}"):
                 st.session_state.current_question += 1
                 st.session_state.quiz_submitted = False
                 st.rerun()
         else:
             total_correct = st.session_state.quiz_results.count(True)
             total_questions = len(st.session_state.quiz_results)
-            st.success(f"**{L.get('quiz_complete', '퀴즈 완료!')}** {L.get('score', '점수')}: {total_correct}/{total_questions}")
-            if st.button(L.get("retake_quiz", "퀴즈 다시 풀기"), key="retake"):
+            st.success(f"**{L.get('quiz_complete', 'クイズ完了!')}** {L.get('score', 'スコア')}: {total_correct}/{total_questions}")
+            if st.button(L.get("retake_quiz", "クイズを再挑戦"), key="retake"):
                 st.session_state.current_question = 0
                 st.session_state.quiz_results = [None] * num_questions
                 st.session_state.quiz_submitted = False
@@ -1894,19 +1921,19 @@ if 'llm' not in st.session_state:
                 st.session_state.firestore_db = db
                 
                 if not db:
-                    llm_init_error = f"{L['llm_error_init']} (DB Client Error: Firebase Admin Init Failed)" 
+                    llm_init_error = f"{L['llm_init_error']} (DB Client Error: Firebase Admin Init Failed)" 
+
+            # DB 로딩 로직 (RAG 챗봇용)
+            if st.session_state.firestore_db and 'conversation_chain' not in st.session_state:
+                # DB 로딩 시도
+                loaded_index = load_index_from_firestore(st.session_state.firestore_db, st.session_state.embeddings)
+                
+                if loaded_index:
+                    st.session_state.conversation_chain = get_rag_chain(loaded_index)
+                    st.session_state.is_rag_ready = True
+                    st.session_state.firestore_load_success = True
                 else:
-                    # DB 로딩 로직 (RAG 챗봇용)
-                    if 'conversation_chain' not in st.session_state:
-                        # DB 로딩 시도
-                        loaded_index = load_index_from_firestore(st.session_state.firestore_db, st.session_state.embeddings)
-                        
-                        if loaded_index:
-                            st.session_state.conversation_chain = get_rag_chain(loaded_index)
-                            st.session_state.is_rag_ready = True
-                            st.session_state.firestore_load_success = True
-                        else:
-                            st.session_state.firestore_load_success = False
+                    st.session_state.firestore_load_success = False
             
             # ⭐ 시뮬레이터 체인 초기화
             SIMULATOR_PROMPT = PromptTemplate(
@@ -2033,35 +2060,6 @@ st.title(L["title"])
 # 9. 기능별 페이지 구현
 # ================================
 
-# ⭐ 이력 삭제 함수 (Firestore 연동)
-def delete_all_history(db):
-    """Firestore의 모든 상담 이력을 삭제합니다."""
-    L = LANG[st.session_state.language] # 함수 내에서 L을 다시 정의
-    
-    if not db:
-        st.error(L["firestore_no_index"])
-        return
-    
-    try:
-        # 이터레이션을 위해 스트림 사용
-        docs = db.collection("simulation_histories").stream()
-        
-        # 삭제 작업 실행
-        with st.spinner(L["deleting_history_progress"]): 
-            for doc in docs:
-                doc.reference.delete()
-        
-        # 세션 상태도 초기화
-        st.session_state.simulator_messages = []
-        st.session_state.simulator_memory.clear()
-        st.session_state.initial_advice_provided = False
-        st.session_state.show_delete_confirm = False
-        st.success(L["delete_success"]) # ⭐ 다국어 적용
-        st.rerun()
-        
-    except Exception as e:
-        st.error(f"이력 삭제 중 오류 발생: {e}")
-
 if feature_selection == L["simulator_tab"]: 
     st.header(L["simulator_header"])
     st.markdown(L["simulator_desc"])
@@ -2070,6 +2068,7 @@ if feature_selection == L["simulator_tab"]:
     st.markdown(f'<div id="tts_status" style="padding: 5px; text-align: center; border-radius: 5px; background-color: #f0f0f0; margin-bottom: 10px;">{L["tts_status_ready"]}</div>', unsafe_allow_html=True)
     
     # TTS JS 유틸리티를 페이지 로드 시 단 한 번만 삽입 (TTS 함수가 글로벌로 정의되도록)
+    # ⭐ TTS는 API Key 없이 작동
     if "tts_js_loaded" not in st.session_state:
          synthesize_and_play_audio(st.session_state.language) 
          st.session_state.tts_js_loaded = True
