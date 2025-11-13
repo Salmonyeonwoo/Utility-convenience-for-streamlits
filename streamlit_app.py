@@ -37,35 +37,29 @@ from langchain.prompts import PromptTemplate # ⭐ PromptTemplate 임포트
 # 1. Firebase Admin SDK 초기화 및 Secrets 처리 함수
 # ================================
 
-# ================================
-# 1. Firebase Admin SDK 초기화 및 Secrets 처리 함수
-# ================================
-
 def _get_admin_credentials():
     """Secrets에서 서비스 계정 정보를 안전하게 로드하고 딕셔너리로 반환합니다."""
     # Secrets 키를 'FIREBASE_SERVICE_ACCOUNT_JSON'으로 표준화
-    FIREBASE_SECRET_KEY = "FIREBASE_SERVICE_ACCOUNT_JSON" # <--- 변수명 정의
-    
+    FIREBASE_SECRET_KEY = "FIREBASE_SERVICE_ACCOUNT_JSON"
     if FIREBASE_SECRET_KEY not in st.secrets:
-        # 오류 메시지를 명확하게 수정
+        # 이 문자열이 오류 메시지의 소스입니다.
         return None, f"'{FIREBASE_SECRET_KEY}' Secret이 누락되었습니다."
-
     
-    service_account_data = st.secrets["FIREBASE_SERVICE_ACCOUNT_JSON"]
+    service_account_data = st.secrets[FIREBASE_SECRET_KEY]
     sa_info = None
 
     if isinstance(service_account_data, str):
         try:
             sa_info = json.loads(service_account_data.strip())
         except json.JSONDecodeError as e:
-            return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 JSON 구문 오류입니다. 값을 확인하세요. 상세 오류: {e}"
+            return None, f"'{FIREBASE_SECRET_KEY}'의 JSON 구문 오류입니다. 값을 확인하세요. 상세 오류: {e}"
     elif hasattr(service_account_data, 'get'):
         try:
             sa_info = dict(service_account_data) # AttrDict를 표준 dict로 변환
         except Exception:
-             return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 딕셔너리 변환 실패. 타입: {type(service_account_data)}"
+            return None, f"'{FIREBASE_SECRET_KEY}'의 딕셔너리 변환 실패. 타입: {type(service_account_data)}"
     else:
-        return None, f"FIREBASE_SERVICE_ACCOUNT_JSON의 형식이 올바르지 않습니다. (Type: {type(service_account_data)})"
+        return None, f"'{FIREBASE_SECRET_KEY}'의 형식이 올바르지 않습니다. (Type: {type(service_account_data)})"
     
     if not sa_info.get("project_id") or not sa_info.get("private_key"):
         return None, "JSON 내 'project_id' 또는 'private_key' 필드가 누락되었습니다."
@@ -82,11 +76,13 @@ def initialize_firestore_admin():
         return None
 
     try:
+        # 이미 초기화된 앱이 있는지 확인
         get_app()
     except ValueError:
-        pass 
+        pass # 초기화된 앱이 없으므로 계속 진행
     else:
         try:
+            # 이미 초기화된 경우 클라이언트만 반환
             return firestore.client()
         except Exception as e:
             st.error(f"🔥 Firebase 클라이언트 로드 실패: {e}")
@@ -240,13 +236,19 @@ def delete_all_history(db):
 # ================================
 def clean_and_load_json(text):
     """LLM 응답 텍스트에서 JSON 객체만 정규표현식으로 추출하여 로드"""
+    # LLM 응답이 ```json ... ``` 형태로 나올 것을 대비하여 정규식으로 감싸진 JSON을 찾음
     match = re.search(r'\{.*\}', text, re.DOTALL)
     if match:
         json_str = match.group(0)
         try:
             return json.loads(json_str)
         except json.JSONDecodeError:
-            return None
+            # JSON 구문 오류 시, 전체 텍스트를 파싱 시도 (가끔 LLM이 태그 없이 순수 JSON만 반환)
+            try:
+                # 첫 번째 줄바꿈까지의 텍스트가 아닌, 찾은 텍스트만 사용
+                return json.loads(json_str.strip())
+            except json.JSONDecodeError:
+                return None
     return None
 
 def synthesize_and_play_audio(current_lang_key):
@@ -304,20 +306,20 @@ def synthesize_and_play_audio(current_lang_key):
         utterance.onend = () => {{
             statusElement.innerText = '{LANG[current_lang_key].get("tts_status_success", "✅ 오디오 재생 완료!")}';
             statusElement.style.backgroundColor = '#e8f5e9';
-             setTimeout(() => {{ 
-                 statusElement.innerText = getReadyText(langKey);
-                 statusElement.style.backgroundColor = '#f0f0f0';
-             }}, 3000);
+            setTimeout(() => {{ 
+                statusElement.innerText = getReadyText(langKey);
+                statusElement.style.backgroundColor = '#f0f0f0';
+            }}, 3000);
         }};
         
         utterance.onerror = (event) => {{
             statusElement.innerText = '{LANG[current_lang_key].get("tts_status_error", "❌ TTS 오류 발생")}';
             statusElement.style.backgroundColor = '#ffebee';
             console.error("SpeechSynthesis Error:", event);
-             setTimeout(() => {{ 
-                 statusElement.innerText = getReadyText(langKey);
-                 statusElement.style.backgroundColor = '#f0f0f0';
-             }}, 3999);
+            setTimeout(() => {{ 
+                statusElement.innerText = getReadyText(langKey);
+                statusElement.style.backgroundColor = '#f0f0f0';
+            }}, 3999);
         }};
 
         window.speechSynthesis.cancel(); // Stop any current speech
@@ -498,17 +500,6 @@ def force_rerun_lstm():
     st.session_state.lstm_rerun_trigger = time.time()
     st.rerun()
 
-
-def clean_and_load_json(text):
-    """LLM 응답 텍스트에서 JSON 객체만 정규표현식으로 추출하여 로드"""
-    match = re.search(r'\{.*\}', text, re.DOTALL)
-    if match:
-        json_str = match.group(0)
-        try:
-            return json.loads(json_str)
-        except json.JSONDecodeError:
-            return None
-    return None
 
 def render_interactive_quiz(quiz_data, current_lang):
     """생성된 퀴즈 데이터를 Streamlit UI로 렌더링하고 피드백을 제공합니다."""
@@ -1095,8 +1086,8 @@ if feature_selection == L["simulator_tab"]:
     
     # TTS JS 유틸리티를 페이지 로드 시 단 한 번만 삽입 (TTS 함수가 글로벌로 정의되도록)
     if "tts_js_loaded" not in st.session_state:
-         synthesize_and_play_audio(st.session_state.language) 
-         st.session_state.tts_js_loaded = True
+          synthesize_and_play_audio(st.session_state.language) 
+          st.session_state.tts_js_loaded = True
 
     # 1.5 이력 삭제 버튼 및 모달
     db = st.session_state.get('firestore_db')
@@ -1160,7 +1151,7 @@ if feature_selection == L["simulator_tab"]:
                     
                     st.rerun()
             else:
-                 st.info(L.get("no_history_found", "이력이 없습니다."))
+                st.info(L.get("no_history_found", "이력이 없습니다."))
 
 
     # ⭐ LLM 초기화가 되어있지 않아도 (API Key가 없어도) UI가 작동해야 함
@@ -1169,11 +1160,11 @@ if feature_selection == L["simulator_tab"]:
             st.success(L["prompt_customer_end"] + " " + L["prompt_survey"])
             
             if st.button(L["new_simulation_button"], key="new_simulation"): 
-                 st.session_state.is_chat_ended = False
-                 st.session_state.initial_advice_provided = False
-                 st.session_state.simulator_messages = []
-                 st.session_state.simulator_memory.clear()
-                 st.rerun()
+                st.session_state.is_chat_ended = False
+                st.session_state.initial_advice_provided = False
+                st.session_state.simulator_messages = []
+                st.session_state.simulator_memory.clear()
+                st.rerun()
             st.stop()
         
         # 1. 고객 문의 입력 필드
@@ -1328,76 +1319,76 @@ if feature_selection == L["simulator_tab"]:
                         st.rerun()
                     else:
                         st.warning("응답 내용이 비어 있습니다.")
-            
-            # 2. 고객의 다음 반응 요청 (LLM 호출) 또는 종료 버튼 표시
-            # 에이전트의 응답 후, 고객 반응 요청 버튼 또는 종료 버튼 표시
-            if last_role == "agent_response":
                 
-                col_end, col_next = st.columns([1, 2])
-                
-                # A) 응대 종료 버튼 (매너 종료)
-                if col_end.button(L["button_end_chat"], key="end_chat"): 
-                    closing_messages = get_closing_messages(current_lang_key)
+                # 2. 고객의 다음 반응 요청 (LLM 호출) 또는 종료 버튼 표시
+                # 에이전트의 응답 후, 고객 반응 요청 버튼 또는 종료 버튼 표시
+                if last_role == "agent_response":
                     
-                    # 매너 질문과 최종 종료 인사는 AI의 응답으로 간주하여 메모리에 추가
-                    st.session_state.simulator_messages.append({"role": "supervisor", "content": closing_messages["additional_query"]}) # 매너 질문
-                    st.session_state.simulator_memory.chat_memory.add_ai_message(closing_messages["additional_query"])
-
-                    st.session_state.simulator_messages.append({"role": "system_end", "content": closing_messages["chat_closing"]}) # 최종 종료 인사
-                    st.session_state.simulator_memory.chat_memory.add_ai_message(closing_messages["chat_closing"])
+                    col_end, col_next = st.columns([1, 2])
                     
-                    st.session_state.is_chat_ended = True
-                    
-                    # ⭐ Firebase 이력 업데이트: 최종 종료 상태 저장
-                    save_simulation_history(db, st.session_state.customer_query_text_area, customer_type_display, st.session_state.simulator_messages)
-                    
-                    st.rerun()
-
-                # B) 고객의 다음 반응 요청 (LLM 호출)
-                if col_next.button(L["request_rebuttal_button"], key="request_rebuttal"): # ⭐ LLM 호출 텍스트 제거
-                    if not API_KEY:
-                        st.warning("API Key가 없기 때문에 LLM을 통한 대화형 시뮬레이션은 불가능합니다.")
-                        st.stop()
-                    
-                    if st.session_state.simulator_chain is None:
-                        st.error(L['llm_error_init'] + " (시뮬레이터 체인 초기화 실패)")
-                        st.stop()
+                    # A) 응대 종료 버튼 (매너 종료)
+                    if col_end.button(L["button_end_chat"], key="end_chat"): 
+                        closing_messages = get_closing_messages(current_lang_key)
                         
-                    # ⭐ 핵심 수정된 프롬프트 (강력하게 협조적인 고객을 유도)
-                    next_reaction_prompt = f"""
-                    Analyze the entire chat history. Roleplay as the customer ({customer_type_display}). 
-                    Based on the agent's last message, generate ONE of the following responses in the customer's voice:
-                    1. Provide **ONE** of the crucial, previously requested details (Model, Location, or Last Step) in a cooperative tone.
-                    2. A short, positive closing remark (e.g., "{L['customer_positive_response']}").
-                    
-                    Crucially, the customer MUST be highly cooperative. If the agent asks for information, the customer MUST provide the detail requested (Model, Location, or Last Step) without arguing or asking why. The purpose of this simulation is for the agent (human user) to practice systematically collecting information and troubleshooting.
-                    
-                    The response MUST be strictly in {LANG[current_lang_key]['lang_select']}.
-                    """
-                    
-                    with st.spinner(L["response_generating"]): # ⭐ 다국어 적용
-                        customer_reaction = st.session_state.simulator_chain.predict(input=next_reaction_prompt)
-                        
-                        # 긍정적 종료 키워드 확인 (대소문자 무시)
-                        positive_keywords = ["감사", "thank you", "ありがとう", L['customer_positive_response'].lower().split('/')[-1].strip()]
-                        is_positive_close = any(keyword in customer_reaction.lower() for keyword in positive_keywords)
-                        
-                        if is_positive_close:
-                            role = "customer_end" # 긍정적 종료
-                            st.session_state.simulator_messages.append({"role": role, "content": customer_reaction})
-                            st.session_state.simulator_memory.chat_memory.add_ai_message(customer_reaction)
+                        # 매너 질문과 최종 종료 인사는 AI의 응답으로 간주하여 메모리에 추가
+                        st.session_state.simulator_messages.append({"role": "supervisor", "content": closing_messages["additional_query"]}) # 매너 질문
+                        st.session_state.simulator_memory.chat_memory.add_ai_message(closing_messages["additional_query"])
 
-                            # 긍정 종료 후 에이전트에게 매너 질문 요청
-                            st.session_state.simulator_messages.append({"role": "supervisor", "content": L["customer_closing_confirm"]})
-                            st.session_state.simulator_memory.chat_memory.add_ai_message(L["customer_closing_confirm"])
-                        else:
-                            role = "customer_rebuttal" # 재반박, 추가 질문, 또는 정보 제공
-                            st.session_state.simulator_messages.append({"role": role, "content": customer_reaction})
-                            st.session_state.simulator_memory.chat_memory.add_ai_message(customer_reaction)
-                             
-                        # DB 저장 및 리런
+                        st.session_state.simulator_messages.append({"role": "system_end", "content": closing_messages["chat_closing"]}) # 최종 종료 인사
+                        st.session_state.simulator_memory.chat_memory.add_ai_message(closing_messages["chat_closing"])
+                        
+                        st.session_state.is_chat_ended = True
+                        
+                        # ⭐ Firebase 이력 업데이트: 최종 종료 상태 저장
                         save_simulation_history(db, st.session_state.customer_query_text_area, customer_type_display, st.session_state.simulator_messages)
+                        
                         st.rerun()
+
+                    # B) 고객의 다음 반응 요청 (LLM 호출)
+                    if col_next.button(L["request_rebuttal_button"], key="request_rebuttal"): # ⭐ LLM 호출 텍스트 제거
+                        if not API_KEY:
+                            st.warning("API Key가 없기 때문에 LLM을 통한 대화형 시뮬레이션은 불가능합니다.")
+                            st.stop()
+                        
+                        if st.session_state.simulator_chain is None:
+                            st.error(L['llm_error_init'] + " (시뮬레이터 체인 초기화 실패)")
+                            st.stop()
+                            
+                        # ⭐ 핵심 수정된 프롬프트 (강력하게 협조적인 고객을 유도)
+                        next_reaction_prompt = f"""
+                        Analyze the entire chat history. Roleplay as the customer ({customer_type_display}). 
+                        Based on the agent's last message, generate ONE of the following responses in the customer's voice:
+                        1. Provide **ONE** of the crucial, previously requested details (Model, Location, or Last Step) in a cooperative tone.
+                        2. A short, positive closing remark (e.g., "{L['customer_positive_response']}").
+                        
+                        Crucially, the customer MUST be highly cooperative. If the agent asks for information, the customer MUST provide the detail requested (Model, Location, or Last Step) without arguing or asking why. The purpose of this simulation is for the agent (human user) to practice systematically collecting information and troubleshooting.
+                        
+                        The response MUST be strictly in {LANG[current_lang_key]['lang_select']}.
+                        """
+                        
+                        with st.spinner(L["response_generating"]): # ⭐ 다국어 적용
+                            customer_reaction = st.session_state.simulator_chain.predict(input=next_reaction_prompt)
+                            
+                            # 긍정적 종료 키워드 확인 (대소문자 무시)
+                            positive_keywords = ["감사", "thank you", "ありがとう", L['customer_positive_response'].lower().split('/')[-1].strip()]
+                            is_positive_close = any(keyword in customer_reaction.lower() for keyword in positive_keywords)
+                            
+                            if is_positive_close:
+                                role = "customer_end" # 긍정적 종료
+                                st.session_state.simulator_messages.append({"role": role, "content": customer_reaction})
+                                st.session_state.simulator_memory.chat_memory.add_ai_message(customer_reaction)
+
+                                # 긍정 종료 후 에이전트에게 매너 질문 요청
+                                st.session_state.simulator_messages.append({"role": "supervisor", "content": L["customer_closing_confirm"]})
+                                st.session_state.simulator_memory.chat_memory.add_ai_message(L["customer_closing_confirm"])
+                            else:
+                                role = "customer_rebuttal" # 재반박, 추가 질문, 또는 정보 제공
+                                st.session_state.simulator_messages.append({"role": role, "content": customer_reaction})
+                                st.session_state.simulator_memory.chat_memory.add_ai_message(customer_reaction)
+                                
+                            # DB 저장 및 리런
+                            save_simulation_history(db, st.session_state.customer_query_text_area, customer_type_display, st.session_state.simulator_messages)
+                            st.rerun()
 
     else:
         # LLM 초기화 자체에 문제가 있을 경우의 오류 메시지 (다국어)
