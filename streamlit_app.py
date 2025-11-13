@@ -366,9 +366,9 @@ def get_mock_response_data(lang_key, customer_type):
     advice_text = advice.replace("{customer_type}", customer_type)
 
     return {
-        "advice_header": f"{LANG[lang_key]['simulation_advice_header']}",
+        "advice_header": f"{L['simulation_advice_header']}",
         "advice": advice_text,
-        "draft_header": f"{LANG[lang_key]['simulation_draft_header']} ({tone})",
+        "draft_header": f"{L['simulation_draft_header']} ({tone})",
         "draft": draft
     }
 
@@ -752,11 +752,7 @@ LANG = {
         "delete_confirm_message": "Are you sure you want to delete ALL simulation history? This action cannot be undone.", # ⭐ 다국어 키 추가
         "delete_confirm_yes": "Yes, Delete", # ⭐ 다국어 키 추가
         "delete_confirm_no": "No, Keep", # ⭐ 다국어 키 추가
-        "delete_success": "✅ Successfully deleted!", # ⭐ 다국어 키 추가
-        "deleting_history_progress": "Deleting history...", # ⭐ 다국어 키 추가
-        "search_history_label": "Search History by Keyword", # ⭐ 다국어 키 추가
-        "date_range_label": "Date Range Filter", # ⭐ 다국어 키 추가
-        "no_history_found": "No history found matching the criteria." # ⭐ 다국어 키 추가
+        "delete_success": "✅ All simulation history deleted!" # ⭐ 다국어 키 추가
     },
     "ja": {
         "title": "パーソナライズAI学習コーチ",
@@ -1117,10 +1113,6 @@ if feature_selection == L["simulator_tab"]:
             # 2. 이력 검색 및 필터링 기능 추가 (KeyError 방지 위해 UI/로직 삭제)
             histories = load_simulation_histories(db)
             
-            # 검색 및 날짜 필터링 UI 및 로직 (KeyError 발생 방지를 위해 단순화)
-            # search_query = st.text_input(L["search_history_label"], key="history_search", value="") # 제거
-            # date_range_input = st.date_input(L["date_range_label"], value=[datetime.now().date() - timedelta(days=7), datetime.now().date()], key="history_date_range") # 제거
-
             # 필터링 로직 (단순 로드)
             filtered_histories = histories
             
