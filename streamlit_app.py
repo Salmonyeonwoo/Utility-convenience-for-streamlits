@@ -199,6 +199,38 @@ def load_simulation_histories(db):
         st.error(f"❌ 이력 로드 실패: {e}")
         return []
 
+# ⭐ 이력 삭제 함수 (Firestore 연동)
+def delete_all_history(db):
+    """Firestore의 모든 상담 이력을 삭제합니다."""
+    # LANG 변수는 전역 스코프에서 사용 가능하지만, 함수 내에서 명시적으로 정의하는 것이 안전
+    # 그러나 Streamlit 앱의 재실행 특성상 전역에서 가져와야 함 (KeyError 방지)
+    L = LANG[st.session_state.language] 
+    
+    if not db:
+        st.error(L.get("firestore_no_index", "DB 연결 오류"))
+        return
+    
+    try:
+        # 이터레이션을 위해 스트림 사용
+        docs = db.collection("simulation_histories").stream()
+        
+        # 삭제 작업 실행
+        with st.spinner(L.get("deleting_history_progress", "이력 삭제 중...")): 
+            for doc in docs:
+                doc.reference.delete()
+        
+        # 세션 상태도 초기화
+        st.session_state.simulator_messages = []
+        st.session_state.simulator_memory.clear()
+        st.session_state.initial_advice_provided = False
+        st.session_state.show_delete_confirm = False
+        st.success(L.get("delete_success", "✅ 삭제 완료!")) # ⭐ 다국어 적용
+        st.rerun()
+        
+    except Exception as e:
+        st.error(f"이력 삭제 중 오류 발생: {e}")
+
+
 # ================================
 # 2. JSON/RAG/LSTM/TTS 함수 정의
 # ================================
@@ -649,15 +681,15 @@ LANG = {
         "new_simulation_button": "새 시뮬레이션 시작",
         "history_selectbox_label": "로드할 이력을 선택하세요:",
         "history_load_button": "선택된 이력 로드",
-        "delete_history_button": "❌ 모든 이력 삭제", # ⭐ 다국어 키 추가
-        "delete_confirm_message": "정말로 모든 상담 이력을 삭제하시겠습니까? 되돌릴 수 없습니다。", # ⭐ 다국어 키 추가
-        "delete_confirm_yes": "예, 삭제합니다", # ⭐ 다국어 키 추가
-        "delete_confirm_no": "아니오, 유지합니다", # ⭐ 다국어 키 추가
-        "delete_success": "✅ 모든 상담 이력 삭제 완료!", # ⭐ 다국어 키 추가
-        "deleting_history_progress": "이력 삭제 중...", # ⭐ 다국어 키 추가
-        "search_history_label": "이력 키워드 검색", # ⭐ 다국어 키 추가
-        "date_range_label": "날짜 범위 필터", # ⭐ 다국어 키 추가
-        "no_history_found": "검색 조건에 맞는 이력이 없습니다。" # ⭐ 다국어 키 추가
+        "delete_history_button": "❌ 모든 이력 삭제", 
+        "delete_confirm_message": "정말로 모든 상담 이력을 삭제하시겠습니까? 되돌릴 수 없습니다。", 
+        "delete_confirm_yes": "예, 삭제합니다", 
+        "delete_confirm_no": "아니오, 유지합니다", 
+        "delete_success": "✅ 모든 상담 이력 삭제 완료!",
+        "deleting_history_progress": "이력 삭제 중...", 
+        "search_history_label": "이력 키워드 검색", 
+        "date_range_label": "날짜 범위 필터", 
+        "no_history_found": "검색 조건에 맞는 이력이 없습니다。" 
     },
     "en": {
         "title": "Personalized AI Study Coach",
@@ -748,15 +780,15 @@ LANG = {
         "new_simulation_button": "Start New Simulation",
         "history_selectbox_label": "Select history to load:",
         "history_load_button": "Load Selected History",
-        "delete_history_button": "❌ Delete All History", 
-        "delete_confirm_message": "Are you sure you want to delete ALL simulation history? This action cannot be undone.", 
-        "delete_confirm_yes": "Yes, Delete", 
-        "delete_confirm_no": "No, Keep", 
-        "delete_success": "✅ All simulation history deleted!", 
-        "deleting_history_progress": "Deleting history...", 
-        "search_history_label": "Search History by Keyword", 
-        "date_range_label": "Date Range Filter", 
-        "no_history_found": "No history found matching the criteria." 
+        "delete_history_button": "❌ Delete All History", # ⭐ 다국어 키 추가
+        "delete_confirm_message": "Are you sure you want to delete ALL simulation history? This action cannot be undone.", # ⭐ 다국어 키 추가
+        "delete_confirm_yes": "Yes, Delete", # ⭐ 다국어 키 추가
+        "delete_confirm_no": "No, Keep", # ⭐ 다국어 키 추가
+        "delete_success": "✅ Successfully deleted!", # ⭐ 다국어 키 추가
+        "deleting_history_progress": "Deleting history...", # ⭐ 다국어 키 추가
+        "search_history_label": "Search History by Keyword", # ⭐ 다국어 키 추가
+        "date_range_label": "Date Range Filter", # ⭐ 다국어 키 추가
+        "no_history_found": "No history found matching the criteria." # ⭐ 다국어 키 추가
     },
     "ja": {
         "title": "パーソナライズAI学習コーチ",
@@ -800,7 +832,7 @@ LANG = {
         "quiz_complete": "クイズ完了!",
         "score": "スコア",
         "retake_quiz": "クイズを再挑戦",
-        "quiz_error_llm": "クイズ生成失敗: LLMが正しいJSONの形式を読み取れませんでしたので、クイズの生成が失敗しました。",
+        "quiz_error_llm": "LLMが正しいJSONの形式を読み取れませんでしたので、クイズの生成が失敗しました。",
         "quiz_original_response": "LLM 原本応答",
         "firestore_loading": "データベースからRAGインデックスをロード中...",
         "firestore_no_index": "データベースで既存のRAGインデックスが見つかりません。ファイルをアップロードして新しく作成してください。", 
@@ -1075,11 +1107,8 @@ def delete_all_history(db):
     try:
         # 이터레이션을 위해 스트림 사용
         docs = db.collection("simulation_histories").stream()
-        
-        # 삭제 작업 실행
-        with st.spinner(L["deleting_history_progress"]): 
-            for doc in docs:
-                doc.reference.delete()
+        for doc in docs:
+            doc.reference.delete()
         
         # 세션 상태도 초기화
         st.session_state.simulator_messages = []
@@ -1116,7 +1145,8 @@ if feature_selection == L["simulator_tab"]:
             st.warning(L["delete_confirm_message"])
             col_yes, col_no = st.columns(2)
             if col_yes.button(L["delete_confirm_yes"], key="confirm_delete_yes", type="primary"):
-                delete_all_history(db)
+                with st.spinner(L["deleting_history_progress"]): # ⭐ 삭제 로딩 스피너 추가
+                    delete_all_history(db)
             if col_no.button(L["delete_confirm_no"], key="confirm_delete_no"):
                 st.session_state.show_delete_confirm = False
                 st.rerun()
