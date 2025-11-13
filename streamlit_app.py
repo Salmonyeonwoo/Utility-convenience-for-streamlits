@@ -550,14 +550,14 @@ def render_interactive_quiz(quiz_data, current_lang):
     options_list = list(options_dict.values())
     
     selected_answer = st.radio(
-        L.get("select_answer", "정답을 선택하세요"),
+        L.get("select_answer", "正解を選択してください"),
         options=options_list,
         key=f"q_radio_{q_index}"
     )
 
     col1, col2 = st.columns(2)
 
-    if col1.button(L.get("check_answer", "정답 확인"), key=f"check_btn_{q_index}", disabled=st.session_state.quiz_submitted):
+    if col1.button(L.get("check_answer", "正解確認"), key=f"check_btn_{q_index}", disabled=st.session_state.quiz_submitted):
         user_choice_letter = selected_answer.split(')')[0] if selected_answer else None
         correct_answer_letter = q_data['correct_answer']
 
@@ -567,24 +567,24 @@ def render_interactive_quiz(quiz_data, current_lang):
         st.session_state.quiz_submitted = True
         
         if is_correct:
-            st.success(L.get("correct_answer", "정답입니다! 🎉"))
+            st.success(L.get("correct_answer", "正解です！ 🎉"))
         else:
-            st.error(L.get("incorrect_answer", "오답입니다.😞"))
+            st.error(L.get("incorrect_answer", "不正解です。😞"))
         
-        st.markdown(f"**{L.get('correct_is', '정답')}: {correct_answer_letter}**")
-        st.info(f"**{L.get('explanation', '해설')}:** {q_data['explanation']}")
+        st.markdown(f"**{L.get('correct_is', '正解')}**: {correct_answer_letter}")
+        st.info(f"**{L.get('explanation', '解説')}**: {q_data['explanation']}")
 
     if st.session_state.quiz_submitted:
         if q_index < num_questions - 1:
-            if col2.button(L.get("next_question", "다음 문항"), key=f"next_btn_{q_index}"):
+            if col2.button(L.get("next_question", "次の質問"), key=f"next_btn_{q_index}"):
                 st.session_state.current_question += 1
                 st.session_state.quiz_submitted = False
                 st.rerun()
         else:
             total_correct = st.session_state.quiz_results.count(True)
             total_questions = len(st.session_state.quiz_results)
-            st.success(f"**{L.get('quiz_complete', '퀴즈 완료!')}** {L.get('score', '점수')}: {total_correct}/{total_questions}")
-            if st.button(L.get("retake_quiz", "퀴즈 다시 풀기"), key="retake"):
+            st.success(f"**{L.get('quiz_complete', 'クイズ完了!')}** {L.get('score', 'スコア')}: {total_correct}/{total_questions}")
+            if st.button(L.get("retake_quiz", "クイズを再挑戦"), key="retake"):
                 st.session_state.current_question = 0
                 st.session_state.quiz_results = [None] * num_questions
                 st.session_state.quiz_submitted = False
@@ -671,7 +671,7 @@ LANG = {
         
         # ⭐ 대화형/종료 메시지
         "button_mic_input": "음성 입력",
-        "prompt_customer_end": "고객님의 추가 문의 사항이 없어, 이 상담 채팅을 종료하겠습니다.",
+        "prompt_customer_end": "고객님의 추가 문의 사항이 없어, 이 상담 채팅을 종료하겠습니다。",
         "prompt_survey": "고객 문의 센터에 연락 주셔서 감사드리며, 추가로 저희 응대 솔루션에 대한 설문 조사에 응해 주시면 감사하겠습니다. 추가 문의 사항이 있으시면 언제든지 연락 주십시오。",
         "customer_closing_confirm": "또 다른 문의 사항은 없으신가요?",
         "customer_positive_response": "좋은 말씀/친절한 상담 감사드립니다。",
@@ -683,14 +683,14 @@ LANG = {
         "new_simulation_button": "새 시뮬레이션 시작",
         "history_selectbox_label": "로드할 이력을 선택하세요:",
         "history_load_button": "선택된 이력 로드",
-        "delete_history_button": "❌ 모든 이력 삭제", 
-        "delete_confirm_message": "정말로 모든 상담 이력을 삭제하시겠습니까? 되돌릴 수 없습니다。", 
-        "delete_confirm_yes": "예, 삭제합니다", 
-        "delete_confirm_no": "아니오, 유지합니다", 
-        "delete_success": "✅ 모든 상담 이력 삭제 완료!",
-        "deleting_history_progress": "이력 삭제 중...", 
-        "search_history_label": "이력 키워드 검색", 
-        "date_range_label": "날짜 범위 필터", 
+        "delete_history_button": "❌ 모든 이력 삭제", # ⭐ 다국어 키 추가
+        "delete_confirm_message": "정말로 모든 상담 이력을 삭제하시겠습니까? 되돌릴 수 없습니다。", # ⭐ 다국어 키 추가
+        "delete_confirm_yes": "예, 삭제합니다", # ⭐ 다국어 키 추가
+        "delete_confirm_no": "아니오, 유지합니다", # ⭐ 다국어 키 추가
+        "delete_success": "✅ 모든 상담 이력 삭제 완료!", # ⭐ 다국어 키 추가
+        "deleting_history_progress": "이력 삭제 중...", # ⭐ 다국어 키 추가
+        "search_history_label": "이력 키워드 검색", # ⭐ 다국어 키 추가
+        "date_range_label": "날짜 범위 필터", # ⭐ 다국어 키 추가
         "no_history_found": "검색 조건에 맞는 이력이 없습니다。",
         "all_label": "모두",
         "filter_suffix": " (필터)",
@@ -793,7 +793,10 @@ LANG = {
         "deleting_history_progress": "Deleting history...", # ⭐ 다국어 키 추가
         "search_history_label": "Search History by Keyword", # ⭐ 다국어 키 추가
         "date_range_label": "Date Range Filter", # ⭐ 다국어 키 추가
-        "no_history_found": "No history found matching the criteria." # ⭐ 다국어 키 추가
+        "no_history_found": "No history found matching the criteria.", # ⭐ 다국어 키 추가
+        "all_label": "All",
+        "filter_suffix": " (Filter)",
+        "empty_response_warning": "Response content is empty."
     },
     "ja": {
         "title": "パーソナライズAI学習コーチ",
@@ -878,7 +881,7 @@ LANG = {
         "customer_positive_response": "親切なご対応ありがとうございました。",
         "button_end_chat": "対応終了 (アンケートを依頼)",
         "agent_response_header": "✍️ エージェント応答",
-        "agent_response_placeholder": "顧客に返信 (必須情報の要求/확인、または解決策の提示)",
+        "agent_response_placeholder": "顧客に返信 (必須情報の要求/確認、または解決策の提示)",
         "send_response_button": "応答送信",
         "request_rebuttal_button": "顧客の次の反応を要求", 
         "new_simulation_button": "新しいシミュレーションを開始",
@@ -1164,54 +1167,38 @@ if feature_selection == L["simulator_tab"]:
         with st.expander(L["history_expander_title"]): # ⭐ 다국어 적용
             
             # 2. 이력 검색 및 필터링 기능 추가
-            # load_simulation_histories에 현재 언어 키 전달 (언어별 데이터 분리)
-            histories = load_simulation_histories(db, st.session_state.language) 
+            histories = load_simulation_histories(db)
             
             # 2-1. 검색 필터
-            col1, col2 = st.columns(2)
-            with col1:
-                search_query = st.text_input(L["search_history_label"], key="history_search")
+            search_query = st.text_input(L["search_history_label"], key="history_search")
             
-            # 2-2. 고객 성향 필터
-            all_customer_types = list(set([h['customer_type'] for h in histories]))
-            customer_type_filter_options = [L.get("all_label", "모두")] + customer_type_options_list # L["customer_type_options"] 사용
-            
-            with col2:
-                selected_type_filter = st.selectbox(
-                    L["customer_type_label"] + L.get("filter_suffix", " (필터)"),
-                    options=customer_type_filter_options,
-                    key="customer_type_filter"
-                )
-            
-            # 2-3. 날짜 필터 (st.date_input은 브라우저 로케일을 사용하므로 요일/월은 그대로 두고, 날짜만 사용)
+            # 2-2. 날짜 필터 (최근 7일 범위로 설정)
             today = datetime.now().date()
             default_start_date = today - timedelta(days=7)
             
+            # st.date_input은 날짜가 선택되지 않았을 때 (None)을 반환할 수 있으므로, 처리 로직을 개선
             date_range_input = st.date_input(
                 L["date_range_label"], 
                 value=[default_start_date, today],
                 key="history_date_range"
             )
 
-            # --- 필터링 로직 ---
+            # 필터링 로직
             filtered_histories = []
             if histories:
                 if isinstance(date_range_input, list) and len(date_range_input) == 2:
                     start_date = min(date_range_input)
-                    end_date = max(date_range_input) + timedelta(days=1) # 하루를 더해 해당 날짜의 끝까지 포함
+                    end_date = max(date_range_input) + timedelta(days=1)
                 else:
-                    # 유효하지 않은 날짜 범위 입력 시 필터링하지 않음
                     start_date = datetime.min.date()
                     end_date = datetime.max.date()
                     
                 for h in histories:
-                    # 텍스트 검색 (initial_query, messages content)
+                    # 텍스트 검색 (initial_query, customer_type)
                     search_match = True
                     if search_query:
                         query_lower = search_query.lower()
-                        # initial_query와 messages의 content를 모두 검색 대상으로 포함
-                        searchable_text = h['initial_query'].lower() + " ".join([m['content'].lower() for m in h['messages']])
-                        if query_lower not in searchable_text:
+                        if query_lower not in h['initial_query'].lower() and query_lower not in h['customer_type'].lower():
                             search_match = False
                     
                     # 날짜 필터
@@ -1220,20 +1207,14 @@ if feature_selection == L["simulator_tab"]:
                         h_date = h['timestamp'].date()
                         if not (start_date <= h_date < end_date):
                             date_match = False
-                    
-                    # 고객 유형 필터
-                    type_match = True
-                    if selected_type_filter not in [L.get("all_label", "모두")]:
-                        if h['customer_type'] != selected_type_filter:
-                            type_match = False
                             
-                    if search_match and date_match and type_match:
+                    if search_match and date_match:
                         filtered_histories.append(h)
             
             
             if filtered_histories:
                 history_options = {
-                    f"[{h['timestamp'].strftime('%Y-%m-%d %H:%M')}] {h['customer_type']} - {h['initial_query'][:30]}...": h
+                    f"[{h['timestamp'].strftime('%m-%d %H:%M')}] {h['customer_type']} - {h['initial_query'][:30]}...": h
                     for h in filtered_histories
                 }
                 
@@ -1502,9 +1483,11 @@ if feature_selection == L["simulator_tab"]:
                     # ⭐ 핵심 수정된 프롬프트 (강력하게 협조적인 고객을 유도)
                     next_reaction_prompt = f"""
                     Analyze the entire chat history. Roleplay as the customer ({customer_type_display}). 
-                    Based on the agent's last message, generate ONE of the following responses in the customer's voice:
-                    1. Provide **ALL** requested troubleshooting details in a single, cooperative message.
-                    2. A short, positive closing remark (e.g., "{L['customer_positive_response']}").
+                    Based on the agent's last message, determine if the agent has requested multiple essential troubleshooting details (Model, Location, Last Step).
+                    
+                    If the agent requested multiple details, the customer MUST provide ALL of the requested details in a single, cooperative message. 
+                    If the agent requested only one detail, the customer MUST provide only that detail.
+                    If all essential details (Model, Location, Last Step) have been provided, the customer should generate a polite closing remark (e.g., "{L['customer_positive_response']}").
                     
                     Crucially, the customer MUST be highly cooperative. If the agent asks for information, the customer MUST provide the detail requested (Model, Location, or Last Step) without arguing or asking why. The purpose of this simulation is for the agent (human user) to practice systematically collecting information and troubleshooting.
                     
