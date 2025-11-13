@@ -654,11 +654,7 @@ LANG = {
         "delete_confirm_message": "정말로 모든 상담 이력을 삭제하시겠습니까? 되돌릴 수 없습니다.", 
         "delete_confirm_yes": "예, 삭제합니다", 
         "delete_confirm_no": "아니오, 유지합니다", 
-        "delete_success": "✅ 모든 상담 이력 삭제 완료!",
-        "deleting_history_progress": "이력 삭제 중...", 
-        "search_history_label": "이력 키워드 검색", 
-        "date_range_label": "날짜 범위 필터", 
-        "no_history_found": "검색 조건에 맞는 이력이 없습니다." 
+        "delete_success": "✅ 모든 상담 이력 삭제 완료!" 
     },
     "en": {
         "title": "Personalized AI Study Coach",
@@ -753,11 +749,7 @@ LANG = {
         "delete_confirm_message": "Are you sure you want to delete ALL simulation history? This action cannot be undone.", # ⭐ 다국어 키 추가
         "delete_confirm_yes": "Yes, Delete", # ⭐ 다국어 키 추가
         "delete_confirm_no": "No, Keep", # ⭐ 다국어 키 추가
-        "delete_success": "✅ Successfully deleted!", # ⭐ 다국어 키 추가
-        "deleting_history_progress": "Deleting history...", # ⭐ 다국어 키 추가
-        "search_history_label": "Search History by Keyword", # ⭐ 다국어 키 추가
-        "date_range_label": "Date Range Filter", # ⭐ 다국어 키 추가
-        "no_history_found": "No history found matching the criteria." # ⭐ 다국어 키 추가
+        "delete_success": "✅ Successfully deleted!" # ⭐ 다국어 키 추가
     },
     "ja": {
         "title": "パーソナライズAI学習コーチ",
@@ -847,12 +839,7 @@ LANG = {
         "request_rebuttal_button": "顧客の次の反応を要求", 
         "new_simulation_button": "新しいシミュレーションを開始",
         "history_selectbox_label": "履歴を選択してロード:",
-        "history_load_button": "選択された履歴をロード",
-        "delete_history_button": "❌ 全履歴を削除", # ⭐ 다국어 키 추가
-        "delete_confirm_message": "本当にすべてのシミュレーション履歴を削除してもよろしいですか？この操作は元に戻せません。", # ⭐ 다국어 키 추가
-        "delete_confirm_yes": "はい、削除します", # ⭐ 다국어 키 추가
-        "delete_confirm_no": "いいえ、維持します", # ⭐ 다국어 키 추가
-        "delete_success": "✅ 削除が完了されました!" # ⭐ 다국어 키 추가
+        "history_load_button": "選択された履歴をロード"
     }
 }
 
@@ -1127,32 +1114,31 @@ if feature_selection == L["simulator_tab"]:
             # 2. 이력 검색 및 필터링 기능 추가
             histories = load_simulation_histories(db)
             
-            # 2-1. 검색 필터 (UI는 남기고, 현재는 필터링 로직을 단순화)
-            # ⭐ KeyError: search_history_label, date_range_label 키를 사용하지 않거나,
-            #    LANG 딕셔너리에 키를 추가해야 함. 여기서는 키를 추가하고 UI를 유지합니다.
-            search_query = st.text_input(L.get("search_history_label", "이력 키워드 검색"), key="history_search", value="")
+            # 2-1. 검색 필터
+            search_query = st.text_input(L["search_history_label"], key="history_search", value="")
             
-            # 2-2. 날짜 필터 (OverflowError 방지 위해 안정성 확보)
+            # 2-2. 날짜 필터 (최근 7일 범위로 설정)
             today = datetime.now().date()
             default_start_date = today - timedelta(days=7)
             
+            # st.date_input은 날짜가 선택되지 않았을 때 (None)을 반환할 수 있으므로, 처리 로직을 개선
             date_range_input = st.date_input(
-                L.get("date_range_label", "날짜 범위 필터"), 
+                L["date_range_label"], 
                 value=[default_start_date, today],
                 key="history_date_range"
             )
+            
+            # date_range_input이 리스트이고 2개의 요소를 가질 때만 유효함
+            if isinstance(date_range_input, list) and len(date_range_input) == 2:
+                date_range = date_range_input
+            else:
+                date_range = [datetime.min.date(), datetime.max.date()]
 
             # 필터링 로직
             filtered_histories = []
             if histories:
-                # 안전한 날짜 범위 설정
-                if isinstance(date_range_input, list) and len(date_range_input) == 2:
-                    start_date = min(date_range_input)
-                    end_date = max(date_range_input) + timedelta(days=1) # 하루를 더해 해당 날짜의 끝까지 포함
-                else:
-                    # 날짜 형식이 잘못되었을 경우 전체 이력 대상으로 필터링 (안정성 확보)
-                    start_date = datetime.min.date()
-                    end_date = datetime.max.date()
+                start_date = min(date_range)
+                end_date = max(date_range) + timedelta(days=1) # 하루를 더해 해당 날짜의 끝까지 포함
                     
                 for h in histories:
                     # 텍스트 검색 (initial_query, customer_type)
@@ -1166,9 +1152,7 @@ if feature_selection == L["simulator_tab"]:
                     date_match = True
                     if h.get('timestamp'):
                         h_date = h['timestamp'].date()
-                        # start_date 또는 end_date가 datetime.min/max 이면 비교 생략
-                        if (start_date != datetime.min.date() and h_date < start_date) or \
-                           (end_date != datetime.max.date() and h_date >= end_date):
+                        if not (start_date <= h_date < end_date):
                             date_match = False
                             
                     if search_match and date_match:
