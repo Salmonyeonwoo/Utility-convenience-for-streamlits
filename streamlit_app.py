@@ -637,7 +637,7 @@ LANG = {
         
         # ⭐ 대화형/종료 메시지
         "button_mic_input": "음성 입력",
-        "prompt_customer_end": "고객님의 추가 문의 사항이 없어, 이 상담 채팅을 종료하겠습니다.",
+        "prompt_customer_end": "고객님의 추가 문의 사항이 없어, 이 상담 채팅을 종료하겠습니다。",
         "prompt_survey": "고객 문의 센터에 연락 주셔서 감사드리며, 추가로 저희 응대 솔루션에 대한 설문 조사에 응해 주시면 감사하겠습니다. 추가 문의 사항이 있으시면 언제든지 연락 주십시오。",
         "customer_closing_confirm": "또 다른 문의 사항은 없으신가요?",
         "customer_positive_response": "좋은 말씀/친절한 상담 감사드립니다。",
@@ -752,7 +752,7 @@ LANG = {
         "delete_confirm_message": "Are you sure you want to delete ALL simulation history? This action cannot be undone.", # ⭐ 다국어 키 추가
         "delete_confirm_yes": "Yes, Delete", # ⭐ 다국어 키 추가
         "delete_confirm_no": "No, Keep", # ⭐ 다국어 키 추가
-        "delete_success": "✅ All simulation history deleted!" # ⭐ 다국어 키 추가
+        "delete_success": "✅ Successfully deleted!" # ⭐ 다국어 키 추가
     },
     "ja": {
         "title": "パーソナライズAI学習コーチ",
@@ -1110,7 +1110,7 @@ if feature_selection == L["simulator_tab"]:
     if db:
         with st.expander(L["history_expander_title"]): # ⭐ 다국어 적용
             
-            # 2. 이력 검색 및 필터링 기능 추가 (KeyError 방지 위해 UI/로직 삭제)
+            # 2. 이력 검색 및 필터링 기능 (KeyError 방지 위해 UI/로직 삭제)
             histories = load_simulation_histories(db)
             
             # 필터링 로직 (단순 로드)
@@ -1223,7 +1223,7 @@ if feature_selection == L["simulator_tab"]:
             The recommended draft MUST be strictly in {LANG[current_lang_key]['lang_select']}.
             
             **CRITICAL RULE FOR DRAFT CONTENT:**
-            - **Core Topic Filtering:** Analyze the customer's inquiry to determine its main subject (e.g., eSIM issue, ticket price, refund). 
+            - **Core Topic Filtering:** Analyze the customer's inquiry to determine its main subject. 
             - **Draft Content:** The draft MUST address the core topic directly. The draft MUST ONLY request *general* information needed for ALL inquiries (like booking ID, contact info). 
             - **Technical Info:** The draft MUST NOT include specific technical troubleshooting requests (Smartphone model, Location, Last Step of troubleshooting) **UNLESS** the core inquiry is explicitly about connection/activation failures (like "won't activate" or "no connection"). If the inquiry is about eSIM activation failure, use a standard troubleshooting request template.
             
