@@ -758,41 +758,45 @@ def force_rerun_lstm():
 def render_interactive_quiz(quiz_data, current_lang):
     st.warning("Quiz UI Placeholder")
 def synthesize_and_play_audio(current_lang_key):
-    st.components.v1.html(f"""<script>window.speakText = (text, langKey) => {{ console.log('Speaking: ' + text + ' in ' + langKey); }}</script>""", height=5, width=0)
+    L = LANG[current_lang_key]
+    openai_client = init_openai_client(L)[0]
+    if openai_client is None:
+        st.error(L['openai_missing'])
+        return None, f"❌ {L['tts_status_error']} (Client Missing)"
+
+    # TTS 음성 선택 (언어에 따른 대략적인 음성 선택)
+    # Whisper는 다국어를 지원하지만, TTS는 현재 en, ja 등 제한적이며, 
+    # voice 파라미터는 한국어 지원이 제한적일 수 있으므로 중립적인 voice를 사용합니다.
+    tts_voice = 'nova' # 여성 목소리, 모든 언어에 사용 가능 (현재 TTS-1 모델 지원)
+    
+    # 음성 파일 생성 및 오디오 바이트 반환
+    try:
+        response = openai_client.audio.speech.create(
+            model="tts-1",
+            voice=tts_voice,
+            input=text_to_speak
+        )
+        # response.content는 MP3 바이너리 데이터입니다.
+        return response.content, f"✅ {L['tts_status_success']}"
+    except Exception as e:
+        return None, f"❌ {L['tts_status_error']} (OpenAI TTS Error: {e})"
 def render_tts_button(text_to_speak, current_lang_key):
-    st.button(LANG[current_lang_key].get("button_listen_audio"), key=f"tts_{hash(text_to_speak)}", on_click=lambda: st.components.v1.html(f"""<script>
-    const statusDiv = document.getElementById('tts_status');
-    statusDiv.innerHTML = '{LANG[current_lang_key]["tts_status_generating"]}';
-    statusDiv.style.backgroundColor = '#fff3cd';
-    fetch("https://texttospeech.googleapis.com/v1/text:synthesize", {{
-      method: 'POST',
-      headers: {{ 'Content-Type': 'application/json' }},
-      body: JSON.stringify({{
-        input: {{ text: text_to_speak }},
-        voice: {{ languageCode: '{current_lang_key}', ssmlGender: 'FEMALE' }},
-        audioConfig: {{ audioEncoding: 'MP3' }}
-      }})
-    }})
-    .then(response => response.json())
-    .then(data => {{
-      if (data.audioContent) {{
-        const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
-        audio.onended = () => {{
-          statusDiv.innerHTML = '{LANG[current_lang_key]["tts_status_success"]}';
-          statusDiv.style.backgroundColor = '#d4edda';
-        }};
-        audio.play();
-      }} else {{
-        statusDiv.innerHTML = '{LANG[current_lang_key]["tts_status_error"]}';
-        statusDiv.style.backgroundColor = '#f8d7da';
-      }}
-    }})
-    .catch(error => {{
-      statusDiv.innerHTML = '{LANG[current_lang_key]["tts_status_error"]}';
-      statusDiv.style.backgroundColor = '#f8d7da';
-      console.error('TTS Error:', error);
-    }});
-        """.replace("text_to_speak", json.dumps(text_to_speak).replace('\\n', ' ')), height=0, width=0))
+    L = LANG[current_lang_key]
+    button_key = f"tts_{hash(text_to_speak)}_{time.time()}" # time.time() 추가하여 키 충돌 방지
+    
+    if st.button(L.get("button_listen_audio"), key=button_key):
+        with st.spinner(L['tts_status_generating']):
+            audio_bytes, status_msg = synthesize_and_play_audio(text_to_speak, current_lang_key)
+            
+            # TTS 상태를 알리는 스피너 대신 임시 메시지 표시
+            if "❌" in status_msg:
+                st.error(status_msg)
+            elif audio_bytes:
+                # MP3 오디오 바이트를 Streamlit 오디오 위젯으로 재생
+                st.audio(audio_bytes, format='audio/mp3', autoplay=True, key=f"audio_player_{button_key}")
+                # st.success(L['tts_status_success']) # 오디오 위젯과 메시지가 겹치므로 생략
+            else:
+                st.error(status_msg)
 def clean_and_load_json(text):
     match = re.search(r'```json\s*(.*?)\s*```', text, re.DOTALL)
     if match: text = match.group(1)
@@ -1359,9 +1363,11 @@ Customer Inquiry: {customer_query}
                     else:
                         with st.spinner(L.get("whisper_processing", "음성 파일을 텍스트로 변환 중...")):
                             try:
-                                # transcribe_bytes_with_whisper 함수 호출
+                                # ⭐ [수정] transcribe_bytes_with_whisper 함수에 언어 코드 전달
                                 transcribed_text = transcribe_bytes_with_whisper(
-                                    audio_bytes_to_transcribe, audio_mime_to_transcribe
+                                    audio_bytes_to_transcribe, 
+                                    audio_mime_to_transcribe,
+                                    lang_code=current_lang_key # 현재 선택된 언어 전달
                                 )
                                 
                                 if transcribed_text.startswith("❌"):
