@@ -1320,7 +1320,9 @@ Customer Inquiry: {customer_query}
                         stop_prompt="✔️ Stop Recording", 
                         key="simulator_audio_input_file"
                     )
-                
+                    
+                if 'sim_audio_bytes_raw' not in st.session_state: 
+                    st.session_state.sim_audio_bytes_raw = None
                 # audio_bytes_from_mic와 mime_type을 세션 상태에 저장 및 업데이트
                 # --- [수정] 녹음 완료 시 즉시 RERUN하여 데이터 반영 ---
                 is_audio_just_recorded = False
