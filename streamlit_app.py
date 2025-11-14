@@ -688,6 +688,7 @@ def delete_all_history(db):
     except Exception as e: st.error(f"{L.get('delete_fail')}: {e}")
 
 # --- Utility Placeholder Functions ---
+# --- Utility Placeholder Functions ---
 def get_document_chunks(files):
     return [] 
 
@@ -828,16 +829,26 @@ st.session_state.openai_init_msg = openai_msg
 # --- LLM 초기화 ---
 # --- LLM 초기화 ---
 # 시뮬레이터/RAG용 LLM 키로 OPENAI_API_KEY를 사용하도록 변경
+# --- 클라이언트 초기화 실행 ---
+# ... (중략) ...
+
+openai_client_obj, openai_msg = init_openai_client(L)
+openai_client = openai_client_obj
+st.session_state.openai_init_msg = openai_msg
+
+# --- LLM 초기화 ---
+# OPENAI_API_KEY만 사용하도록 명확히 변경
 LLM_API_KEY = os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
-LLM_MODEL = "gpt-3.5-turbo" # 사용할 OpenAI 모델 지정
+LLM_MODEL = "gpt-3.5-turbo" 
 
 if 'llm' not in st.session_state and LLM_API_KEY:
     try:
-        # LLM (ChatOpenAI) 초기화
+        # LLM (ChatOpenAI) 및 임베딩 (OpenAIEmbeddings) 초기화
+        from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+
         st.session_state.llm = ChatOpenAI(model=LLM_MODEL, temperature=0.7, openai_api_key=LLM_API_KEY)
         
-        # ⭐ [수정] st.session_state.embeddings를 OpenAIEmbeddings로 초기화
-        # load_index_from_firestore 호출을 위해 반드시 필요합니다.
+        # ⭐ [핵심 수정] OpenAIEmbeddings로 초기화
         st.session_state.embeddings = OpenAIEmbeddings(openai_api_key=LLM_API_KEY)
         
         st.session_state.is_llm_ready = True
@@ -856,7 +867,8 @@ if 'llm' not in st.session_state and LLM_API_KEY:
         st.session_state.llm_init_error_msg = f"{L['llm_error_init']} (OpenAI): {e}"
         st.session_state.is_llm_ready = False
 elif not LLM_API_KEY:
-    st.session_state.llm_init_error_msg = L["openai_missing"] # OpenAI 키가 없음을 알림
+    # OpenAI 키가 없음을 알림 (기존 L["llm_error_key"] 대신 L["openai_missing"] 사용)
+    st.session_state.llm_init_error_msg = L["openai_missing"] 
 
 # RAG Index Loading
 if st.session_state.get('firestore_db') and 'conversation_chain' not in st.session_state and st.session_state.is_llm_ready:
