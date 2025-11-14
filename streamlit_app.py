@@ -44,7 +44,7 @@ DEFAULT_LANG = "ko"
 # st.session_state 접근은 st.set_page_config 이후로 미룹니다.
 
 LANG = {
-    "ko": {
+    "ko":{
         "title": "개인 맞춤형 AI 학습 코치 (음성 및 DB 통합)",
         "sidebar_title": "📚 AI Study Coach 설정",
         "file_uploader": "학습 자료 업로드 (PDF, TXT, HTML)",
@@ -175,7 +175,7 @@ LANG = {
         "whisper_processing": "음성 전사 처리 중",
         "empty_response_warning": "응답을 입력하세요.",
     },
-    "en": {
+    "en":{
         "title": "Personalized AI Study Coach (Voice & DB Integration)",
         "sidebar_title": "📚 AI Study Coach Settings",
         "lang_select": "Select Language",
@@ -284,7 +284,7 @@ LANG = {
         "whisper_processing": "Processing voice transcription",
         "empty_response_warning": "Please enter a response.",
     },
-    "ja": {
+    "ja":{
         "title": "パーソナライズAI学習コーチ (音声・DB統合)",
         "sidebar_title": "📚 AI学習コーチ設定",
         "lang_select": "言語選択",
