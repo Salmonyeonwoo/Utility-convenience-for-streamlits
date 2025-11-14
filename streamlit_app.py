@@ -825,7 +825,9 @@ openai_client = openai_client_obj
 st.session_state.openai_init_msg = openai_msg
 
 # --- LLM 초기화 ---
-API_KEY = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+client = OpenAI(api_key=openai_key)
+res = client.embeddings.create(model="text-embedding-3-small", input=text)
+embedding = res.data[0].embedding
 if 'llm' not in st.session_state and API_KEY:
     try:
         st.session_state.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.7, google_api_key=API_KEY)
