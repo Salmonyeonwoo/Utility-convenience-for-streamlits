@@ -223,7 +223,6 @@ def delete_all_history(db):
         # 세션 상태도 초기화
         st.session_state.simulator_messages = []
         st.session_state.simulator_memory.clear()
-        st.session_state.initial_advice_provided = False
         st.session_state.show_delete_confirm = False
         st.success(L["delete_success"]) # ⭐ 다국어 적용
         st.rerun()
@@ -233,7 +232,7 @@ def delete_all_history(db):
 
 
 # ================================
-# 2. JSON/RAG/LSTM/TTS 함수 정의
+# 2. JSON/RAG/LSTM/TTS 및 WHISPER 함수 정의
 # ================================
 def clean_and_load_json(text):
     """LLM 응답 텍스트에서 JSON 객체만 정규표현식으로 추출하여 로드"""
@@ -257,6 +256,7 @@ def transcribe_audio_with_whisper(audio_file, client):
     
     # 2. UploadedFile 객체의 내용을 임시 파일에 기록
     temp_dir = tempfile.mkdtemp()
+    temp_audio_path = os.path.join(temp_dir, audio_file.name) 
     
     try:
         # 파일 확장자 확인 (Whisper가 지원하는 형식인지 확인)
@@ -292,6 +292,11 @@ def transcribe_audio_with_whisper(audio_file, client):
         # 임시 파일 정리 (try-except-finally 구문 보장)
         if os.path.exists(temp_audio_path):
              os.remove(temp_audio_path)
+        try:
+             os.rmdir(temp_dir)
+        except OSError:
+             # 임시 폴더 삭제 실패는 무시
+             pass
 
 
 def synthesize_and_play_audio(current_lang_key):
@@ -597,14 +602,14 @@ def render_interactive_quiz(quiz_data, current_lang):
     options_list = list(options_dict.values())
     
     selected_answer = st.radio(
-        L.get("select_answer", "정답을 선택하세요"),
+        L.get("select_answer", "正解を選択してください"),
         options=options_list,
         key=f"q_radio_{q_index}"
     )
 
     col1, col2 = st.columns(2)
 
-    if col1.button(L.get("check_answer", "정답 확인"), key=f"check_btn_{q_index}", disabled=st.session_state.quiz_submitted):
+    if col1.button(L.get("check_answer", "正解確認"), key=f"check_btn_{q_index}", disabled=st.session_state.quiz_submitted):
         user_choice_letter = selected_answer.split(')')[0] if selected_answer else None
         correct_answer_letter = q_data['correct_answer']
 
@@ -614,24 +619,24 @@ def render_interactive_quiz(quiz_data, current_lang):
         st.session_state.quiz_submitted = True
         
         if is_correct:
-            st.success(L.get("correct_answer", "정답입니다! 🎉"))
+            st.success(L.get("correct_answer", "正解です！ 🎉"))
         else:
-            st.error(L.get("incorrect_answer", "오답입니다.😞"))
+            st.error(L.get("incorrect_answer", "不正解です。😞"))
         
-        st.markdown(f"**{L.get('correct_is', '정답')}: {correct_answer_letter}**")
-        st.info(f"**{L.get('explanation', '해설')}:** {q_data['explanation']}")
+        st.markdown(f"**{L.get('correct_is', '正解')}**: {correct_answer_letter}")
+        st.info(f"**{L.get('explanation', '解説')}**: {q_data['explanation']}")
 
     if st.session_state.quiz_submitted:
         if q_index < num_questions - 1:
-            if col2.button(L.get("next_question", "다음 문항"), key=f"next_btn_{q_index}"):
+            if col2.button(L.get("next_question", "次の質問"), key=f"next_btn_{q_index}"):
                 st.session_state.current_question += 1
                 st.session_state.quiz_submitted = False
                 st.rerun()
         else:
             total_correct = st.session_state.quiz_results.count(True)
             total_questions = len(st.session_state.quiz_results)
-            st.success(f"**{L.get('quiz_complete', '퀴즈 완료!')}** {L.get('score', '점수')}: {total_correct}/{total_questions}")
-            if st.button(L.get("retake_quiz", "퀴즈 다시 풀기"), key="retake"):
+            st.success(f"**{L.get('quiz_complete', 'クイズ完了!')}** {L.get('score', 'スコア')}: {total_correct}/{total_questions}")
+            if st.button(L.get("retake_quiz", "クイズを再挑戦"), key="retake"):
                 st.session_state.current_question = 0
                 st.session_state.quiz_results = [None] * num_questions
                 st.session_state.quiz_submitted = False
@@ -738,7 +743,12 @@ LANG = {
         "deleting_history_progress": "이력 삭제 중...", # ⭐ 다국어 키 추가
         "search_history_label": "이력 키워드 검색", # ⭐ 다국어 키 추가
         "date_range_label": "날짜 범위 필터", # ⭐ 다국어 키 추가
-        "no_history_found": "검색 조건에 맞는 이력이 없습니다。" # ⭐ 다국어 키 추가
+        "no_history_found": "검색 조건에 맞는 이력이 없습니다。", # ⭐ 다국어 키 추가
+        "whisper_client_error": "❌ Whisper API Client 초기화 실패.",
+        "whisper_format_error": "오류: 지원하지 않는 오디오 형식입니다.",
+        "whisper_auth_error": "❌ Whisper API 인증 실패: API Key를 확인하세요.",
+        "whisper_processing": "음성 파일을 텍스트로 변환 중...",
+        "whisper_success": "✅ 음성 전사 완료! 텍스트 창을 확인하세요."
     },
     "en": {
         "title": "Personalized AI Study Coach",
@@ -890,7 +900,7 @@ LANG = {
         "response_generating": "応答生成中...", # ⭐ 다국어 키 추가
         "lstm_result_header": "達成度予測結果",
         "lstm_score_metric": "現在の予測達成度",
-        "lstm_score_info": "次のクイズの推定スコアは約 **{predicted_score:.1f}点**입니다。学習の成果を維持または向上させてください！",
+        "lstm_score_info": "次のクイズの推定スコアは約 **{predicted_score:.1f}点**です。学習の成果を維持または向上させてください！",
         "lstm_rerun_button": "新しい仮想データで予測",
 
         # ⭐ 시뮬레이터 관련 텍스트
@@ -922,21 +932,21 @@ LANG = {
         "customer_positive_response": "親切なご対応ありがとうございました。",
         "button_end_chat": "対応終了 (アンケートを依頼)",
         "agent_response_header": "✍️ エージェント応答",
-        "agent_response_placeholder": "顧客に返信 (必須情報の要求/확인、または解決策の提示)",
+        "agent_response_placeholder": "顧客に返信 (必須情報の要求/確認、または解決策の提示)",
         "send_response_button": "応答送信",
         "request_rebuttal_button": "顧客の次の反応を要求", 
         "new_simulation_button": "新しいシミュレーションを開始",
         "history_selectbox_label": "履歴を選択してロード:",
         "history_load_button": "選択された履歴をロード",
-        "delete_history_button": "❌ 全ての履歴を削除する", # ⭐ 다국어 키 추가
-        "delete_confirm_message": "Are you sure you want to delete ALL simulation history? This action cannot be undone.　本当にすべての履歴を削除しますか。削除しましたら、取消出来ません。", # ⭐ 다국어 키 추가
-        "delete_confirm_yes": "はい、削除します。", # ⭐ 다국어 키 추가
-        "delete_confirm_no": "いいえ、維持します。", # ⭐ 다국어 키 추가
-        "delete_success": "✅ 削除完了されました。", # ⭐ 다국어 키 추가
-        "deleting_history_progress": "履歴を削除中。。", # ⭐ 다국어 키 추가
-        "search_history_label": "キーワードで履歴を検索", # ⭐ 다국어 키 추가
-        "date_range_label": "日付の範囲をフィルター", # ⭐ 다국어 키 추가
-        "no_history_found": "条件に合致する履歴が見付りません" # ⭐ 다국어 키 추가
+        "delete_history_button": "❌ 全履歴を削除", # ⭐ 다국어 키 추가
+        "delete_confirm_message": "本当にすべてのシミュレーション履歴を削除してもよろしいですか？この操作は元に戻せません。", # ⭐ 다국어 키 추가
+        "delete_confirm_yes": "はい、削除します", # ⭐ 다국어 키 추가
+        "delete_confirm_no": "いいえ、維持します", # ⭐ 다국어 키 추가
+        "delete_success": "✅ 削除が完了されました!", # ⭐ 다국어 키 추가
+        "deleting_history_progress": "履歴削除中...", # ⭐ 다국어 키 추가
+        "search_history_label": "履歴キーワード検索", # ⭐ 다국어 키 추가
+        "date_range_label": "日付範囲フィルター", # ⭐ 다국어 키 추가
+        "no_history_found": "検索条件に一致する履歴はありません。" # ⭐ 다국어 키 추가
     }
 }
 
@@ -1148,6 +1158,16 @@ if feature_selection == L["simulator_tab"]:
     st.header(L["simulator_header"])
     st.markdown(L["simulator_desc"])
     
+    # ⭐ OpenAI Client 초기화 시도
+    openai_key = st.secrets.get("OPENAI_API_KEY")
+    openai_client = None
+    if openai_key:
+        try:
+            openai_client = OpenAI(api_key=openai_key)
+        except Exception as e:
+            st.warning(f"OpenAI Client 초기화 오류: {e}")
+            openai_client = None
+    
     # 1. TTS 유틸리티 (상태 표시기 및 JS 함수)를 페이지 상단에 삽입
     st.markdown(f'<div id="tts_status" style="padding: 5px; text-align: center; border-radius: 5px; background-color: #f0f0f0; margin-bottom: 10px;">{L["tts_status_ready"]}</div>', unsafe_allow_html=True)
     
@@ -1182,13 +1202,12 @@ if feature_selection == L["simulator_tab"]:
             histories = load_simulation_histories(db)
             
             # 2-1. 검색 필터
-            search_query = st.text_input(L["search_history_label"], key="history_search", value="")
+            search_query = st.text_input(L["search_history_label"], key="history_search")
             
             # 2-2. 날짜 필터 (st.date_input은 브라우저 로케일을 따름)
             today = datetime.now().date()
             default_start_date = today - timedelta(days=7)
             
-            # st.date_input은 날짜가 선택되지 않았을 때 (None)을 반환할 수 있으므로, 처리 로직을 개선
             date_range_input = st.date_input(
                 L["date_range_label"], 
                 value=[default_start_date, today],
@@ -1409,42 +1428,76 @@ if feature_selection == L["simulator_tab"]:
                 
                 st.markdown(f"### {L['agent_response_header']}") 
                 
-                # HTML과 JavaScript를 사용하여 Enter 키 전송 로직 삽입
+                # --- ⭐ Whisper 오디오 전사 기능 추가 ---
+                col_upload, col_text_area = st.columns([1, 2])
+                
+                # OpenAI Client 초기화 (Secrets에서 키를 로드)
+                openai_key = st.secrets.get("OPENAI_API_KEY")
+                openai_client = None
+                if openai_key:
+                    try:
+                        openai_client = OpenAI(api_key=openai_key)
+                    except Exception:
+                        openai_client = None
+                
+                # 전사 결과 저장소 초기화
+                if 'transcribed_text' not in st.session_state:
+                    st.session_state.transcribed_text = ""
+                
+                # 오디오 파일 업로드
+                with col_upload:
+                    if openai_client is None:
+                        st.warning(L.get("whisper_client_error", "OpenAI Key가 없어 음성 인식을 사용할 수 없습니다."))
+                        audio_file = None
+                    else:
+                        audio_file = st.file_uploader(L["button_mic_input"], type=["mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm"], key="simulator_audio_input_file")
+                
+                if audio_file:
+                    with st.spinner(L.get("whisper_processing", "음성 파일을 텍스트로 변환 중...")):
+                        transcribed_text = transcribe_audio_with_whisper(audio_file, openai_client)
+                        
+                        if transcribed_text.startswith("❌") or transcribed_text.startswith("오류"):
+                            st.error(transcribed_text)
+                            st.session_state.transcribed_text = ""
+                        else:
+                            st.session_state.transcribed_text = transcribed_text
+                            st.success(L.get("whisper_success", "✅ 음성 전사 완료! 텍스트 창을 확인하세요."))
+                        
+                        # 오디오 파일 처리 후 상태를 리셋하여 재전송 시 무한 루프 방지
+                        st.experimental_set_query_params(refresh=time.time())
+                        st.rerun() 
+
+                # st.text_area는 전사 결과를 기본값으로 사용
+                agent_response = col_text_area.text_area(
+                    L["agent_response_placeholder"], 
+                    value=st.session_state.transcribed_text,
+                    key="agent_response_area_text",
+                    height=150
+                )
+                
+                # --- Enter 키 전송 로직 ---
                 js_code_for_enter = f"""
                 <script>
-                // st.text_area의 키가 'agent_response_area_text'인 요소를 찾습니다.
                 const textarea = document.querySelector('textarea[key="agent_response_area_text"]');
                 const button = document.querySelector('button[key="send_agent_response"]');
                 
                 if (textarea && button) {{
                     textarea.addEventListener('keydown', function(event) {{
-                        // Shift + Enter 또는 Ctrl + Enter는 줄바꿈
-                        if (event.key === 'Enter' && (event.shiftKey || event.ctrlKey)) {{
-                            // 기본 동작(줄바꿈) 허용
-                        }} 
-                        // Enter만 눌렀을 때 전송
-                        else if (event.key === 'Enter') {{
-                            event.preventDefault(); // 기본 Enter 동작(줄바꿈) 방지
+                        if (event.key === 'Enter' && (!event.shiftKey && !event.ctrlKey)) {{
+                            event.preventDefault(); 
                             button.click();
                         }}
                     }});
                 }}
                 </script>
                 """
-                
-                # Streamlit에 JavaScript 삽입
                 st.components.v1.html(js_code_for_enter, height=0, width=0)
-                
-                # st.text_area를 사용하여 명시적인 입력 필드를 제공
-                agent_response = st.text_area(
-                    L["agent_response_placeholder"], 
-                    value="",
-                    key="agent_response_area_text",
-                    height=150
-                )
                 
                 if st.button(L["send_response_button"], key="send_agent_response"): 
                     if agent_response.strip():
+                        # 전송 후 전사 결과 상태 초기화
+                        st.session_state.transcribed_text = ""
+                        
                         st.session_state.simulator_messages.append(
                             {"role": "agent_response", "content": agent_response}
                         )
@@ -1502,7 +1555,11 @@ if feature_selection == L["simulator_tab"]:
                     """
                     
                     with st.spinner(L["response_generating"]): # ⭐ 다국어 적용
-                        customer_reaction = st.session_state.simulator_chain.predict(input=next_reaction_prompt)
+                        try:
+                            customer_reaction = st.session_state.simulator_chain.predict(input=next_reaction_prompt)
+                        except Exception as e:
+                            st.error(f"LLM 응답 생성 중 오류 발생: {e}")
+                            st.stop()
                         
                         # 긍정적 종료 키워드 확인 (대소문자 무시)
                         positive_keywords = ["감사", "thank you", "ありがとう", L['customer_positive_response'].lower().split('/')[-1].strip()]
