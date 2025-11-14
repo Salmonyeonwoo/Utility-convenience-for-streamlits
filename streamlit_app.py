@@ -964,9 +964,7 @@ with st.sidebar:
                 # Mock Chain을 설정하여 RAG 챗봇이 작동하도록 보장
                 st.session_state.conversation_chain = get_rag_chain(vector_store)
                 st.session_state.is_rag_ready = True
-                else:
-                    st.session_state.is_rag_ready = False
-                    st.error(L["embed_fail"])
+                
     elif not files_to_process:
         st.warning(L.get("warning_no_files")) 
 
