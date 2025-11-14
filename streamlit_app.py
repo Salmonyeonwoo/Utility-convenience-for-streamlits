@@ -160,7 +160,6 @@ LANG = {
         "saved_success": '저장 완료!',
         "delete_confirm_rec": '정말로 이 음성 기록을 삭제하시겠습니까? GCS 파일도 삭제됩니다.',
         "gcs_init_fail": 'GCS 초기화 실패. 권한 및 버킷 이름을 확인하세요.',
-        "firebase_init_fail": 'Firebase Admin 초기화 실패.',
         "upload_fail": 'GCS 오디오 파일 업로드 실패',
         "gcs_not_conf": 'GCS 미설정 또는 오디오 없음',
         "gcs_playback_fail": '오디오 재생 실패',
@@ -315,7 +314,7 @@ LANG = {
         "transcript_result": '転写結果:',
         "transcript_text": '転写テキスト',
         "llm_error_key": "⚠️ 警告: GEMINI API키가 설정되어 있지 않습니다. Streamlit Secrets에 'GEMINI_API_KEY'를 설치해주세요。",
-        "llm_error_init": "LLM 초기화 오류：API키를 확인해주세요。",
+        "llm_error_init": "LLM 初期化 오류：API키를 확인해주세요。",
         "simulation_warning_query": "顧客の問い合わせ内容を入力してください。",
         "simulation_no_key_warning": "⚠️ API키가 부족합니다。応答の生成は続行できません。",
         "simulation_advice_header": "AI対応ガイドライン",
@@ -349,7 +348,7 @@ LANG = {
         "date_range_label": "日付範囲フィルター", 
         "no_history_found": "検索条件に一致する履歴はありません。",
         "simulator_header": "AI顧客対応シミュレーター",
-        "simulator_desc": "困難な顧客의問い合わせに対してAIの対応草案とガイドラインを提供します。",
+        "simulator_desc": "困難な顧客の問い合わせに対してAIの対応草案とガイドラインを提供します。",
         "customer_query_label": "顧客の問い合わせ内容 (リンクを含む)", 
         "customer_type_label": "顧客の傾向", # <-- [필수 키]
         "customer_type_options": ["一般的な問い合わせ", "困難な顧客", "非常に不満な顧客"],
@@ -366,7 +365,7 @@ LANG = {
         "rag_desc": "アップロードされたドキュメントに基づいて質問に回答します。",
         "rag_input_placeholder": "学習資料について質問してください",
         "content_header": "カスタム学習コンテンツ生成",
-        "content_desc": "学習テーマと難易도에 맞춰 콘텐츠를 생성합니다。",
+        "content_desc": "学習テーマと難易度에 맞춰 콘텐츠를 생성합니다。",
         "topic_label": "学習テーマ",
         "level_label": "難易度",
         "content_type_label": "コンテンツ形式",
@@ -1215,7 +1214,12 @@ elif feature_selection == L["simulator_tab"]:
         
         current_lang_key = st.session_state.language 
 
-        if st.button(L["button_simulate"], key="start_simulation", disabled=st.session_state.initial_advice_provided):
+        if st.button(
+            L["button_simulate"], 
+            key="start_simulation", 
+            disabled=st.session_state.initial_advice_provided
+        ):
+            print("Simulation started!")
             if not customer_query: st.warning(L["simulation_warning_query"]); st.stop()
             
             st.session_state.simulator_memory.clear()
@@ -1240,8 +1244,14 @@ Customer Inquiry: {customer_query}
                 st.session_state.simulator_memory.chat_memory.add_ai_message(ai_advice_text)
                 st.session_state.initial_advice_provided = True
                 save_simulation_history(db, customer_query, customer_type_display, st.session_state.simulator_messages)
+                st.info(L["simulation_running"])
                 st.warning(L["simulation_no_key_warning"])
                 st.rerun() 
+
+            if st.session_state.initial_advice_provided:
+                st.success("Initial advice provided. Simulation button is disabled.")
+            else:
+                st.warning("Initial advice not provided yet. Click the button to proceed.")
             
             if LLM_API_KEY and st.session_state.is_llm_ready:
                 with st.spinner(L["response_generating"]):
