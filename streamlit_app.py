@@ -1250,17 +1250,22 @@ Customer Inquiry: {customer_query}
                 audio_mime_from_mic = mic_result.get('mime_type', 'audio/webm')
 
                 # 로직 변경: audio_file 대신 audio_bytes_from_mic 사용
+
+                # Assuming you replaced st.audio_input with a component that returns mic_result dict:
+
+
+                # This is where the error occurred because the following block was not indented.
                 if audio_bytes_from_mic is not None:
-                    # ... existing logic for transcription ...
-                
-                if audio_file is not None:
+                    # Use the logic for the *new* variable (audio_bytes_from_mic)
                     if openai_client is None:
                         st.error(L.get("whisper_client_error", "OpenAI Key가 없어 음성 인식을 사용할 수 없습니다."))
-                    else:
+                else:
                         with st.spinner(L.get("whisper_processing", "음성 파일을 텍스트로 변환 중...")):
                             try:
-                                # 전사 함수 호출
-                                transcribed_text = transcribe_audio_with_whisper(audio_file, openai_client, current_lang_key)
+                                # Use the function that takes bytes
+                                transcribed_text = transcribe_bytes_with_whisper(
+                                    audio_bytes_from_mic, audio_mime_from_mic
+                                )
                                 
                                 if transcribed_text.startswith("❌"):
                                     st.error(transcribed_text)
@@ -1269,13 +1274,10 @@ Customer Inquiry: {customer_query}
                                     st.session_state.last_transcript = transcribed_text
                                     st.success(L.get("whisper_success", "✅ 음성 전사 완료! 텍스트 창을 확인하세요."))
                                 
-                                # st.audio_input의 결과 반영을 위해 rerun
                                 st.rerun() 
-                                
                             except Exception as e:
                                 st.error(f"음성 전사 처리 중 오류 발생: {e}")
                                 st.session_state.last_transcript = ""
-
 
                 # st.text_area는 전사 결과를 기본값으로 사용
                 agent_response = col_text_area.text_area(
