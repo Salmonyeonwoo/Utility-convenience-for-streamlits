@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from datetime import datetime, timedelta # 날짜/시간 처리를 위해 추가
+from openai import OpenAI # ⭐ OpenAI SDK 임포트 (추가)
 
 # ⭐ Admin SDK 관련 라이브러리 임포트
 from firebase_admin import credentials, firestore, initialize_app, get_app
@@ -181,8 +182,6 @@ def load_simulation_histories(db):
     
     try:
         # 현재 선택된 언어 키로 필터링
-        # 참고: Firestore의 Query는 where 필터링이 없으면 작동하지 않으므로,
-        # 언어 키 필터를 사용하여 현재 앱의 언어와 일치하는 이력만 가져옵니다.
         histories = (
             db.collection("simulation_histories")
             .where("language_key", "==", current_lang_key) # ⭐ 언어 필터링 적용
@@ -218,11 +217,8 @@ def delete_all_history(db):
     try:
         # 이터레이션을 위해 스트림 사용
         docs = db.collection("simulation_histories").stream()
-        
-        # 삭제 작업 실행
-        with st.spinner(L["deleting_history_progress"]): 
-            for doc in docs:
-                doc.reference.delete()
+        for doc in docs:
+            doc.reference.delete()
         
         # 세션 상태도 초기화
         st.session_state.simulator_messages = []
@@ -248,6 +244,58 @@ def clean_and_load_json(text):
         except json.JSONDecodeError:
             return None
     return None
+
+# ⭐ Whisper API 연동 함수 (OpenAI Client 인스턴스를 인수로 받음)
+def transcribe_audio_with_whisper(audio_file, openai_client, lang_key):
+    """Whisper API를 사용하여 오디오 파일을 텍스트로 전사합니다."""
+    if openai_client is None:
+        return LANG[lang_key].get("whisper_client_error", "오류: Whisper API Client가 초기화되지 않았습니다.")
+    
+    # 템포러리 디렉토리와 파일 경로 설정
+    temp_dir = tempfile.mkdtemp()
+    temp_audio_path = os.path.join(temp_dir, "uploaded_audio") 
+    
+    # Streamlit UploadedFile 객체의 내용을 임시 파일에 기록
+    try:
+        # 파일 확장자 확인 및 추가 (Whisper가 지원하는 형식인지 확인)
+        file_extension = audio_file.name.split('.')[-1].lower()
+        if file_extension not in ["mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm"]:
+             return LANG[lang_key].get("whisper_format_error", f"오류: 지원하지 않는 오디오 형식 ({file_extension})입니다.")
+
+        temp_audio_path += f".{file_extension}"
+
+        with open(temp_audio_path, "wb") as f:
+            f.write(audio_file.read())
+        
+        # 언어 코드 설정 (Whisper는 BCP-47 포맷을 사용)
+        whisper_lang = {
+            "ko": "ko",
+            "en": "en",
+            "ja": "ja"
+        }.get(lang_key, "en") # 기본값은 영어
+
+        with open(temp_audio_path, "rb") as audio_data:
+            # Whisper API 호출
+            transcript = openai_client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_data,
+                language=whisper_lang
+            )
+        
+        # API 응답에서 텍스트 추출
+        return transcript.text
+    
+    except Exception as e:
+        error_msg = str(e)
+        if "Authentication" in error_msg or "api_key" in error_msg:
+             return LANG[lang_key].get("whisper_auth_error", "❌ Whisper API 인증 실패: API Key를 확인하세요.")
+        return f"❌ Whisper API 호출 실패: {error_msg}"
+    finally:
+        # 임시 파일 정리 (try-except-finally 구문 보장)
+        if os.path.exists(temp_audio_path):
+             os.remove(temp_audio_path)
+        os.rmdir(temp_dir)
+
 
 def synthesize_and_play_audio(current_lang_key):
     """TTS API 대신 Web Speech API를 위한 JS 유틸리티를 Streamlit에 삽입합니다."""
@@ -552,14 +600,14 @@ def render_interactive_quiz(quiz_data, current_lang):
     options_list = list(options_dict.values())
     
     selected_answer = st.radio(
-        L.get("select_answer", "正解を選択してください"),
+        L.get("select_answer", "정답을 선택하세요"),
         options=options_list,
         key=f"q_radio_{q_index}"
     )
 
     col1, col2 = st.columns(2)
 
-    if col1.button(L.get("check_answer", "正解確認"), key=f"check_btn_{q_index}", disabled=st.session_state.quiz_submitted):
+    if col1.button(L.get("check_answer", "정답 확인"), key=f"check_btn_{q_index}", disabled=st.session_state.quiz_submitted):
         user_choice_letter = selected_answer.split(')')[0] if selected_answer else None
         correct_answer_letter = q_data['correct_answer']
 
@@ -569,24 +617,24 @@ def render_interactive_quiz(quiz_data, current_lang):
         st.session_state.quiz_submitted = True
         
         if is_correct:
-            st.success(L.get("correct_answer", "正解です！ 🎉"))
+            st.success(L.get("correct_answer", "정답입니다! 🎉"))
         else:
-            st.error(L.get("incorrect_answer", "不正解です。😞"))
+            st.error(L.get("incorrect_answer", "오답입니다.😞"))
         
-        st.markdown(f"**{L.get('correct_is', '正解')}**: {correct_answer_letter}")
-        st.info(f"**{L.get('explanation', '解説')}**: {q_data['explanation']}")
+        st.markdown(f"**{L.get('correct_is', '정답')}: {correct_answer_letter}**")
+        st.info(f"**{L.get('explanation', '해설')}:** {q_data['explanation']}")
 
     if st.session_state.quiz_submitted:
         if q_index < num_questions - 1:
-            if col2.button(L.get("next_question", "次の質問"), key=f"next_btn_{q_index}"):
+            if col2.button(L.get("next_question", "다음 문항"), key=f"next_btn_{q_index}"):
                 st.session_state.current_question += 1
                 st.session_state.quiz_submitted = False
                 st.rerun()
         else:
             total_correct = st.session_state.quiz_results.count(True)
             total_questions = len(st.session_state.quiz_results)
-            st.success(f"**{L.get('quiz_complete', 'クイズ完了!')}** {L.get('score', 'スコア')}: {total_correct}/{total_questions}")
-            if st.button(L.get("retake_quiz", "クイズを再挑戦"), key="retake"):
+            st.success(f"**{L.get('quiz_complete', '퀴즈 완료!')}** {L.get('score', '점수')}: {total_correct}/{total_questions}")
+            if st.button(L.get("retake_quiz", "퀴즈 다시 풀기"), key="retake"):
                 st.session_state.current_question = 0
                 st.session_state.quiz_results = [None] * num_questions
                 st.session_state.quiz_submitted = False
@@ -673,7 +721,7 @@ LANG = {
         
         # ⭐ 대화형/종료 메시지
         "button_mic_input": "음성 입력",
-        "prompt_customer_end": "고객님의 추가 문의 사항이 없어, 이 상담 채팅을 종료하겠습니다.",
+        "prompt_customer_end": "고객님의 추가 문의 사항이 없어, 이 상담 채팅을 종료하겠습니다。",
         "prompt_survey": "고객 문의 센터에 연락 주셔서 감사드리며, 추가로 저희 응대 솔루션에 대한 설문 조사에 응해 주시면 감사하겠습니다. 추가 문의 사항이 있으시면 언제든지 연락 주십시오。",
         "customer_closing_confirm": "또 다른 문의 사항은 없으신가요?",
         "customer_positive_response": "좋은 말씀/친절한 상담 감사드립니다。",
@@ -685,15 +733,15 @@ LANG = {
         "new_simulation_button": "새 시뮬레이션 시작",
         "history_selectbox_label": "로드할 이력을 선택하세요:",
         "history_load_button": "선택된 이력 로드",
-        "delete_history_button": "❌ 모든 이력 삭제", 
-        "delete_confirm_message": "정말로 모든 상담 이력을 삭제하시겠습니까? 되돌릴 수 없습니다。", 
-        "delete_confirm_yes": "예, 삭제합니다", 
-        "delete_confirm_no": "아니오, 유지합니다", 
-        "delete_success": "✅ 모든 상담 이력 삭제 완료!",
-        "deleting_history_progress": "이력 삭제 중...", 
-        "search_history_label": "이력 키워드 검색", 
-        "date_range_label": "날짜 범위 필터", 
-        "no_history_found": "검색 조건에 맞는 이력이 없습니다。" 
+        "delete_history_button": "❌ 모든 이력 삭제", # ⭐ 다국어 키 추가
+        "delete_confirm_message": "정말로 모든 상담 이력을 삭제하시겠습니까? 되돌릴 수 없습니다。", # ⭐ 다국어 키 추가
+        "delete_confirm_yes": "예, 삭제합니다", # ⭐ 다국어 키 추가
+        "delete_confirm_no": "아니오, 유지합니다", # ⭐ 다국어 키 추가
+        "delete_success": "✅ 모든 상담 이력 삭제 완료!", # ⭐ 다국어 키 추가
+        "deleting_history_progress": "이력 삭제 중...", # ⭐ 다국어 키 추가
+        "search_history_label": "이력 키워드 검색", # ⭐ 다국어 키 추가
+        "date_range_label": "날짜 범위 필터", # ⭐ 다국어 키 추가
+        "no_history_found": "검색 조건에 맞는 이력이 없습니다。" # ⭐ 다국어 키 추가
     },
     "en": {
         "title": "Personalized AI Study Coach",
@@ -845,7 +893,7 @@ LANG = {
         "response_generating": "応答生成中...", # ⭐ 다국어 키 추가
         "lstm_result_header": "達成度予測結果",
         "lstm_score_metric": "現在の予測達成度",
-        "lstm_score_info": "次のクイズの推定スコアは約 **{predicted_score:.1f}点**です。学習の成果を維持または向上させてください！",
+        "lstm_score_info": "次のクイズの推定スコアは約 **{predicted_score:.1f}点**입니다。学習の成果を維持または向上させてください！",
         "lstm_rerun_button": "新しい仮想データで予測",
 
         # ⭐ 시뮬레이터 관련 텍스트
@@ -1139,7 +1187,7 @@ if feature_selection == L["simulator_tab"]:
             # 2-1. 검색 필터
             search_query = st.text_input(L["search_history_label"], key="history_search")
             
-            # 2-2. 날짜 필터 (최근 7일 범위로 설정)
+            # 2-2. 날짜 필터 (st.date_input은 브라우저 로케일을 따름)
             today = datetime.now().date()
             default_start_date = today - timedelta(days=7)
             
