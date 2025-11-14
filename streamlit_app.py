@@ -43,7 +43,7 @@ from langchain.prompts import PromptTemplate
 DEFAULT_LANG = "ko"
 # st.session_state 접근은 st.set_page_config 이후로 미룹니다.
 
-LANG = {    
+LANG = {
     "ko": {
         "title": "개인 맞춤형 AI 학습 코치 (음성 및 DB 통합)",
         "sidebar_title": "📚 AI Study Coach 설정",
