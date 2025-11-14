@@ -422,8 +422,17 @@ if 'last_transcript' not in st.session_state:
     st.session_state.last_transcript = ""
 if 'sim_audio_upload_key' not in st.session_state:
     st.session_state.sim_audio_upload_key = 0
+if 'last_transcript' not in st.session_state:
+    st.session_state.last_transcript = ""
+if 'sim_audio_upload_key' not in st.session_state:
+    st.session_state.sim_audio_upload_key = 0
+if 'sim_audio_bytes' not in st.session_state:
+    st.session_state.sim_audio_bytes = None
+if 'sim_audio_mime' not in st.session_state:
+    st.session_state.sim_audio_mime = 'audio/webm'
 
 L = LANG[st.session_state.language]
+
 
 
 # -----------------------------
@@ -1234,37 +1243,42 @@ Customer Inquiry: {customer_query}
                 
                     # ⭐ st.audio_input 위젯 사용
                     # 오디오 파일 녹음/업로드 (mic_recorder component 사용)
+                # ... (중략) ...
+
+                # 오디오 파일 녹음/업로드 (mic_recorder component 사용)
                 with col_audio:
-                    # ⭐ mic_recorder component 사용
-                    # mic_recorder는 bytes 대신 audio_bytes, mime_type을 가진 dictionary를 반환합니다.
-                    # start_prompt와 stop_prompt는 L["button_mic_input"] 등을 사용해야 합니다.
+                    # ⭐ mic_recorder component 사용: 녹음 결과(dict)를 mic_result에 저장합니다.
                     mic_result = mic_recorder(
                         start_prompt=L["button_mic_input"], 
                         stop_prompt="✔️ Stop Recording", # 임시 텍스트
                         key="simulator_audio_input_file"
                     )
-                    # mic_result는 {'audio_bytes': bytes, 'mime_type': str} 형태
                 
-                # audio_file 대신 mic_result.get('audio_bytes') 사용
-                audio_bytes_from_mic = mic_result.get('audio_bytes') if mic_result else None
-                audio_mime_from_mic = mic_result.get('mime_type', 'audio/webm') if mic_result else 'audio/webm'
-
-                # 로직 변경: audio_file 대신 audio_bytes_from_mic 사용
-
-                # Assuming you replaced st.audio_input with a component that returns mic_result dict:
-
-
-                # This is where the error occurred because the following block was not indented.
-                if audio_bytes_from_mic is not None:
-                    # Use the logic for the *new* variable (audio_bytes_from_mic)
-                    if openai_client is None:
+                # audio_bytes_from_mic와 mime_type을 세션 상태에 저장 및 업데이트
+                if mic_result and mic_result.get('audio_bytes'):
+                    # 녹음된 오디오 데이터가 존재할 경우에만 세션 상태를 업데이트
+                    st.session_state['sim_audio_bytes'] = mic_result['audio_bytes']
+                    st.session_state['sim_audio_mime'] = mic_result.get('mime_type', 'audio/webm')
+                    st.info("녹음 완료! 전사 버튼을 눌러주세요.")
+                
+                # --- [수정] 전사 버튼 추가 및 로직 분리 ---
+                col_transcribe, _ = st.columns([1, 2])
+                
+                if col_transcribe.button(L["transcribe_btn"], key='start_whisper_transcribe'):
+                    # 버튼을 눌렀을 때만 전사 로직 실행
+                    audio_bytes_to_transcribe = st.session_state.get('sim_audio_bytes')
+                    audio_mime_to_transcribe = st.session_state.get('sim_audio_mime', 'audio/webm')
+                    
+                    if audio_bytes_to_transcribe is None:
+                        st.warning("먼저 마이크로 녹음을 완료하거나 오디오 파일을 업로드하세요.")
+                    elif openai_client is None:
                         st.error(L.get("whisper_client_error", "OpenAI Key가 없어 음성 인식을 사용할 수 없습니다."))
-                else:
+                    else:
                         with st.spinner(L.get("whisper_processing", "음성 파일을 텍스트로 변환 중...")):
                             try:
-                                # Use the function that takes bytes
+                                # transcribe_bytes_with_whisper 함수 호출
                                 transcribed_text = transcribe_bytes_with_whisper(
-                                    audio_bytes_from_mic, audio_mime_from_mic
+                                    audio_bytes_to_transcribe, audio_mime_to_transcribe
                                 )
                                 
                                 if transcribed_text.startswith("❌"):
@@ -1274,9 +1288,11 @@ Customer Inquiry: {customer_query}
                                     st.session_state.last_transcript = transcribed_text
                                     st.success(L.get("whisper_success", "✅ 음성 전사 완료! 텍스트 창을 확인하세요."))
                                 
+                                # 전사 완료 후 오디오 데이터는 유지하고, 텍스트 에어리어 업데이트를 위해 rerun
                                 st.rerun() 
+                                
                             except Exception as e:
-                                # 이 부분이 현재 오류를 포착하는 곳입니다.
+                                # 이전 오류 (NoneType)를 여기서 안전하게 처리
                                 st.error(f"음성 전사 처리 중 오류 발생: {e}")
                                 st.session_state.last_transcript = ""
 
@@ -1288,6 +1304,7 @@ Customer Inquiry: {customer_query}
                     height=150
                 )
                 
+                                
                 # --- Enter 키 전송 로직 ---
                 js_code_for_enter = f"""
                 <script>
