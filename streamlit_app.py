@@ -928,6 +928,15 @@ LANG = {
         "new_simulation_button": "新しいシミュレーションを開始",
         "history_selectbox_label": "履歴を選択してロード:",
         "history_load_button": "選択された履歴をロード"
+        "delete_history_button": "❌ 全ての履歴を削除する", # ⭐ 다국어 키 추가
+        "delete_confirm_message": "Are you sure you want to delete ALL simulation history? This action cannot be undone.　本当にすべての履歴を削除しますか。削除しましたら、取消出来ません。", # ⭐ 다국어 키 추가
+        "delete_confirm_yes": "はい、削除します。", # ⭐ 다국어 키 추가
+        "delete_confirm_no": "いいえ、維持します。", # ⭐ 다국어 키 추가
+        "delete_success": "✅ 削除完了されました。", # ⭐ 다국어 키 추가
+        "deleting_history_progress": "履歴を削除中。。", # ⭐ 다국어 키 추가
+        "search_history_label": "キーワードで履歴を検索", # ⭐ 다국어 키 추가
+        "date_range_label": "日付の範囲をフィルター", # ⭐ 다국어 키 추가
+        "no_history_found": "条件に合致する履歴が見付りません" # ⭐ 다국어 키 추가
     }
 }
 
