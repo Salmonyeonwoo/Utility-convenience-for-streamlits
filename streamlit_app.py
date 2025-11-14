@@ -31,7 +31,6 @@ from google.cloud.firestore import Query
 from langchain.chains import ConversationalRetrievalChain, ConversationChain
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_community.vectorstores import FAISS
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.memory import ConversationBufferMemory
 from langchain.schema.document import Document
@@ -40,6 +39,7 @@ from streamlit_mic_recorder import mic_recorder # Assuming this is the desired c
 from tensorflow.keras.models import Sequential # Re-enabled for LSTM mock
 from langchain_openai import ChatOpenAI 
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 # -----------------------------
 # 1. Config & I18N (다국어 지원)
 # -----------------------------
@@ -833,19 +833,12 @@ LLM_MODEL = "gpt-3.5-turbo" # 사용할 OpenAI 모델 지정
 
 if 'llm' not in st.session_state and LLM_API_KEY:
     try:
-        # ChatOpenAI 사용 (RAG/Simulator)
+        # LLM (ChatOpenAI) 초기화
         st.session_state.llm = ChatOpenAI(model=LLM_MODEL, temperature=0.7, openai_api_key=LLM_API_KEY)
         
-        # 임베딩도 OpenAI의 Embeddings 모델로 치환
-        # 주: Langchain에서 OpenAIEmbeddings는 별도 모듈 임포트 필요 (혹은 GoogleGenerativeAIEmbeddings를 Mock 처리)
-        # 임베딩은 그대로 Mock 객체를 사용하거나, OpenAI Embeddings를 사용해야 함.
-        # 현재는 Mock 객체가 있으므로, 오류 방지를 위해 임베딩 초기화 코드를 제거하거나 Mock에 의존합니다.
-        
-        # ⭐ 임베딩 로직은 복잡해지므로, RAG가 Mock 객체를 사용하도록 의존하는 상태를 유지하고
-        #    LLM(Chat)만 OpenAI로 변경하는 것을 권장합니다.
-        
-        # [옵션 1] (권장): LLM만 OpenAI로 바꾸고 Embeddings는 Mock에 의존
-        # st.session_state.embeddings = GoogleGenerativeAIEmbeddings(...) 이 코드를 제거하거나 주석 처리
+        # ⭐ [수정] st.session_state.embeddings를 OpenAIEmbeddings로 초기화
+        # load_index_from_firestore 호출을 위해 반드시 필요합니다.
+        st.session_state.embeddings = OpenAIEmbeddings(openai_api_key=LLM_API_KEY)
         
         st.session_state.is_llm_ready = True
         
