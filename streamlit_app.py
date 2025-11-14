@@ -12,10 +12,9 @@ import re
 import base64
 import io
 import numpy as np
-# from bs4 import BeautifulSoup # Placeholder functions do not need these imports
-from matplotlib import pyplot as plt # Re-enabled for LSTM visualization
-from tensorflow.keras.models import Sequential # Re-enabled for LSTM mock
-from tensorflow.keras.layers import LSTM, Dense # Re-enabled for LSTM mock
+from matplotlib import pyplot as plt
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
 from datetime import datetime, timedelta, timezone
 from openai import OpenAI
 
@@ -35,16 +34,13 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.memory import ConversationBufferMemory
 from langchain.schema.document import Document
 from langchain.prompts import PromptTemplate
-from streamlit_mic_recorder import mic_recorder # Assuming this is the desired component
-from tensorflow.keras.models import Sequential # Re-enabled for LSTM mock
-from langchain_openai import ChatOpenAI 
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from streamlit_mic_recorder import mic_recorder
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings # OpenAI LLM 및 임베딩 사용
+
 # -----------------------------
 # 1. Config & I18N (다국어 지원)
 # -----------------------------
 DEFAULT_LANG = "ko"
-# st.session_state 접근은 st.set_page_config 이후로 미룹니다.
 
 LANG = {
     "ko":{
@@ -237,6 +233,8 @@ LANG = {
         "search_history_label": "Search History by Keyword", 
         "date_range_label": "Date Range Filter", 
         "no_history_found": "No history found matching the criteria.",
+        "simulator_header": "AI Customer Response Simulator",
+        "simulator_desc": "Provides AI draft responses and guidelines for difficult customer inquiries.",
         "title": "Personalized AI Study Coach (Voice & DB Integration)",
         "sidebar_title": "📚 AI Study Coach Settings",
         "file_uploader": "Upload Study Materials (PDF, TXT, HTML)",
@@ -341,11 +339,13 @@ LANG = {
         "delete_history_button": "❌ 全履歴を削除", 
         "delete_confirm_message": "本当にすべてのシミュレーション履歴を削除してもよろしいですか？この操作は元に戻せません。", 
         "delete_confirm_yes": "はい、削除します", 
-        "delete_confirm_no": "いいえ、維持します", 
+        "delete_confirm_no": "いいえ, 유지합니다", 
         "deleting_history_progress": "履歴削除中...", 
         "search_history_label": "履歴キーワード検索", 
         "date_range_label": "日付範囲フィルター", 
         "no_history_found": "検索条件に一致する履歴はありません。",
+        "simulator_header": "AI顧客対応シミュレーター",
+        "simulator_desc": "困難な顧客の問い合わせに対してAIの対応草案とガイドラインを提供します。",
         "title": "パーソナライズAI学習コーチ (音声・DB統合)",
         "sidebar_title": "📚 AI学習コーチ設定",
         "file_uploader": "学習資料をアップロード (PDF, TXT, HTML)",
@@ -386,7 +386,7 @@ LANG = {
         "quiz_original_response": "LLM 原本応答",
         "firestore_loading": "データベースからRAGインデックスをロード中...",
         "db_save_complete": "(DB保存完了)", 
-        "data_analysis_progress": "資料分析および学習DB構築中...", 
+        "data_analysis_progress": "資料分析 및 학습 DB 구축 중...", 
         "response_generating": "応答生成中...", 
         "lstm_result_header": "達成度予測結果",
         "lstm_score_metric": "現在の予測達成度",
@@ -397,8 +397,7 @@ LANG = {
         "empty_response_warning": "応答を入力してください。",
     }
 }
-
-# st.set_page_config는 스크립트 시작 시 한 번만 호출되어야 합니다.
+# st.session_state는 스크립트 시작 시 한 번만 호출되어야 합니다.
 if 'language' not in st.session_state:
     st.session_state.language = DEFAULT_LANG
 if 'is_llm_ready' not in st.session_state:
@@ -423,17 +422,15 @@ if 'last_transcript' not in st.session_state:
     st.session_state.last_transcript = ""
 if 'sim_audio_upload_key' not in st.session_state:
     st.session_state.sim_audio_upload_key = 0
-if 'last_transcript' not in st.session_state:
-    st.session_state.last_transcript = ""
-if 'sim_audio_upload_key' not in st.session_state:
-    st.session_state.sim_audio_upload_key = 0
 if 'sim_audio_bytes' not in st.session_state:
     st.session_state.sim_audio_bytes = None
 if 'sim_audio_mime' not in st.session_state:
     st.session_state.sim_audio_mime = 'audio/webm'
+# ⭐ [추가] 마이크 녹음 데이터의 안정적인 저장을 위한 raw bytes 저장소
+if 'sim_audio_bytes_raw' not in st.session_state: 
+    st.session_state.sim_audio_bytes_raw = None
 
 L = LANG[st.session_state.language]
-
 
 
 # -----------------------------
@@ -610,12 +607,13 @@ def delete_audio_record(db, bucket_name, doc_id: str):
     doc_ref.delete()
     return True
 
-def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = 'audio/webm'):
+def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = 'audio/webm', lang_code: str = 'en'):
     L = LANG[st.session_state.language]
     openai_client = init_openai_client(L)[0] 
     if openai_client is None:
         raise RuntimeError(L['openai_missing'])
     
+    # LangChain 언어 코드 맵핑 (ko, en, ja)
     whisper_lang_map = {
         'ko': 'ko',
         'en': 'en',
@@ -637,11 +635,14 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = 'audio/we
             res = openai_client.audio.transcriptions.create(
                 model='whisper-1', 
                 file=af,
-                response_format='text'
+                response_format='text',
+                # ⭐ 언어 코드 추가
+                language=whisper_language 
             )
         return res.strip() or ''
     except Exception as e:
-        raise RuntimeError(f"{L['error']} Whisper: {e}")
+        # API 오류가 발생하면, 오류 메시지를 텍스트로 반환하여 UI에 표시
+        return f"❌ {L['error']} Whisper: {e}"
     finally:
         try:
             os.remove(tmp.name)
@@ -695,10 +696,8 @@ def delete_all_history(db):
     except Exception as e: st.error(f"{L.get('delete_fail')}: {e}")
 
 # --- Utility Placeholder Functions ---
-# --- Utility Placeholder Functions ---
 def get_document_chunks(files):
     return [] 
-
 
 def get_vector_store(text_chunks):
     # Mock Vector Store 반환 (성공 가정)
@@ -764,6 +763,8 @@ def force_rerun_lstm():
     st.rerun() 
 def render_interactive_quiz(quiz_data, current_lang):
     st.warning("Quiz UI Placeholder")
+    
+# ⭐ [수정] TTS API 호출 로직을 Python 서버 측으로 이동하고 OpenAI TTS 사용
 def synthesize_and_play_audio(text_to_speak, current_lang_key):
     L = LANG[current_lang_key]
     openai_client = init_openai_client(L)[0]
@@ -772,10 +773,6 @@ def synthesize_and_play_audio(text_to_speak, current_lang_key):
         st.error(L['openai_missing'])
         return None, f"❌ {L['tts_status_error']} (Client Missing)"
 
-
-    # TTS 음성 선택 (언어에 따른 대략적인 음성 선택)
-    # Whisper는 다국어를 지원하지만, TTS는 현재 en, ja 등 제한적이며, 
-    # voice 파라미터는 한국어 지원이 제한적일 수 있으므로 중립적인 voice를 사용합니다.
     tts_voice = 'nova' # 여성 목소리, 모든 언어에 사용 가능 (현재 TTS-1 모델 지원)
     
     # 음성 파일 생성 및 오디오 바이트 반환
@@ -785,13 +782,14 @@ def synthesize_and_play_audio(text_to_speak, current_lang_key):
             voice=tts_voice,
             input=text_to_speak
         )
-        # response.content는 MP3 바이너리 데이터입니다.
         return response.content, f"✅ {L['tts_status_success']}"
     except Exception as e:
         return None, f"❌ {L['tts_status_error']} (OpenAI TTS Error: {e})"
+        
 def render_tts_button(text_to_speak, current_lang_key):
     L = LANG[current_lang_key]
-    button_key = f"tts_{hash(text_to_speak)}_{time.time()}" # time.time() 추가하여 키 충돌 방지
+    # ⭐ [수정] 버튼 키를 고유하게 만들되, st.audio 키는 고정적으로 만듭니다.
+    button_key = f"tts_button_{hash(text_to_speak)}_{time.time()}" 
     audio_player_key = f"tts_player_{hash(text_to_speak)}"
     
     if st.button(L.get("button_listen_audio"), key=button_key):
@@ -803,10 +801,10 @@ def render_tts_button(text_to_speak, current_lang_key):
                 st.error(status_msg)
             elif audio_bytes:
                 # MP3 오디오 바이트를 Streamlit 오디오 위젯으로 재생
-                st.audio(audio_bytes, format='audio/mp3', autoplay=True, key=audio_player_key)
-                # st.success(L['tts_status_success']) # 오디오 위젯과 메시지가 겹치므로 생략
+                st.audio(audio_bytes, format='audio/mp3', autoplay=True, key=audio_player_key) 
             else:
                 st.error(status_msg)
+                
 def clean_and_load_json(text):
     match = re.search(r'```json\s*(.*?)\s*```', text, re.DOTALL)
     if match: text = match.group(1)
@@ -841,30 +839,13 @@ openai_client = openai_client_obj
 st.session_state.openai_init_msg = openai_msg
 
 # --- LLM 초기화 ---
-# --- LLM 초기화 ---
-# 시뮬레이터/RAG용 LLM 키로 OPENAI_API_KEY를 사용하도록 변경
-# --- 클라이언트 초기화 실행 ---
-# ... (중략) ...
-
-openai_client_obj, openai_msg = init_openai_client(L)
-openai_client = openai_client_obj
-st.session_state.openai_init_msg = openai_msg
-
-# --- LLM 초기화 ---
-# OPENAI_API_KEY만 사용하도록 명확히 변경
 LLM_API_KEY = os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
 LLM_MODEL = "gpt-3.5-turbo" 
 
 if 'llm' not in st.session_state and LLM_API_KEY:
     try:
-        # LLM (ChatOpenAI) 및 임베딩 (OpenAIEmbeddings) 초기화
-        from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-
         st.session_state.llm = ChatOpenAI(model=LLM_MODEL, temperature=0.7, openai_api_key=LLM_API_KEY)
-        
-        # ⭐ [핵심 수정] OpenAIEmbeddings로 초기화
         st.session_state.embeddings = OpenAIEmbeddings(openai_api_key=LLM_API_KEY)
-        
         st.session_state.is_llm_ready = True
         
         SIMULATOR_PROMPT = PromptTemplate(
@@ -881,21 +862,17 @@ if 'llm' not in st.session_state and LLM_API_KEY:
         st.session_state.llm_init_error_msg = f"{L['llm_error_init']} (OpenAI): {e}"
         st.session_state.is_llm_ready = False
 elif not LLM_API_KEY:
-    # OpenAI 키가 없음을 알림 (기존 L["llm_error_key"] 대신 L["openai_missing"] 사용)
     st.session_state.llm_init_error_msg = L["openai_missing"] 
 
 # RAG Index Loading
 if st.session_state.get('firestore_db') and 'conversation_chain' not in st.session_state and st.session_state.is_llm_ready:
     loaded_index = load_index_from_firestore(st.session_state.firestore_db, st.session_state.embeddings)
     
-    # ⭐ [핵심 수정] loaded_index가 None이면 Mock으로 채워 오류 메시지를 피합니다.
     if loaded_index:
         st.session_state.conversation_chain = get_rag_chain(loaded_index)
         st.session_state.is_rag_ready = True
         st.session_state.firestore_load_success = True
     else:
-        # Mock index가 없더라도, RAG 챗봇 탭에서 오류 메시지가 아닌
-        # "자료 분석 시작" 유도 메시지를 보여주기 위해 상태만 업데이트
         st.session_state.firestore_load_success = False
         st.session_state.is_rag_ready = False
 
@@ -915,9 +892,7 @@ with st.sidebar:
     
     if selected_lang_key != st.session_state.language:
         st.session_state.language = selected_lang_key
-        # L 업데이트
         L = LANG[st.session_state.language]
-        # LLM 관련 세션 상태 초기화 메시지도 업데이트
         if not st.session_state.is_llm_ready:
             st.session_state.llm_init_error_msg = L["llm_error_key"]
         st.rerun()
@@ -935,15 +910,12 @@ with st.sidebar:
         st.success("✅ LLM 및 임베딩 클라이언트 준비 완료")
 
     # DB & GCS 상태 표시
-    # DB 메시지를 동적으로 업데이트
     if "✅" in st.session_state.db_init_msg: st.success(st.session_state.db_init_msg)
     else: st.warning(L.get("firebase_init_fail") if "🔥" in st.session_state.db_init_msg else st.session_state.db_init_msg)
     
-    # GCS 메시지를 동적으로 업데이트
     if "✅" in st.session_state.gcs_init_msg: st.success(st.session_state.gcs_init_msg)
     else: st.warning(L.get("gcs_missing") if "GCS bucket is not configured" in st.session_state.gcs_init_msg else st.session_state.gcs_init_msg)
     
-    # OpenAI 메시지를 동적으로 업데이트
     if "✅" in st.session_state.openai_init_msg: st.success(st.session_state.openai_init_msg)
     else: st.warning(L.get("openai_missing") if "missing" in st.session_state.openai_init_msg else st.session_state.openai_init_msg)
 
@@ -962,12 +934,8 @@ with st.sidebar:
                 text_chunks = get_document_chunks(files_to_process)
                 vector_store = get_vector_store(text_chunks)
                 
-                # if vector_store: 대신 무조건 성공했다고 가정하고 Mock Chain을 설정합니다.
-                
-                # ⭐ [핵심 수정] 오류 우회를 위해 Mock 성공 로직 강제 실행
+                # 오류 우회를 위해 Mock 성공 로직 강제 실행
                 if vector_store is None:
-                    # Mock Vector Store가 None이라도, 성공했다고 가정하고 Mock Chain을 만듭니다.
-                    # text_chunks의 길이를 1로 가정합니다.
                     count = 1 
                 else:
                     count = len(text_chunks) if text_chunks else 1
@@ -975,7 +943,6 @@ with st.sidebar:
                 save_success = save_index_to_firestore(st.session_state.firestore_db, vector_store)
                 st.success(L["embed_success"].format(count=count) + (" " + L["db_save_complete"] if save_success else " (DB Save Failed)"))
                 
-                # Mock Chain을 설정하여 RAG 챗봇이 작동하도록 보장
                 st.session_state.conversation_chain = get_rag_chain(vector_store)
                 st.session_state.is_rag_ready = True
                 
@@ -1008,7 +975,7 @@ if feature_selection == L["voice_rec_header"]:
         # Audio Input Widget
         audio_obj = None
         try:
-            # 현재 Streamlit 환경에서 사용할 수 있도록 st.file_uploader만 사용하도록 대체
+            # st.file_uploader를 사용
             audio_obj = st.file_uploader(L['uploaded_file'], type=['wav', 'mp3', 'm4a', 'webm'], key='main_file_uploader')
             st.caption(f"({L['uploaded_file']}만 지원)")
         except Exception:
@@ -1031,7 +998,12 @@ if feature_selection == L["voice_rec_header"]:
                 else:
                     with st.spinner(L['transcribing']):
                         try:
-                            transcript_text = transcribe_bytes_with_whisper(audio_bytes, audio_mime)
+                            # ⭐ 언어 코드 전달
+                            transcript_text = transcribe_bytes_with_whisper(
+                                audio_bytes, 
+                                audio_mime,
+                                lang_code=st.session_state.language
+                            )
                             st.session_state['last_transcript'] = transcript_text
                             st.success(L['transcript_result'])
                         except RuntimeError as e:
@@ -1104,9 +1076,14 @@ if feature_selection == L["voice_rec_header"]:
                             elif data.get('gcs_path') and gcs_client and bucket_name:
                                 with st.spinner(L['transcribing']):
                                     try:
+                                        # ⭐ 언어 코드 전달
                                         blob_bytes = download_audio_from_gcs(bucket_name, data['gcs_path'].split(f'gs://{bucket_name}/')[-1])
                                         mime_type = data.get('mime_type', 'audio/webm')
-                                        new_text = transcribe_bytes_with_whisper(blob_bytes, mime_type)
+                                        new_text = transcribe_bytes_with_whisper(
+                                            blob_bytes, 
+                                            mime_type,
+                                            lang_code=st.session_state.language
+                                        )
                                         st.session_state.firestore_db.collection('voice_records').document(doc_id).update({'transcript': new_text})
                                         st.success(L['retranscribe'] + ' ' + L['saved_success'])
                                         st.rerun()
@@ -1127,15 +1104,12 @@ if feature_selection == L["voice_rec_header"]:
                                 st.warning(L['delete_confirm_rec'])
 
 elif feature_selection == L["simulator_tab"]: 
-    # (Simulator UI logic remains the same, using st.session_state.firestore_db)
     st.header(L["simulator_header"])
     st.markdown(L["simulator_desc"])
     
     # 1. TTS 유틸리티 (상태 표시기 및 JS 함수)를 페이지 상단에 삽입
     st.markdown(f'<div id="tts_status" style="padding: 5px; text-align: center; border-radius: 5px; background-color: #f0f0f0; margin-bottom: 10px;">{L["tts_status_ready"]}</div>', unsafe_allow_html=True)
-    if "tts_js_loaded" not in st.session_state:
-        synthesize_and_play_audio(st.session_state.language) 
-        st.session_state.tts_js_loaded = True
+    # Python 서버 측 TTS로 전환했으므로, JS 호출은 더 이상 필요 없습니다.
 
     # 1.5 이력 삭제 버튼 및 모달
     db = st.session_state.get('firestore_db')
@@ -1319,7 +1293,6 @@ Customer Inquiry: {customer_query}
                 
                 # 오디오 파일 녹음/업로드 (mic_recorder component 사용)
                 with col_audio:
-                    # ⭐ mic_recorder component 사용: 녹음 결과(dict)를 mic_result에 저장합니다.
                     mic_result = mic_recorder(
                         start_prompt=L["button_mic_input"], 
                         stop_prompt="✔️ Stop Recording", 
@@ -1327,24 +1300,22 @@ Customer Inquiry: {customer_query}
                     )
                 
                 # audio_bytes_from_mic와 mime_type을 세션 상태에 저장 및 업데이트
-                # --- [수정] 녹음 완료 시 즉시 RERUN하여 데이터 반영 ---
                 is_audio_just_recorded = False
                 if mic_result and mic_result.get('audio_bytes'):
-                    # ⭐ [재확인] 녹음 완료 시, 이전 데이터와 비교하여 변경된 경우에만 RERUN
                     current_bytes = mic_result['audio_bytes']
                     if current_bytes != st.session_state.get('sim_audio_bytes_raw'):
                         st.session_state['sim_audio_bytes'] = current_bytes
                         st.session_state['sim_audio_mime'] = mic_result.get('mime_type', 'audio/webm')
-                        st.session_state['sim_audio_bytes_raw'] = current_bytes # 데이터 비교용으로 저장
+                        st.session_state['sim_audio_bytes_raw'] = current_bytes
                         is_audio_just_recorded = True
                     
                 
                 # 녹음이 방금 완료되었다면, 세션 상태를 반영하기 위해 즉시 RERUN
                 if is_audio_just_recorded:
                     st.info("✅ 녹음 완료! 아래의 전사 버튼을 눌러 텍스트를 생성하세요.")
-                    st.rerun() # 필수: 데이터가 반영되도록 페이지를 새로 고침
+                    st.rerun() 
 
-                # ⭐ [추가] 녹음 상태일 때만 녹음 데이터를 보여줍니다.
+                # 녹음된 오디오가 현재 세션에 저장되어 있으면 재생 위젯 표시
                 if st.session_state.get('sim_audio_bytes'):
                     st.audio(st.session_state['sim_audio_bytes'], format=st.session_state['sim_audio_mime'])
 
@@ -1352,7 +1323,6 @@ Customer Inquiry: {customer_query}
                 col_transcribe, _ = st.columns([1, 2])
                 
                 if col_transcribe.button(L["transcribe_btn"], key='start_whisper_transcribe'):
-                    # 버튼을 눌렀을 때만 전사 로직 실행
                     audio_bytes_to_transcribe = st.session_state.get('sim_audio_bytes')
                     audio_mime_to_transcribe = st.session_state.get('sim_audio_mime', 'audio/webm')
                     
@@ -1363,11 +1333,11 @@ Customer Inquiry: {customer_query}
                     else:
                         with st.spinner(L.get("whisper_processing", "음성 파일을 텍스트로 변환 중...")):
                             try:
-                                # ⭐ [수정] transcribe_bytes_with_whisper 함수에 언어 코드 전달
+                                # transcribe_bytes_with_whisper 함수에 언어 코드 전달
                                 transcribed_text = transcribe_bytes_with_whisper(
                                     audio_bytes_to_transcribe, 
                                     audio_mime_to_transcribe,
-                                    lang_code=current_lang_key # 현재 선택된 언어 전달
+                                    lang_code=current_lang_key 
                                 )
                                 
                                 if transcribed_text.startswith("❌"):
@@ -1377,11 +1347,9 @@ Customer Inquiry: {customer_query}
                                     st.session_state.last_transcript = transcribed_text
                                     st.success(L.get("whisper_success", "✅ 음성 전사 완료! 텍스트 창을 확인하세요."))
                                 
-                                # 전사 완료 후 오디오 데이터는 유지하고, 텍스트 에어리어 업데이트를 위해 rerun
                                 st.rerun() 
                                 
                             except Exception as e:
-                                # 이전 오류 (NoneType)를 여기서 안전하게 처리
                                 st.error(f"음성 전사 처리 중 오류 발생: {e}")
                                 st.session_state.last_transcript = ""
 
@@ -1393,7 +1361,6 @@ Customer Inquiry: {customer_query}
                     height=150
                 )
                 
-                                
                 # --- Enter 키 전송 로직 ---
                 js_code_for_enter = f"""
                 <script>
@@ -1422,21 +1389,18 @@ Customer Inquiry: {customer_query}
                 
                 if st.button(L["send_response_button"], key="send_agent_response"): 
                     if agent_response.strip():
-                        # 전송 후 전사 결과 상태 초기화
                         st.session_state.last_transcript = ""
                         
                         st.session_state.simulator_messages.append(
                             {"role": "agent_response", "content": agent_response}
                         )
                         st.session_state.simulator_memory.chat_memory.add_user_message(agent_response)
-                        # DB 저장 및 리런
                         save_simulation_history(db, st.session_state.customer_query_text_area, customer_type_display, st.session_state.simulator_messages)
                         st.rerun()
                     else:
                         st.warning(L.get("empty_response_warning", "응답 내용이 비어 있습니다."))
             
             # 2. 고객의 다음 반응 요청 (LLM 호출) 또는 종료 버튼 표시
-            # 에이전트의 응답 후, 고객 반응 요청 버튼 또는 종료 버튼 표시
             if last_role == "agent_response":
                 
                 col_end, col_next = st.columns([1, 2])
@@ -1445,16 +1409,14 @@ Customer Inquiry: {customer_query}
                 if col_end.button(L["button_end_chat"], key="end_chat"): 
                     closing_messages = get_closing_messages(current_lang_key)
                     
-                    # 매너 질문과 최종 종료 인사는 AI의 응답으로 간주하여 메모리에 추가
-                    st.session_state.simulator_messages.append({"role": "supervisor", "content": closing_messages["additional_query"]}) # 매너 질문
+                    st.session_state.simulator_messages.append({"role": "supervisor", "content": closing_messages["additional_query"]})
                     st.session_state.simulator_memory.chat_memory.add_ai_message(closing_messages["additional_query"])
 
-                    st.session_state.simulator_messages.append({"role": "system_end", "content": closing_messages["chat_closing"]}) # 최종 종료 인사
+                    st.session_state.simulator_messages.append({"role": "system_end", "content": closing_messages["chat_closing"]})
                     st.session_state.simulator_memory.chat_memory.add_ai_message(closing_messages["chat_closing"])
                     
                     st.session_state.is_chat_ended = True
                     
-                    # ⭐ Firebase 이력 업데이트: 최종 종료 상태 저장
                     save_simulation_history(db, st.session_state.customer_query_text_area, customer_type_display, st.session_state.simulator_messages)
                     
                     st.rerun()
@@ -1469,7 +1431,6 @@ Customer Inquiry: {customer_query}
                         st.error(L['llm_error_init'] + " (시뮬레이터 체인 초기화 실패)")
                         st.stop()
                         
-                    # ⭐ 핵심 수정된 프롬프트 (강력하게 협조적인 고객을 유도)
                     next_reaction_prompt = f"""
                     Analyze the entire chat history. Roleplay as the customer ({customer_type_display}). 
                     Based on the agent's last message, generate ONE of the following responses in the customer's voice:
@@ -1481,40 +1442,35 @@ Customer Inquiry: {customer_query}
                     The response MUST be strictly in {LANG[current_lang_key]['lang_select']}.
                     """
                     
-                    with st.spinner(L["response_generating"]): # ⭐ 다국어 적용
+                    with st.spinner(L["response_generating"]):
                         try:
                             customer_reaction = st.session_state.simulator_chain.predict(input=next_reaction_prompt)
                         except Exception as e:
                             st.error(f"LLM 응답 생성 중 오류 발생: {e}")
                             st.stop()
                         
-                        # 긍정적 종료 키워드 확인 (대소문자 무시)
                         positive_keywords = ["감사", "thank you", "ありがとう", L['customer_positive_response'].lower().split('/')[-1].strip()]
                         is_positive_close = any(keyword in customer_reaction.lower() for keyword in positive_keywords)
                         
                         if is_positive_close:
-                            role = "customer_end" # 긍정적 종료
+                            role = "customer_end" 
                             st.session_state.simulator_messages.append({"role": role, "content": customer_reaction})
                             st.session_state.simulator_memory.chat_memory.add_ai_message(customer_reaction)
 
-                            # 긍정 종료 후 에이전트에게 매너 질문 요청
                             st.session_state.simulator_messages.append({"role": "supervisor", "content": L["customer_closing_confirm"]})
                             st.session_state.simulator_memory.chat_memory.add_ai_message(L["customer_closing_confirm"])
                         else:
-                            role = "customer_rebuttal" # 재반박, 추가 질문, 또는 정보 제공
+                            role = "customer_rebuttal"
                             st.session_state.simulator_messages.append({"role": role, "content": customer_reaction})
                             st.session_state.simulator_memory.chat_memory.add_ai_message(customer_reaction)
                              
-                        # DB 저장 및 리런
                         save_simulation_history(db, st.session_state.customer_query_text_area, customer_type_display, st.session_state.simulator_messages)
                         st.rerun()
 
     else:
-        # LLM 초기화 자체에 문제가 있을 경우의 오류 메시지 (다국어)
         st.error(L["llm_error_init"])
 
 elif feature_selection == L["rag_tab"]:
-    # (RAG Chatbot UI logic remains the same)
     st.header(L["rag_header"])
     st.markdown(L["rag_desc"])
     if st.session_state.get('is_rag_ready', False) and st.session_state.get('conversation_chain'):
@@ -1541,7 +1497,6 @@ elif feature_selection == L["rag_tab"]:
             st.warning(L["warning_rag_not_ready"])
 
 elif feature_selection == L["content_tab"]:
-    # (Custom Content Generation UI logic remains the same)
     st.header(L["content_header"])
     st.markdown(L["content_desc"])
     if st.session_state.is_llm_ready:
@@ -1559,7 +1514,6 @@ elif feature_selection == L["content_tab"]:
                 
                 # 1. 퀴즈/일반 콘텐츠에 따른 Prompt 설정
                 if content_type == 'quiz':
-                    # JSON 출력 포맷 지시를 올바르게 수정
                     full_prompt = f"""You are a professional AI coach at the {level} level. Please generate exactly 10 multiple-choice questions about the topic in {target_lang}. Your entire response MUST be a valid JSON object wrapped in triple backticks and the word 'json' (```json ... ```).
 
 JSON structure:
@@ -1616,10 +1570,8 @@ Topic: {topic}
                                 f"이것은 {target_lang}으로 작성된 {topic}에 대한 Mock {content_type_display} 입니다."
                             )
 
-                        # Session 저장
                         st.session_state.quiz_data_raw = quiz_data_raw
 
-                        # 퀴즈 JSON 처리
                         if content_type == "quiz":
                             quiz_data = clean_and_load_json(quiz_data_raw)
 
@@ -1672,7 +1624,6 @@ elif feature_selection == L["lstm_tab"]:
     try:
         model, data = load_or_train_lstm()
 
-        # 예측값 생성 (Mock)
         predicted_score = np.clip(
             data[-1] + np.random.uniform(-3, 5),
             50,
