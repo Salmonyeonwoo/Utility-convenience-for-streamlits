@@ -30,7 +30,8 @@ from google.cloud.firestore import Query
 from langchain.chains import ConversationalRetrievalChain, ConversationChain
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_community.vectorstores import FAISS
-from langchain.text_splitter import RecursiveCharacterSplitter
+# [수정] RecursiveCharacterSplitter -> RecursiveCharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter 
 from langchain.memory import ConversationBufferMemory
 from langchain.schema.document import Document
 from langchain.prompts import PromptTemplate
