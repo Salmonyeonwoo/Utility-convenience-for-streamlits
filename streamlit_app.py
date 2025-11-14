@@ -236,7 +236,7 @@ LANG = {
         "simulator_header": "AI Customer Response Simulator",
         "simulator_desc": "Provides AI draft responses and guidelines for difficult customer inquiries.",
         "customer_query_label": "Customer Query (Links included)", 
-        "customer_type_label": "Customer Type", # <-- [추가] 누락 키
+        "customer_type_label": "Customer Type", # <-- [필수 키]
         "customer_type_options": ["General Inquiry", "Difficult Customer", "Highly Dissatisfied Customer"],
         "initial_query_sample": "I arrived in Paris, France, but the eSIM I bought from Klook won't activate. I'm really struggling to get connected. What should I do?", 
         "title": "Personalized AI Study Coach (Voice & DB Integration)",
@@ -351,7 +351,7 @@ LANG = {
         "simulator_header": "AI顧客対応シミュレーター",
         "simulator_desc": "困難な顧客의問い合わせに対してAIの対応草案とガイドラインを提供します。",
         "customer_query_label": "顧客の問い合わせ内容 (リンクを含む)", 
-        "customer_type_label": "顧客の傾向", # <-- [추가] 누락 키
+        "customer_type_label": "顧客の傾向", # <-- [필수 키]
         "customer_type_options": ["一般的な問い合わせ", "困難な顧客", "非常に不満な顧客"],
         "initial_query_sample": "フランスのパリに到着しましたが、Klookで購入したeSIMがアクティベートできません。接続できなくて困っています。どうすればいいですか？", 
         "title": "パーソナライズAI学習コーチ (音声・DB統合)",
@@ -366,7 +366,7 @@ LANG = {
         "rag_desc": "アップロードされたドキュメントに基づいて質問に回答します。",
         "rag_input_placeholder": "学習資料について質問してください",
         "content_header": "カスタム学習コンテンツ生成",
-        "content_desc": "学習テーマと難易度に合わせてコンテンツを生成します。",
+        "content_desc": "学習テーマと難易도에 맞춰 콘텐츠를 생성합니다。",
         "topic_label": "学習テーマ",
         "level_label": "難易度",
         "content_type_label": "コンテンツ形式",
