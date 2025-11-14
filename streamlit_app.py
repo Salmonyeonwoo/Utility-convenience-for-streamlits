@@ -1231,7 +1231,7 @@ Customer Inquiry: {customer_query}
                     st.session_state.last_transcript = ""
                 
                 # 오디오 파일 녹음/업로드 (st.audio_input)
-                with col_audio:
+                
                     # ⭐ st.audio_input 위젯 사용
                     # 오디오 파일 녹음/업로드 (mic_recorder component 사용)
                 with col_audio:
