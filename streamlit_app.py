@@ -1336,6 +1336,9 @@ Customer Inquiry: {customer_query}
                     st.info("✅ 녹음 완료! 아래의 전사 버튼을 눌러 텍스트를 생성하세요.")
                     st.rerun() # 필수: 데이터가 반영되도록 페이지를 새로 고침
 
+                if st.session_state.get('sim_audio_bytes'):
+                    st.audio(st.session_state['sim_audio_bytes'], format=st.session_state['sim_audio_mime'])
+
                 # --- [수정] 전사 버튼 실행 로직 ---
                 col_transcribe, _ = st.columns([1, 2])
                 
