@@ -1190,7 +1190,7 @@ elif feature_selection == L["simulator_tab"]:
                 st.info(L.get("no_history_found"))
 
     # LLM and UI logic for Simulation flow
-    if st.session_state.is_llm_ready or not API_KEY: # Use API_KEY for initial check
+    if st.session_state.is_llm_ready or not LLM_API_KEY: # Use LLM_API_KEY for initial check
         if st.session_state.is_chat_ended:
             st.success(L["prompt_customer_end"] + " " + L["prompt_survey"])
             if st.button(L["new_simulation_button"], key="new_simulation"): 
@@ -1235,7 +1235,7 @@ elif feature_selection == L["simulator_tab"]:
 Customer Inquiry: {customer_query}
 """
 
-            if not API_KEY or not st.session_state.is_llm_ready: # Mock response for missing key
+            if not LLM_API_KEY or not st.session_state.is_llm_ready: # Mock response for missing key
                 mock_data = get_mock_response_data(current_lang_key, customer_type_display)
                 ai_advice_text = f"### {mock_data['advice_header']}\n\n{mock_data['advice']}\n\n### {mock_data['draft_header']}\n\n{mock_data['draft']}"
                 st.session_state.simulator_messages.append({"role": "supervisor", "content": ai_advice_text})
@@ -1245,7 +1245,7 @@ Customer Inquiry: {customer_query}
                 st.warning(L["simulation_no_key_warning"])
                 st.rerun() 
             
-            if API_KEY and st.session_state.is_llm_ready:
+            if LLM_API_KEY and st.session_state.is_llm_ready:
                 with st.spinner(L["response_generating"]):
                     try:
                         response_text = st.session_state.simulator_chain.predict(input=initial_prompt)
@@ -1446,8 +1446,8 @@ Customer Inquiry: {customer_query}
                     st.rerun()
 
                 # B) 고객의 다음 반응 요청 (LLM 호출)
-                if col_next.button(L["request_rebuttal_button"], key="request_rebuttal"): # ⭐ LLM 호출 텍스트 제거
-                    if not API_KEY:
+                if col_next.button(L["request_rebuttal_button"], key="request_rebuttal"):
+                    if not LLM_API_KEY:
                         st.warning("API Key가 없기 때문에 LLM을 통한 대화형 시뮬레이션은 불가능합니다.")
                         st.stop()
                     
