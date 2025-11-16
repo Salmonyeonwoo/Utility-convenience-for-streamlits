@@ -573,8 +573,7 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, filename: str = "audio.wav
         elif hasattr(resp, "get") and resp.get("transcript"):
             text = resp.get("transcript")
         elif isinstance(resp, dict) and resp.get("results"):
-            text = "
-".join([r.get("text", "") for r in resp.get("results", [])])
+            text = "\n".join([r.get("text", "") for r in resp.get("results", [])])
 
 
         if text:
