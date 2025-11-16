@@ -36,7 +36,6 @@ from langchain.schema.document import Document
 from langchain.prompts import PromptTemplate
 from streamlit_mic_recorder import mic_recorder
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings 
-from audiorecorder import audiorecorder
 
 # -----------------------------
 # 1. Config & I18N (다국어 지원)
