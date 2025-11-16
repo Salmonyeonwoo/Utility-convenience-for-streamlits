@@ -1027,6 +1027,15 @@ if feature_selection == L["voice_rec_header"]:
             neutral_color="#6aa36f",
             icon_name="user",
             icon_size="6x",
+            start_prompt="Start recording",
+            stop_prompt="Stop recording",
+            pause_prompt="",
+            custom_style={'color': 'black'},
+            start_style={},
+            pause_style={},
+            stop_style={},
+            show_visualizer=True,
+            key=None
         )
         audio_mime = 'audio/webm'
         if audio_obj is not None:
