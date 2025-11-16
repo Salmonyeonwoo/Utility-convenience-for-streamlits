@@ -404,38 +404,45 @@ LANG = {
         "empty_response_warning": "응답을 입력하세요。",
     }
 }
+
 # st.session_state는 스크립트 시작 시 한 번만 호출되어야 합니다.
-if 'language' not in st.session_state:
+if "embedding_cache" not in st.session_state:
+    st.session_state.embedding_cache = {}
+if "language" not in st.session_state:
     st.session_state.language = DEFAULT_LANG
-if 'is_llm_ready' not in st.session_state:
+if "is_llm_ready" not in st.session_state:
     st.session_state.is_llm_ready = False
-if 'llm_init_error_msg' not in st.session_state:
+if "llm_init_error_msg" not in st.session_state:
     st.session_state.llm_init_error_msg = ""
-if 'uploaded_files_state' not in st.session_state:
+if "uploaded_files_state" not in st.session_state:
     st.session_state.uploaded_files_state = None
-if 'is_rag_ready' not in st.session_state:
+if "is_rag_ready" not in st.session_state:
     st.session_state.is_rag_ready = False
-if 'simulator_messages' not in st.session_state:
+if "simulator_messages" not in st.session_state:
     st.session_state.simulator_messages = []
-if 'simulator_memory' not in st.session_state:
+if "simulator_memory" not in st.session_state:
     st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history")
-if 'initial_advice_provided' not in st.session_state:
+if "initial_advice_provided" not in st.session_state:
     st.session_state.initial_advice_provided = False
-if 'is_chat_ended' not in st.session_state:
+if "is_chat_ended" not in st.session_state:
     st.session_state.is_chat_ended = False
-if 'show_delete_confirm' not in st.session_state:
+if "show_delete_confirm" not in st.session_state:
     st.session_state.show_delete_confirm = False
-if 'last_transcript' not in st.session_state:
+if "last_transcript" not in st.session_state:
     st.session_state.last_transcript = ""
-if 'sim_audio_upload_key' not in st.session_state:
+if "sim_audio_upload_key" not in st.session_state:
     st.session_state.sim_audio_upload_key = 0
-if 'sim_audio_bytes' not in st.session_state:
+if "sim_audio_bytes" not in st.session_state:
     st.session_state.sim_audio_bytes = None
-if 'sim_audio_mime' not in st.session_state:
+if "sim_audio_mime" not in st.session_state:
     st.session_state.sim_audio_mime = 'audio/webm'
 # ⭐ [추가] 마이크 녹음 데이터의 안정적인 저장을 위한 raw bytes 저장소
-if 'sim_audio_bytes_raw' not in st.session_state: 
+if "sim_audio_bytes_raw" not in st.session_state: 
     st.session_state.sim_audio_bytes_raw = None
+if "memory" not in st.session_state:
+    st.session_state.memory = ConversationBufferMemory(memory_key="chat_history")
+if "simulator_input_text" not in st.session_state:
+    st.session_state.simulator_input_text = ""
 
 L = LANG[st.session_state.language]
 
@@ -523,11 +530,82 @@ def init_openai_client(L):
     openai_key = st.secrets.get('OPENAI_API_KEY') or os.environ.get('OPENAI_API_KEY')
     if openai_key:
         try:
-            return OpenAI(api_key=openai_key), "✅ OpenAI 클라이언트 준비 완료"
+            client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+            return client
         except Exception as e:
             return None, f"OpenAI client init error: {e}"
     return None, L['openai_missing']
 
+st.session_state.setdefault("openai_client", init_openai_client())
+
+def transcribe_bytes_with_whisper(audio_bytes: bytes, filename: str = "audio.wav", mime_type: str = None):
+"""OpenAI Python client를 사용하여 bytes 오디오를 전사한다. 여러 SDK 버전에 대응하도록 여러 시도 경로를 제공. 반환값: (text_or_none, error_or_none)"""
+    client = st.session_state.get("openai_client")
+    if not client:
+        return None, LANG[DEFAULT_LANG]["openai_missing"]
+
+
+# 1) 우선적으로 OpenAI SDK의 'audio.transcriptions.create' 형태 시도
+    try:
+    # SDK에 따라 (filename, bytes) 튜플 형태를 허용하거나 file=BytesIO를 허용
+        import io as _io
+        bio = _io.BytesIO(audio_bytes)
+        bio.name = filename
+
+
+    try:
+        resp = client.audio.transcriptions.create(file=(filename, audio_bytes), model="whisper-1")
+    except Exception:
+# 다른 인터페이스 시도
+    try:
+        resp = client.audio.transcriptions.create(file=bio, model="whisper-1")
+    except Exception:
+        resp = None
+
+
+# 응답에서 텍스트 추출
+    if resp:
+        text = None
+        if hasattr(resp, "text"):
+            text = resp.text
+        elif isinstance(resp, dict) and resp.get("text"):
+            text = resp.get("text")
+        elif hasattr(resp, "get") and resp.get("transcript"):
+            text = resp.get("transcript")
+        elif isinstance(resp, dict) and resp.get("results"):
+            text = "
+".join([r.get("text", "") for r in resp.get("results", [])])
+
+
+        if text:
+            return text, None
+
+
+except Exception as e:
+# 기록은 남기되 계속해서 다른 방식 시도
+    print("Whisper try1 error:", e)
+
+
+try:
+    import openai as _openai
+    if hasattr(_openai, 'Audio') and hasattr(_openai.Audio, 'transcribe'):
+# openai.Audio.transcribe(client, file=...) 형태
+        bio = _io.BytesIO(audio_bytes)
+        bio.name = filename
+        try:
+        # openai 라이브러리의 최신 패턴
+            _openai.api_key = st.secrets.get("OPENAI_API_KEY")
+            transcription = _openai.Audio.transcribe("whisper-1", bio)
+            if isinstance(transcription, dict) and transcription.get('text'):
+                return transcription.get('text'), None
+        except Exception as e:
+            print("Whisper openai.Audio.transcribe failed:", e)
+except Exception:
+    pass
+
+
+# 3) 실패 시 에러 반환
+return None, "❌ Whisper 전사 오류: 사용 중인 OpenAI SDK와 호환되지 않거나 내부 오류가 발생했습니다. OPENAI_API_KEY와 SDK 버전을 확인하세요."
 # -----------------------------
 # 2. GCS, Firestore, Whisper Helpers 
 # -----------------------------
