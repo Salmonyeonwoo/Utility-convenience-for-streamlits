@@ -538,32 +538,28 @@ def init_openai_client(L):
 
 st.session_state.setdefault("openai_client", init_openai_client())
 
-def transcribe_bytes_with_whisper(audio_bytes: bytes, filename: str = "audio.wav", mime_type: str = None):
+def transcribe_bytes_with_whisper(audio_bytes: bytes, filename: str = "audio.wav"):
     """
     OpenAI Python client를 사용하여 bytes 오디오를 전사한다.
-    여러 SDK 버전에 대응하도록 여러 시도 경로를 제공.
+    다양한 SDK 버전에 대응하도록 구성.
     반환값: (text_or_none, error_or_none)
     """
     client = st.session_state.get("openai_client")
     if not client:
         return None, LANG[DEFAULT_LANG]["openai_missing"]
 
-
-# 1) 우선적으로 OpenAI SDK의 'audio.transcriptions.create' 형태 시도
-    
-    # SDK에 따라 (filename, bytes) 튜플 형태를 허용하거나 file=BytesIO를 허용
     import io as _io
     bio = _io.BytesIO(audio_bytes)
     bio.name = filename
 
-
+    # 1) 기본 방식 시도
     try:
         resp = client.audio.transcriptions.create(
             file=(filename, audio_bytes),
             model="whisper-1"
         )
     except Exception:
-        # 2) 대체 방식: BytesIO 객체 전달
+        # 2) fallback 방식 시도
         try:
             resp = client.audio.transcriptions.create(
                 file=bio,
@@ -572,11 +568,10 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, filename: str = "audio.wav
         except Exception:
             resp = None
 
-    # 3) 응답에서 텍스트 추출
+    # 응답 파싱
     if resp:
         text = None
 
-        # SDK 구조별 대응
         if hasattr(resp, "text"):
             text = resp.text
         elif isinstance(resp, dict) and resp.get("text"):
@@ -589,31 +584,8 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, filename: str = "audio.wav
         if text:
             return text, None
 
-    except Exception as e:
-# 기록은 남기되 계속해서 다른 방식 시도
-        print("Whisper try1 error:", e)
+    return None, "❌ Whisper 전사 오류: 응답에서 텍스트를 추출할 수 없습니다."
 
-
-try:
-    import openai as _openai
-    if hasattr(_openai, 'Audio') and hasattr(_openai.Audio, 'transcribe'):
-# openai.Audio.transcribe(client, file=...) 형태
-        bio = _io.BytesIO(audio_bytes)
-        bio.name = filename
-        try:
-        # openai 라이브러리의 최신 패턴
-            _openai.api_key = st.secrets.get("OPENAI_API_KEY")
-            transcription = _openai.Audio.transcribe("whisper-1", bio)
-            if isinstance(transcription, dict) and transcription.get('text'):
-                return transcription.get('text'), None
-        except Exception as e:
-            print("Whisper openai.Audio.transcribe failed:", e)
-except Exception:
-    pass
-
-
-# 3) 실패 시 에러 반환
-return None, "❌ Whisper 전사 오류: 사용 중인 OpenAI SDK와 호환되지 않거나 내부 오류가 발생했습니다. OPENAI_API_KEY와 SDK 버전을 확인하세요."
 # -----------------------------
 # 2. GCS, Firestore, Whisper Helpers 
 # -----------------------------
