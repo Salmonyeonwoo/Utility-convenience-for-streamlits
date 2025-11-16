@@ -7,7 +7,7 @@ langchain-core
 langchain-google-genai
 google-generativeai
 langchain-openai
-streamlit-mic-recorder
+
 
 # Vector Store
 faiss-cpu==1.8.0
@@ -37,6 +37,8 @@ matplotlib
 bs4
 openai
 streamlit-mic-recorder
+streamlit-webrtc
+opencv-python-headless
 
 # Utilities
 google-cloud-firestore
