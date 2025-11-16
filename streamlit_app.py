@@ -445,6 +445,9 @@ if "simulator_input_text" not in st.session_state:
     st.session_state.simulator_input_text = ""
 if "openai_client" not in st.session_state:
     st.session_state.openai_client = None
+# ⭐ [추가] 에이전트 응답 텍스트 영역의 상태를 명시적으로 관리하기 위한 키 추가
+if "agent_response_area_text" not in st.session_state:
+    st.session_state.agent_response_area_text = ""
 
 
 L = LANG[st.session_state.language]
@@ -1261,6 +1264,7 @@ elif feature_selection == L["simulator_tab"]:
                 st.session_state.simulator_messages = []
                 st.session_state.simulator_memory.clear()
                 st.session_state['last_transcript'] = ''
+                st.session_state['agent_response_area_text'] = '' # ⭐ 초기화 추가
                 st.rerun()
             st.stop()
         
@@ -1353,6 +1357,11 @@ Customer Inquiry: {customer_query}
             # 1. 에이전트(사용자)가 응답할 차례 (초기 문의 후, 재반박 후, 매너 질문 후)
             if last_role in ["customer_rebuttal", "customer_end", "supervisor", "customer"]:
                 
+                # ⭐ [수정] 새 응답 턴이 시작될 때 텍스트 영역을 비워 새 입력을 받도록 합니다.
+                # 단, 이전 턴에서 음성 인식을 통해 텍스트가 채워졌다면 유지합니다.
+                if last_role not in ["agent_response"] and not st.session_state.get('last_transcript'):
+                    st.session_state.agent_response_area_text = ""
+
                 st.markdown(f"### {L['agent_response_header']}") 
                 
                 # --- ⭐ Whisper 오디오 전사 기능 추가 ---
@@ -1446,7 +1455,9 @@ Customer Inquiry: {customer_query}
                 # 사용자가 입력한 값은 st.session_state.agent_response_area_text에 저장됩니다.
                 agent_response = col_text_area.text_area(
                     L["agent_response_placeholder"], 
-                    value=st.session_state.last_transcript, # last_transcript는 전사 성공 시 업데이트됨
+                    # ⭐ [수정] value를 st.session_state.agent_response_area_text로 고정하고, 
+                    # last_transcript가 업데이트되면 agent_response_area_text도 업데이트되므로 문제 없습니다.
+                    value=st.session_state.agent_response_area_text, 
                     key="agent_response_area_text",
                     height=150
                 )
@@ -1479,9 +1490,8 @@ Customer Inquiry: {customer_query}
                 
                 if st.button(L["send_response_button"], key="send_agent_response"): 
                     if agent_response.strip():
-                        # 응답을 전송하면 last_transcript를 비워 다음 녹음이 새롭게 시작되도록 합니다.
+                        # 응답을 전송하면 last_transcript와 agent_response_area_text를 비워 다음 응답 턴을 준비합니다.
                         st.session_state.last_transcript = "" 
-                        # agent_response_area_text 값도 비워줍니다.
                         st.session_state.agent_response_area_text = ""
                         
                         st.session_state.simulator_messages.append(
