@@ -1021,7 +1021,8 @@ if feature_selection == L["voice_rec_header"]:
         except Exception:
             audio_obj = None
 
-        audio_bytes = audio_recorder(
+        audio_bytes = audio_recorder
+        (
             text="",
             recording_color="#e8b62c",
             neutral_color="#6aa36f",
