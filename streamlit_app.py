@@ -36,7 +36,6 @@ from langchain.schema.document import Document
 from langchain.prompts import PromptTemplate
 from streamlit_mic_recorder import mic_recorder
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings 
-from audio_recorder_streamlit import audio_recorder
 from audiorecorder import audiorecorder
 
 # -----------------------------
