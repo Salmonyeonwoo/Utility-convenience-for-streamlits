@@ -365,7 +365,7 @@ LANG = {
         "rag_desc": "アップロードされたドキュメントに基づいて質問に回答します。",
         "rag_input_placeholder": "学習資料について質問してください",
         "content_header": "カスタム学習コンテンツ生成",
-        "content_desc": "学習テーマと難易度에 맞춰 콘텐츠를 생성합니다。",
+        "content_desc": "学習テーマと難易度に 맞춰 콘텐츠를 생성합니다。",
         "topic_label": "学習テーマ",
         "level_label": "難易度",
         "content_type_label": "コンテンツ形式",
@@ -487,7 +487,7 @@ def initialize_firestore_admin(L):
         db_client = firestore.client()
         return db_client, "✅ Firestore DB 클라이언트 준비 완료"
     except Exception as e:
-        return None, f"🔥 {L['firebase_init_fail']}: 서비스 계정 정보 문제. 오류: {e}"
+        return None, f"🔥 {L.get('firebase_init_fail', 'Firebase 초기화 실패')}: 서비스 계정 정보 문제. 오류: {e}"
 
 
 def get_gcs_bucket_name():
@@ -1360,7 +1360,13 @@ Customer Inquiry: {customer_query}
                                     st.session_state.last_transcript = ""
                                 else:
                                     st.session_state.last_transcript = transcribed_text
-                                    st.success(L.get("whisper_success", "✅ 음성 전사 완료! 텍스트 창을 확인하세요."))
+                                    
+                                    # ⭐ [핵심 변경] 텍스트 영역에 자동 입력되도록 session_state의 key 값을 업데이트
+                                    st.session_state.agent_response_area_text = transcribed_text
+                                    
+                                    # ⭐ [피드백 강화] 인식된 내용을 성공 메시지에 포함하여 즉시 확인시켜줍니다. (스트리밍 대체 피드백)
+                                    snippet = transcribed_text[:50].replace('\n', ' ') + ('...' if len(transcribed_text) > 50 else '')
+                                    st.success(f"{L.get('whisper_success', '✅ 음성 전사 완료! 텍스트 창을 확인하세요.')}\n\n**인식 내용:** *{snippet}*")
                                 
                                 st.rerun() 
                                 
@@ -1369,9 +1375,10 @@ Customer Inquiry: {customer_query}
                                 st.session_state.last_transcript = ""
 
                 # st.text_area는 전사 결과를 기본값으로 사용
+                # 사용자가 입력한 값은 st.session_state.agent_response_area_text에 저장됩니다.
                 agent_response = col_text_area.text_area(
                     L["agent_response_placeholder"], 
-                    value=st.session_state.last_transcript,
+                    value=st.session_state.last_transcript, # last_transcript는 전사 성공 시 업데이트됨
                     key="agent_response_area_text",
                     height=150
                 )
@@ -1404,7 +1411,10 @@ Customer Inquiry: {customer_query}
                 
                 if st.button(L["send_response_button"], key="send_agent_response"): 
                     if agent_response.strip():
-                        st.session_state.last_transcript = ""
+                        # 응답을 전송하면 last_transcript를 비워 다음 녹음이 새롭게 시작되도록 합니다.
+                        st.session_state.last_transcript = "" 
+                        # agent_response_area_text 값도 비워줍니다.
+                        st.session_state.agent_response_area_text = ""
                         
                         st.session_state.simulator_messages.append(
                             {"role": "agent_response", "content": agent_response}
