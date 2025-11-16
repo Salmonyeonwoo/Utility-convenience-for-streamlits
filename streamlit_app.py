@@ -114,7 +114,7 @@ LANG = {
         "tts_status_error": "❌ TTS 오류 발생",
         "history_expander_title": "📝 이전 상담 이력 로드 (최근 10개)", 
         "initial_query_sample": "프랑스 파리에 도착했는데, 클룩에서 구매한 eSIM이 활성화가 안 됩니다. 연결이 안 돼서 너무 곤란합니다. 어떻게 해야 하나요?", 
-        "button_mic_input": "🎙 음성 입력",
+        "button_mic_input": "🎙 녹음 시작", # 텍스트 변경
         "prompt_customer_end": "고객님의 추가 문의 사항이 없어, 이 상담 채팅을 종료하겠습니다。",
         "prompt_survey": "고객 문의 센터에 연락 주셔서 감사드립니다. 추가 문의 사항이 있으시면 언제든지 연락 주십시오。",
         "customer_closing_confirm": "또 다른 문의 사항은 없으신가요?",
@@ -211,7 +211,7 @@ LANG = {
         "tts_status_error": "❌ TTS API error occurred",
         "history_expander_title": "📝 Load Previous Simulation History (Last 10)", 
         "initial_query_sample": "I arrived in Paris, France, but the eSIM I bought from Klook won't activate. I'm really struggling to get connected. What should I do?", 
-        "button_mic_input": "🎙 Voice Input",
+        "button_mic_input": "🎙 Start Recording",
         "prompt_customer_end": "As there are no further inquiries, we will now end this chat session.",
         "prompt_survey": "Thank you for contacting our Customer Support Center. Please feel free to contact us anytime if you have any additional questions.",
         "customer_closing_confirm": "Is there anything else we can assist you with today?",
@@ -326,7 +326,7 @@ LANG = {
         "tts_status_error": "❌ TTS APIエラーが発生しました",
         "history_expander_title": "📝 以前の対応履歴をロード (最新 10件)", 
         "initial_query_sample": "フランスのパリに到着しましたが、Klookで購入したeSIMがアクティベートできません。接続できなくて困っています。どうすればいいですか？", 
-        "button_mic_input": "🎙 音声入力",
+        "button_mic_input": "🎙 녹음 시작",
         "prompt_customer_end": "お客様からの追加のお問い合わせがないため、本チャットサポートを終了させていただきます。",
         "prompt_survey": "お問い合わせいただき、誠にありがとうございました。追加のご質問がございましたらいつでもご連絡ください。",
         "customer_closing_confirm": "また、お客様にお手伝いさせて頂けるお問い合わせは御座いませんか？",
@@ -349,7 +349,7 @@ LANG = {
         "no_history_found": "検索条件に一致する履歴はありません。",
         "simulator_header": "AI顧客対応シミュレーター",
         "simulator_desc": "困難な顧客の問い合わせに対してAIの対応草案とガイドラインを提供します。",
-        "customer_query_label": "顧客の問い合わせ内容 (リンクを含む)", 
+        "customer_query_label": "顧客の問い合わせ内容 (링크を含む)", 
         "customer_type_label": "顧客の傾向", # <-- [필수 키]
         "customer_type_options": ["一般的な問い合わせ", "困難な顧客", "非常に不満な顧客"],
         "initial_query_sample": "フランスのパリに到着しましたが、Klookで購入したeSIMがアクティベートできません。接続できなくて困っています。どうすればいいですか？", 
@@ -537,61 +537,54 @@ def init_openai_client(L):
     if openai_key:
         try:
             client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-            return client, "✅ OpenAI 클라이언트 준비 완료"  # FIX 1: Ensure consistent return of (client, message)
+            return client, "✅ OpenAI 클라이언트 준비 완료"
         except Exception as e:
             return None, f"OpenAI client init error: {e}"
     return None, L['openai_missing']
 
-# FIX 2: Remove the faulty line that caused the TypeError:
-# st.session_state.setdefault("openai_client", init_openai_client()) 
-
-def transcribe_bytes_with_whisper(audio_bytes: bytes, filename: str = "audio.wav"):
-    """
-    OpenAI Python client를 사용하여 bytes 오디오를 전사한다.
-    다양한 SDK 버전에 대응하도록 구성.
-    반환값: (text_or_none, error_or_none)
-    """
-    client = st.session_state.get("openai_client")
-    if not client:
-        return None, LANG[DEFAULT_LANG]["openai_missing"]
-
-    import io as _io
-    bio = _io.BytesIO(audio_bytes)
-    bio.name = filename
-
-    # 1) 기본 방식 시도
+def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = 'audio/webm', lang_code: str = 'en'):
+    L = LANG[st.session_state.language]
+    openai_client = st.session_state.get("openai_client") 
+    if openai_client is None:
+        # OpenAI 클라이언트가 초기화되지 않았거나 키가 없는 경우
+        return f"❌ {L['error']} Whisper: {L['openai_missing']}", L['openai_missing']
+    
+    # LangChain 언어 코드 맵핑 (ko, en, ja)
+    whisper_lang_map = {
+        'ko': 'ko',
+        'en': 'en',
+        'ja': 'ja'
+    }
+    whisper_language = whisper_lang_map.get(lang_code, 'en') # 기본값은 영어
+    
+    # Determine file extension
+    ext = mime_type.split('/')[-1].lower() if '/' in mime_type else 'webm'
+    
+    # write to temp file
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=f'.{ext}')
+    tmp.write(audio_bytes)
+    tmp.flush()
+    tmp.close()
+    
     try:
-        resp = client.audio.transcriptions.create(
-            file=(filename, audio_bytes),
-            model="whisper-1"
-        )
-    except Exception:
-        # 2) fallback 방식 시도
-        try:
-            resp = client.audio.transcriptions.create(
-                file=bio,
-                model="whisper-1"
+        with open(tmp.name, 'rb') as af:
+            res = openai_client.audio.transcriptions.create(
+                model='whisper-1', 
+                file=af,
+                response_format='text',
+                # ⭐ 언어 코드 추가
+                language=whisper_language 
             )
+        return res.strip() or '', None
+    except Exception as e:
+        # API 오류가 발생하면, 오류 메시지를 텍스트로 반환하여 UI에 표시
+        return f"❌ {L['error']} Whisper API 오류: {e}", "API Error"
+    finally:
+        try:
+            os.remove(tmp.name)
         except Exception:
-            resp = None
+            pass
 
-    # 응답 파싱
-    if resp:
-        text = None
-
-        if hasattr(resp, "text"):
-            text = resp.text
-        elif isinstance(resp, dict) and resp.get("text"):
-            text = resp["text"]
-        elif hasattr(resp, "get") and resp.get("transcript"):
-            text = resp.get("transcript")
-        elif isinstance(resp, dict) and resp.get("results"):
-            text = "\n".join([r.get("text", "") for r in resp.get("results", [])])
-
-        if text:
-            return text, None
-
-    return None, "❌ Whisper 전사 오류: 응답에서 텍스트를 추출할 수 없습니다."
 
 # -----------------------------
 # 2. GCS, Firestore, Whisper Helpers 
@@ -678,48 +671,6 @@ def delete_audio_record(db, bucket_name, doc_id: str):
     # delete firestore doc
     doc_ref.delete()
     return True
-
-def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = 'audio/webm', lang_code: str = 'en'):
-    L = LANG[st.session_state.language]
-    openai_client = init_openai_client(L)[0] 
-    if openai_client is None:
-        raise RuntimeError(L['openai_missing'])
-    
-    # LangChain 언어 코드 맵핑 (ko, en, ja)
-    whisper_lang_map = {
-        'ko': 'ko',
-        'en': 'en',
-        'ja': 'ja'
-    }
-    whisper_language = whisper_lang_map.get(lang_code, 'en') # 기본값은 영어
-    
-    # Determine file extension
-    ext = mime_type.split('/')[-1].lower() if '/' in mime_type else 'webm'
-    
-    # write to temp file
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=f'.{ext}')
-    tmp.write(audio_bytes)
-    tmp.flush()
-    tmp.close()
-    
-    try:
-        with open(tmp.name, 'rb') as af:
-            res = openai_client.audio.transcriptions.create(
-                model='whisper-1', 
-                file=af,
-                response_format='text',
-                # ⭐ 언어 코드 추가
-                language=whisper_language 
-            )
-        return res.strip() or ''
-    except Exception as e:
-        # API 오류가 발생하면, 오류 메시지를 텍스트로 반환하여 UI에 표시
-        return f"❌ {L['error']} Whisper: {e}"
-    finally:
-        try:
-            os.remove(tmp.name)
-        except Exception:
-            pass
 
 
 # -----------------------------
@@ -1073,16 +1024,19 @@ if feature_selection == L["voice_rec_header"]:
                     with st.spinner(L['transcribing']):
                         try:
                             # ⭐ 언어 코드 전달
-                            transcript_text = transcribe_bytes_with_whisper(
+                            transcript_text, error = transcribe_bytes_with_whisper(
                                 audio_bytes, 
                                 audio_mime,
                                 lang_code=st.session_state.language
                             )
-                            st.session_state['last_transcript'] = transcript_text
-                            
-                            # ⭐ [피드백 강화] 인식된 내용을 성공 메시지에 포함하여 즉시 확인
-                            snippet = transcript_text[:50].replace('\n', ' ') + ('...' if len(transcript_text) > 50 else '')
-                            st.success(f"{L['transcript_result']} - **{snippet}**")
+                            if error:
+                                st.error(transcript_text)
+                            else:
+                                st.session_state['last_transcript'] = transcript_text
+                                
+                                # ⭐ [피드백 강화] 인식된 내용을 성공 메시지에 포함하여 즉시 확인
+                                snippet = transcript_text[:50].replace('\n', ' ') + ('...' if len(transcript_text) > 50 else '')
+                                st.success(f"{L['transcript_result']} - **{snippet}**")
                             
                         except RuntimeError as e:
                             st.error(e)
@@ -1157,14 +1111,18 @@ if feature_selection == L["voice_rec_header"]:
                                         # ⭐ [수정] 함수 이름 오타 수정 반영
                                         blob_bytes = download_audio_from_gcs(bucket_name, data['gcs_path'].split(f'gs://{bucket_name}/')[-1])
                                         mime_type = data.get('mime_type', 'audio/webm')
-                                        new_text = transcribe_bytes_with_whisper(
+                                        # transcribe_bytes_with_whisper는 이제 (text, error) 튜플을 반환
+                                        new_text, error = transcribe_bytes_with_whisper(
                                             blob_bytes, 
                                             mime_type,
                                             lang_code=st.session_state.language
                                         )
-                                        st.session_state.firestore_db.collection('voice_records').document(doc_id).update({'transcript': new_text})
-                                        st.success(L['retranscribe'] + ' ' + L['saved_success'])
-                                        st.rerun()
+                                        if error:
+                                            st.error(new_text)
+                                        else:
+                                            st.session_state.firestore_db.collection('voice_records').document(doc_id).update({'transcript': new_text})
+                                            st.success(L['retranscribe'] + ' ' + L['saved_success'])
+                                            st.rerun()
                                     except Exception as e:
                                         st.error(f"{L['error']} {e}")
                             else: st.error(L['gcs_not_conf'])
@@ -1357,27 +1315,22 @@ Customer Inquiry: {customer_query}
             # 1. 에이전트(사용자)가 응답할 차례 (초기 문의 후, 재반박 후, 매너 질문 후)
             if last_role in ["customer_rebuttal", "customer_end", "supervisor", "customer"]:
                 
-                # ⭐ [수정] 새 응답 턴이 시작될 때 텍스트 영역을 비워 새 입력을 받도록 합니다.
-                # 단, 이전 턴에서 음성 인식을 통해 텍스트가 채워졌다면 유지합니다.
-                if last_role not in ["agent_response"] and not st.session_state.get('last_transcript'):
-                    st.session_state.agent_response_area_text = ""
-
                 st.markdown(f"### {L['agent_response_header']}") 
                 
                 # --- ⭐ Whisper 오디오 전사 기능 추가 ---
                 col_audio, col_text_area = st.columns([1, 2])
                 
-                # 전사 결과 저장소 초기화
-                if 'last_transcript' not in st.session_state:
-                    st.session_state.last_transcript = ""
-                
                 # 오디오 파일 녹음/업로드 (mic_recorder component 사용)
                 with col_audio:
                     mic_result = mic_recorder(
                         start_prompt=L["button_mic_input"], 
-                        stop_prompt="✔️ Stop Recording", 
+                        stop_prompt="✔️ 녹음 중지 및 전사", # 텍스트 변경
                         key="simulator_audio_input_file"
                     )
+                    
+                    # 녹음된 오디오가 현재 세션에 저장되어 있으면 재생 위젯 표시
+                    if st.session_state.get('sim_audio_bytes'):
+                        st.audio(st.session_state['sim_audio_bytes'], format=st.session_state['sim_audio_mime'], key="sim_audio_player")
                 
                 # audio_bytes_from_mic와 mime_type을 세션 상태에 저장 및 업데이트
                 is_audio_just_recorded = False
@@ -1390,60 +1343,32 @@ Customer Inquiry: {customer_query}
                         is_audio_just_recorded = True
                     
                 
-                # 녹음이 방금 완료되었다면, 세션 상태를 반영하기 위해 즉시 RERUN
+                # ⭐ [핵심 수정 1 & 3] 녹음이 완료되면 즉시 자동 전사 및 텍스트 영역에 자동 입력
                 if is_audio_just_recorded:
-                    st.info("✅ 녹음 완료! 아래의 전사 버튼을 눌러 텍스트를 생성하세요.")
-                    st.rerun() 
-
-                # 녹음된 오디오가 현재 세션에 저장되어 있으면 재생 위젯 표시
-                if st.session_state.get('sim_audio_bytes'):
-                    # Streamlit의 오디오 위젯은 재생/일시정지 기능을 내장하고 있습니다.
-                    st.audio(st.session_state['sim_audio_bytes'], format=st.session_state['sim_audio_mime'])
-
-                # --- [수정] 전사 버튼 실행 로직 ---
-                col_transcribe, _ = st.columns([1, 2])
-                
-                # ⭐ Key Error 방지를 위한 L.get() 적용
-                transcribe_button_text = L.get("transcribe_btn", "Transcribe")
-                
-                if col_transcribe.button(transcribe_button_text, key='start_whisper_transcribe'):
                     audio_bytes_to_transcribe = st.session_state.get('sim_audio_bytes')
                     audio_mime_to_transcribe = st.session_state.get('sim_audio_mime', 'audio/webm')
                     
-                    if audio_bytes_to_transcribe is None:
-                        st.warning("먼저 마이크로 녹음을 완료하거나 오디오 파일을 업로드하세요.")                    
-                    elif st.session_state.openai_client is None: # Use session state client
+                    if st.session_state.openai_client is None: 
                         st.error(L.get("whisper_client_error", "OpenAI Key가 없어 음성 인식을 사용할 수 없습니다."))
                     else:
                         with st.spinner(L.get("whisper_processing", "음성 파일을 텍스트로 변환 중...")):
                             try:
-                                # transcribe_bytes_with_whisper 함수에 언어 코드 전달
-                                transcribed_text = transcribe_bytes_with_whisper(
+                                transcribed_text, error = transcribe_bytes_with_whisper(
                                     audio_bytes_to_transcribe, 
                                     audio_mime_to_transcribe,
                                     lang_code=current_lang_key 
                                 )
                                 
-                                if transcribed_text.startswith("❌"):
+                                if error:
                                     st.error(transcribed_text)
                                     st.session_state.last_transcript = ""
                                 else:
                                     st.session_state.last_transcript = transcribed_text
+                                    st.session_state.agent_response_area_text = transcribed_text # 자동 입력
                                     
-                                    # ⭐ [핵심 변경] 텍스트 영역에 자동 입력되도록 session_state의 key 값을 업데이트
-                                    st.session_state.agent_response_area_text = transcribed_text
-                                    
-                                    # ⭐ [피드백 강화] 인식된 내용을 성공 메시지에 포함하여 즉시 확인시켜줍니다.
+                                    # ⭐ [수정] 스트리밍 시각화 대체 및 피드백 강화
                                     snippet = transcribed_text[:50].replace('\n', ' ') + ('...' if len(transcribed_text) > 50 else '')
-                                    
-                                    # API Key가 Secrets에 설정되어 있는지 확인하여 피드백 메시지 강화
-                                    if st.secrets.get("OPENAI_API_KEY"):
-                                        success_msg = f"{L.get('whisper_success', '✅ 음성 전사 완료! 텍스트 창을 확인하세요.')}\n\n**인식 내용 (Whisper API):** *{snippet}*"
-                                    else:
-                                        success_msg = f"{L.get('whisper_success', '✅ 음성 전사 완료! 텍스트 창을 확인하세요.')}\n\n**인식 내용:** *{snippet}* (OpenAI Key 미설정 시 Mock 응답)"
-                                        
-                                    st.success(success_msg)
-
+                                    st.info(f"✅ 전사 완료. 내용이 입력창에 자동으로 반영되었습니다.\n\n**인식 내용:** *{snippet}*")
                                 
                                 st.rerun() 
                                 
@@ -1453,14 +1378,13 @@ Customer Inquiry: {customer_query}
 
                 # st.text_area는 전사 결과를 기본값으로 사용
                 # 사용자가 입력한 값은 st.session_state.agent_response_area_text에 저장됩니다.
-                agent_response = col_text_area.text_area(
-                    L["agent_response_placeholder"], 
-                    # ⭐ [수정] value를 st.session_state.agent_response_area_text로 고정하고, 
-                    # last_transcript가 업데이트되면 agent_response_area_text도 업데이트되므로 문제 없습니다.
-                    value=st.session_state.agent_response_area_text, 
-                    key="agent_response_area_text",
-                    height=150
-                )
+                with col_text_area:
+                    agent_response = st.text_area(
+                        L["agent_response_placeholder"], 
+                        value=st.session_state.agent_response_area_text, 
+                        key="agent_response_area_text",
+                        height=150
+                    )
                 
                 # --- Enter 키 전송 로직 ---
                 js_code_for_enter = f"""
