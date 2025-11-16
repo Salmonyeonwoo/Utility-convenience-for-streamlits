@@ -539,7 +539,11 @@ def init_openai_client(L):
 st.session_state.setdefault("openai_client", init_openai_client())
 
 def transcribe_bytes_with_whisper(audio_bytes: bytes, filename: str = "audio.wav", mime_type: str = None):
-"""OpenAI Python client를 사용하여 bytes 오디오를 전사한다. 여러 SDK 버전에 대응하도록 여러 시도 경로를 제공. 반환값: (text_or_none, error_or_none)"""
+    """
+    OpenAI Python client를 사용하여 bytes 오디오를 전사한다.
+    여러 SDK 버전에 대응하도록 여러 시도 경로를 제공.
+    반환값: (text_or_none, error_or_none)
+    """
     client = st.session_state.get("openai_client")
     if not client:
         return None, LANG[DEFAULT_LANG]["openai_missing"]
