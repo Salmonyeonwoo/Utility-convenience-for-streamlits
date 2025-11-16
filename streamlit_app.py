@@ -550,39 +550,44 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, filename: str = "audio.wav
 
 
 # 1) 우선적으로 OpenAI SDK의 'audio.transcriptions.create' 형태 시도
-    try:
+    
     # SDK에 따라 (filename, bytes) 튜플 형태를 허용하거나 file=BytesIO를 허용
-        import io as _io
-        bio = _io.BytesIO(audio_bytes)
-        bio.name = filename
+    import io as _io
+    bio = _io.BytesIO(audio_bytes)
+    bio.name = filename
 
 
     try:
-        resp = client.audio.transcriptions.create(file=(filename, audio_bytes), model="whisper-1")
+        resp = client.audio.transcriptions.create(
+            file=(filename, audio_bytes),
+            model="whisper-1"
+        )
     except Exception:
-# 다른 인터페이스 시도
-    try:
-        resp = client.audio.transcriptions.create(file=bio, model="whisper-1")
-    except Exception:
-        resp = None
+        # 2) 대체 방식: BytesIO 객체 전달
+        try:
+            resp = client.audio.transcriptions.create(
+                file=bio,
+                model="whisper-1"
+            )
+        except Exception:
+            resp = None
 
-
-# 응답에서 텍스트 추출
+    # 3) 응답에서 텍스트 추출
     if resp:
         text = None
+
+        # SDK 구조별 대응
         if hasattr(resp, "text"):
             text = resp.text
         elif isinstance(resp, dict) and resp.get("text"):
-            text = resp.get("text")
+            text = resp["text"]
         elif hasattr(resp, "get") and resp.get("transcript"):
             text = resp.get("transcript")
         elif isinstance(resp, dict) and resp.get("results"):
             text = "\n".join([r.get("text", "") for r in resp.get("results", [])])
 
-
         if text:
             return text, None
-
 
 except Exception as e:
 # 기록은 남기되 계속해서 다른 방식 시도
