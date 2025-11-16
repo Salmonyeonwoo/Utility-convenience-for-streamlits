@@ -12,7 +12,6 @@ import re
 import base64
 import io
 import numpy as np
-import audiorecorder
 from matplotlib import pyplot as plt
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
@@ -1013,7 +1012,6 @@ if feature_selection == L["voice_rec_header"]:
         st.subheader(L['rec_header'])
 
         st.title("Audio Recorder")
-        audio = audiorecorder("Click to record", "Click to stop recording")
         # Audio Input Widget
         audio_obj = None
         try:
