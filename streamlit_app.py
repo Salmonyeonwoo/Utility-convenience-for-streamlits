@@ -397,11 +397,11 @@ LANG = {
         "response_generating": "応答生成中...", 
         "lstm_result_header": "達成度予測結果",
         "lstm_score_metric": "現在の予測達成度",
-        "lstm_score_info": "次のクイズの推定スコ어は約 **{predicted_score:.1f}点**입니다。学習の成果を維持または向上させてください！",
+        "lstm_score_info": "次のクイズ의推定スコ어は約 **{predicted_score:.1f}点**입니다。学習の成果を維持または向上させてください！",
         "lstm_rerun_button": "新しい仮想データで予測",
-        "rec_header": "音声入力と転写",
-        "whisper_processing": "音声転写処理中",
-        "empty_response_warning": "応答を入力してください。",
+        "rec_header": "음성 입력 및 전사",
+        "whisper_processing": "음성 전사 처리 중",
+        "empty_response_warning": "응답을 입력하세요。",
     }
 }
 # st.session_state는 스크립트 시작 시 한 번만 호출되어야 합니다.
@@ -1012,7 +1012,11 @@ if feature_selection == L["voice_rec_header"]:
                                 lang_code=st.session_state.language
                             )
                             st.session_state['last_transcript'] = transcript_text
-                            st.success(L['transcript_result'])
+                            
+                            # ⭐ [피드백 강화] 인식된 내용을 성공 메시지에 포함하여 즉시 확인
+                            snippet = transcript_text[:50].replace('\n', ' ') + ('...' if len(transcript_text) > 50 else '')
+                            st.success(f"{L['transcript_result']} - **{snippet}**")
+                            
                         except RuntimeError as e:
                             st.error(e)
 
@@ -1329,6 +1333,7 @@ Customer Inquiry: {customer_query}
 
                 # 녹음된 오디오가 현재 세션에 저장되어 있으면 재생 위젯 표시
                 if st.session_state.get('sim_audio_bytes'):
+                    # Streamlit의 오디오 위젯은 재생/일시정지 기능을 내장하고 있습니다.
                     st.audio(st.session_state['sim_audio_bytes'], format=st.session_state['sim_audio_mime'])
 
                 # --- [수정] 전사 버튼 실행 로직 ---
@@ -1364,9 +1369,17 @@ Customer Inquiry: {customer_query}
                                     # ⭐ [핵심 변경] 텍스트 영역에 자동 입력되도록 session_state의 key 값을 업데이트
                                     st.session_state.agent_response_area_text = transcribed_text
                                     
-                                    # ⭐ [피드백 강화] 인식된 내용을 성공 메시지에 포함하여 즉시 확인시켜줍니다. (스트리밍 대체 피드백)
+                                    # ⭐ [피드백 강화] 인식된 내용을 성공 메시지에 포함하여 즉시 확인시켜줍니다.
                                     snippet = transcribed_text[:50].replace('\n', ' ') + ('...' if len(transcribed_text) > 50 else '')
-                                    st.success(f"{L.get('whisper_success', '✅ 음성 전사 완료! 텍스트 창을 확인하세요.')}\n\n**인식 내용:** *{snippet}*")
+                                    
+                                    # API Key가 Secrets에 설정되어 있는지 확인하여 피드백 메시지 강화
+                                    if st.secrets.get("OPENAI_API_KEY"):
+                                        success_msg = f"{L.get('whisper_success', '✅ 음성 전사 완료! 텍스트 창을 확인하세요.')}\n\n**인식 내용 (Whisper API):** *{snippet}*"
+                                    else:
+                                        success_msg = f"{L.get('whisper_success', '✅ 음성 전사 완료! 텍스트 창을 확인하세요.')}\n\n**인식 내용:** *{snippet}* (OpenAI Key 미설정 시 Mock 응답)"
+                                        
+                                    st.success(success_msg)
+
                                 
                                 st.rerun() 
                                 
