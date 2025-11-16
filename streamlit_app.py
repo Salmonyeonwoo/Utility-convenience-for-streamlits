@@ -443,6 +443,9 @@ if "memory" not in st.session_state:
     st.session_state.memory = ConversationBufferMemory(memory_key="chat_history")
 if "simulator_input_text" not in st.session_state:
     st.session_state.simulator_input_text = ""
+if "openai_client" not in st.session_state:
+    st.session_state.openai_client = None
+
 
 L = LANG[st.session_state.language]
 
@@ -531,12 +534,13 @@ def init_openai_client(L):
     if openai_key:
         try:
             client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-            return client
+            return client, "✅ OpenAI 클라이언트 준비 완료"  # FIX 1: Ensure consistent return of (client, message)
         except Exception as e:
             return None, f"OpenAI client init error: {e}"
     return None, L['openai_missing']
 
-st.session_state.setdefault("openai_client", init_openai_client())
+# FIX 2: Remove the faulty line that caused the TypeError:
+# st.session_state.setdefault("openai_client", init_openai_client()) 
 
 def transcribe_bytes_with_whisper(audio_bytes: bytes, filename: str = "audio.wav"):
     """
@@ -832,7 +836,7 @@ def render_interactive_quiz(quiz_data, current_lang):
 # ⭐ [수정] TTS API 호출 로직을 Python 서버 측으로 이동하고 OpenAI TTS 사용
 def synthesize_and_play_audio(text_to_speak, current_lang_key):
     L = LANG[current_lang_key]
-    openai_client = init_openai_client(L)[0]
+    openai_client = st.session_state.get('openai_client')
     
     if openai_client is None:
         st.error(L['openai_missing'])
@@ -899,8 +903,10 @@ gcs_client_obj, gcs_msg = init_gcs_client(L)
 gcs_client = gcs_client_obj
 st.session_state.gcs_init_msg = gcs_msg
 
+# FIX 3: Correctly call and store the OpenAI client object
 openai_client_obj, openai_msg = init_openai_client(L)
 openai_client = openai_client_obj
+st.session_state.openai_client = openai_client_obj # Store client object
 st.session_state.openai_init_msg = openai_msg
 
 # --- LLM 초기화 ---
@@ -1058,7 +1064,7 @@ if feature_selection == L["voice_rec_header"]:
             
             # Transcribe Action
             if st.button(L['transcribe_btn'], key='transcribe_btn_key_rec'):
-                if openai_client is None:
+                if st.session_state.openai_client is None: # Use session state client
                     st.error(L['openai_missing'])
                 else:
                     with st.spinner(L['transcribing']):
@@ -1141,7 +1147,7 @@ if feature_selection == L["voice_rec_header"]:
 
                         # Re-transcribe Button
                         if colr.button(L['retranscribe'], key=f'retx_{doc_id}'):
-                            if openai_client is None: st.error(L['openai_missing'])
+                            if st.session_state.openai_client is None: st.error(L['openai_missing']) # Use session state client
                             elif data.get('gcs_path') and gcs_client and bucket_name:
                                 with st.spinner(L['transcribing']):
                                     try:
@@ -1352,15 +1358,6 @@ Customer Inquiry: {customer_query}
                 # --- ⭐ Whisper 오디오 전사 기능 추가 ---
                 col_audio, col_text_area = st.columns([1, 2])
                 
-                # OpenAI Client 초기화 (Secrets에서 키를 로드)
-                openai_key = st.secrets.get("OPENAI_API_KEY")
-                openai_client = None
-                if openai_key:
-                    try:
-                        openai_client = OpenAI(api_key=openai_key)
-                    except Exception:
-                        openai_client = None
-
                 # 전사 결과 저장소 초기화
                 if 'last_transcript' not in st.session_state:
                     st.session_state.last_transcript = ""
@@ -1406,7 +1403,7 @@ Customer Inquiry: {customer_query}
                     
                     if audio_bytes_to_transcribe is None:
                         st.warning("먼저 마이크로 녹음을 완료하거나 오디오 파일을 업로드하세요.")                    
-                    elif openai_client is None:
+                    elif st.session_state.openai_client is None: # Use session state client
                         st.error(L.get("whisper_client_error", "OpenAI Key가 없어 음성 인식을 사용할 수 없습니다."))
                     else:
                         with st.spinner(L.get("whisper_processing", "음성 파일을 텍스트로 변환 중...")):
