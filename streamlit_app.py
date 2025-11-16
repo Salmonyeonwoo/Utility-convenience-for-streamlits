@@ -589,9 +589,9 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, filename: str = "audio.wav
         if text:
             return text, None
 
-except Exception as e:
+    except Exception as e:
 # 기록은 남기되 계속해서 다른 방식 시도
-    print("Whisper try1 error:", e)
+        print("Whisper try1 error:", e)
 
 
 try:
