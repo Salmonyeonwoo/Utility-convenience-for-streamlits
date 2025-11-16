@@ -7,3 +7,5 @@ config.js
 node_modules
 
 .env
+
+./.streamlit/secrets.toml
