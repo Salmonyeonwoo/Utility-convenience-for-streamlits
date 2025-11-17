@@ -620,6 +620,7 @@ def render_tts_button(text: str, lang_key: str):
 
     if st.button(L["button_listen_audio"]):
         with st.spinner(L["tts_status_generating"]):
+
             audio_bytes, msg = synthesize_tts(text, lang_key)
 
             if audio_bytes:
