@@ -615,17 +615,24 @@ def synthesize_tts(text: str, lang_key: str):
         return None, f"❌ {L['tts_status_error']} (OpenAI TTS Error: {e})"
 
 
+import hashlib
+
 def render_tts_button(text: str, lang_key: str):
     L = LANG[lang_key]
 
-    if st.button(L["button_listen_audio"]):
+    # 메시지 내용 기반 고유 해시 생성
+    unique_id = hashlib.md5(text.encode("utf-8")).hexdigest()
+
+    # Streamlit UI - 고유 키 사용
+    if st.button(L["button_listen_audio"], key=f"tts_btn_{unique_id}"):
         with st.spinner(L["tts_status_generating"]):
             audio_bytes, msg = synthesize_tts(text, lang_key)
             if audio_bytes:
-                st.audio(audio_bytes, format="audio/mp3")
+                st.audio(audio_bytes, format="audio/mp3", autoplay=True)
                 st.success(msg)
             else:
                 st.error(msg)
+
 
 
 
