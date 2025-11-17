@@ -1605,7 +1605,6 @@ elif feature_selection == L["simulator_tab"]:
 
                 reaction_lower = reaction.lower()
 
-                # 고객이 “없습니다”라고 명확하게 말한 경우 → 종료
                 closing_user_signals = [
                     "없습니다", "없어요", "없어",
                     "no more", "nothing else",
@@ -1615,6 +1614,9 @@ elif feature_selection == L["simulator_tab"]:
                 appreciation_signals = [
                     "감사", "thank", "ありがとう"
                 ]
+
+                is_closing = any(k in reaction_lower for k in closing_user_signals)
+                is_positive = any(k in reaction_lower for k in appreciation_signals)
 
                 # 1) 고객이 종료 의사를 표현한 경우
                 if any(k in reaction_lower for k in closing_user_signals):
