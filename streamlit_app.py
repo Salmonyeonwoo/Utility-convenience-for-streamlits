@@ -591,35 +591,43 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/we
             pass
 
 
-def synthesize_tts(text: str, lang_key: str) -> (bytes, str):
+def synthesize_tts(text: str, lang_key: str):
     L = LANG[lang_key]
     client = st.session_state.openai_client
     if client is None:
         return None, f"❌ {L['tts_status_error']} (Client Missing)"
 
     try:
-        res = client.audio.speech.create(
+        # OpenAI Python 1.x 표준 방식
+        response = client.audio.speech.create(
             model="tts-1",
             voice="nova",
             input=text,
+            format="mp3"
         )
-        # openai-python 1.x: bytes는 res.read() 또는 res.content
-        audio_bytes = res.read() if hasattr(res, "read") else res.content
+
+        # 1.x에서 공식적으로 사용하는 audio bytes 필드
+        audio_bytes = response.data
+
         return audio_bytes, f"✅ {L['tts_status_success']}"
     except Exception as e:
         return None, f"❌ {L['tts_status_error']} (OpenAI TTS Error: {e})"
 
 
+
 def render_tts_button(text: str, lang_key: str):
     L = LANG[lang_key]
-    if st.button(L["button_listen_audio"], key=f"tts_btn_{hash(text)}_{time.time()}"):
+
+    if st.button(L["button_listen_audio"]):
         with st.spinner(L["tts_status_generating"]):
             audio_bytes, msg = synthesize_tts(text, lang_key)
+
             if audio_bytes:
-                st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+                st.audio(audio_bytes, format="audio/mp3")
                 st.success(msg)
             else:
                 st.error(msg)
+
 
 # ========================================
 # 4. 로컬 음성 기록 Helper
@@ -1579,50 +1587,75 @@ elif feature_selection == L["simulator_tab"]:
                 # st.rerun()
 
             if col_next.button(L["request_rebuttal_button"], key="sim_next_rebuttal_btn"):
+
                 if not st.session_state.is_llm_ready or not LLM_API_KEY:
                     st.warning("API Key가 없어 대화형 시뮬레이션은 불가능합니다.")
-                elif st.session_state.simulator_chain is None:
+                    st.stop()
+
+                if st.session_state.simulator_chain is None:
                     st.error(L["llm_error_init"])
+                    st.stop()
+
+                next_prompt = f"""
+            You are now ROLEPLAYING as the CUSTOMER.
+
+            Analyze the entire dialogue so far and respond to the agent’s last message.
+
+            Rules:
+            1. If the agent asked a question or asked for more information → provide exactly ONE piece of missing information.
+            2. If the agent simply gave a solution without asking questions → respond with appreciation.
+            3. If appreciation is given → ALWAYS respond with a follow-up line:
+               "{L['customer_closing_confirm']}"
+            4. If the agent asks "Anything else?" and the customer has no more questions:
+               - Respond politely with "{L['customer_positive_response']}".
+               - Then the system must END the chat.
+            5. Language MUST be {LANG[st.session_state.language]['lang_select']}.
+                """
+
+                with st.spinner(L["response_generating"]):
+                    reaction = st.session_state.simulator_chain.predict(input=next_prompt)
+
+                # 종료 여부 판단
+                lower = reaction.lower()
+                closing_keywords = [
+                    "없습니다", "없어요", "없어",
+                    "no more", "no thanks", "nothing else",
+                    "結構です", "大丈夫です"
+                ]
+                positive_keywords = [
+                    "thank you", "감사", "ありがとう",
+                ]
+
+                is_close_request = any(k in lower for k in closing_keywords)
+                is_positive = any(k in lower for k in positive_keywords)
+
+                if is_close_request:
+                    # 상담 종료 + 설문 안내
+                    end_msg = f"{L['prompt_survey']}"
+                    st.session_state.simulator_messages.append({"role": "system_end", "content": end_msg})
+                    st.session_state.is_chat_ended = True
+
+                    save_simulation_history_local(
+                        st.session_state.customer_query_text_area,
+                        customer_type_display,
+                        st.session_state.simulator_messages,
+                        is_chat_ended=True,
+                    )
+
                 else:
-                    next_prompt = f"""
-Roleplay as the customer ({customer_type_display}) based on the entire conversation.
-Respond to the agent's last message in a cooperative tone.
+                    st.session_state.simulator_messages.append(
+                        {"role": "customer_rebuttal", "content": reaction}
+                    )
+                    st.session_state.simulator_memory.chat_memory.add_ai_message(reaction)
 
-Rules:
-- If the agent requested specific information, provide ONE key detail.
-- Or provide a short positive closing remark like "{L['customer_positive_response']}".
-- Language MUST match the user language.
+                    save_simulation_history_local(
+                        st.session_state.customer_query_text_area,
+                        customer_type_display,
+                        st.session_state.simulator_messages,
+                        is_chat_ended=False,
+                    )
 
-Return only the customer's message.
-                    """
-                    with st.spinner(L["response_generating"]):
-                        try:
-                            reaction = st.session_state.simulator_chain.predict(input=next_prompt)
-                        except Exception as e:
-                            st.error(f"LLM 응답 생성 중 오류: {e}")
-                            st.stop()
-
-                        lower = reaction.lower()
-                        positive_keywords = [
-                            "thank you",
-                            "감사",
-                            "ありがとう",
-                        ]
-                        is_positive = any(k in lower for k in positive_keywords)
-
-                        role = "customer_end" if is_positive else "customer_rebuttal"
-
-                        st.session_state.simulator_messages.append(
-                            {"role": role, "content": reaction}
-                        )
-                        st.session_state.simulator_memory.chat_memory.add_ai_message(reaction)
-                        save_simulation_history_local(
-                            st.session_state.customer_query_text_area,
-                            customer_type_display,
-                            st.session_state.simulator_messages,
-                            is_chat_ended=is_positive,
-                        )
-                        if is_positive:
+                    if is_positive:
                             st.session_state.is_chat_ended = True
                         # st.rerun()
 
@@ -1786,6 +1819,5 @@ elif feature_selection == L["lstm_tab"]:
             ax.set_ylabel("Score (0-100)")
             ax.legend()
             st.pyplot(fig)
-            
     except Exception as e:
         st.info(f"LSTM 기능 에러: {e}")
