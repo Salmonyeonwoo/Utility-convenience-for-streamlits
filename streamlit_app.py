@@ -598,20 +598,21 @@ def synthesize_tts(text: str, lang_key: str):
         return None, f"❌ {L['tts_status_error']} (Client Missing)"
 
     try:
-        # OpenAI Python 1.x 표준 방식
+        # format 파라미터 없이 호출해야 함
         response = client.audio.speech.create(
             model="tts-1",
             voice="nova",
             input=text,
-            format="mp3"
         )
 
-        # 1.x에서 공식적으로 사용하는 audio bytes 필드
+        # 최신 SDK에서 오디오 bytes는 response.data 로 제공됨
         audio_bytes = response.data
 
         return audio_bytes, f"✅ {L['tts_status_success']}"
+
     except Exception as e:
         return None, f"❌ {L['tts_status_error']} (OpenAI TTS Error: {e})"
+
 
 
 
