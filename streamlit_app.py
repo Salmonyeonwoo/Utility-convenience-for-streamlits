@@ -594,19 +594,20 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/we
 def synthesize_tts(text: str, lang_key: str):
     L = LANG[lang_key]
     client = st.session_state.openai_client
+
     if client is None:
         return None, f"❌ {L['tts_status_error']} (Client Missing)"
 
     try:
-        # format 파라미터 없이 호출해야 함
+        # TTS 생성: format 파라미터 절대 넣지 말 것
         response = client.audio.speech.create(
             model="tts-1",
             voice="nova",
             input=text,
         )
 
-        # 최신 SDK에서 오디오 bytes는 response.data 로 제공됨
-        audio_bytes = response.data
+        # 모든 SDK 버전에서 작동하는 안전한 방식
+        audio_bytes = response.read()
 
         return audio_bytes, f"✅ {L['tts_status_success']}"
 
@@ -614,21 +615,18 @@ def synthesize_tts(text: str, lang_key: str):
         return None, f"❌ {L['tts_status_error']} (OpenAI TTS Error: {e})"
 
 
-
-
 def render_tts_button(text: str, lang_key: str):
     L = LANG[lang_key]
 
     if st.button(L["button_listen_audio"]):
         with st.spinner(L["tts_status_generating"]):
-
             audio_bytes, msg = synthesize_tts(text, lang_key)
-
             if audio_bytes:
                 st.audio(audio_bytes, format="audio/mp3")
                 st.success(msg)
             else:
                 st.error(msg)
+
 
 
 # ========================================
