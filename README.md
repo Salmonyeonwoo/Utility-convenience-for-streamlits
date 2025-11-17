@@ -42,6 +42,11 @@ Utilizing LSTM
 
 <img width="1836" height="751" alt="image" src="https://github.com/user-attachments/assets/7f8c6ffd-a0f0-40da-994d-6f06859e2520" />
 
+Asking children's case via Korean
+
+<img width="1058" height="726" alt="image" src="https://github.com/user-attachments/assets/b05d168d-f98b-4ab9-a86e-78ce07a1595d" />
+
+
 Movies for RAG and LSTM via my streamlit app
 
 https://www.youtube.com/watch?v=MOQ2qD7Ws-E
