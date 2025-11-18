@@ -899,55 +899,53 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/we
         except OSError:
             pass
 
+# ========================================
+# 역할별 TTS 음성 스타일 설정
+# ========================================
 
-def synthesize_tts(text: str, lang_key: str):
-    L = LANG[lang_key]
+TTS_VOICES = {
+    "customer": {
+        "gender": "male",
+        "voice": "verse"      # 남성 목소리
+    },
+    "agent": {
+        "gender": "female",
+        "voice": "coral"      # 따뜻한 여성 목소리
+    }
+}
+
+def synthesize_tts(text: str, lang_key: str, role: str = "customer"):
+    client = st.session_state.openai_client
+    if not client:
+        return None, LANG[lang_key]["openai_missing"]
+
+    voice_cfg = TTS_VOICES.get(role, TTS_VOICES["customer"])
+    voice_name = voice_cfg["voice"]
 
     try:
-        client = st.session_state.openai_client
-        if client is None:
-            return None, L["tts_status_error"]
-
-        # 최신 Audio Speech API
         response = client.audio.speech.create(
             model="gpt-4o-mini-tts",
-            voice="alloy",
-            input=text,
-            response_format="mp3"
+            voice=voice_name,
+            input=text
         )
-
-        # ---- 중요: bytes 로 변환 ----
-        if hasattr(response, "read"):
-            audio_bytes = response.read()
-        elif hasattr(response, "content"):
-            audio_bytes = response.content
-        else:
-            audio_bytes = bytes(response)
-
-        return audio_bytes, L["tts_status_success"]
+        return response.read(), LANG[lang_key]["tts_status_success"]
 
     except Exception as e:
-        return None, f"TTS Error: {e}"
+        return None, f"TTS Error: {str(e)}"
 
 
 
-
-def render_tts_button(text, lang_key, prefix=""):
-    """음성 버튼 렌더링 (키 충돌 방지 포함)"""
+def render_tts_button(text, lang_key, role="customer", prefix=""):
     L = LANG[lang_key]
-
-    safe_key = prefix + "tts_" + hashlib.md5(text.encode()).hexdigest()
+    safe_key = prefix + f"tts_{role}_" + hashlib.md5(text.encode()).hexdigest()
 
     if st.button(L["button_listen_audio"], key=safe_key):
-        with st.spinner(L["tts_status_generating"]):
-            audio_bytes, msg = synthesize_tts(text, lang_key)
+        audio_bytes, msg = synthesize_tts(text, lang_key, role=role)
+        if audio_bytes:
+            st.audio(audio_bytes, format="audio/mp3")
+        else:
+            st.error(msg)
 
-            if audio_bytes:
-                # ★ mp3 재생 확실히 되는 방식
-                st.audio(audio_bytes, format="audio/mp3")
-                st.success(msg)
-            else:
-                st.error(msg)
 
 
 # ========================================
@@ -1729,7 +1727,7 @@ elif feature_selection == L["simulator_tab"]:
         if role == "customer":
             with st.chat_message("user", avatar="🙋"):
                 st.markdown(content)
-                render_tts_button(content, st.session_state.language, prefix="customer_")
+                render_tts_button(customer_message, st.session_state.language, role="customer", prefix="cust_")
 
         elif role == "supervisor":
             with st.chat_message("assistant", avatar="🤖"):
@@ -1739,7 +1737,7 @@ elif feature_selection == L["simulator_tab"]:
         elif role == "agent_response":
             with st.chat_message("user", avatar="🧑‍💻"):
                 st.markdown(content)
-                render_tts_button(content, st.session_state.language, prefix="agent_")
+                render_tts_button(agent_reply, st.session_state.language, role="agent", prefix="agt_")
 
         elif role in ["customer_rebuttal", "customer_end", "system_end"]:
             with st.chat_message("assistant", avatar="✨"):
