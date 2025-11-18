@@ -1469,35 +1469,25 @@ elif feature_selection == L["simulator_tab"]:
         role = msg["role"]
         content = msg["content"]
 
-        # 고객 메시지
         if role == "customer":
             with st.chat_message("user", avatar="🙋"):
                 st.markdown(content)
-                render_tts_button(content, st.session_state.language)
+                render_tts_button(content, st.session_state.language, prefix="customer_")
 
-        # Supervisor / 가이드 메시지
         elif role == "supervisor":
             with st.chat_message("assistant", avatar="🤖"):
                 st.markdown(content)
-                render_tts_button(content, st.session_state.language)
+                render_tts_button(content, st.session_state.language, prefix="supervisor_")
 
-        # 에이전트 응답
         elif role == "agent_response":
             with st.chat_message("user", avatar="🧑‍💻"):
                 st.markdown(content)
-                render_tts_button(content, st.session_state.language)
+                render_tts_button(content, st.session_state.language, prefix="agent_")
 
-        # 고객 리액션
-        elif role == "customer_rebuttal":
-            with st.chat_message("assistant", avatar="😠"):
-                st.markdown(content)
-                render_tts_button(content, st.session_state.language)
-
-        # 종료 메시지
-        elif role in ["customer_end", "system_end"]:
+        elif role in ["customer_rebuttal", "customer_end", "system_end"]:
             with st.chat_message("assistant", avatar="✨"):
                 st.markdown(content)
-                render_tts_button(content, st.session_state.language)
+                render_tts_button(content, st.session_state.language, prefix=f"{role}_")
 
     # 에이전트 응답 / 마이크 입력
     # 에이전트 응답 / 마이크 입력
@@ -1639,6 +1629,53 @@ elif feature_selection == L["simulator_tab"]:
 
         # 에이전트 응답 이후: 종료/다음 반응
         last_role = st.session_state.simulator_messages[-1]["role"] if st.session_state.simulator_messages else None
+        last_role = st.session_state.simulator_messages[-1]["role"] if st.session_state.simulator_messages else None
+
+        if last_role == "customer":
+            customer_text = st.session_state.simulator_messages[-1]["content"].strip().lower()
+
+            appreciation_patterns = ["감사", "thank", "ありがとうございます", "ありがとう", "감사합니다"]
+            closing_patterns = ["없습니다", "없어요", "없어", "no more", "nothing else", "結構です", "大丈夫です"]
+
+            # 1) 고객이 감사 인사를 한 경우
+            if any(p in customer_text for p in appreciation_patterns):
+
+                st.info("고객이 감사 인사를 했습니다. 에이전트가 추가 문의 여부를 확인해야 합니다.")
+
+                if st.button(L["send_closing_confirm_button"], key="btn_send_closing_confirm"):
+                    closing_msg = L["customer_closing_confirm"]
+
+                    st.session_state.simulator_messages.append(
+                        {"role": "supervisor", "content": closing_msg}
+                    )
+                    st.session_state.simulator_memory.chat_memory.add_ai_message(closing_msg)
+
+                    st.success("추가 문의 여부 확인 메시지가 전송되었습니다.")
+                    st.stop()
+
+            # 2) 고객이 “추가 문의 없음”을 표현한 경우
+            elif any(p in customer_text for p in closing_patterns):
+
+                st.success("고객이 더 이상 문의가 없다고 말했습니다.")
+
+                end_msg = L["prompt_survey"]
+                st.session_state.simulator_messages.append({"role": "system_end", "content": end_msg})
+                st.session_state.is_chat_ended = True
+
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area,
+                    customer_type_display,
+                    st.session_state.simulator_messages,
+                    is_chat_ended=True,
+                )
+
+                st.info("📌 상담 종료 단계입니다. 설문조사 메시지를 전송할 수 있습니다.")
+                st.stop()
+
+            # 3) 그 외의 경우 → 일반적인 추가 질문
+            else:
+                pass  # 에이전트 응답 UI 그대로 유지됨
+
         if last_role == "agent_response":
             col_end, col_next = st.columns([1, 2])
 
@@ -1655,7 +1692,25 @@ elif feature_selection == L["simulator_tab"]:
                 st.stop()
                 # st.rerun()
 
-            if col_next.button(L["request_rebuttal_button"], key="sim_next_rebuttal_btn"):
+                if col_next.button(L["request_rebuttal_button"], key="sim_next_rebuttal_btn"):
+                    next_prompt = """ ... (LLM에게 customer role 요청) ... """
+
+                    with st.spinner(L["response_generating"]):
+                        reaction = st.session_state.simulator_chain.predict(input=next_prompt)
+
+                    st.session_state.simulator_messages.append(
+                        {"role": "customer_rebuttal", "content": reaction}
+                    )
+                    st.session_state.simulator_memory.chat_memory.add_ai_message(reaction)
+
+                    save_simulation_history_local(
+                        st.session_state.customer_query_text_area,
+                        customer_type_display,
+                        st.session_state.simulator_messages,
+                        is_chat_ended=False,
+                    )
+
+                    st.stop()
 
                 if not st.session_state.is_llm_ready or not LLM_API_KEY:
                     st.warning("API Key가 없어 대화형 시뮬레이션은 불가능합니다.")
@@ -1726,28 +1781,28 @@ elif feature_selection == L["simulator_tab"]:
                 # -----------------------------
                 # 3) 고객이 감사 메시지 보내옴 → supervisor가 closing 질문 자동 발송
                 # -----------------------------
-                if any(k in reaction_lower for k in appreciation_signals):
-                    # 고객 감사 메시지
-                    st.session_state.simulator_messages.append(
-                        {"role": "customer_rebuttal", "content": reaction}
-                    )
-                    st.session_state.simulator_memory.chat_memory.add_ai_message(reaction)
-
-                    follow_up = L["customer_closing_confirm"]
-
-                    # supervisor가 추가 문의 여부 질문
-                    st.session_state.simulator_messages.append(
-                        {"role": "supervisor", "content": follow_up}
-                    )
-                    st.session_state.simulator_memory.chat_memory.add_ai_message(follow_up)
-
-                    save_simulation_history_local(
-                        st.session_state.customer_query_text_area,
-                        customer_type_display,
-                        st.session_state.simulator_messages,
-                        is_chat_ended=False,
-                    )
-                    st.stop()
+                # if any(k in reaction_lower for k in appreciation_signals):
+                #     # 고객 감사 메시지
+                #     st.session_state.simulator_messages.append(
+                #         {"role": "customer_rebuttal", "content": reaction}
+                #     )
+                #     st.session_state.simulator_memory.chat_memory.add_ai_message(reaction)
+                #
+                #     follow_up = L["customer_closing_confirm"]
+                #
+                #     # supervisor가 추가 문의 여부 질문
+                #     st.session_state.simulator_messages.append(
+                #         {"role": "supervisor", "content": follow_up}
+                #     )
+                #     st.session_state.simulator_memory.chat_memory.add_ai_message(follow_up)
+                #
+                #     save_simulation_history_local(
+                #         st.session_state.customer_query_text_area,
+                #         customer_type_display,
+                #         st.session_state.simulator_messages,
+                #         is_chat_ended=False,
+                #     )
+                #     st.stop()
 
                 # -----------------------------
                 # 4) 기타 일반 반응
@@ -1766,26 +1821,26 @@ elif feature_selection == L["simulator_tab"]:
                 st.stop()
 
                 # 2) 고객이 감사 인사 → 반드시 “추가 문의 여부” 확인 메시지 발송
-                if any(k in reaction_lower for k in appreciation_signals):
-                    follow_up = L["customer_closing_confirm"]
-
-                    st.session_state.simulator_messages.append(
-                        {"role": "customer_rebuttal", "content": reaction}
-                    )
-                    st.session_state.simulator_messages.append(
-                        {"role": "supervisor", "content": follow_up}
-                    )
-
-                    st.session_state.simulator_memory.chat_memory.add_ai_message(reaction)
-                    st.session_state.simulator_memory.chat_memory.add_ai_message(follow_up)
-
-                    save_simulation_history_local(
-                        st.session_state.customer_query_text_area,
-                        customer_type_display,
-                        st.session_state.simulator_messages,
-                        is_chat_ended=False,
-                    )
-                    st.stop()
+                # if any(k in reaction_lower for k in appreciation_signals):
+                #     follow_up = L["customer_closing_confirm"]
+                #
+                #     st.session_state.simulator_messages.append(
+                #         {"role": "customer_rebuttal", "content": reaction}
+                #     )
+                #     st.session_state.simulator_messages.append(
+                #         {"role": "supervisor", "content": follow_up}
+                #     )
+                #
+                #     st.session_state.simulator_memory.chat_memory.add_ai_message(reaction)
+                #     st.session_state.simulator_memory.chat_memory.add_ai_message(follow_up)
+                #
+                #     save_simulation_history_local(
+                #         st.session_state.customer_query_text_area,
+                #         customer_type_display,
+                #         st.session_state.simulator_messages,
+                #         is_chat_ended=False,
+                #     )
+                #     st.stop()
 
                 # 3) 그 외 일반적 반응
                 st.session_state.simulator_messages.append(
