@@ -902,29 +902,30 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/we
 
 def synthesize_tts(text: str, lang_key: str):
     """
-    OpenAI TTS → MP3 바이트로 변환하여 반환
+    OpenAI Audio TTS (모든 SDK 버전 호환)
+    출력: MP3 bytes
     """
-
-    client = st.session_state.openai_client
-    if client is None:
-        return None, LANG[lang_key]["tts_status_error"]
-
     try:
-        # OpenAI Audio API - TTS (모델: gpt-4o-mini-tts 권장)
+        client = st.session_state.openai_client
+        if client is None:
+            return None, LANG[lang_key]["tts_status_error"]
+
+        # 최신 Audio API: response_format="mp3"
         response = client.audio.speech.create(
             model="gpt-4o-mini-tts",
             voice="alloy",
             input=text,
-            format="mp3"     # 반드시 mp3로!
+            response_format="mp3"     # ← format이 아니라 response_format! 100% 지원됨
         )
 
-        # response.stream.read() 로 완전한 MP3 bytes 얻기
-        audio_bytes = response.read()
+        # 반환: bytes 형태
+        audio_bytes = response
 
         return audio_bytes, LANG[lang_key]["tts_status_success"]
 
     except Exception as e:
         return None, f"TTS Error: {e}"
+
 
 
 def render_tts_button(text, lang_key, prefix=""):
