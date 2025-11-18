@@ -542,15 +542,15 @@ L = LANG[st.session_state.language]
 
 @st.cache_resource
 
-if "OPENAI_API_KEY" in st.secrets:
-    secret_key = st.secrets["OPENAI_API_KEY"]
-else:
+# Safely load API key from Streamlit secrets
+secret_key = None
+
+try:
+    if hasattr(st, "secrets") and "OPENAI_API_KEY" in st.secrets:
+        secret_key = st.secrets["OPENAI_API_KEY"]
+except Exception:
     secret_key = None
 
-
-    
-if hasattr(st, "secrets"):
-   secret_key = st.secrets["OPENAI_API_KEY"]
 
 # 2) 사용자 입력 키 (세션에 저장)
 if "user_api_key" not in st.session_state:
