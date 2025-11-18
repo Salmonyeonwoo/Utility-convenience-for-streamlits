@@ -543,7 +543,8 @@ L = LANG[st.session_state.language]
 # 1) Streamlit Cloud Secrets에서 우선 가져오기
 
 
-secret_key = None
+secret_key = st.secrets.get("OPENAI_API_KEY") if "OPENAI_API_KEY" in st.secrets else None
+    
 if hasattr(st, "secrets"):
     if "OPENAI_API_KEY" in st.secrets:
         secret_key = st.secrets["OPENAI_API_KEY"]
