@@ -934,8 +934,8 @@ def synthesize_tts(text: str, lang_key: str, role: str = "agent", emotion: str =
         resp = client.audio.speech.create(
             model="gpt-4o-mini-tts",
             voice=voice_name,
-            input=style_text,
-            format="mp3"
+            input=style_text
+            # format="mp3"
         )
         return resp.read(), L["tts_status_success"]
 
