@@ -914,24 +914,34 @@ TTS_VOICES = {
     }
 }
 
-def synthesize_tts(text: str, lang_key: str, role: str = "customer"):
+def synthesize_tts(text: str, lang_key: str, role: str = "agent", emotion: str = "neutral"):
+    L = LANG[lang_key]
     client = st.session_state.openai_client
-    if not client:
-        return None, LANG[lang_key]["openai_missing"]
+    if client is None:
+        return None, L["openai_missing"]
 
-    voice_cfg = TTS_VOICES.get(role, TTS_VOICES["customer"])
-    voice_name = voice_cfg["voice"]
+    # 역할 및 감정 톤 적용
+    style_text = f"""
+<voice role="{role}" emotion="{emotion}" style="{'professional' if role=='agent' else 'expressive'}">
+{text}
+</voice>
+"""
+
+    # 음색 모델 선택
+    voice_name = TTS_VOICES[role]["voice"]
 
     try:
-        response = client.audio.speech.create(
+        resp = client.audio.speech.create(
             model="gpt-4o-mini-tts",
             voice=voice_name,
-            input=text
+            input=style_text,
+            format="mp3"
         )
-        return response.read(), LANG[lang_key]["tts_status_success"]
+        return resp.read(), L["tts_status_success"]
 
     except Exception as e:
-        return None, f"TTS Error: {str(e)}"
+        return None, f"{L['tts_status_error']}: {e}"
+
 
 
 
