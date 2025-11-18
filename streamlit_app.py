@@ -674,23 +674,23 @@ def synthesize_tts(text: str, lang_key: str):
 
 import hashlib
 
-def render_tts_button(text: str, lang_key: str):
+def render_tts_button(text, lang_key, prefix=""):
+    """음성 듣기 버튼을 렌더링 (각 prefix마다 위젯 key 구분)"""
+
     L = LANG[lang_key]
 
-    # 메시지 내용 기반 고유 해시 생성
-    unique_id = hashlib.md5(text.encode("utf-8")).hexdigest()
+    # key 충돌 방지
+    safe_key = prefix + "tts_" + hashlib.md5(text.encode()).hexdigest()
 
-    # Streamlit UI - 고유 키 사용
-    if st.button(L["button_listen_audio"], key=f"tts_btn_{unique_id}"):
-        with st.spinner(L["tts_status_generating"]):
+    col1, col2 = st.columns([1, 5])
+
+    with col1:
+        if st.button(L["button_listen_audio"], key=safe_key):
             audio_bytes, msg = synthesize_tts(text, lang_key)
             if audio_bytes:
-                st.audio(audio_bytes, format="audio/mp3", autoplay=True)
-                st.success(msg)
+                st.audio(audio_bytes, format="audio/wav")
             else:
                 st.error(msg)
-
-
 
 
 # ========================================
