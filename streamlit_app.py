@@ -12,6 +12,7 @@ import time
 import uuid
 import base64
 import tempfile
+import hashlib
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
@@ -678,25 +679,20 @@ def synthesize_tts(text: str, lang_key: str):
         return None, f"❌ {L['tts_status_error']} (OpenAI TTS Error: {e})"
 
 
-import hashlib
-
-def render_tts_button(text, lang_key, prefix=""):
-    """음성 듣기 버튼을 렌더링 (각 prefix마다 위젯 key 구분)"""
-
+def render_tts_button(text: str, lang_key: str, prefix: str = ""):
     L = LANG[lang_key]
 
-    # key 충돌 방지
-    safe_key = prefix + "tts_" + hashlib.md5(text.encode()).hexdigest()
+    # 완전 고유 key 생성 (message, prefix, time 조합)
+    unique_key = prefix + "_tts_" + hashlib.md5(
+        (text + prefix + str(time.time())).encode("utf-8")
+    ).hexdigest()
 
-    col1, col2 = st.columns([1, 5])
-
-    with col1:
-        if st.button(L["button_listen_audio"], key=safe_key):
-            audio_bytes, msg = synthesize_tts(text, lang_key)
-            if audio_bytes:
-                st.audio(audio_bytes, format="audio/wav")
-            else:
-                st.error(msg)
+    if st.button(L["button_listen_audio"], key=unique_key):
+        audio_bytes, msg = synthesize_tts(text, lang_key)
+        if audio_bytes:
+            st.audio(audio_bytes, format="audio/wav")
+        else:
+            st.error(msg)
 
 
 # ========================================
