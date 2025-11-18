@@ -947,39 +947,26 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/we
 
 TTS_VOICES = {
     "customer": {
-        "neutral": {
-            "voice": "ko-KR-Standard-B",
-            "speaking_rate": 1.0,
-            "pitch": 0.0
-        },
-        "angry": {
-            "voice": "ko-KR-Standard-B",
-            "speaking_rate": 1.3,
-            "pitch": -6.0
-        },
-        "thankful": {
-            "voice": "ko-KR-Standard-B",
-            "speaking_rate": 0.95,
-            "pitch": +3.0
-        }
+        "gender": "male",
+        "voice": "verse"
     },
     "agent": {
-        "default": {
-            "voice": "ko-KR-Standard-A",
-            "speaking_rate": 0.98,
-            "pitch": +1.0
-        },
-        "firm": {
-            "voice": "ko-KR-Standard-A",
-            "speaking_rate": 1.05,
-            "pitch": -2.0
-        }
+        "gender": "female",
+        "voice": "coral"
+    },
+    "supervisor": {
+        "gender": "female",
+        "voice": "alloy"   # supervisor용 톤 추천
     }
 }
 
 
 
+
 def synthesize_tts(text: str, lang_key: str, role: str = "agent", emotion: str = "neutral"):
+    if role not in TTS_VOICES:
+        role = "agent"
+
     L = LANG[lang_key]
     client = st.session_state.openai_client
     if client is None:
@@ -1831,7 +1818,8 @@ elif feature_selection == L["simulator_tab"]:
         elif role == "supervisor":
             with st.chat_message("assistant", avatar="🤖"):
                 st.markdown(content)
-                render_tts_button(content, st.session_state.language, prefix="supervisor_")
+                render_tts_button(content, st.session_state.language, role="supervisor", prefix="supervisor_")
+
 
         elif role == "agent_response":
             with st.chat_message("user", avatar="🧑‍💻"):
