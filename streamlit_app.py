@@ -1947,30 +1947,27 @@ elif feature_selection == L["simulator_tab"]:
                 send_clicked = st.button(L["send_response_button"], key="send_response_btn")
 
             if send_clicked:
-                if st.button("send_response", key="btn_send_agent"):
+                if st.button(L["send_response_button"], key="send_agent_response_btn"):
+
                     agent_response = st.session_state.agent_response_area_text.strip()
 
                     if not agent_response:
-                        st.warning("응답을 입력하세요.")
+                        st.warning(L["empty_response_warning"])
                         st.stop()
 
-                    # 메시지 저장
+                    # 마지막 전사 내용 저장
+                    st.session_state.last_transcript = agent_response
+
+                    # 메시지 로그 업데이트
                     st.session_state.simulator_messages.append(
                         {"role": "agent_response", "content": agent_response}
                     )
-
                     st.session_state.simulator_memory.chat_memory.add_ai_message(agent_response)
 
                     # 입력창 초기화
                     st.session_state.agent_response_area_text = ""
-                else:
-                    st.session_state.last_transcript = agent_response                    
-                    st.session_state.sim_audio_bytes = None
+                    st.session_state.sim_audio_bytes = None                  
 
-                    st.session_state.simulator_messages.append(
-                        {"role": "agent_response", "content": agent_response}
-                    )
-                    
                     render_tts_button(agent_response, st.session_state.language, role="agent", prefix="agt_")
 
                     save_simulation_history_local(
