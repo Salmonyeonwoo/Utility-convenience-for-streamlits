@@ -52,6 +52,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(AUDIO_DIR, exist_ok=True)
 os.makedirs(RAG_INDEX_DIR, exist_ok=True)
 
+
 # ----------------------------------------
 # JSON Helper
 # ----------------------------------------
@@ -495,8 +496,6 @@ LANG: Dict[str, Dict[str, str]] = {
     }
 }
 
-
-
 # ========================================
 # 1-1. Session State 초기화
 # ========================================
@@ -567,7 +566,6 @@ except Exception:
 # 2) 사용자 입력 키 (세션에 저장)
 if "user_api_key" not in st.session_state:
     st.session_state.user_api_key = ""
-
 
 # 3) UI 제공: 사용자가 직접 입력하는 백업 API Key
 # ========================================
@@ -760,6 +758,26 @@ def get_llm_client():
 
     return None, None
 
+def get_google_tts_client():
+    if "GCP_TTS_CREDENTIALS" not in st.session_state:
+        return None, "❌ Google Cloud TTS 인증 정보가 없습니다."
+
+    try:
+        data = st.session_state["GCP_TTS_CREDENTIALS"]
+
+        # temp file 생성
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
+            tmp.write(data.encode("utf-8"))
+            tmp_path = tmp.name
+
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp_path
+
+        client = texttospeech.TextToSpeechClient()
+        return client, None
+
+    except Exception as e:
+        return None, f"❌ TTS 클라이언트 초기화 실패: {e}"
+
 
 def run_llm(prompt: str) -> str:
     """선택된 LLM으로 프롬프트 실행"""
@@ -819,6 +837,28 @@ def run_llm(prompt: str) -> str:
 
     return "❌ Unsupported provider."
 
+def analyze_emotion(text):
+    prompt = f"""
+    분석 대상 문장:
+    "{text}"
+
+    고객의 감정을 단 하나로 분류하세요:
+    angry / upset / frustrated / neutral / satisfied / thankful / sad
+
+    답변은 하나의 단어로만 출력하세요.
+    """
+
+    result = run_llm(prompt)
+    result = result.lower().strip()
+
+    allowed = ["angry", "upset", "frustrated", "neutral", "satisfied", "thankful", "sad"]
+
+    # 안전 처리
+    for a in allowed:
+        if a in result:
+            return a
+
+    return "neutral"
 
 # ========================================
 # 2-A. Whisper / TTS 용 OpenAI Client 별도로 초기화
@@ -860,6 +900,7 @@ if not st.session_state.is_llm_ready:
 else:
     st.session_state.llm_init_error_msg = ""
 
+
 # ========================================
 # 3. Whisper / TTS Helper
 # ========================================
@@ -899,20 +940,44 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/we
         except OSError:
             pass
 
+
 # ========================================
 # 역할별 TTS 음성 스타일 설정
 # ========================================
 
 TTS_VOICES = {
     "customer": {
-        "gender": "male",
-        "voice": "verse"      # 남성 목소리
+        "neutral": {
+            "voice": "ko-KR-Standard-B",
+            "speaking_rate": 1.0,
+            "pitch": 0.0
+        },
+        "angry": {
+            "voice": "ko-KR-Standard-B",
+            "speaking_rate": 1.3,
+            "pitch": -6.0
+        },
+        "thankful": {
+            "voice": "ko-KR-Standard-B",
+            "speaking_rate": 0.95,
+            "pitch": +3.0
+        }
     },
     "agent": {
-        "gender": "female",
-        "voice": "coral"      # 따뜻한 여성 목소리
+        "default": {
+            "voice": "ko-KR-Standard-A",
+            "speaking_rate": 0.98,
+            "pitch": +1.0
+        },
+        "firm": {
+            "voice": "ko-KR-Standard-A",
+            "speaking_rate": 1.05,
+            "pitch": -2.0
+        }
     }
 }
+
+
 
 def synthesize_tts(text: str, lang_key: str, role: str = "agent", emotion: str = "neutral"):
     L = LANG[lang_key]
@@ -922,7 +987,7 @@ def synthesize_tts(text: str, lang_key: str, role: str = "agent", emotion: str =
 
     # 역할 및 감정 톤 적용
     style_text = f"""
-<voice role="{role}" emotion="{emotion}" style="{'professional' if role=='agent' else 'expressive'}">
+<voice role="{role}" emotion="{emotion}" style="{'professional' if role == 'agent' else 'expressive'}">
 {text}
 </voice>
 """
@@ -943,8 +1008,6 @@ def synthesize_tts(text: str, lang_key: str, role: str = "agent", emotion: str =
         return None, f"{L['tts_status_error']}: {e}"
 
 
-
-
 def render_tts_button(text, lang_key, role="customer", prefix=""):
     L = LANG[lang_key]
     safe_key = prefix + f"tts_{role}_" + hashlib.md5(text.encode()).hexdigest()
@@ -955,7 +1018,6 @@ def render_tts_button(text, lang_key, role="customer", prefix=""):
             st.audio(audio_bytes, format="audio/mp3")
         else:
             st.error(msg)
-
 
 
 # ========================================
@@ -971,11 +1033,11 @@ def save_voice_records(records: List[Dict[str, Any]]):
 
 
 def save_audio_record_local(
-    audio_bytes: bytes,
-    filename: str,
-    transcript_text: str,
-    mime_type: str = "audio/webm",
-    meta: Dict[str, Any] = None,
+        audio_bytes: bytes,
+        filename: str,
+        transcript_text: str,
+        mime_type: str = "audio/webm",
+        meta: Dict[str, Any] = None,
 ) -> str:
     records = load_voice_records()
     rec_id = str(uuid.uuid4())
@@ -1031,6 +1093,7 @@ def get_audio_bytes_local(rec_id: str):
         b = f.read()
     return b, rec
 
+
 # ========================================
 # 5. 로컬 시뮬레이션 이력 Helper
 # ========================================
@@ -1043,7 +1106,8 @@ def load_simulation_histories_local(lang_key: str) -> List[Dict[str, Any]]:
     ]
 
 
-def save_simulation_history_local(initial_query: str, customer_type: str, messages: List[Dict[str, Any]], is_chat_ended: bool):
+def save_simulation_history_local(initial_query: str, customer_type: str, messages: List[Dict[str, Any]],
+                                  is_chat_ended: bool):
     histories = _load_json(SIM_META_FILE, [])
     doc_id = str(uuid.uuid4())
     ts = datetime.utcnow().isoformat()
@@ -1063,6 +1127,7 @@ def save_simulation_history_local(initial_query: str, customer_type: str, messag
 
 def delete_all_history_local():
     _save_json(SIM_META_FILE, [])
+
 
 # ========================================
 # 6. RAG Helper (FAISS)
@@ -1169,6 +1234,7 @@ def rag_answer(question: str, vectorstore: FAISS, lang_key: str) -> str:
     resp = llm.invoke(prompt)
     return resp.content if hasattr(resp, "content") else str(resp)
 
+
 # ========================================
 # 7. LSTM Helper (간단 Mock + 시각화)
 # ========================================
@@ -1180,6 +1246,7 @@ def load_or_train_lstm():
     ts = 60 + 20 * np.sin(np.linspace(0, 4 * np.pi, n_points)) + np.random.normal(0, 5, n_points)
     ts = np.clip(ts, 50, 100).astype(np.float32)
     return ts
+
 
 # ========================================
 # 8. LLM (ChatOpenAI) for Simulator / Content
@@ -1241,6 +1308,26 @@ with st.sidebar:
         format_func=lambda x: {"ko": "한국어", "en": "English", "ja": "日本語"}[x],
     )
 
+    st.markdown("### 🔐 Google Cloud TTS 인증 설정 (Service Account JSON)")
+
+    uploaded_json = st.file_uploader(
+        "Google Cloud Service Account JSON 업로드",
+        type=["json"],
+        key="gcp_tts_json"
+    )
+
+    if uploaded_json is not None:
+        try:
+            # JSON 내용 읽기
+            json_data = uploaded_json.read().decode("utf-8")
+
+            # 세션에 저장
+            st.session_state["GCP_TTS_CREDENTIALS"] = json_data
+            st.success("Google Cloud TTS 인증 정보가 저장되었습니다!")
+
+        except Exception as e:
+            st.error(f"❌ JSON 처리 오류: {e}")
+
     # 🔹 언어 변경 감지
     if selected_lang_key != st.session_state.language:
         old_lang = st.session_state.language
@@ -1261,6 +1348,7 @@ with st.sidebar:
         # st.session_state.messages = []
 
         # st.rerun()
+
 
 
     L = LANG[st.session_state.language]
@@ -1545,7 +1633,8 @@ elif feature_selection == L["simulator_tab"]:
                 q = h["initial_query"][:30].replace("\n", " ")
                 return f"[{t_str}] {h['customer_type']} - {q}..."
 
-            options_map = { _label(h): h for h in filtered }
+
+            options_map = {_label(h): h for h in filtered}
             sel_key = st.selectbox(L["history_selectbox_label"], options=list(options_map.keys()))
             if st.button(L["history_load_button"], key="load_hist_btn"):
                 h = options_map[sel_key]
@@ -1682,7 +1771,7 @@ elif feature_selection == L["simulator_tab"]:
         **ROLEPLAY as the customer** who is frustrated but **HIGHLY COOPERATIVE** and
         provide the requested details piece by piece (not all at once).
         The customer MUST NOT argue about why the information is needed.
-        
+
         [CRITICAL RULE 6: ASK FOR ALL REQUIRED DETAILS AT ONCE]
         When composing the draft reply:
         - Do NOT ask one-by-one questions.
@@ -1921,7 +2010,7 @@ elif feature_selection == L["simulator_tab"]:
                     {"role": "customer", "content": reaction}
                 )
                 customer_message = reaction
-                render_tts_button(customer_message, st.session_state.language, role="customer", prefix="cust_")
+                render_tts_button(customer_message, st.session_state.language, role="customer",emotion=auto_emotion, prefix="cust_")
 
                 st.stop()
 
@@ -2059,7 +2148,6 @@ elif feature_selection == L["simulator_tab"]:
             5. Language MUST be {LANG[st.session_state.language]['lang_select']}.
                 """
 
-
                 # LLM 실행
                 with st.spinner(L["response_generating"]):
                     reaction = st.session_state.simulator_chain.predict(input=next_prompt)
@@ -2179,8 +2267,8 @@ elif feature_selection == L["simulator_tab"]:
                 )
 
                 if is_positive:
-                            st.session_state.is_chat_ended = True
-                        # st.rerun()
+                    st.session_state.is_chat_ended = True
+                # st.rerun()
 
 # -------------------- RAG Tab --------------------
 elif feature_selection == L["rag_tab"]:
