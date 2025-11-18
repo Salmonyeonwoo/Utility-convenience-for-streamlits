@@ -1741,7 +1741,7 @@ elif feature_selection == L["simulator_tab"]:
                 st.success(L["survey_sent_confirm"])  # 아래에서 추가해줄 Lang 문자열
                 st.session_state.simulation_finished = True
 
-                st.experimental_rerun()
+                st.rerun()
 
                 if st.session_state.get("simulation_finished", False):
                     st.session_state.simulation_finished = False
