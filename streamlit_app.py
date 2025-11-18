@@ -535,18 +535,18 @@ L = LANG[st.session_state.language]
 # 2. OpenAI Client 초기화 (secrets 사용 안 함)
 # ========================================
 
-@st.cache_resource
+
 # ========================================
 # 0-A. API Key 안전 구조 (Secrets + User Input)
 # ========================================
 
-# 1) Streamlit Cloud Secrets에서 우선 가져오기
-
+@st.cache_resource
 
 if "OPENAI_API_KEY" in st.secrets:
     secret_key = st.secrets["OPENAI_API_KEY"]
 else:
     secret_key = None
+
 
     
 if hasattr(st, "secrets"):
