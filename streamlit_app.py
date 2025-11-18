@@ -154,6 +154,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_closing_confirm": "또 다른 문의 사항은 없으신가요?",
         "customer_positive_response": "친절한 상담 감사드립니다。",
         "button_end_chat": "응대 종료 (설문 요청)",
+        "survey_sent_confirm": "📨 설문조사 링크가 전송되었으며, 이 상담은 종료되었습니다.",
+        "new_simulation_ready": "새 시뮬레이션을 시작할 수 있습니다.",
         "agent_response_header": "✍️ 에이전트 응답",
         "agent_response_placeholder": "고객에게 응답하세요...",
         "send_response_button": "응답 전송",
@@ -287,6 +289,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_closing_confirm": "Anything else I can help you with?",
         "customer_positive_response": "Thank you for your kind support.",
         "button_end_chat": "End Chat (Survey Request)",
+        "survey_sent_confirm": "📨 The survey link has been sent. This chat session is now closed.",
+        "new_simulation_ready": "You can now start a new simulation.",
         "agent_response_header": "✍️ Agent Response",
         "agent_response_placeholder": "Write a response...",
         "send_response_button": "Send Response",
@@ -434,6 +438,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_closing_confirm": "他のお問合せはございませんでしょうか。",
         "customer_positive_response": "ご丁寧な対応ありがとうございました。",
         "button_end_chat": "チャット終了（アンケート）",
+        "new_simulation_ready": "新しいシミュレーションを開始できます。",
+        "survey_sent_confirm": "📨 アンケートリンクを送信しました。このチャットは終了しました。",
         "agent_response_header": "✍️ エージェント応答",
         "agent_response_placeholder": "顧客へ返信内容を入力…",
         "send_response_button": "返信送信",
@@ -1679,8 +1685,12 @@ elif feature_selection == L["simulator_tab"]:
                     )
                     st.session_state.simulator_memory.chat_memory.add_ai_message(closing_msg)
 
-                    st.success("추가 문의 여부 확인 메시지가 전송되었습니다.")
-                    st.stop()
+                    st.success("추가 문의 여부 확인 메시지가 전송되었습니다. 고객의 응답을 생성합니다...")
+
+                    st.session_state.trigger_customer_reaction = True
+
+                if st.session_state.get("sim_next_rebuttal", False):
+                    st.session_state.sim_next_rebuttal = False
 
             # 2) 고객이 “추가 문의 없음”을 표현한 경우
             elif any(p in customer_text for p in closing_patterns):
@@ -1709,17 +1719,41 @@ elif feature_selection == L["simulator_tab"]:
             col_end, col_next = st.columns([1, 2])
 
             if col_end.button(L["button_end_chat"], key="sim_end_chat_btn"):
-                # 고객에게 "추가 문의 확인" 먼저 보내기
-                closing_query = L["customer_closing_confirm"]
+                # 설문 조사 메시지 전송
+                survey_msg = L["prompt_survey"]
 
                 st.session_state.simulator_messages.append(
-                    {"role": "supervisor", "content": closing_query}
+                    {"role": "system_end", "content": survey_msg}
                 )
-                st.session_state.simulator_memory.chat_memory.add_ai_message(closing_query)
+                st.session_state.simulator_memory.chat_memory.add_ai_message(survey_msg)
 
-                # 설문 메시지는 고객이 “없습니다”라고 한 뒤에만 전송
-                st.stop()
-                # st.rerun()
+                # 상담 종료 상태 저장
+                st.session_state.is_chat_ended = True
+
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area,
+                    customer_type_display,
+                    st.session_state.simulator_messages,
+                    is_chat_ended=True,
+                )
+
+                # UI 상태 초기화
+                st.success(L["survey_sent_confirm"])  # 아래에서 추가해줄 Lang 문자열
+                st.session_state.simulation_finished = True
+
+                st.experimental_rerun()
+
+                if st.session_state.get("simulation_finished", False):
+                    st.session_state.simulation_finished = False
+
+                    # 모든 세션 초기화
+                    st.session_state.simulator_messages = []
+                    st.session_state.agent_response_area_text = ""
+                    st.session_state.customer_query_text_area = ""
+                    st.session_state.initial_advice_provided = False
+                    st.session_state.is_chat_ended = False
+
+                    st.success(L["new_simulation_ready"])
 
                 if col_next.button(L["request_rebuttal_button"], key="sim_next_rebuttal_btn"):
                     next_prompt = """ ... (LLM에게 customer role 요청) ... """
