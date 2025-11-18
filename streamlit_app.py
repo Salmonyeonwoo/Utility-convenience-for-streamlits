@@ -550,8 +550,7 @@ else:
 
     
 if hasattr(st, "secrets"):
-    if "OPENAI_API_KEY" in st.secrets:
-        secret_key = st.secrets["OPENAI_API_KEY"]
+   secret_key = st.secrets["OPENAI_API_KEY"]
 
 # 2) 사용자 입력 키 (세션에 저장)
 if "user_api_key" not in st.session_state:
