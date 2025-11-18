@@ -1651,7 +1651,8 @@ elif feature_selection == L["simulator_tab"]:
                     last_role = h["messages"][-1]["role"] if h["messages"] else None
                     if last_role == "agent_response":
                         st.session_state.sim_stage = "CUSTOMER_TURN"
-                    
+                    else:
+                        st.session_state.sim_stage = "AGENT_TURN"
 
                 # 메모리 재구성 (심층 LLM용, 필요 시)
                 st.session_state.simulator_memory.clear()
@@ -1802,7 +1803,8 @@ Customer Inquiry:
                         )
                     except Exception as e:
                         st.error(f"AI 조언 생성 중 오류 발생: {e}")
-            
+
+            st.session_state.sim_stage = "AGENT_TURN"
             st.rerun()
 
     # =========================
