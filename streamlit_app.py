@@ -1971,7 +1971,7 @@ elif feature_selection == L["simulator_tab"]:
                     st.session_state.simulator_messages.append(
                         {"role": "agent_response", "content": agent_response}
                     )
-                    agent_response = st.session_state.agent_response_area_text
+                    
                     render_tts_button(agent_response, st.session_state.language, role="agent", prefix="agt_")
 
                     save_simulation_history_local(
