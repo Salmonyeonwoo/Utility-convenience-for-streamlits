@@ -15,7 +15,7 @@ import tempfile
 import hashlib
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
-
+import google.generativeai as genai
 import numpy as np
 import streamlit as st
 from matplotlib import pyplot as plt
@@ -151,12 +151,12 @@ LANG: Dict[str, Dict[str, str]] = {
         "initial_query_sample": "프랑스 파리에 도착했는데, 클룩에서 구매한 eSIM이 활성화가 안 됩니다...",
         "button_mic_input": "🎙 음성 입력",
         "prompt_customer_end": "고객님의 추가 문의 사항이 없어, 이 상담을 종료합니다。",
-        "prompt_survey": "문의해 주셔서 감사합니다. 필요하시면 언제든지 연락주세요。",
-        "customer_closing_confirm": "또 다른 문의 사항은 없으신가요?",
-        "customer_positive_response": "친절한 상담 감사드립니다。",
+        "prompt_survey": "지금까지 상담원 000였습니다. 즐거운 하루 되시기 바랍니다. [설문 조사 링크]",
+        "customer_closing_confirm": "다른 문의 사항은 없으십니까?",
+        "customer_positive_response": "알겠습니다. 감사합니다。",
         "button_end_chat": "응대 종료 (설문 요청)",
-        "survey_sent_confirm": "📨 설문조사 링크가 전송되었으며, 이 상담은 종료되었습니다.",
-        "new_simulation_ready": "새 시뮬레이션을 시작할 수 있습니다.",
+        "survey_sent_confirm": "📨 설문조사 링크가 전송되었으며, 이 상담은 종료되었습니다。",
+        "new_simulation_ready": "새 시뮬레이션을 시작할 수 있습니다。",
         "agent_response_header": "✍️ 에이전트 응답",
         "agent_response_placeholder": "고객에게 응답하세요...",
         "send_response_button": "응답 전송",
@@ -186,7 +186,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "transcribing": "음성 전사 중...",
         "transcript_result": "전사 결과:",
         "transcript_text": "전사 텍스트",
-        "openai_missing": "OpenAI API Key가 없습니다.",
+        "openai_missing": "OpenAI API Key가 없습니다。",
         "whisper_client_error": "❌ Whisper API Client 초기화 실패",
         "whisper_auth_error": "❌ Whisper API 인증 실패",
         "whisper_format_error": "❌ 지원하지 않는 오디오 형식입니다。",
@@ -208,6 +208,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "rec_header": "음성 입력 및 전사",
         "whisper_processing": "음성 전사 처리 중",
         "empty_response_warning": "응답을 입력하세요。",
+        "customer_no_more_inquiries": "없습니다. 감사합니다。",
+        "customer_has_additional_inquiries": "추가 문의 사항도 있습니다。",
+        "sim_end_chat_button": "설문 조사 링크 전송 및 채팅 종료",
     },
 
     # --- ⭐ 영어 버전 (한국어 100% 매칭) ---
@@ -286,9 +289,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "initial_query_sample": "I arrived in Paris but my Klook eSIM won't activate…",
         "button_mic_input": "🎙 Voice Input",
         "prompt_customer_end": "No further inquiries. Ending chat.",
-        "prompt_survey": "Thank you for contacting support.",
-        "customer_closing_confirm": "Anything else I can help you with?",
-        "customer_positive_response": "Thank you for your kind support.",
+        "prompt_survey": "This was Agent 000. Have a nice day. [Survey Link]",
+        "customer_closing_confirm": "Is there anything else we can assist you with?",
+        "customer_positive_response": "Noted with thanks.",
         "button_end_chat": "End Chat (Survey Request)",
         "survey_sent_confirm": "📨 The survey link has been sent. This chat session is now closed.",
         "new_simulation_ready": "You can now start a new simulation.",
@@ -356,7 +359,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "delete_fail": "Delete failed",
         "rec_header": "Voice Input & Transcription",
         "whisper_processing": "Processing...",
-        "empty_response_warning": "Please enter a response."
+        "empty_response_warning": "Please enter a response.",
+        "customer_no_more_inquiries": "No, that will be all, thank you.",
+        "customer_has_additional_inquiries": "Yes, I have an additional question.",
+        "sim_end_chat_button": "Send Survey Link and End Chat",
     },
 
     # --- ⭐ 일본어 버전 (한국어 100% 매칭) ---
@@ -435,9 +441,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "initial_query_sample": "パリに到着しましたが、KlookのeSIMが使えません…",
         "button_mic_input": "🎙 音声入力",
         "prompt_customer_end": "追加の質問がないためチャットを終了します。",
-        "prompt_survey": "お問い合わせありがとうございました。",
+        "prompt_survey": "担当エージェント000でした。良い一日をお過ごしください。 [アンケートリンク]",
         "customer_closing_confirm": "他のお問合せはございませんでしょうか。",
-        "customer_positive_response": "ご丁寧な対応ありがとうございました。",
+        "customer_positive_response": "はい、承知いたしました。ありがとうございます。",
         "button_end_chat": "チャット終了（アンケート）",
         "new_simulation_ready": "新しいシミュレーションを開始できます。",
         "survey_sent_confirm": "📨 アンケートリンクを送信しました。このチャットは終了しました。",
@@ -492,7 +498,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "delete_fail": "削除失敗",
         "rec_header": "音声入力＆転写",
         "whisper_processing": "処理中...",
-        "empty_response_warning": "応答を入力してください。"
+        "empty_response_warning": "応答を入力してください。",
+        "customer_no_more_inquiries": "いいえ、結構です。大丈夫です。有難う御座いました。",
+        "customer_has_additional_inquiries": "はい、追加の問い合わせがあります。",
+        "sim_end_chat_button": "アンケートリンクを送信してチャット終了",
     }
 }
 
@@ -514,7 +523,10 @@ if "rag_vectorstore" not in st.session_state:
     st.session_state.rag_vectorstore = None
 if "rag_messages" not in st.session_state:
     st.session_state.rag_messages = []
-
+if "agent_input" not in st.session_state:
+    st.session_state.agent_input = ""
+if "last_audio" not in st.session_state:
+    st.session_state.last_audio = None
 if "simulator_messages" not in st.session_state:
     st.session_state.simulator_messages = []
 if "simulator_memory" not in st.session_state:
@@ -535,45 +547,23 @@ if "last_transcript" not in st.session_state:
     st.session_state.last_transcript = ""
 if "sim_audio_bytes" not in st.session_state:
     st.session_state.sim_audio_bytes = None
-
+if "chat_state" not in st.session_state:
+    st.session_state.chat_state = "idle"
+    # idle → initial_customer → supervisor_advice → agent_turn → customer_turn → closing
 if "openai_client" not in st.session_state:
     st.session_state.openai_client = None
 if "openai_init_msg" not in st.session_state:
     st.session_state.openai_init_msg = ""
+if "sim_stage" not in st.session_state:
+    st.session_state.sim_stage = "WAIT_FIRST_QUERY"
+    # WAIT_FIRST_QUERY (초기 문의 입력)
+    # AGENT_TURN (에이전트 응답 입력)
+    # CUSTOMER_TURN (고객 반응 생성 요청)
+    # WAIT_CLOSING_CONFIRMATION_FROM_AGENT (고객이 감사, 에이전트가 종료 확인 메시지 보내기 대기)
+    # WAIT_CUSTOMER_CLOSING_RESPONSE (종료 확인 메시지 보냄, 고객의 마지막 응답 대기)
+    # FINAL_CLOSING_ACTION (최종 종료 버튼 대기)
+    # CLOSING (채팅 종료)
 
-L = LANG[st.session_state.language]
-
-# ========================================
-# 2. OpenAI Client 초기화 (secrets 사용 안 함)
-# ========================================
-
-# @st.cache_resource
-# ========================================
-# 0-A. API Key 안전 구조 (Secrets + User Input)
-# ========================================
-
-# 1) Streamlit Cloud Secrets에서 우선 가져오기
-
-
-secret_key = None
-
-try:
-    if hasattr(st, "secrets") and "OPENAI_API_KEY" in st.secrets:
-        secret_key = st.secrets["OPENAI_API_KEY"]
-except Exception:
-    secret_key = None
-
-# 2) 사용자 입력 키 (세션에 저장)
-if "user_api_key" not in st.session_state:
-    st.session_state.user_api_key = ""
-
-# 3) UI 제공: 사용자가 직접 입력하는 백업 API Key
-# ========================================
-# 0. 멀티 모델 API Key 안전 구조 (Secrets + User Input)
-# ========================================
-
-
-# --- 정의: 지원하는 API 목록 ---
 L = LANG[st.session_state.language]
 
 # ========================================
@@ -618,23 +608,23 @@ if "selected_llm" not in st.session_state:
     st.session_state.selected_llm = "openai_gpt4"  # 기본값
 
 
-def get_api_key(api_name: str):
-    """1) Streamlit secrets → 2) user 입력 순으로 API Key 반환"""
-    cfg = SUPPORTED_APIS[api_name]
+def get_api_key(api):
+    cfg = SUPPORTED_APIS[api]
 
-    # 1. Streamlit Secrets 우선
+    # 1. Streamlit Secrets (.streamlit/secrets.toml)
     try:
         if hasattr(st, "secrets") and cfg["secret_key"] in st.secrets:
             return st.secrets[cfg["secret_key"]]
     except Exception:
         pass
 
-    # 2. 사용자 입력 Key
-    if st.session_state.get(cfg["session_key"]):
-        return st.session_state[cfg["session_key"]]
+    # 2. Environment Variable (os.environ) - 로컬 .env 또는 터미널 export를 위해 추가
+    env_key = os.environ.get(cfg["secret_key"])
+    if env_key:
+        return env_key
 
-    # 3. 없는 경우
-    return None
+    # 3. User Input (Streamlit sidebar session state)
+    return st.session_state.get(cfg["session_key"], "")
 
 
 # ========================================
@@ -647,6 +637,7 @@ with st.sidebar:
         st.markdown(f"**{cfg['label']}**")
         key_input = st.text_input(
             cfg["label"],
+            value=st.session_state.get(cfg["session_key"], ""), # 이미 저장된 값 보여주기
             type="password",
             key=f"input_{api}",
             placeholder="sk-**************************",
@@ -656,6 +647,7 @@ with st.sidebar:
             if key_input.strip():
                 st.session_state[cfg["session_key"]] = key_input.strip()
                 st.success(f"{cfg['label']} 저장됨")
+                st.rerun() # 키 변경 시 재실행
             else:
                 st.warning("API Key를 입력하세요.")
 
@@ -663,29 +655,29 @@ with st.sidebar:
     st.markdown("### 🤖 사용할 LLM 모델 선택")
 
     MODEL_CHOICES = {
-        "openai_gpt4": "OpenAI GPT-4.1",
+        "openai_gpt4": "OpenAI GPT-4o",
         "openai_gpt35": "OpenAI GPT-3.5 Turbo",
         "gemini_flash": "Gemini 2.0 Flash",
         "gemini_pro": "Gemini 2.0 Pro",
-        "nvidia_llama3": "NVIDIA NIM Llama-3-70B",
         "claude_sonnet": "Claude 3.5 Sonnet",
         "groq_llama3": "Groq Llama-3-70B",
-        "groq_mixtral": "Groq Mixtral-8x7B",
     }
+
+    # 기본값 설정: "openai_gpt4"가 리스트에 있다면 해당 인덱스, 없다면 0
+    default_index = list(MODEL_CHOICES.keys()).index(st.session_state.selected_llm) \
+        if st.session_state.selected_llm in MODEL_CHOICES else 0
 
     st.session_state.selected_llm = st.selectbox(
         "LLM 모델 선택",
         options=list(MODEL_CHOICES.keys()),
         format_func=lambda x: MODEL_CHOICES[x],
         key="selected_llm_box",
-        index=list(MODEL_CHOICES.keys()).index(st.session_state.selected_llm)
-        if st.session_state.selected_llm in MODEL_CHOICES
-        else 0,
+        index=default_index,
     )
 
 
 # ========================================
-# 2. LLM 클라이언트 라우팅
+# 2. LLM 클라이언트 라우팅 & 실행
 # ========================================
 def get_llm_client():
     """선택된 모델에 맞는 클라이언트 + 모델코드 반환"""
@@ -693,90 +685,51 @@ def get_llm_client():
 
     # --- OpenAI ---
     if model_key.startswith("openai"):
-        from openai import OpenAI
-
         key = get_api_key("openai")
-        if not key:
-            return None, None
-
-        client = OpenAI(api_key=key)
-        model_name = "gpt-4.1" if model_key == "openai_gpt4" else "gpt-3.5-turbo"
-        return client, ("openai", model_name)
+        if not key: return None, None
+        try:
+            client = OpenAI(api_key=key)
+            model_name = "gpt-4o" if model_key == "openai_gpt4" else "gpt-3.5-turbo"
+            return client, ("openai", model_name)
+        except Exception: return None, None
 
     # --- Gemini ---
     if model_key.startswith("gemini"):
-        import google.generativeai as genai
-
         key = get_api_key("gemini")
-        if not key:
-            return None, None
-
-        genai.configure(api_key=key)
-        model_name = (
-            "gemini-2.0-flash" if model_key == "gemini_flash" else "gemini-2.0-pro"
-        )
-        return genai, ("gemini", model_name)
-
-    # --- NVIDIA NIM ---
-    if model_key.startswith("nvidia"):
-        import requests  # 전역에서 run_llm이 다시 사용
-
-        key = get_api_key("nvidia")
-        if not key:
-            return None, None
-
-        model_name = "meta/llama3-70b-instruct"
-        return ("nvidia", key), ("nvidia", model_name)
+        if not key: return None, None
+        try:
+            genai.configure(api_key=key)
+            model_name = "gemini-2.5-pro" if model_key == "gemini_pro" else "gemini-2.5-flash"
+            return genai, ("gemini", model_name)
+        except Exception: return None, None
 
     # --- Claude ---
     if model_key.startswith("claude"):
         from anthropic import Anthropic
-
         key = get_api_key("claude")
-        if not key:
-            return None, None
-
-        client = Anthropic(api_key=key)
-        model_name = "claude-3-5-sonnet-latest"
-        return client, ("claude", model_name)
+        if not key: return None, None
+        try:
+            client = Anthropic(api_key=key)
+            model_name = "claude-3-5-sonnet-latest"
+            return client, ("claude", model_name)
+        except Exception: return None, None
 
     # --- Groq ---
     if model_key.startswith("groq"):
         from groq import Groq
-
         key = get_api_key("groq")
-        if not key:
-            return None, None
-
-        client = Groq(api_key=key)
-        model_name = (
-            "llama3-70b-8192"
-            if "llama3" in model_key
-            else "mixtral-8x7b-32768"
-        )
-        return client, ("groq", model_name)
+        if not key: return None, None
+        try:
+            client = Groq(api_key=key)
+            model_name = (
+                "llama3-70b-8192"
+                if "llama3" in model_key
+                else "mixtral-8x7b-32768"
+            )
+            return client, ("groq", model_name)
+        except Exception: return None, None
 
     return None, None
-
-def get_google_tts_client():
-    if "GCP_TTS_CREDENTIALS" not in st.session_state:
-        return None, "❌ Google Cloud TTS 인증 정보가 없습니다."
-
-    try:
-        data = st.session_state["GCP_TTS_CREDENTIALS"]
-
-        # temp file 생성
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
-            tmp.write(data.encode("utf-8"))
-            tmp_path = tmp.name
-
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp_path
-
-        client = texttospeech.TextToSpeechClient()
-        return client, None
-
-    except Exception as e:
-        return None, f"❌ TTS 클라이언트 초기화 실패: {e}"
 
 
 def run_llm(prompt: str) -> str:
@@ -788,11 +741,14 @@ def run_llm(prompt: str) -> str:
 
     provider, model_name = info
 
+    # 메시지 리스트 생성
+    messages = [{"role": "user", "content": prompt}]
+
     # --- OpenAI Chat ---
     if provider == "openai":
         resp = client.chat.completions.create(
             model=model_name,
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,
         )
         return resp.choices[0].message.content
 
@@ -806,7 +762,7 @@ def run_llm(prompt: str) -> str:
     if provider == "claude":
         resp = client.messages.create(
             model=model_name,
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,
         )
         return resp.content[0].text
 
@@ -814,95 +770,48 @@ def run_llm(prompt: str) -> str:
     if provider == "groq":
         resp = client.chat.completions.create(
             model=model_name,
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,
         )
         return resp.choices[0].message.content
 
-    # --- NVIDIA NIM ---
-    if provider == "nvidia":
-        import requests  # get_llm_client에서 이미 임포트되지만, 안전하게 한 번 더
-
-        api_key = client[1]
-        r = requests.post(
-            "https://integrate.api.nvidia.com/v1/chat/completions",
-            headers={"Authorization": f"Bearer {api_key}"},
-            json={
-                "model": model_name,
-                "messages": [{"role": "user", "content": prompt}],
-            },
-            timeout=60,
-        )
-        data = r.json()
-        return data["choices"][0]["message"]["content"]
-
     return "❌ Unsupported provider."
-
-def analyze_emotion(text):
-    prompt = f"""
-    분석 대상 문장:
-    "{text}"
-
-    고객의 감정을 단 하나로 분류하세요:
-    angry / upset / frustrated / neutral / satisfied / thankful / sad
-
-    답변은 하나의 단어로만 출력하세요.
-    """
-
-    result = run_llm(prompt)
-    result = result.lower().strip()
-
-    allowed = ["angry", "upset", "frustrated", "neutral", "satisfied", "thankful", "sad"]
-
-    # 안전 처리
-    for a in allowed:
-        if a in result:
-            return a
-
-    return "neutral"
 
 # ========================================
 # 2-A. Whisper / TTS 용 OpenAI Client 별도로 초기화
 #      (선택 모델과 무관하게, OpenAI Key만 있으면 사용)
 # ========================================
-if "openai_client" not in st.session_state:
-    st.session_state.openai_client = None
-if "openai_init_msg" not in st.session_state:
-    st.session_state.openai_init_msg = ""
 
-
-def init_openai_client_for_audio():
-    """Whisper/TTS 전용 OpenAI 클라이언트 초기화"""
-    from openai import OpenAI
-
-    openai_key = get_api_key("openai")
-    if not openai_key:
-        st.session_state.openai_client = None
-        st.session_state.openai_init_msg = LANG[DEFAULT_LANG]["openai_missing"]
-        return
-
+def init_openai_audio_client():
+    key = get_api_key("openai")
+    if not key:
+        return None
     try:
-        st.session_state.openai_client = OpenAI(api_key=openai_key)
-        st.session_state.openai_init_msg = "✅ OpenAI TTS/Whisper client ready."
-    except Exception as e:
-        st.session_state.openai_client = None
-        st.session_state.openai_init_msg = f"OpenAI client init error: {e}"
+        return OpenAI(api_key=key)
+    except:
+        return None
 
-
-init_openai_client_for_audio()
-
-# LLM 사용 가능 여부 플래그 (시뮬레이터 등에서 사용)
+# LLM 클라이언트 및 상태 업데이트
+st.session_state.openai_client = init_openai_audio_client()
 probe_client, _ = get_llm_client()
 st.session_state.is_llm_ready = probe_client is not None
+
+if st.session_state.openai_client:
+    # 키를 찾았고 클라이언트 객체는 생성되었으나, 실제 인증은 API 호출 시 이루어짐 (401 오류는 여기서 발생)
+    st.session_state.openai_init_msg = "✅ OpenAI TTS/Whisper 클라이언트 준비 완료 (Key 확인됨)"
+else:
+    # 키를 찾지 못한 경우
+    st.session_state.openai_init_msg = L["openai_missing"]
+
+
 if not st.session_state.is_llm_ready:
-    st.session_state.llm_init_error_msg = LANG[st.session_state.language][
-        "simulation_no_key_warning"
-    ]
+    st.session_state.llm_init_error_msg = L["simulation_no_key_warning"]
 else:
     st.session_state.llm_init_error_msg = ""
 
 
 # ========================================
 # 3. Whisper / TTS Helper
+# (요청 1, 2 반영: Whisper 로직 확인, TTS 목소리 차별화 및 안정적인 tts-1 사용)
 # ========================================
 
 def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/webm", lang_code: str = "ko") -> str:
@@ -911,14 +820,10 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/we
     if client is None:
         return f"❌ {L['openai_missing']}"
 
-    # 언어 코드 매핑
     whisper_lang = {"ko": "ko", "en": "en", "ja": "ja"}.get(lang_code, "en")
 
-    ext = "webm"
-    if "/" in mime_type:
-        ext = mime_type.split("/")[-1].lower()
-
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=f".{ext}")
+    # 임시 파일 저장 (Whisper API 호환성)
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
     tmp.write(audio_bytes)
     tmp.flush()
     tmp.close()
@@ -931,8 +836,9 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/we
                 response_format="text",
                 language=whisper_lang,
             )
-        return res.strip() if isinstance(res, str) else str(res)
+        return res.strip() if hasattr(res, 'text') else str(res)
     except Exception as e:
+        # 파일 형식 오류 등 상세 오류 처리
         return f"❌ {L['error']} Whisper: {e}"
     finally:
         try:
@@ -940,58 +846,40 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/we
         except OSError:
             pass
 
-
-# ========================================
-# 역할별 TTS 음성 스타일 설정
-# ========================================
-
-# ========================================
-# 역할별 TTS 음성 스타일 설정
-# ========================================
-
+# 역할별 TTS 음성 스타일 설정 (요청 2 반영: 목소리 차별화)
 TTS_VOICES = {
     "customer": {
         "gender": "male",
-        "voice": "verse"
+        "voice": "alloy"  # Distinct Male, Generic/Customer
     },
     "agent": {
         "gender": "female",
-        "voice": "coral"
+        "voice": "shimmer" # Distinct Female, Professional/Agent
     },
     "supervisor": {
         "gender": "female",
-        "voice": "alloy"   # supervisor용 톤 추천
+        "voice": "nova"   # Another Distinct Female, Informative/Supervisor
     }
 }
 
-
-
-
-def synthesize_tts(text: str, lang_key: str, role: str = "agent", emotion: str = "neutral"):
-    if role not in TTS_VOICES:
-        role = "agent"
-
+def synthesize_tts(text: str, lang_key: str, role: str = "agent"):
     L = LANG[lang_key]
     client = st.session_state.openai_client
     if client is None:
         return None, L["openai_missing"]
 
-    # 역할 및 감정 톤 적용
-    style_text = f"""
-<voice role="{role}" emotion="{emotion}" style="{'professional' if role == 'agent' else 'expressive'}">
-{text}
-</voice>
-"""
+    if role not in TTS_VOICES:
+        role = "agent"
 
-    # 음색 모델 선택
     voice_name = TTS_VOICES[role]["voice"]
 
     try:
+        # tts-1 모델 사용 (안정성)
         resp = client.audio.speech.create(
-            model="gpt-4o-mini-tts",
+            model="tts-1",
             voice=voice_name,
-            input=style_text
-            # format="mp3"
+            input=text
+            # format="mp3"은 기본값입니다.
         )
         return resp.read(), L["tts_status_success"]
 
@@ -999,21 +887,33 @@ def synthesize_tts(text: str, lang_key: str, role: str = "agent", emotion: str =
         return None, f"{L['tts_status_error']}: {e}"
 
 
-def render_tts_button(text, lang_key, role="customer", prefix=""):
+def render_tts_button(text, lang_key, role="customer", prefix="", index: int = -1):
+    """
+    TTS 재생 버튼을 렌더링하고, 고유한 키를 생성합니다.
+    index: 대화 내역에서의 고유 인덱스 (DuplicateWidgetID 방지용)
+    """
     L = LANG[lang_key]
-    safe_key = prefix + f"tts_{role}_" + hashlib.md5(text.encode()).hexdigest()
+    
+    # 텍스트의 해시값과 고유 인덱스를 결합하여 키 생성
+    # 인덱스(-1은 키가 중요하지 않은 경우, 예: 음성 기록 목록)를 사용하여 중복 방지
+    content_hash = hashlib.md5(text[:100].encode()).hexdigest()
+    safe_key = f"{prefix}_{index}_{content_hash}"
 
+    # 재생 버튼을 누를 때만 TTS 요청
     if st.button(L["button_listen_audio"], key=safe_key):
-        audio_bytes, msg = synthesize_tts(text, lang_key, role=role)
-        if audio_bytes:
-            st.audio(audio_bytes, format="audio/mp3")
-        else:
-            st.error(msg)
-
+        with st.spinner(L["tts_status_generating"]):
+            # 감정 분석 (현재 미사용) 대신 단순 텍스트만 전달
+            audio_bytes, msg = synthesize_tts(text, lang_key, role=role)
+            if audio_bytes:
+                st.audio(audio_bytes, format="audio/mp3")
+                st.success(msg)
+            else:
+                st.error(msg)
 
 
 # ========================================
 # 4. 로컬 음성 기록 Helper
+# (RAG 및 음성 기록 관리용 함수는 그대로 유지)
 # ========================================
 
 def load_voice_records() -> List[Dict[str, Any]]:
@@ -1092,11 +992,11 @@ def get_audio_bytes_local(rec_id: str):
 
 def load_simulation_histories_local(lang_key: str) -> List[Dict[str, Any]]:
     histories = _load_json(SIM_META_FILE, [])
+    # 현재 언어와 메시지 리스트가 유효한 이력만 필터링
     return [
         h for h in histories
         if h.get("language_key") == lang_key and isinstance(h.get("messages"), list)
     ]
-
 
 def save_simulation_history_local(initial_query: str, customer_type: str, messages: List[Dict[str, Any]],
                                   is_chat_ended: bool):
@@ -1112,18 +1012,19 @@ def save_simulation_history_local(initial_query: str, customer_type: str, messag
         "timestamp": ts,
         "is_chat_ended": is_chat_ended,
     }
+    # 기존 이력에 추가 (최신순)
     histories.insert(0, data)
-    _save_json(SIM_META_FILE, histories)
-    return True
-
+    # 너무 많은 이력 방지 (예: 50개)
+    _save_json(SIM_META_FILE, histories[:50])
+    return doc_id
 
 def delete_all_history_local():
     _save_json(SIM_META_FILE, [])
 
-
 # ========================================
 # 6. RAG Helper (FAISS)
 # ========================================
+# RAG 관련 함수는 시뮬레이터와 무관하므로 기존 코드를 유지합니다.
 
 def load_documents(files) -> List[Document]:
     docs: List[Document] = []
@@ -1131,7 +1032,6 @@ def load_documents(files) -> List[Document]:
         name = f.name
         lower = name.lower()
         if lower.endswith(".pdf"):
-            # UploadedFile -> temp 파일로
             tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
             tmp.write(f.read())
             tmp.flush()
@@ -1163,20 +1063,26 @@ def split_documents(docs: List[Document]) -> List[Document]:
     return splitter.split_documents(docs)
 
 
-def build_rag_index(files, embeddings):
-    if not files:
-        st.warning(L["warning_no_files"])
+def get_embedding_function():
+    """선택된 LLM Provider의 임베딩 엔진 자동 반환."""
+    # OpenAI Embeddings만 지원
+    selected = st.session_state.selected_llm
+    if selected.startswith("openai") and st.session_state.openai_client:
+        return OpenAIEmbeddings(openai_api_key=get_api_key("openai"))
+    return None
+
+def build_rag_index(files):
+    if not files: return None, 0
+    embeddings = get_embedding_function()
+    if not embeddings:
+        st.error("임베딩 모델 초기화 실패. OpenAI API 키를 확인하세요.")
         return None, 0
 
     docs = load_documents(files)
-    if not docs:
-        st.warning("문서를 불러오지 못했습니다.")
-        return None, 0
+    if not docs: return None, 0
 
     chunks = split_documents(docs)
-    if not chunks:
-        st.warning("문서 청크 분할에 실패했습니다.")
-        return None, 0
+    if not chunks: return None, 0
 
     try:
         vectorstore = FAISS.from_documents(chunks, embeddings)
@@ -1188,44 +1094,35 @@ def build_rag_index(files, embeddings):
 
     return vectorstore, len(chunks)
 
-
-def load_rag_index(embeddings):
+def load_rag_index():
+    embeddings = get_embedding_function()
+    if not embeddings: return None
     try:
         vs = FAISS.load_local(RAG_INDEX_DIR, embeddings, allow_dangerous_deserialization=True)
         return vs
     except Exception:
         return None
 
-
 def rag_answer(question: str, vectorstore: FAISS, lang_key: str) -> str:
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        return LANG[lang_key]["openai_missing"]
+    # RAG Answer는 LLM 클라이언트 라우팅을 사용하도록 수정
+    llm_client, info = get_llm_client()
+    if llm_client is None:
+        return LANG[lang_key]["simulation_no_key_warning"]
 
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.2,
-        openai_api_key=api_key,
-    )
+    # Langchain ChatOpenAI 대신 run_llm을 사용하기 위해 prompt를 직접 구성
     retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
-
     docs = retriever.get_relevant_documents(question)
     context = "\n\n".join(d.page_content[:1500] for d in docs)
 
-    prompt_tmpl = PromptTemplate(
-        template=(
-            "You are a helpful AI tutor. Answer the question using ONLY the provided context.\n"
-            "If you cannot find the answer in the context, say you don't know.\n\n"
-            "Question:\n{question}\n\n"
-            "Context:\n{context}\n\n"
-            "Answer:"
-        ),
-        input_variables=["question", "context"],
+    prompt = (
+        "You are a helpful AI tutor. Answer the question using ONLY the provided context.\n"
+        "If you cannot find the answer in the context, say you don't know.\n"
+        "Answer in the language of the question.\n\n"
+        "Question:\n" + question + "\n\n"
+        "Context:\n" + context + "\n\n"
+        "Answer:"
     )
-    prompt = prompt_tmpl.format(question=question, context=context)
-    resp = llm.invoke(prompt)
-    return resp.content if hasattr(resp, "content") else str(resp)
-
+    return run_llm(prompt)
 
 # ========================================
 # 7. LSTM Helper (간단 Mock + 시각화)
@@ -1242,54 +1139,101 @@ def load_or_train_lstm():
 
 # ========================================
 # 8. LLM (ChatOpenAI) for Simulator / Content
+# (RAG와 동일하게 run_llm으로 통합)
 # ========================================
 
-LLM_API_KEY = os.environ.get("OPENAI_API_KEY")
-LLM_MODEL = "gpt-4o-mini"
+# ConversationChain 대신 run_llm을 사용하여 메모리 기능을 수동으로 구현
+# st.session_state.simulator_memory는 유지하여 대화 기록을 관리합니다.
 
-if "llm" not in st.session_state:
-    if LLM_API_KEY:
-        try:
-            st.session_state.llm = ChatOpenAI(
-                model=LLM_MODEL,
-                temperature=0.7,
-                openai_api_key=LLM_API_KEY,
-            )
-            st.session_state.embeddings = OpenAIEmbeddings(openai_api_key=LLM_API_KEY)
-            st.session_state.is_llm_ready = True
+def get_chat_history_for_prompt():
+    """메모리에서 대화 기록을 추출하여 프롬프트에 사용할 문자열 형태로 반환"""
+    history_str = ""
+    for msg in st.session_state.simulator_messages:
+        role = msg["role"]
+        content = msg["content"]
+        if role == "customer" or role == "customer_rebuttal":
+            history_str += f"Customer: {content}\n"
+        elif role == "agent_response":
+            history_str += f"Agent: {content}\n"
+        # supervisor 메시지는 LLM에 전달하지 않아 역할 혼동 방지
+    return history_str
 
-            sim_prompt = PromptTemplate(
-                template=(
-                    "You are an AI customer who responds ONLY as the customer in the scenario.\n"
-                    "Do NOT greet unless the agent greets first.\n"
-                    "Do NOT repeat your initial message.\n"
-                    "Always answer in the language used by the agent.\n\n"
-                    "Rules:\n"
-                    "- If the agent requests specific information, provide ONLY ONE detail.\n"
-                    "- If the agent provides a solution, respond politely.\n"
-                    "- If the conversation is nearing completion, optionally add a closing remark.\n"
-                    "- DO NOT generate long formal greetings like 'Good morning'.\n"
-                    "- DO NOT reset context.\n\n"
-                    "{chat_history}\nHuman agent: {input}\nCustomer:"
-                ),
-                input_variables=["input", "chat_history"],
-            )
+def generate_customer_reaction(current_lang_key: str) -> str:
+    """고객의 다음 반응을 생성하는 LLM 호출 (요청 4, 7, 8, 그리고 요청 1 & 2 반영)"""
+    history_text = get_chat_history_for_prompt()
+    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
 
-            st.session_state.simulator_chain = ConversationChain(
-                llm=st.session_state.llm,
-                memory=st.session_state.simulator_memory,
-                prompt=sim_prompt,
-                input_key="input",
-            )
-        except Exception as e:
-            st.session_state.llm_init_error_msg = f"{L['llm_error_init']} (OpenAI): {e}"
-            st.session_state.is_llm_ready = False
-    else:
-        st.session_state.llm_init_error_msg = LANG[DEFAULT_LANG]["openai_missing"]
-        st.session_state.is_llm_ready = False
+    next_prompt = f"""
+You are now ROLEPLAYING as the CUSTOMER.
+
+Read the following conversation and respond naturally in {lang_name}.
+
+Conversation so far:
+{history_text}
+
+RULES:
+1. You are only the customer. Do not write as the agent.
+2. **[Crucial Rule for Repetition/New Inquiry]** After the agent has provided a solution:
+    - If you are still confused or the problem is not fully solved, you MUST state the remaining confusion/problem clearly and briefly. DO NOT REPEAT THE INITIAL QUERY. Focus only on the unresolved aspect or the new inquiry.
+3. If the agent requested information → provide EXACTLY ONE missing detail.
+4. If the agent provided a clear solution, or if you have no further questions,
+   you MUST respond with appreciation or satisfaction, like "{L['customer_positive_response']}".
+5. If the agent's LAST message was the closing confirmation: "{L['customer_closing_confirm']}"
+    - If you have NO additional questions: You MUST reply with "{L['customer_no_more_inquiries']}".
+    - If you DO have additional questions: You MUST reply with "{L['customer_has_additional_inquiries']}" AND MUST FOLLOW UP WITH THE NEW INQUIRY DETAILS IMMEDIATELY. DO NOT just repeat that you have an additional question.
+6. Do NOT repeat your initial message or previous responses unless necessary.
+7. Output ONLY the customer's next message.
+"""
+    try:
+        reaction = run_llm(next_prompt)
+        return reaction.strip()
+    except Exception as e:
+        return f"❌ 고객 반응 생성 오류: {e}"
+
+def generate_customer_closing_response(current_lang_key: str) -> str:
+    """에이전트의 마지막 확인 질문에 대한 고객의 최종 답변 생성 (요청 7, 8, 그리고 요청 2 반영)"""
+    history_text = get_chat_history_for_prompt()
+    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+
+    # 마지막 메시지가 에이전트의 종료 확인 메시지인지 확인 (프롬프트에 포함)
+    closing_msg = L['customer_closing_confirm']
+
+    final_prompt = f"""
+You are now ROLEPLAYING as the CUSTOMER.
+
+The agent's final message was the closing confirmation: "{closing_msg}".
+You MUST respond to this confirmation based on the overall conversation.
+
+Conversation history:
+{history_text}
+
+RULES:
+1. If the conversation seems resolved and you have NO additional questions:
+    - You MUST reply with "{L['customer_no_more_inquiries']}".
+2. If the conversation is NOT fully resolved and you DO have additional questions (or the agent provided a cancellation denial that you want to appeal):
+    - You MUST reply with "{L['customer_has_additional_inquiries']}" AND MUST FOLLOW UP WITH THE NEW INQUIRY DETAILS. DO NOT just repeat that you have an additional question.
+3. Your reply MUST be ONLY one of the two options above, in {lang_name}.
+4. Output ONLY the customer's next message (must be one of the two rule options).
+"""
+    try:
+        reaction = run_llm(final_prompt)
+        # LLM의 출력이 규칙을 따르지 않을 경우를 대비하여 강제 적용
+        reaction_text = reaction.strip()
+        # "추가 문의 사항도 있습니다"가 포함되어 있으면 그대로 반환 (상세 내용 포함 가정)
+        if L['customer_no_more_inquiries'] in reaction_text:
+            return L['customer_no_more_inquiries']
+        elif L['customer_has_additional_inquiries'] in reaction_text:
+            return reaction_text 
+        else:
+            # LLM이 규칙을 어겼을 경우, "추가 문의 사항이 있다"고 가정하고 에이전트 턴으로 넘김
+            return L['customer_has_additional_inquiries'] 
+    except Exception as e:
+        st.error(f"고객 최종 반응 생성 오류: {e}")
+        return L['customer_has_additional_inquiries'] # 오류 시 에이전트 턴으로 유도
+
 
 # ========================================
-# 9. 사이드바 (언어 선택 + 파일 업로드 + 분석 버튼)
+# 9. 사이드바
 # ========================================
 
 with st.sidebar:
@@ -1300,33 +1244,9 @@ with st.sidebar:
         format_func=lambda x: {"ko": "한국어", "en": "English", "ja": "日本語"}[x],
     )
 
-    st.markdown("### 🔐 Google Cloud TTS 인증 설정 (Service Account JSON)")
-
-    uploaded_json = st.file_uploader(
-        "Google Cloud Service Account JSON 업로드",
-        type=["json"],
-        key="gcp_tts_json"
-    )
-
-    if uploaded_json is not None:
-        try:
-            # JSON 내용 읽기
-            json_data = uploaded_json.read().decode("utf-8")
-
-            # 세션에 저장
-            st.session_state["GCP_TTS_CREDENTIALS"] = json_data
-            st.success("Google Cloud TTS 인증 정보가 저장되었습니다!")
-
-        except Exception as e:
-            st.error(f"❌ JSON 처리 오류: {e}")
-
     # 🔹 언어 변경 감지
     if selected_lang_key != st.session_state.language:
-        old_lang = st.session_state.language
         st.session_state.language = selected_lang_key
-        L = LANG[st.session_state.language]
-
-        # 🔹 시뮬레이터 관련 상태 초기화
         st.session_state.simulator_messages = []
         st.session_state.simulator_memory.clear()
         st.session_state.initial_advice_provided = False
@@ -1334,14 +1254,8 @@ with st.sidebar:
         st.session_state.agent_response_area_text = ""
         st.session_state.last_transcript = ""
         st.session_state.sim_audio_bytes = None
-        st.session_state.sim_audio_bytes_raw = None
-
-        # (원하면 RAG 채팅 이력도 언어별로 분리하고 싶을 때)
-        # st.session_state.messages = []
-
-        # st.rerun()
-
-
+        st.session_state.sim_stage = "WAIT_FIRST_QUERY"
+        st.rerun()
 
     L = LANG[st.session_state.language]
 
@@ -1352,12 +1266,12 @@ with st.sidebar:
     if st.session_state.llm_init_error_msg:
         st.error(st.session_state.llm_init_error_msg)
     elif st.session_state.is_llm_ready:
-        st.success("✅ LLM 및 임베딩 클라이언트 준비 완료")
+        st.success("✅ LLM 클라이언트 준비 완료")
 
-    if "✅" in st.session_state.openai_init_msg:
-        st.success(st.session_state.openai_init_msg)
+    if st.session_state.openai_client:
+        st.success("✅ OpenAI TTS/Whisper 클라이언트 준비 완료")
     else:
-        st.warning(st.session_state.openai_init_msg)
+        st.warning(L["openai_missing"])
 
     st.markdown("---")
 
@@ -1372,7 +1286,7 @@ with st.sidebar:
     if files_to_process and st.session_state.is_llm_ready:
         if st.button(L["button_start_analysis"]):
             with st.spinner(L["data_analysis_progress"]):
-                vs, count = build_rag_index(files_to_process, st.session_state.embeddings)
+                vs, count = build_rag_index(files_to_process)
                 if vs is not None:
                     st.session_state.rag_vectorstore = vs
                     st.session_state.is_rag_ready = True
@@ -1459,7 +1373,7 @@ if feature_selection == L["voice_rec_header"]:
                 )
                 st.success(L["saved_success"])
                 st.session_state.last_transcript = ""
-                # st.rerun()
+                st.rerun()
             except Exception as e:
                 st.error(f"{L['error']} {e}")
 
@@ -1522,7 +1436,7 @@ if feature_selection == L["voice_rec_header"]:
                                             break
                                     save_voice_records(records)
                                     st.success(L["retranscribe"] + " " + L["saved_success"])
-                                    # st.rerun()
+                                    st.rerun()
                                 except Exception as e:
                                     st.error(f"{L['error']} {e}")
 
@@ -1534,25 +1448,18 @@ if feature_selection == L["voice_rec_header"]:
                             else:
                                 st.error(L["delete_fail"])
                             st.session_state[f"confirm_del_{rec_id}"] = False
-                            # st.rerun()
+                            st.rerun()
                         else:
                             st.session_state[f"confirm_del_{rec_id}"] = True
                             st.warning(L["delete_confirm_rec"])
 
 # -------------------- Simulator Tab --------------------
-# -------------------- Simulator Tab --------------------
 elif feature_selection == L["simulator_tab"]:
     st.header(L["simulator_header"])
     st.markdown(L["simulator_desc"])
 
-    # 상태 초기값 보정
-    if "sim_stage" not in st.session_state:
-        st.session_state.sim_stage = "WAIT_FIRST_QUERY"
-
-    st.markdown(
-        f'<div style="padding:5px;text-align:center;border-radius:5px;background-color:#f0f0f0;margin-bottom:10px;">{L["tts_status_ready"]}</div>',
-        unsafe_allow_html=True,
-    )
+    current_lang = st.session_state.language
+    L = LANG[current_lang] # 다시 L 업데이트
 
     # =========================
     # 0. 전체 이력 삭제
@@ -1575,14 +1482,12 @@ elif feature_selection == L["simulator_tab"]:
                     st.session_state.is_chat_ended = False
                     st.session_state.sim_stage = "WAIT_FIRST_QUERY"
                     st.success(L["delete_success"])
-                st.stop()
+                st.rerun()
             if c_no.button(L["delete_confirm_no"], key="confirm_del_no"):
                 st.session_state.show_delete_confirm = False
 
-    current_lang = st.session_state.language
-
     # =========================
-    # 1. 이전 이력 로드
+    # 1. 이전 이력 로드 (기존 로직 유지)
     # =========================
     with st.expander(L["history_expander_title"]):
         histories = load_simulation_histories_local(current_lang)
@@ -1651,35 +1556,31 @@ elif feature_selection == L["simulator_tab"]:
                     last_role = h["messages"][-1]["role"] if h["messages"] else None
                     if last_role == "agent_response":
                         st.session_state.sim_stage = "CUSTOMER_TURN"
+                    elif last_role == "customer_rebuttal":
+                         st.session_state.sim_stage = "AGENT_TURN"
+                    elif last_role == "supervisor" and h["messages"][-1]["content"] == L["customer_closing_confirm"]:
+                        st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
                     else:
                         st.session_state.sim_stage = "AGENT_TURN"
 
-                # 메모리 재구성 (심층 LLM용, 필요 시)
-                st.session_state.simulator_memory.clear()
-                for msg in h["messages"]:
-                    role = msg["role"]
-                    if role in ["customer", "agent_response"]:
-                        st.session_state.simulator_memory.chat_memory.add_user_message(msg["content"])
-                    else:
-                        st.session_state.simulator_memory.chat_memory.add_ai_message(msg["content"])
-
+                st.session_state.simulator_memory.clear() # 메모리 초기화
+                # 메모리 재구성 (간단히 메시지만 복원, ConversationChain 미사용으로 메모리 동기화는 수동)
+                # 실제 LLM에 전달할 때 get_chat_history_for_prompt()가 처리함
                 st.rerun()
         else:
             st.info(L["no_history_found"])
 
     # =========================
-    # 2. LLM 준비 체크
+    # 2. LLM 준비 체크 & 채팅 종료 상태
     # =========================
-    if not st.session_state.is_llm_ready and not LLM_API_KEY:
+    if not st.session_state.is_llm_ready:
         st.warning(L["simulation_no_key_warning"])
 
-    # =========================
-    # 3. 이미 종료된 상태라면
-    # =========================
-    if st.session_state.is_chat_ended or st.session_state.sim_stage == "CLOSING":
+    if st.session_state.sim_stage == "CLOSING":
         st.success(L["survey_sent_confirm"])
         st.info(L["new_simulation_ready"])
         if st.button(L["new_simulation_button"], key="new_simulation_btn"):
+            # 초기화 로직
             st.session_state.simulator_messages = []
             st.session_state.simulator_memory.clear()
             st.session_state.initial_advice_provided = False
@@ -1689,12 +1590,15 @@ elif feature_selection == L["simulator_tab"]:
             st.session_state.last_transcript = ""
             st.session_state.sim_audio_bytes = None
             st.session_state.sim_stage = "WAIT_FIRST_QUERY"
-           
+            st.rerun()
         st.stop()
 
+
     # =========================
-    # 4. 초기 문의 입력 (WAIT_FIRST_QUERY)
-    # =========================
+    # 3. 초기 문의 입력 (WAIT_FIRST_QUERY)
+    # ========================================
+    # 3. 초기 문의 입력 (WAIT_FIRST_QUERY)
+    # ========================================
     if st.session_state.sim_stage == "WAIT_FIRST_QUERY":
         customer_query = st.text_area(
             L["customer_query_label"],
@@ -1704,11 +1608,11 @@ elif feature_selection == L["simulator_tab"]:
         )
 
         customer_email = st.text_input(
-            L.get("customer_email_label", "Customer email (optional)"),
+            L["customer_email_label"],
             key="customer_email",
         )
         customer_phone = st.text_input(
-            L.get("customer_phone_label", "Customer phone / WhatsApp (optional)"),
+            L["customer_phone_label"],
             key="customer_phone",
         )
 
@@ -1736,12 +1640,11 @@ elif feature_selection == L["simulator_tab"]:
             st.session_state.simulator_messages.append(
                 {"role": "customer", "content": customer_query}
             )
-            st.session_state.simulator_memory.chat_memory.add_user_message(customer_query)
 
             contact_info_block = ""
             if customer_email or customer_phone:
                 contact_info_block = (
-                    f"\n\n[Customer contact info for your reference]"
+                    f"\n\n[Customer contact info for reference (DO NOT use these in your reply draft!)]"
                     f"\n- Email: {customer_email or 'N/A'}"
                     f"\n- Phone: {customer_phone or 'N/A'}"
                 )
@@ -1749,7 +1652,7 @@ elif feature_selection == L["simulator_tab"]:
             current_lang_key = st.session_state.language
             lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
 
-            # 2) Supervisor 가이드 + 초안 생성 (run_llm 사용 → 멀티 모델 지원)
+            # 2) Supervisor 가이드 + 초안 생성 (요청 3, 5, 6 반영)
             initial_prompt = f"""
 You are an AI Customer Support Supervisor. Your role is to analyze the following customer inquiry
 from a **{customer_type_display}** and provide:
@@ -1762,8 +1665,13 @@ from a **{customer_type_display}** and provide:
   - "### {L['simulation_advice_header']}"
   - "### {L['simulation_draft_header']}"
 
-[INFO TO COLLECT]
-Always include a section for required information to collect from the customer before solving.
+[CRITICAL GUIDELINE RULES]
+1. **Initial Information Collection (Req 3):** The first step in the guideline MUST be to request the necessary initial diagnostic information (e.g., device compatibility, local status/location, order number) BEFORE attempting to troubleshoot or solve the problem.
+2. **Empathy for Difficult Customers (Req 5):** If the customer type is 'Difficult Customer' or 'Highly Dissatisfied Customer', the guideline MUST emphasize extreme politeness, empathy, and apologies, even if the policy (e.g., no refund) must be enforced.
+3. **24-48 Hour Follow-up (Req 6):** If the issue cannot be solved immediately or requires confirmation from a local partner/supervisor, the guideline MUST state the procedure:
+   - Acknowledge the issue.
+   - Inform the customer they will receive a definite answer within 24 or 48 hours.
+   - Request the customer's email or phone number for follow-up contact.
 
 Customer Inquiry:
 {customer_query}
@@ -1773,19 +1681,12 @@ Customer Inquiry:
             if not st.session_state.is_llm_ready:
                 mock_text = (
                     f"### {L['simulation_advice_header']}\n\n"
-                    f"- (Mock) {customer_type_display} 유형 고객에 대한 응대 가이드라인입니다.\n\n"
+                    f"- (Mock) {customer_type_display} 유형 고객 응대 가이드입니다. (요청 3, 5, 6 반영)\n\n"
                     f"### {L['simulation_draft_header']}\n\n"
-                    f"(Mock) 여기에는 실제 AI 응대 초안이 들어갑니다.\n\n"
+                    f"(Mock) 에이전트 응대 초안이 여기에 들어갑니다。\n\n"
                 )
                 st.session_state.simulator_messages.append(
                     {"role": "supervisor", "content": mock_text}
-                )
-                st.session_state.initial_advice_provided = True
-                save_simulation_history_local(
-                    customer_query,
-                    customer_type_display,
-                    st.session_state.simulator_messages,
-                    is_chat_ended=False,
                 )
             else:
                 with st.spinner(L["response_generating"]):
@@ -1794,50 +1695,39 @@ Customer Inquiry:
                         st.session_state.simulator_messages.append(
                             {"role": "supervisor", "content": text}
                         )
-                        st.session_state.initial_advice_provided = True
-                        save_simulation_history_local(
-                            customer_query,
-                            customer_type_display,
-                            st.session_state.simulator_messages,
-                            is_chat_ended=False,
-                        )
                     except Exception as e:
                         st.error(f"AI 조언 생성 중 오류 발생: {e}")
 
+            st.session_state.initial_advice_provided = True
+            save_simulation_history_local(
+                customer_query,
+                customer_type_display,
+                st.session_state.simulator_messages,
+                is_chat_ended=False,
+            )
             st.session_state.sim_stage = "AGENT_TURN"
             st.rerun()
 
     # =========================
-    # 5. 대화 로그 표시 (공통)
+    # 4. 대화 로그 표시 (공통)
+    # (핵심 수정 부분: TTS 버튼에 메시지 인덱스 전달)
     # =========================
-    for msg in st.session_state.simulator_messages:
+    for idx, msg in enumerate(st.session_state.simulator_messages):
         role = msg["role"]
         content = msg["content"]
+        avatar = {"customer": "🙋", "supervisor": "🤖", "agent_response": "🧑‍💻", "customer_rebuttal": "✨", "system_end": "📌"}.get(role, "💬")
+        tts_role = "customer" if role.startswith("customer") or role == "customer_rebuttal" else ("agent" if role == "agent_response" else "supervisor")
 
-        if role == "customer":
-            with st.chat_message("user", avatar="🙋"):
-                st.markdown(content)
-                render_tts_button(content, st.session_state.language, role="customer", prefix="cust_")
-
-        elif role == "supervisor":
-            with st.chat_message("assistant", avatar="🤖"):
-                st.markdown(content)
-                render_tts_button(content, st.session_state.language, role="supervisor", prefix="sup_")
-
-        elif role == "agent_response":
-            with st.chat_message("user", avatar="🧑‍💻"):
-                st.markdown(content)
-                render_tts_button(content, st.session_state.language, role="agent", prefix="agt_")
-
-        elif role in ["customer_rebuttal", "customer_end", "system_end"]:
-            with st.chat_message("assistant", avatar="✨"):
-                st.markdown(content)
-                render_tts_button(content, st.session_state.language, role="customer", prefix=f"{role}_")
+        with st.chat_message(role, avatar=avatar):
+            st.markdown(content)
+            # 인덱스를 render_tts_button에 전달하여 고유 키 생성에 사용
+            render_tts_button(content, st.session_state.language, role=tts_role, prefix=f"{role}_", index=idx)
 
     # =========================
-    # 6. 에이전트 입력 단계 (AGENT_TURN)
+    # 5. 에이전트 입력 단계 (AGENT_TURN)
+    # (요청 1 반영: 텍스트 입력 시 세션 상태 자동 업데이트)
     # =========================
-    if st.session_state.sim_stage == "AGENT_TURN" and not st.session_state.is_chat_ended:
+    if st.session_state.sim_stage == "AGENT_TURN":
         st.markdown(f"### {L['agent_response_header']}")
 
         col_mic, col_text = st.columns([1, 2])
@@ -1867,7 +1757,7 @@ Customer Inquiry:
             elif st.session_state.openai_client is None:
                 st.error(L["whisper_client_error"])
             else:
-                with st.spinner(L.get("whisper_processing", "음성 파일을 텍스트로 변환 중...")):
+                with st.spinner(L["whisper_processing"]):
                     transcribed_text = transcribe_bytes_with_whisper(
                         st.session_state.sim_audio_bytes,
                         "audio/wav",
@@ -1878,39 +1768,51 @@ Customer Inquiry:
                         st.session_state.last_transcript = ""
                     else:
                         st.session_state.last_transcript = transcribed_text.strip()
+                        # 전사된 텍스트를 입력창에 반영 (요청 1 반영)
                         st.session_state.agent_response_area_text = transcribed_text.strip()
                         snippet = transcribed_text[:50].replace("\n", " ")
                         if len(transcribed_text) > 50:
                             snippet += "..."
-                        st.success(
-                            L.get("whisper_success", "✅ 음성 전사 완료!")
-                            + f"\n\n**인식 내용:** *{snippet}*"
-                        )
+                        st.success(L["whisper_success"] + f"\n\n**인식 내용:** *{snippet}*")
+                        st.rerun() # 텍스트 반영을 위해 UI 재실행
 
-        # --- 텍스트 입력 + 전송 버튼 (단일 버튼!) ---
+        # --- 텍스트 입력 + 전송 버튼 ---
+        # 1. 텍스트 입력 필드
+        # Streamlit 1.23.0+ 버전에서 text_area는 입력 시마다 세션 상태를 업데이트하지 않음. 
+        # 따라서 on_change와 자체 콜백 함수를 사용하여 강제 동기화해야 함 (요청 1 해결).
+        def update_agent_response():
+            # 입력 필드의 현재 값을 세션 상태 변수에 저장
+            st.session_state.agent_response_area_text = st.session_state.agent_response_input_box_widget
+            
         col_text, col_button = st.columns([4, 1])
 
         with col_text:
-            st.session_state.agent_response_area_text = st.text_area(
+            st.text_area(
                 L["agent_response_placeholder"],
                 value=st.session_state.agent_response_area_text,
-                key="agent_response_input_box",
+                key="agent_response_input_box_widget", # 새로운 키 사용
+                on_change=update_agent_response, # 변경 시마다 세션 상태 업데이트
             )
+            # update_agent_response 함수를 통해 st.session_state.agent_response_area_text가 최신 값으로 업데이트됨.
 
         with col_button:
             send_clicked = st.button(L["send_response_button"], key="send_agent_response_btn")
 
         if send_clicked:
-            agent_response = st.session_state.agent_response_area_text.strip()
+            # send_clicked 시점에는 이미 update_agent_response를 통해 값이 세션 상태에 반영되어 있어야 함.
+            # 하지만, text_area의 on_change는 버튼 클릭보다 먼저 발생하도록 보장되지 않을 수 있음.
+            # 따라서 버튼 클릭 전에 최종적으로 한 번 더 값을 가져오는 것이 안전함.
+            agent_response = st.session_state.agent_response_input_box_widget.strip()
+            st.session_state.agent_response_area_text = agent_response # 최종값 반영
+            
             if not agent_response:
                 st.warning(L["empty_response_warning"])
                 st.stop()
 
-            # 로그 업데이트
+            # 로그 업데이트 (요청 4 반영)
             st.session_state.simulator_messages.append(
                 {"role": "agent_response", "content": agent_response}
             )
-            st.session_state.last_transcript = agent_response
 
             # 입력창/오디오 초기화
             st.session_state.agent_response_area_text = ""
@@ -1925,438 +1827,163 @@ Customer Inquiry:
                 is_chat_ended=False,
             )
 
-            # 다음 단계: 고객 차례
+            # 다음 단계: 고객 반응 생성 요청
             st.session_state.sim_stage = "CUSTOMER_TURN"
             st.rerun()
 
-    # =========================
-    # 7. 고객 반응/종료 단계 (CUSTOMER_TURN)
-    # =========================
-    if st.session_state.sim_stage == "CUSTOMER_TURN" and not st.session_state.is_chat_ended:
-        col_end, col_next = st.columns([1, 2])
 
-        # (1) 에이전트가 바로 설문 종료 요청
-        if col_end.button(L["button_end_chat"], key="sim_end_chat_btn"):
-            survey_msg = L["prompt_survey"]
-            st.session_state.simulator_messages.append(
-                {"role": "system_end", "content": survey_msg}
-            )
-            st.session_state.is_chat_ended = True
-            customer_type_display = st.session_state.get("customer_type_sim_select", "")
-            save_simulation_history_local(
-                st.session_state.customer_query_text_area,
-                customer_type_display,
-                st.session_state.simulator_messages,
-                is_chat_ended=True,
-            )
-            st.session_state.sim_stage = "CLOSING"
-            st.rerun()
-
-        # (2) 고객 반응 자동 생성
-        if col_next.button(L["customer_generate_response_button"], key="sim_next_rebuttal_btn"):
+    # =========================
+    # 6. 고객 반응 생성 단계 (CUSTOMER_TURN)
+    #    - 고객 반응 생성 후: 감사 표현 시 -> WAIT_CLOSING_CONFIRMATION_FROM_AGENT로, 아니면 -> AGENT_TURN으로
+    # =========================
+    if st.session_state.sim_stage == "CUSTOMER_TURN":
+        st.info("에이전트 응답 전송 완료. 고객 반응 생성이 필요합니다.")
+        # 고객 반응 생성 버튼 (요청 4 반영)
+        if st.button(L["customer_generate_response_button"], key="sim_next_rebuttal_btn"):
             if not st.session_state.is_llm_ready:
                 st.warning(L["simulation_no_key_warning"])
                 st.stop()
 
-            # 대화 로그를 하나의 텍스트로 정리
-            convo_lines = []
-            for m in st.session_state.simulator_messages:
-                r = m["role"]
-                prefix = {
-                    "customer": "Customer",
-                    "agent_response": "Agent",
-                    "supervisor": "Supervisor",
-                    "customer_rebuttal": "Customer",
-                }.get(r, r)
-                convo_lines.append(f"{prefix}: {m['content']}")
-            convo_text = "\n".join(convo_lines)
+            with st.spinner(L["response_generating"]): # 로딩 표시 (요청 4 반영)
+                reaction = generate_customer_reaction(st.session_state.language)
 
-            lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[st.session_state.language]
+            if reaction.startswith("❌"):
+                st.error(reaction)
+                st.stop()
 
-            next_prompt = f"""
-You are now ROLEPLAYING as the CUSTOMER.
-
-Read the following conversation and respond naturally in {lang_name}.
-
-RULES:
-1. If the agent requested information → provide EXACTLY ONE missing detail.
-2. If the agent provided a clear solution → respond with appreciation.
-3. If you have no more questions, clearly say so (short and polite).
-4. Do NOT write as the agent. Only customer voice.
-
-Conversation so far:
-{convo_text}
-
-Now, output ONLY the customer's next message.
-"""
-
-            with st.spinner(L["response_generating"]):
-                try:
-                    reaction = run_llm(next_prompt)
-                except Exception as e:
-                    st.error(f"고객 반응 생성 중 오류: {e}")
-                    st.stop()
-
-            reaction = reaction.strip()
             st.session_state.simulator_messages.append(
                 {"role": "customer_rebuttal", "content": reaction}
             )
 
-            # 종료 의사 판별
+            # 종료 의사 판별 (요청 7 반영: 감사 인사를 했는지)
             reaction_lower = reaction.lower()
-            closing_user_signals = [
-                "없습니다", "없어요", "없어",
-                "no more", "nothing else",
-                "結構です", "大丈夫です",
-            ]
-            appreciation_signals = ["감사", "thank", "ありがとうございます", "ありがとう", "감사합니다"]
+            appreciation_signals = ["감사", "thank", "ありがとう"]
+            has_appreciation = any(k in reaction_lower for k in appreciation_signals)
+
+            customer_type_display = st.session_state.get("customer_type_sim_select", "")
+            
+            # **고객이 추가 문의 사항을 상세히 남겼는지 확인**
+            # LLM이 규칙을 잘 따랐다면, "추가 문의 사항도 있습니다." 뒤에 구체적인 내용이 있어야 함.
+            is_additional_inquiry_signal = L['customer_has_additional_inquiries'] in reaction
+            has_details = len(reaction) > len(L['customer_has_additional_inquiries']) + 5 # 구체적인 내용이 충분히 있는지 확인
+
+            # (A) 감사 표현을 했거나, 구체적인 추가 문의 내용이 없는 "추가 문의 있음" 답변인 경우: 에이전트가 종료 확인 메시지 보내도록 유도
+            if has_appreciation and not is_additional_inquiry_signal:
+                st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area, customer_type_display,
+                    st.session_state.simulator_messages, is_chat_ended=False,
+                )
+            # (B) 구체적인 추가 질문/반응인 경우: 다시 에이전트 차례
+            elif is_additional_inquiry_signal and has_details:
+                 st.session_state.sim_stage = "AGENT_TURN"
+                 save_simulation_history_local(
+                    st.session_state.customer_query_text_area, customer_type_display,
+                    st.session_state.simulator_messages, is_chat_ended=False,
+                )
+            # (C) 구체적인 내용 없이 "추가 문의 사항도 있습니다"만 반복한 경우 (요청 2 해결 목표)
+            #    -> 에이전트 턴으로 넘겨서 상세 문의를 요청하도록 유도
+            else:
+                st.session_state.sim_stage = "AGENT_TURN"
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area, customer_type_display,
+                    st.session_state.simulator_messages, is_chat_ended=False,
+                )
+
+            st.rerun()
+
+    # =========================
+    # 7. 종료 확인 메시지 대기 (WAIT_CLOSING_CONFIRMATION_FROM_AGENT)
+    #    - 고객이 감사 인사를 했으므로, 에이전트가 종료 확인 메시지를 보내야 함 (요청 7)
+    # =========================
+    if st.session_state.sim_stage == "WAIT_CLOSING_CONFIRMATION_FROM_AGENT":
+        st.success("고객이 솔루션에 긍정적으로 반응했습니다. 추가 문의 여부를 확인해 주세요.")
+
+        # 에이전트가 "추가 문의 여부 확인 메시지"를 보내는 버튼 (요청 7 반영)
+        if st.button(L["send_closing_confirm_button"], key="btn_send_closing_confirm"):
+            closing_msg = L["customer_closing_confirm"]
+
+            # 에이전트 응답으로 로그 기록
+            st.session_state.simulator_messages.append(
+                {"role": "agent_response", "content": closing_msg}
+            )
+
+            # 다음 단계: 고객의 최종 답변 대기
+            st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
+
+            customer_type_display = st.session_state.get("customer_type_sim_select", "")
+            save_simulation_history_local(
+                st.session_state.customer_query_text_area, customer_type_display,
+                st.session_state.simulator_messages, is_chat_ended=False,
+            )
+            st.rerun()
+
+
+    # =========================
+    # 8. 고객 최종 응답 생성 및 처리 (WAIT_CUSTOMER_CLOSING_RESPONSE)
+    #    - 고객 답변에 따라 8A(종료) 또는 8B(추가 문의) 처리 (요청 8)
+    # =========================
+    if st.session_state.sim_stage == "WAIT_CUSTOMER_CLOSING_RESPONSE":
+        st.info("에이전트가 추가 문의 여부를 확인했습니다. 고객의 최종 답변을 생성합니다.")
+
+        # 고객 답변 자동 생성
+        if st.button(L["customer_generate_response_button"], key="btn_generate_final_response"):
+            if not st.session_state.is_llm_ready:
+                st.warning(L["simulation_no_key_warning"])
+                st.stop()
+                
+            with st.spinner(L["response_generating"]):
+                # 고객의 최종 답변 생성 (요청 8A/8B 분기)
+                final_customer_reaction = generate_customer_closing_response(st.session_state.language)
 
             customer_type_display = st.session_state.get("customer_type_sim_select", "")
 
-            # (a) 종료 의사 + 감사 → 설문 후 종료
-            if any(k in reaction_lower for k in closing_user_signals):
-                # 고객 종료 메시지 기록
-                st.session_state.simulator_messages.append(
-                    {"role": "customer_end", "content": reaction}
-                )
-                # 설문 안내
-                st.session_state.simulator_messages.append(
-                    {"role": "system_end", "content": L["prompt_survey"]}
-                )
-                st.session_state.is_chat_ended = True
+            # 로그 기록
+            st.session_state.simulator_messages.append(
+                {"role": "customer_rebuttal", "content": final_customer_reaction}
+            )
+
+            # (A) "없습니다. 감사합니다" 경로 (요청 8A)
+            if L['customer_no_more_inquiries'] in final_customer_reaction:
+                st.session_state.sim_stage = "FINAL_CLOSING_ACTION"
                 save_simulation_history_local(
-                    st.session_state.customer_query_text_area,
-                    customer_type_display,
-                    st.session_state.simulator_messages,
-                    is_chat_ended=True,
+                    st.session_state.customer_query_text_area, customer_type_display,
+                    st.session_state.simulator_messages, is_chat_ended=False,
                 )
-                st.session_state.sim_stage = "CLOSING"
-                st.rerun()
-
-            # (b) 아직 질문이 더 있는 일반 반응 → 다시 에이전트 차례
-            else:
+            # (B) "추가 문의 사항도 있습니다" 경로 (요청 8B)
+            elif L['customer_has_additional_inquiries'] in final_customer_reaction:
+                st.session_state.sim_stage = "AGENT_TURN" # 다시 에이전트 응답 단계로
                 save_simulation_history_local(
-                    st.session_state.customer_query_text_area,
-                    customer_type_display,
-                    st.session_state.simulator_messages,
-                    is_chat_ended=False,
-                )
-                st.session_state.sim_stage = "AGENT_TURN"
-                st.rerun()
-
-                    # st.rerun()
-
-        # 에이전트 응답 이후: 종료/다음 반응
-        # ============================================================
-        # 5. 에이전트 답변 이후 단계:
-        #    - 고객 반응 자동 생성
-        #    - 또는 "추가 문의 여부" 질문 보내기 버튼
-        # ============================================================
-        # ============================================================
-        # 6. "추가 문의 사항" 질문 이후 고객 답변 처리
-        # ============================================================
-        last_role = st.session_state.simulator_messages[-1]["role"] if st.session_state.simulator_messages else None
-
-        if last_role == "customer" and not st.session_state.is_chat_ended:
-            customer_text_raw = st.session_state.simulator_messages[-1]["content"]
-            customer_text = customer_text_raw.lower()
-
-            # 감사 + 종료 키워드
-            appreciation_patterns = ["감사", "thank", "ありがとうございます", "ありがとう"]
-            closing_patterns = ["없습니다", "없어요", "없어", "no more", "nothing else", "結構です", "大丈夫です"]
-
-            has_appreciation = any(p in customer_text for p in appreciation_patterns)
-            has_closing = any(p in customer_text for p in closing_patterns)
-
-            # -------------------------------------
-            # A) "없습니다" + "감사"가 함께 있는 경우 → 감사 + 설문 + 종료
-            # -------------------------------------
-            if has_appreciation and has_closing:
-                survey_msg = L["prompt_survey"]
-
-                st.session_state.simulator_messages.append(
-                    {"role": "system_end", "content": survey_msg}
-                )
-                st.session_state.is_chat_ended = True
-
-                # 이력 저장
-                save_simulation_history_local(
-                    st.session_state.customer_query_text_area,
-                    customer_type_display,
-                    st.session_state.simulator_messages,
-                    is_chat_ended=True,
+                    st.session_state.customer_query_text_area, customer_type_display,
+                    st.session_state.simulator_messages, is_chat_ended=False,
                 )
 
-                st.success(L["save_history_success"])
-                st.info("📌 설문 안내 메시지가 전송되었고, 이 상담은 종료되었습니다.")
-                st.stop()
+            st.rerun()
 
-            # -------------------------------------
-            # B) "없습니다" 키워드가 없으면 → 추가 문의로 판단
-            #     (감사 표현만 있어도, 뒤에 내용이 있으면 추가 문의)
-            # -------------------------------------
-            elif not has_closing:
-                # 별도 종료 처리는 하지 않고, 위쪽
-                #  'last_role in ["customer", "customer_rebuttal"]' 블록이
-                #   다시 에이전트 응답 UI를 열어줄 것임.
-                st.info("고객이 추가 문의를 하고 있습니다. 에이전트 응답을 이어가 주세요.")
-                # 여기서는 st.stop() 하지 않고 통과
+    # =========================
+    # 9. 최종 종료 행동 (FINAL_CLOSING_ACTION)
+    #    - 고객이 종료 의사를 밝혔으므로, 에이전트가 채팅을 종료해야 함
+    # =========================
+    if st.session_state.sim_stage == "FINAL_CLOSING_ACTION":
+        st.success("고객이 더 이상 문의할 사항이 없다고 확인했습니다.")
 
-        if last_role == "customer":
-            customer_text = st.session_state.simulator_messages[-1]["content"].strip().lower()
+        # 설문 조사 링크 전송 및 채팅 종료 버튼 (요청 8A 반영)
+        if st.button(L["sim_end_chat_button"], key="btn_final_end_chat"):
+            # 감사 인사 및 설문 조사 메시지 (요청 8A)
+            end_msg = L["prompt_survey"]
+            st.session_state.simulator_messages.append(
+                {"role": "system_end", "content": end_msg}
+            )
+            st.session_state.is_chat_ended = True
+            st.session_state.sim_stage = "CLOSING" # 최종 종료 상태
 
-            appreciation_patterns = ["감사", "thank", "ありがとうございます", "ありがとう", "감사합니다"]
-            closing_patterns = ["없습니다", "없어요", "없어", "no more", "nothing else", "結構です", "大丈夫です"]
+            customer_type_display = st.session_state.get("customer_type_sim_select", "")
+            save_simulation_history_local(
+                st.session_state.customer_query_text_area, customer_type_display,
+                st.session_state.simulator_messages, is_chat_ended=True,
+            )
 
-            # 1) 고객이 감사 인사를 한 경우
-            if any(p in customer_text for p in appreciation_patterns):
-
-                st.info("고객이 감사 인사를 했습니다. 에이전트가 추가 문의 여부를 확인해야 합니다.")
-
-                if st.button(L["send_closing_confirm_button"], key="btn_send_closing_confirm"):
-                    closing_msg = L["customer_closing_confirm"]
-
-                    st.session_state.simulator_messages.append(
-                        {"role": "supervisor", "content": closing_msg}
-                    )
-                    st.session_state.simulator_memory.chat_memory.add_ai_message(closing_msg)
-
-                    st.success("추가 문의 여부 확인 메시지가 전송되었습니다. 고객의 응답을 생성합니다...")
-
-                    st.session_state.trigger_customer_reaction = True
-
-                if st.session_state.get("sim_next_rebuttal", False):
-                    st.session_state.sim_next_rebuttal = False
-
-            # 2) 고객이 “추가 문의 없음”을 표현한 경우
-            elif any(p in customer_text for p in closing_patterns):
-
-                st.success("고객이 더 이상 문의가 없다고 말했습니다.")
-
-                end_msg = L["prompt_survey"]
-                st.session_state.simulator_messages.append({"role": "system_end", "content": end_msg})
-                st.session_state.is_chat_ended = True
-
-                save_simulation_history_local(
-                    st.session_state.customer_query_text_area,
-                    customer_type_display,
-                    st.session_state.simulator_messages,
-                    is_chat_ended=True,
-                )
-
-                st.info("📌 상담 종료 단계입니다. 설문조사 메시지를 전송할 수 있습니다.")
-                st.stop()
-
-            # 3) 그 외의 경우 → 일반적인 추가 질문
-            else:
-                pass  # 에이전트 응답 UI 그대로 유지됨
-
-        if last_role == "agent_response":
-            col_end, col_next = st.columns([1, 2])
-
-            if col_end.button(L["button_end_chat"], key="sim_end_chat_btn"):
-                # 설문 조사 메시지 전송
-                survey_msg = L["prompt_survey"]
-
-                st.session_state.simulator_messages.append(
-                    {"role": "system_end", "content": survey_msg}
-                )
-                st.session_state.simulator_memory.chat_memory.add_ai_message(survey_msg)
-
-                # 상담 종료 상태 저장
-                st.session_state.is_chat_ended = True
-
-                save_simulation_history_local(
-                    st.session_state.customer_query_text_area,
-                    customer_type_display,
-                    st.session_state.simulator_messages,
-                    is_chat_ended=True,
-                )
-
-                # UI 상태 초기화
-                st.success(L["survey_sent_confirm"])  # 아래에서 추가해줄 Lang 문자열
-                st.session_state.simulation_finished = True
-
-                st.rerun()
-
-                if st.session_state.get("simulation_finished", False):
-                    st.session_state.simulation_finished = False
-
-                    # 모든 세션 초기화
-                    st.session_state.simulator_messages = []
-                    st.session_state.agent_response_area_text = ""
-                    st.session_state.customer_query_text_area = ""
-                    st.session_state.initial_advice_provided = False
-                    st.session_state.is_chat_ended = False
-
-                    st.success(L["new_simulation_ready"])
-
-                if col_next.button(L["request_rebuttal_button"], key="sim_next_rebuttal_btn"):
-                    next_prompt = """ ... (LLM에게 customer role 요청) ... """
-
-                    with st.spinner(L["response_generating"]):
-                        reaction = st.session_state.simulator_chain.predict(input=next_prompt)
-
-                    st.session_state.simulator_messages.append(
-                        {"role": "customer_rebuttal", "content": reaction}
-                    )
-                    st.session_state.simulator_memory.chat_memory.add_ai_message(reaction)
-
-                    save_simulation_history_local(
-                        st.session_state.customer_query_text_area,
-                        customer_type_display,
-                        st.session_state.simulator_messages,
-                        is_chat_ended=False,
-                    )
-
-                    st.stop()
-
-                if not st.session_state.is_llm_ready or not LLM_API_KEY:
-                    st.warning("API Key가 없어 대화형 시뮬레이션은 불가능합니다.")
-                    st.stop()
-
-                # -----------------------------
-                # 1) supervisor → customer 역할로 변환 (LLM)
-                # -----------------------------
-                next_prompt = f"""
-            You are now ROLEPLAYING as the CUSTOMER.
-
-            Analyze the dialogue so far and respond naturally.
-
-            RULES:
-            1. If the agent requested information → provide EXACTLY ONE missing detail.
-            2. If the agent provided a solution → respond with appreciation.
-            3. If appreciation is given → ALWAYS respond with:
-               "{L['customer_closing_confirm']}"
-            4. If the agent already asked:
-               "{L['customer_closing_confirm']}"
-               AND the customer has no further questions:
-               → Respond with "{L['customer_positive_response']}"
-               → THEN the chat MUST END.
-            5. Language MUST be {LANG[st.session_state.language]['lang_select']}.
-                """
-
-                # LLM 실행
-                with st.spinner(L["response_generating"]):
-                    reaction = st.session_state.simulator_chain.predict(input=next_prompt)
-
-                reaction_lower = reaction.lower()
-
-                # 패턴 정의
-                closing_user_signals = [
-                    "없습니다", "없어요", "없어",
-                    "no more", "nothing else",
-                    "結構です", "大丈夫です"
-                ]
-
-                appreciation_signals = [
-                    "감사", "thank", "ありがとう"
-                ]
-
-                # -----------------------------
-                # 2) 고객이 "종료 의사" 전달
-                # -----------------------------
-                if any(k in reaction_lower for k in closing_user_signals):
-                    st.session_state.simulator_messages.append(
-                        {"role": "customer_end", "content": reaction}
-                    )
-                    st.session_state.simulator_messages.append(
-                        {"role": "system_end", "content": L["prompt_survey"]}
-                    )
-
-                    st.session_state.simulator_memory.chat_memory.add_ai_message(reaction)
-                    st.session_state.simulator_memory.chat_memory.add_ai_message(L["prompt_survey"])
-
-                    st.session_state.is_chat_ended = True
-
-                    save_simulation_history_local(
-                        st.session_state.customer_query_text_area,
-                        customer_type_display,
-                        st.session_state.simulator_messages,
-                        is_chat_ended=True,
-                    )
-                    st.stop()
-
-                # -----------------------------
-                # 3) 고객이 감사 메시지 보내옴 → supervisor가 closing 질문 자동 발송
-                # -----------------------------
-                # if any(k in reaction_lower for k in appreciation_signals):
-                #     # 고객 감사 메시지
-                #     st.session_state.simulator_messages.append(
-                #         {"role": "customer_rebuttal", "content": reaction}
-                #     )
-                #     st.session_state.simulator_memory.chat_memory.add_ai_message(reaction)
-                #
-                #     follow_up = L["customer_closing_confirm"]
-                #
-                #     # supervisor가 추가 문의 여부 질문
-                #     st.session_state.simulator_messages.append(
-                #         {"role": "supervisor", "content": follow_up}
-                #     )
-                #     st.session_state.simulator_memory.chat_memory.add_ai_message(follow_up)
-                #
-                #     save_simulation_history_local(
-                #         st.session_state.customer_query_text_area,
-                #         customer_type_display,
-                #         st.session_state.simulator_messages,
-                #         is_chat_ended=False,
-                #     )
-                #     st.stop()
-
-                # -----------------------------
-                # 4) 기타 일반 반응
-                # -----------------------------
-                st.session_state.simulator_messages.append(
-                    {"role": "customer_rebuttal", "content": reaction}
-                )
-                st.session_state.simulator_memory.chat_memory.add_ai_message(reaction)
-
-                save_simulation_history_local(
-                    st.session_state.customer_query_text_area,
-                    customer_type_display,
-                    st.session_state.simulator_messages,
-                    is_chat_ended=False,
-                )
-                st.stop()
-
-                # 2) 고객이 감사 인사 → 반드시 “추가 문의 여부” 확인 메시지 발송
-                # if any(k in reaction_lower for k in appreciation_signals):
-                #     follow_up = L["customer_closing_confirm"]
-                #
-                #     st.session_state.simulator_messages.append(
-                #         {"role": "customer_rebuttal", "content": reaction}
-                #     )
-                #     st.session_state.simulator_messages.append(
-                #         {"role": "supervisor", "content": follow_up}
-                #     )
-                #
-                #     st.session_state.simulator_memory.chat_memory.add_ai_message(reaction)
-                #     st.session_state.simulator_memory.chat_memory.add_ai_message(follow_up)
-                #
-                #     save_simulation_history_local(
-                #         st.session_state.customer_query_text_area,
-                #         customer_type_display,
-                #         st.session_state.simulator_messages,
-                #         is_chat_ended=False,
-                #     )
-                #     st.stop()
-
-                # 3) 그 외 일반적 반응
-                st.session_state.simulator_messages.append(
-                    {"role": "customer_rebuttal", "content": reaction}
-                )
-                st.session_state.simulator_memory.chat_memory.add_ai_message(reaction)
-
-                save_simulation_history_local(
-                    st.session_state.customer_query_text_area,
-                    customer_type_display,
-                    st.session_state.simulator_messages,
-                    is_chat_ended=False,
-                )
-
-                if is_positive:
-                    st.session_state.is_chat_ended = True
-                # st.rerun()
+            st.rerun()
 
 # -------------------- RAG Tab --------------------
 elif feature_selection == L["rag_tab"]:
@@ -2364,16 +1991,17 @@ elif feature_selection == L["rag_tab"]:
     st.markdown(L["rag_desc"])
 
     if not st.session_state.is_rag_ready or st.session_state.rag_vectorstore is None:
-        # 이미 저장된 인덱스가 있으면 로드 시도
         if st.session_state.is_llm_ready:
-            vs = load_rag_index(st.session_state.embeddings)
-            if vs is not None:
-                st.session_state.rag_vectorstore = vs
-                st.session_state.is_rag_ready = True
-            else:
-                st.info(L["warning_rag_not_ready"])
+            with st.spinner(L["firestore_loading"]):
+                vs = load_rag_index()
+                if vs is not None:
+                    st.session_state.rag_vectorstore = vs
+                    st.session_state.is_rag_ready = True
+                else:
+                    st.info(L["firestore_no_index"])
         else:
-            st.info(L["warning_rag_not_ready"])
+            st.warning(L["warning_rag_not_ready"])
+
 
     if st.session_state.is_rag_ready and st.session_state.rag_vectorstore is not None:
         # 기존 대화 로그 표시
@@ -2427,7 +2055,7 @@ elif feature_selection == L["content_tab"]:
             "객관식 퀴즈 10문항": "quiz",
             "실습 예제 아이디어": "example",
             "Key Summary Note": "summary",
-            "10 Multiple-Choice Questions": "quiz",
+            "10 MCQ Questions": "quiz",
             "Practical Example Idea": "example",
             "核心要約ノート": "summary",
             "選択式クイズ10問": "quiz",
@@ -2464,26 +2092,24 @@ elif feature_selection == L["content_tab"]:
                     user_msg = f"Topic: {topic} (level: {level})"
                     with st.spinner("퀴즈 생성 중..."):
                         try:
-                            resp = st.session_state.llm.invoke(system_prompt + "\n\n" + user_msg)
-                            raw = resp.content if hasattr(resp, "content") else str(resp)
+                            resp = run_llm(system_prompt + "\n\n" + user_msg)
                             # 단순 출력
                             st.success(f"**{topic}** - {content_display}")
-                            st.code(raw, language="json")
+                            st.code(resp, language="json")
                         except Exception as e:
                             st.error(f"Content Generation Error: {e}")
                 else:
                     content_prompt = (
                         f"You are a professional AI coach at the {level} level.\n"
                         f"Generate clear and educational content in {target_lang}.\n"
-                        f"Content type: {content_display}.\n"
+                        f"Content type: {content_type}.\n"
                         f"Topic: {topic}\n"
                     )
                     with st.spinner("콘텐츠 생성 중..."):
                         try:
-                            resp = st.session_state.llm.invoke(content_prompt)
-                            txt = resp.content if hasattr(resp, "content") else str(resp)
+                            resp = run_llm(content_prompt)
                             st.success(f"**{topic}** - {content_display}")
-                            st.markdown(txt)
+                            st.markdown(resp)
                         except Exception as e:
                             st.error(f"Content Generation Error: {e}")
 
