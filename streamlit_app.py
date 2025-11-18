@@ -536,8 +536,63 @@ L = LANG[st.session_state.language]
 # ========================================
 
 @st.cache_resource
+# ========================================
+# 0-A. API Key 안전 구조 (Secrets + User Input)
+# ========================================
+
+# 1) Streamlit Cloud Secrets에서 우선 가져오기
+
+
+secret_key = None
+try:
+    secret_key = st.secrets.get("OPENAI_API_KEY", None)
+except Exception:
+    secret_key = None
+
+# 2) 사용자 입력 키 (세션에 저장)
+if "user_api_key" not in st.session_state:
+    st.session_state.user_api_key = ""
+
+# 3) UI 제공: 사용자가 직접 입력하는 백업 API Key
+with st.sidebar:
+    st.markdown("### 🔐 OpenAI API Key 설정")
+
+    if secret_key:
+        st.success("✔ Streamlit Secrets API Key 감지됨 (자동 적용)")
+    else:
+        st.warning("⚠ Streamlit Secrets에 API Key 없음 — 직접 입력 필요")
+
+    user_key_input = st.text_input(
+        "직접 OpenAI API Key 입력 (선택)",
+        type="password",
+        key="user_key_input_box",
+        placeholder="sk-************************"
+    )
+
+    if st.button("API Key 적용"):
+        if user_key_input.strip():
+            st.session_state.user_api_key = user_key_input.strip()
+            st.success("🔑 사용자 API Key 등록 완료! (세션 내 임시 저장)")
+        else:
+            st.warning("API Key를 입력하세요.")
+
+
+# 4) 최종 API Key 선택 우선순위
+def get_active_api_key():
+    """
+    1) Streamlit Cloud Secrets
+    2) 사용자 입력 키
+    3) 아무것도 없으면 None
+    """
+    if secret_key:
+        return secret_key
+    if st.session_state.user_api_key:
+        return st.session_state.user_api_key
+    return None
+
+
 def init_openai_client():
-    openai_key = os.environ.get("OPENAI_API_KEY")
+    openai_key = get_active_api_key()
     if not openai_key:
         return None, LANG[DEFAULT_LANG]["openai_missing"]
     try:
