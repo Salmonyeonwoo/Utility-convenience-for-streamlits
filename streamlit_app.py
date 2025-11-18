@@ -945,6 +945,10 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/we
 # 역할별 TTS 음성 스타일 설정
 # ========================================
 
+# ========================================
+# 역할별 TTS 음성 스타일 설정
+# ========================================
+
 TTS_VOICES = {
     "customer": {
         "gender": "male",
@@ -1005,6 +1009,7 @@ def render_tts_button(text, lang_key, role="customer", prefix=""):
             st.audio(audio_bytes, format="audio/mp3")
         else:
             st.error(msg)
+
 
 
 # ========================================
@@ -1535,16 +1540,23 @@ if feature_selection == L["voice_rec_header"]:
                             st.warning(L["delete_confirm_rec"])
 
 # -------------------- Simulator Tab --------------------
+# -------------------- Simulator Tab --------------------
 elif feature_selection == L["simulator_tab"]:
     st.header(L["simulator_header"])
     st.markdown(L["simulator_desc"])
+
+    # 상태 초기값 보정
+    if "sim_stage" not in st.session_state:
+        st.session_state.sim_stage = "WAIT_FIRST_QUERY"
 
     st.markdown(
         f'<div style="padding:5px;text-align:center;border-radius:5px;background-color:#f0f0f0;margin-bottom:10px;">{L["tts_status_ready"]}</div>',
         unsafe_allow_html=True,
     )
 
-    # 전체 이력 삭제
+    # =========================
+    # 0. 전체 이력 삭제
+    # =========================
     col_del, _ = st.columns([1, 4])
     with col_del:
         if st.button(L["delete_history_button"], key="trigger_delete_hist"):
@@ -1560,15 +1572,18 @@ elif feature_selection == L["simulator_tab"]:
                     st.session_state.simulator_messages = []
                     st.session_state.simulator_memory.clear()
                     st.session_state.show_delete_confirm = False
+                    st.session_state.is_chat_ended = False
+                    st.session_state.sim_stage = "WAIT_FIRST_QUERY"
                     st.success(L["delete_success"])
-                    # st.rerun()
+                st.stop()
             if c_no.button(L["delete_confirm_no"], key="confirm_del_no"):
                 st.session_state.show_delete_confirm = False
-                # st.rerun()
 
     current_lang = st.session_state.language
 
-    # 이력 로드
+    # =========================
+    # 1. 이전 이력 로드
+    # =========================
     with st.expander(L["history_expander_title"]):
         histories = load_simulation_histories_local(current_lang)
         search_query = st.text_input(L["search_history_label"], key="sim_hist_search")
@@ -1620,7 +1635,6 @@ elif feature_selection == L["simulator_tab"]:
                 q = h["initial_query"][:30].replace("\n", " ")
                 return f"[{t_str}] {h['customer_type']} - {q}..."
 
-
             options_map = {_label(h): h for h in filtered}
             sel_key = st.selectbox(L["history_selectbox_label"], options=list(options_map.keys()))
             if st.button(L["history_load_button"], key="load_hist_btn"):
@@ -1630,6 +1644,17 @@ elif feature_selection == L["simulator_tab"]:
                 st.session_state.initial_advice_provided = True
                 st.session_state.is_chat_ended = h.get("is_chat_ended", False)
 
+                # 상태 복원
+                if st.session_state.is_chat_ended:
+                    st.session_state.sim_stage = "CLOSING"
+                else:
+                    last_role = h["messages"][-1]["role"] if h["messages"] else None
+                    if last_role == "agent_response":
+                        st.session_state.sim_stage = "CUSTOMER_TURN"
+                    else:
+                        st.session_state.sim_stage = "AGENT_TURN"
+
+                # 메모리 재구성 (심층 LLM용, 필요 시)
                 st.session_state.simulator_memory.clear()
                 for msg in h["messages"]:
                     role = msg["role"]
@@ -1642,170 +1667,149 @@ elif feature_selection == L["simulator_tab"]:
         else:
             st.info(L["no_history_found"])
 
-    # LLM 없으면 시뮬레이터 제한
+    # =========================
+    # 2. LLM 준비 체크
+    # =========================
     if not st.session_state.is_llm_ready and not LLM_API_KEY:
         st.warning(L["simulation_no_key_warning"])
 
-    if st.session_state.is_chat_ended:
-        st.success(L["prompt_customer_end"] + " " + L["prompt_survey"])
+    # =========================
+    # 3. 이미 종료된 상태라면
+    # =========================
+    if st.session_state.is_chat_ended or st.session_state.sim_stage == "CLOSING":
+        st.success(L["survey_sent_confirm"])
+        st.info(L["new_simulation_ready"])
         if st.button(L["new_simulation_button"], key="new_simulation_btn"):
-            st.session_state.is_chat_ended = False
-            st.session_state.initial_advice_provided = False
             st.session_state.simulator_messages = []
             st.session_state.simulator_memory.clear()
-            st.session_state.last_transcript = ""
+            st.session_state.initial_advice_provided = False
+            st.session_state.is_chat_ended = False
             st.session_state.agent_response_area_text = ""
             st.session_state.customer_query_text_area = ""
-            # st.rerun()
+            st.session_state.last_transcript = ""
+            st.session_state.sim_audio_bytes = None
+            st.session_state.sim_stage = "WAIT_FIRST_QUERY"
+           
         st.stop()
 
-    # 초기 문의 입력
-    customer_query = st.text_area(
-        L["customer_query_label"],
-        key="customer_query_text_area",
-        height=150,
-        placeholder=L["initial_query_sample"],
-        value=st.session_state.agent_response_area_text,
-        disabled=st.session_state.initial_advice_provided,
-    )
+    # =========================
+    # 4. 초기 문의 입력 (WAIT_FIRST_QUERY)
+    # =========================
+    if st.session_state.sim_stage == "WAIT_FIRST_QUERY":
+        customer_query = st.text_area(
+            L["customer_query_label"],
+            key="customer_query_text_area",
+            height=150,
+            placeholder=L["initial_query_sample"],
+        )
 
-    # 🔹 새로 추가: 고객 연락처 (선택)
-    customer_email = st.text_input(
-        L.get("customer_email_label", "Customer email (optional)"),
-        key="customer_email",
-        disabled=st.session_state.initial_advice_provided,
-    )
-    customer_phone = st.text_input(
-        L.get("customer_phone_label", "Customer phone / WhatsApp (optional)"),
-        key="customer_phone",
-        disabled=st.session_state.initial_advice_provided,
-    )
+        customer_email = st.text_input(
+            L.get("customer_email_label", "Customer email (optional)"),
+            key="customer_email",
+        )
+        customer_phone = st.text_input(
+            L.get("customer_phone_label", "Customer phone / WhatsApp (optional)"),
+            key="customer_phone",
+        )
 
-    customer_type_options = L["customer_type_options"]
-    default_idx = 1 if len(customer_type_options) > 1 else 0
-    customer_type_display = st.selectbox(
-        L["customer_type_label"],
-        customer_type_options,
-        index=default_idx,
-        disabled=st.session_state.initial_advice_provided,
-        key="customer_type_sim_select",
-    )
+        customer_type_options = L["customer_type_options"]
+        default_idx = 1 if len(customer_type_options) > 1 else 0
+        customer_type_display = st.selectbox(
+            L["customer_type_label"],
+            customer_type_options,
+            index=default_idx,
+            key="customer_type_sim_select",
+        )
 
-    if st.button(L["button_simulate"], disabled=st.session_state.initial_advice_provided):
-        if not customer_query.strip():
-            st.warning(L["simulation_warning_query"])
-            st.stop()
+        if st.button(L["button_simulate"], key="btn_simulate_initial"):
+            if not customer_query.strip():
+                st.warning(L["simulation_warning_query"])
+                st.stop()
 
-        st.session_state.simulator_memory.clear()
-        st.session_state.simulator_messages = []
-        st.session_state.is_chat_ended = False
+            # 초기 상태 리셋
+            st.session_state.simulator_messages = []
+            st.session_state.simulator_memory.clear()
+            st.session_state.is_chat_ended = False
+            st.session_state.initial_advice_provided = False
 
-        st.session_state.simulator_messages.append({"role": "customer", "content": customer_query})
-        st.session_state.simulator_memory.chat_memory.add_user_message(customer_query)
-
-        contact_info_block = ""
-        if customer_email or customer_phone:
-            contact_info_block = (
-                f"\n\n[Customer contact info for your reference]"
-                f"\n- Email: {customer_email or 'N/A'}"
-                f"\n- Phone: {customer_phone or 'N/A'}"
+            # 1) 고객 첫 메시지 추가
+            st.session_state.simulator_messages.append(
+                {"role": "customer", "content": customer_query}
             )
+            st.session_state.simulator_memory.chat_memory.add_user_message(customer_query)
 
-        current_lang_key = st.session_state.language
+            contact_info_block = ""
+            if customer_email or customer_phone:
+                contact_info_block = (
+                    f"\n\n[Customer contact info for your reference]"
+                    f"\n- Email: {customer_email or 'N/A'}"
+                    f"\n- Phone: {customer_phone or 'N/A'}"
+                )
 
-        initial_prompt = f"""
-        You are an AI Customer Support Supervisor. Your role is to analyze the following customer inquiry
-        from a **{customer_type_display}** and provide:
+            current_lang_key = st.session_state.language
+            lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
 
-        1) A detailed **response guideline for the human agent** (step-by-step).
-        2) A **ready-to-send draft reply** in {LANG[current_lang_key]['lang_select']}.
+            # 2) Supervisor 가이드 + 초안 생성 (run_llm 사용 → 멀티 모델 지원)
+            initial_prompt = f"""
+You are an AI Customer Support Supervisor. Your role is to analyze the following customer inquiry
+from a **{customer_type_display}** and provide:
 
+1) A detailed **response guideline for the human agent** (step-by-step).
+2) A **ready-to-send draft reply** in {lang_name}.
 
-        [CRITICAL RULE 1: LANGUAGE]
-        - All content (guideline AND draft) MUST be written strictly in {LANG[current_lang_key]['lang_select']}.
+[FORMAT]
+- Use the exact markdown headers:
+  - "### {L['simulation_advice_header']}"
+  - "### {L['simulation_draft_header']}"
 
-        [CRITICAL RULE 2: FORMAT]
-        - Use the exact markdown headers:
-          - "### {L['simulation_advice_header']}"
-          - "### {L['simulation_draft_header']}"
+[INFO TO COLLECT]
+Always include a section for required information to collect from the customer before solving.
 
-        [CRITICAL RULE 3: INFORMATION YOU MUST ASK FIRST]
-        Before solving the problem, list the essential details the agent must collect from the customer.
-        In the guideline, always include a section like "1. 정보 수집 / Information to collect" with bullet points such as:
-        - For eSIM / connectivity issues:
-          - Device model (e.g. iPhone 12, Galaxy S22)
-          - OS version
-          - Whether the device supports eSIM
-          - Current location / country and whether the customer has already arrived
-          - Exact activation steps already tried and at which step it failed
-        - For tickets with children:
-          - Number of children
-          - Each child's date of birth or age range
-          - Whether the ticket type changes with age (free / child / youth / adult)
-        - Any booking ID, voucher number, or reservation code
-        - Customer's preferred contact channel if follow-up is needed.
+Customer Inquiry:
+{customer_query}
+{contact_info_block}
+"""
 
-        [CRITICAL RULE 4: DRAFT STYLE]
-        - The draft reply should:
-          - Politely thank the customer.
-          - Clearly ask for the missing information listed above (but not all in one long sentence).
-          - Explain the next troubleshooting steps in simple language.
-          - For eSIM cases, mention important checks (airplane mode, roaming settings, APN, profile installation, etc.) if relevant.
-          - For child ticket cases, clearly explain how the pricing works by age.
+            if not st.session_state.is_llm_ready:
+                mock_text = (
+                    f"### {L['simulation_advice_header']}\n\n"
+                    f"- (Mock) {customer_type_display} 유형 고객에 대한 응대 가이드라인입니다.\n\n"
+                    f"### {L['simulation_draft_header']}\n\n"
+                    f"(Mock) 여기에는 실제 AI 응대 초안이 들어갑니다.\n\n"
+                )
+                st.session_state.simulator_messages.append(
+                    {"role": "supervisor", "content": mock_text}
+                )
+                st.session_state.initial_advice_provided = True
+                save_simulation_history_local(
+                    customer_query,
+                    customer_type_display,
+                    st.session_state.simulator_messages,
+                    is_chat_ended=False,
+                )
+            else:
+                with st.spinner(L["response_generating"]):
+                    try:
+                        text = run_llm(initial_prompt)
+                        st.session_state.simulator_messages.append(
+                            {"role": "supervisor", "content": text}
+                        )
+                        st.session_state.initial_advice_provided = True
+                        save_simulation_history_local(
+                            customer_query,
+                            customer_type_display,
+                            st.session_state.simulator_messages,
+                            is_chat_ended=False,
+                        )
+                    except Exception as e:
+                        st.error(f"AI 조언 생성 중 오류 발생: {e}")
 
-        [CRITICAL RULE 5: ROLEPLAY FOR FUTURE MESSAGES]
-        When the Agent subsequently asks for information in later rounds,
-        **ROLEPLAY as the customer** who is frustrated but **HIGHLY COOPERATIVE** and
-        provide the requested details piece by piece (not all at once).
-        The customer MUST NOT argue about why the information is needed.
+            st.session_state.sim_stage = "AGENT_TURN"
+            st.rerun()
 
-        [CRITICAL RULE 6: ASK FOR ALL REQUIRED DETAILS AT ONCE]
-        When composing the draft reply:
-        - Do NOT ask one-by-one questions.
-        - Instead, request ALL required details in a neatly formatted multi-bullet list.
-        - Each bullet point must contain only ONE information category.
-
-        Customer Inquiry:
-        {customer_query}
-        {contact_info_block}
-        """
-
-        if not st.session_state.is_llm_ready or not LLM_API_KEY:
-            mock_text = (
-                f"### {L['simulation_advice_header']}\n\n"
-                f"- (Mock) {customer_type_display} 유형 고객에 대한 응대 가이드라인입니다.\n\n"
-                f"### {L['simulation_draft_header']}\n\n"
-                f"(Mock) 여기에는 실제 AI 응대 초안이 들어갑니다.\n\n"
-            )
-            st.session_state.simulator_messages.append({"role": "supervisor", "content": mock_text})
-            st.session_state.simulator_memory.chat_memory.add_ai_message(mock_text)
-            st.session_state.initial_advice_provided = True
-            save_simulation_history_local(
-                customer_query,
-                customer_type_display,
-                st.session_state.simulator_messages,
-                is_chat_ended=False,
-            )
-            st.warning(L["simulation_no_key_warning"])
-            # st.rerun()
-        else:
-            with st.spinner(L["response_generating"]):
-                try:
-                    text = st.session_state.simulator_chain.predict(input=initial_prompt)
-                    st.session_state.simulator_messages.append({"role": "supervisor", "content": text})
-                    st.session_state.initial_advice_provided = True
-                    save_simulation_history_local(
-                        customer_query,
-                        customer_type_display,
-                        st.session_state.simulator_messages,
-                        is_chat_ended=False,
-                    )
-                    # st.rerun()
-                except Exception as e:
-                    st.error(f"AI 조언 생성 중 오류 발생: {e}")
-
-    # 대화 로그 표시
-    # 대화 로그 표시
+    # =========================
+    # 5. 대화 로그 표시 (공통)
+    # =========================
     for msg in st.session_state.simulator_messages:
         role = msg["role"]
         content = msg["content"]
@@ -1813,169 +1817,232 @@ elif feature_selection == L["simulator_tab"]:
         if role == "customer":
             with st.chat_message("user", avatar="🙋"):
                 st.markdown(content)
-                render_tts_button(content, st.session_state.language, prefix="customer_")
+                render_tts_button(content, st.session_state.language, role="customer", prefix="cust_")
 
         elif role == "supervisor":
             with st.chat_message("assistant", avatar="🤖"):
                 st.markdown(content)
-                render_tts_button(content, st.session_state.language, role="supervisor", prefix="supervisor_")
-
+                render_tts_button(content, st.session_state.language, role="supervisor", prefix="sup_")
 
         elif role == "agent_response":
             with st.chat_message("user", avatar="🧑‍💻"):
                 st.markdown(content)
-                render_tts_button(content, st.session_state.language, prefix="agent_")
+                render_tts_button(content, st.session_state.language, role="agent", prefix="agt_")
 
         elif role in ["customer_rebuttal", "customer_end", "system_end"]:
             with st.chat_message("assistant", avatar="✨"):
                 st.markdown(content)
-                render_tts_button(content, st.session_state.language, prefix=f"{role}_")
+                render_tts_button(content, st.session_state.language, role="customer", prefix=f"{role}_")
 
-    # 에이전트 응답 / 마이크 입력
-    # 에이전트 응답 / 마이크 입력
-    if st.session_state.initial_advice_provided and not st.session_state.is_chat_ended:
+    # =========================
+    # 6. 에이전트 입력 단계 (AGENT_TURN)
+    # =========================
+    if st.session_state.sim_stage == "AGENT_TURN" and not st.session_state.is_chat_ended:
+        st.markdown(f"### {L['agent_response_header']}")
 
-        last_role = (
-            st.session_state.simulator_messages[-1]["role"]
-            if st.session_state.simulator_messages else None
-        )
+        col_mic, col_text = st.columns([1, 2])
 
-        if last_role in ["customer", "supervisor", "customer_rebuttal", "customer_end"]:
-            st.markdown(f"### {L['agent_response_header']}")
-            col_mic, col_text = st.columns([1, 2])
+        # --- 마이크 녹음 ---
+        with col_mic:
+            mic_audio = mic_recorder(
+                start_prompt=L["button_mic_input"],
+                stop_prompt="⏹️ 녹음 종료",
+                just_once=False,
+                format="wav",
+                use_container_width=True,
+                key="sim_mic_recorder",
+            )
 
-            # 마이크 녹음
-            with col_mic:
-                mic_audio = mic_recorder(
-                    start_prompt=L["button_mic_input"],
-                    stop_prompt="⏹️ 녹음 종료",
-                    just_once=False,
-                    format="wav",
-                    use_container_width=True,
-                    key="sim_mic_recorder",
-                )
+        if mic_audio and mic_audio.get("bytes"):
+            st.session_state.sim_audio_bytes = mic_audio["bytes"]
+            st.info("✅ 녹음 완료! 아래 전사 버튼을 눌러 텍스트로 변환하세요.")
 
-            new_audio_bytes = mic_audio["bytes"] if mic_audio else None
+        if st.session_state.sim_audio_bytes:
+            st.audio(st.session_state.sim_audio_bytes, format="audio/wav")
 
-            if new_audio_bytes is not None:
-                st.session_state.sim_audio_bytes = new_audio_bytes
-                st.info("✅ 녹음 완료! 아래 전사 버튼을 눌러 텍스트로 변환하세요.")
-
-            if st.session_state.sim_audio_bytes:
-                st.audio(st.session_state.sim_audio_bytes, format="audio/wav")
-
-            # 전사 버튼
-            col_tr, _ = st.columns([1, 2])
-            if col_tr.button(L["transcribe_btn"], key="sim_transcribe_btn"):
-                if st.session_state.sim_audio_bytes is None:
-                    st.warning("먼저 마이크로 녹음을 완료하세요.")
-                elif st.session_state.openai_client is None:
-                    st.error(L["whisper_client_error"])
-                else:
-                    # 🔹 여기서 실제 전사 대상 오디오/포맷을 정의
-                    audio_bytes_to_transcribe = st.session_state.sim_audio_bytes
-                    audio_mime_to_transcribe = "audio/wav"  # mic_recorder(format="wav") 이라서 고정
-
-                    with st.spinner(
-                            L.get("whisper_processing", "음성 파일을 텍스트로 변환 중...")
-                    ):
-                        try:
-                            transcribed_text = transcribe_bytes_with_whisper(
-                                audio_bytes_to_transcribe,
-                                audio_mime_to_transcribe,
-                                # 언어키는 세션에서 직접 가져오는 게 더 안전
-                                lang_code=st.session_state.language,
-                            )
-
-                            if transcribed_text.startswith("❌"):
-                                st.error(transcribed_text)
-                                st.session_state.last_transcript = ""
-                            else:
-                                # 마지막 전사 내용과 에이전트 응답창에 동시에 반영
-                                st.session_state.last_transcript = transcribed_text
-                                st.session_state.agent_response_area_text = transcribed_text.strip()
-                                st.session_state.last_transcript = transcribed_text.strip()
-
-                                snippet = transcribed_text[:50].replace("\n", " ") + (
-                                    "..." if len(transcribed_text) > 50 else ""
-                                )
-
-                                success_msg = L.get(
-                                    "whisper_success",
-                                    "✅ 음성 전사 완료! 텍스트 창을 확인하세요."
-                                ) + f"\n\n**인식 내용:** *{snippet}*"
-
-                                st.success(success_msg)
-
-                        except Exception as e:
-                            st.error(f"Whisper Error: {e}")
-
-                            if transcribed_text.startswith("❌"):
-                                st.error(transcribed_text)
-                                st.session_state.last_transcript = ""
-                            else:
-                                st.session_state.last_transcript = transcribed_text
-                                st.session_state.agent_response_area_text = transcribed_text
-
-                                snippet = (
-                                        transcribed_text[:50].replace("\n", " ")
-                                        + ("..." if len(transcribed_text) > 50 else "")
-                                )
-
-                                success_msg = (
-                                        L.get("whisper_success",
-                                              "✅ 음성 전사 완료! 텍스트 창을 확인하세요.")
-                                        + f"\n\n**인식 내용:** *{snippet}*"
-                                )
-                        except Exception as e:
-                            st.error(f"Whisper Error: {e}")
-
-            # ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-            # 여기서부터가 문제였던 부분 — 정렬 완전 수정
-            # ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-
-            col_text, col_button = st.columns([4, 1])
-
-            with col_text:
-                st.session_state.agent_response_area_text = st.text_area(
-                    L["agent_response_placeholder"],
-                    value=st.session_state.agent_response_area_text,
-                    key="agent_response_input_box"
-                )
-
-            with col_button:
-                send_clicked = st.button(L["send_response_button"], key="send_response_btn")
-
-            if send_clicked:
-                if st.button(L["send_response_button"], key="send_agent_response_btn"):
-
-                    agent_response = st.session_state.agent_response_area_text.strip()
-
-                    if not agent_response:
-                        st.warning(L["empty_response_warning"])
-                        st.stop()
-
-                    # 마지막 전사 내용 저장
-                    st.session_state.last_transcript = agent_response
-
-                    # 메시지 로그 업데이트
-                    st.session_state.simulator_messages.append(
-                        {"role": "agent_response", "content": agent_response}
+        col_tr, _ = st.columns([1, 2])
+        if col_tr.button(L["transcribe_btn"], key="sim_transcribe_btn"):
+            if st.session_state.sim_audio_bytes is None:
+                st.warning("먼저 마이크로 녹음을 완료하세요.")
+            elif st.session_state.openai_client is None:
+                st.error(L["whisper_client_error"])
+            else:
+                with st.spinner(L.get("whisper_processing", "음성 파일을 텍스트로 변환 중...")):
+                    transcribed_text = transcribe_bytes_with_whisper(
+                        st.session_state.sim_audio_bytes,
+                        "audio/wav",
+                        lang_code=st.session_state.language,
                     )
-                    st.session_state.simulator_memory.chat_memory.add_ai_message(agent_response)
+                    if transcribed_text.startswith("❌"):
+                        st.error(transcribed_text)
+                        st.session_state.last_transcript = ""
+                    else:
+                        st.session_state.last_transcript = transcribed_text.strip()
+                        st.session_state.agent_response_area_text = transcribed_text.strip()
+                        snippet = transcribed_text[:50].replace("\n", " ")
+                        if len(transcribed_text) > 50:
+                            snippet += "..."
+                        st.success(
+                            L.get("whisper_success", "✅ 음성 전사 완료!")
+                            + f"\n\n**인식 내용:** *{snippet}*"
+                        )
 
-                    # 입력창 초기화
-                    st.session_state.agent_response_area_text = ""
-                    st.session_state.sim_audio_bytes = None                  
+        # --- 텍스트 입력 + 전송 버튼 (단일 버튼!) ---
+        col_text, col_button = st.columns([4, 1])
 
-                    render_tts_button(agent_response, st.session_state.language, role="agent", prefix="agt_")
+        with col_text:
+            st.session_state.agent_response_area_text = st.text_area(
+                L["agent_response_placeholder"],
+                value=st.session_state.agent_response_area_text,
+                key="agent_response_input_box",
+            )
 
-                    save_simulation_history_local(
-                        st.session_state.customer_query_text_area,
-                        customer_type_display,
-                        st.session_state.simulator_messages,
-                        is_chat_ended=False,
-                    )
+        with col_button:
+            send_clicked = st.button(L["send_response_button"], key="send_agent_response_btn")
+
+        if send_clicked:
+            agent_response = st.session_state.agent_response_area_text.strip()
+            if not agent_response:
+                st.warning(L["empty_response_warning"])
+                st.stop()
+
+            # 로그 업데이트
+            st.session_state.simulator_messages.append(
+                {"role": "agent_response", "content": agent_response}
+            )
+            st.session_state.last_transcript = agent_response
+
+            # 입력창/오디오 초기화
+            st.session_state.agent_response_area_text = ""
+            st.session_state.sim_audio_bytes = None
+
+            # 이력 저장
+            customer_type_display = st.session_state.get("customer_type_sim_select", "")
+            save_simulation_history_local(
+                st.session_state.customer_query_text_area,
+                customer_type_display,
+                st.session_state.simulator_messages,
+                is_chat_ended=False,
+            )
+
+            # 다음 단계: 고객 차례
+            st.session_state.sim_stage = "CUSTOMER_TURN"
+            st.rerun()
+
+    # =========================
+    # 7. 고객 반응/종료 단계 (CUSTOMER_TURN)
+    # =========================
+    if st.session_state.sim_stage == "CUSTOMER_TURN" and not st.session_state.is_chat_ended:
+        col_end, col_next = st.columns([1, 2])
+
+        # (1) 에이전트가 바로 설문 종료 요청
+        if col_end.button(L["button_end_chat"], key="sim_end_chat_btn"):
+            survey_msg = L["prompt_survey"]
+            st.session_state.simulator_messages.append(
+                {"role": "system_end", "content": survey_msg}
+            )
+            st.session_state.is_chat_ended = True
+            customer_type_display = st.session_state.get("customer_type_sim_select", "")
+            save_simulation_history_local(
+                st.session_state.customer_query_text_area,
+                customer_type_display,
+                st.session_state.simulator_messages,
+                is_chat_ended=True,
+            )
+            st.session_state.sim_stage = "CLOSING"
+            st.rerun()
+
+        # (2) 고객 반응 자동 생성
+        if col_next.button(L["customer_generate_response_button"], key="sim_next_rebuttal_btn"):
+            if not st.session_state.is_llm_ready:
+                st.warning(L["simulation_no_key_warning"])
+                st.stop()
+
+            # 대화 로그를 하나의 텍스트로 정리
+            convo_lines = []
+            for m in st.session_state.simulator_messages:
+                r = m["role"]
+                prefix = {
+                    "customer": "Customer",
+                    "agent_response": "Agent",
+                    "supervisor": "Supervisor",
+                    "customer_rebuttal": "Customer",
+                }.get(r, r)
+                convo_lines.append(f"{prefix}: {m['content']}")
+            convo_text = "\n".join(convo_lines)
+
+            lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[st.session_state.language]
+
+            next_prompt = f"""
+You are now ROLEPLAYING as the CUSTOMER.
+
+Read the following conversation and respond naturally in {lang_name}.
+
+RULES:
+1. If the agent requested information → provide EXACTLY ONE missing detail.
+2. If the agent provided a clear solution → respond with appreciation.
+3. If you have no more questions, clearly say so (short and polite).
+4. Do NOT write as the agent. Only customer voice.
+
+Conversation so far:
+{convo_text}
+
+Now, output ONLY the customer's next message.
+"""
+
+            with st.spinner(L["response_generating"]):
+                try:
+                    reaction = run_llm(next_prompt)
+                except Exception as e:
+                    st.error(f"고객 반응 생성 중 오류: {e}")
+                    st.stop()
+
+            reaction = reaction.strip()
+            st.session_state.simulator_messages.append(
+                {"role": "customer_rebuttal", "content": reaction}
+            )
+
+            # 종료 의사 판별
+            reaction_lower = reaction.lower()
+            closing_user_signals = [
+                "없습니다", "없어요", "없어",
+                "no more", "nothing else",
+                "結構です", "大丈夫です",
+            ]
+            appreciation_signals = ["감사", "thank", "ありがとうございます", "ありがとう", "감사합니다"]
+
+            customer_type_display = st.session_state.get("customer_type_sim_select", "")
+
+            # (a) 종료 의사 + 감사 → 설문 후 종료
+            if any(k in reaction_lower for k in closing_user_signals):
+                # 고객 종료 메시지 기록
+                st.session_state.simulator_messages.append(
+                    {"role": "customer_end", "content": reaction}
+                )
+                # 설문 안내
+                st.session_state.simulator_messages.append(
+                    {"role": "system_end", "content": L["prompt_survey"]}
+                )
+                st.session_state.is_chat_ended = True
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area,
+                    customer_type_display,
+                    st.session_state.simulator_messages,
+                    is_chat_ended=True,
+                )
+                st.session_state.sim_stage = "CLOSING"
+                st.rerun()
+
+            # (b) 아직 질문이 더 있는 일반 반응 → 다시 에이전트 차례
+            else:
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area,
+                    customer_type_display,
+                    st.session_state.simulator_messages,
+                    is_chat_ended=False,
+                )
+                st.session_state.sim_stage = "AGENT_TURN"
+                st.rerun()
 
                     # st.rerun()
 
