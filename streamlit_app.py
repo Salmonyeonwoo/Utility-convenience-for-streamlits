@@ -1937,11 +1937,10 @@ elif feature_selection == L["simulator_tab"]:
             col_text, col_button = st.columns([4, 1])
 
             with col_text:
-                agent_response = st.text_area(
+                st.session_state.agent_response_area_text = st.text_area(
                     L["agent_response_placeholder"],
                     value=st.session_state.agent_response_area_text,
-                    height=150,
-                    key="agent_response_text_area"
+                    key="agent_response_input_box"
                 )
 
             with col_button:
@@ -1958,7 +1957,7 @@ elif feature_selection == L["simulator_tab"]:
                     st.session_state.simulator_messages.append(
                         {"role": "agent_response", "content": agent_response}
                     )
-                    agent_response = agent_response_text
+                    agent_response = st.session_state.agent_response_area_text
                     render_tts_button(agent_response, st.session_state.language, role="agent", prefix="agt_")
 
                     save_simulation_history_local(
