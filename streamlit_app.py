@@ -568,58 +568,297 @@ except Exception:
 if "user_api_key" not in st.session_state:
     st.session_state.user_api_key = ""
 
+
 # 3) UI 제공: 사용자가 직접 입력하는 백업 API Key
-with st.sidebar:
-    st.markdown("### 🔐 OpenAI API Key 설정")
-
-    if secret_key:
-        st.success("✔ Streamlit Secrets API Key 감지됨 (자동 적용)")
-    else:
-        st.warning("⚠ Streamlit Secrets에 API Key 없음 — 직접 입력 필요")
-
-    user_key_input = st.text_input(
-        "직접 OpenAI API Key 입력 (선택)",
-        type="password",
-        key="user_key_input_box",
-        placeholder="sk-************************"
-    )
-
-    if st.button("API Key 적용"):
-        if user_key_input.strip():
-            st.session_state.user_api_key = user_key_input.strip()
-            st.success("🔑 사용자 API Key 등록 완료! (세션 내 임시 저장)")
-        else:
-            st.warning("API Key를 입력하세요.")
+# ========================================
+# 0. 멀티 모델 API Key 안전 구조 (Secrets + User Input)
+# ========================================
 
 
-# 4) 최종 API Key 선택 우선순위
-def get_active_api_key():
-    """
-    1) Streamlit Cloud Secrets
-    2) 사용자 입력 키
-    3) 아무것도 없으면 None
-    """
-    if secret_key:
-        return secret_key
-    if st.session_state.user_api_key:
-        return st.session_state.user_api_key
+# --- 정의: 지원하는 API 목록 ---
+L = LANG[st.session_state.language]
+
+# ========================================
+# 0. 멀티 모델 API Key 안전 구조 (Secrets + User Input)
+# ========================================
+
+# 1) 지원하는 API 목록 정의
+SUPPORTED_APIS = {
+    "openai": {
+        "label": "OpenAI API Key",
+        "secret_key": "OPENAI_API_KEY",
+        "session_key": "user_openai_key",
+    },
+    "gemini": {
+        "label": "Google Gemini API Key",
+        "secret_key": "GEMINI_API_KEY",
+        "session_key": "user_gemini_key",
+    },
+    "nvidia": {
+        "label": "NVIDIA NIM API Key",
+        "secret_key": "NVIDIA_API_KEY",
+        "session_key": "user_nvidia_key",
+    },
+    "claude": {
+        "label": "Anthropic Claude API Key",
+        "secret_key": "CLAUDE_API_KEY",
+        "session_key": "user_claude_key",
+    },
+    "groq": {
+        "label": "Groq API Key",
+        "secret_key": "GROQ_API_KEY",
+        "session_key": "user_groq_key",
+    },
+}
+
+# 2) 세션 초기화
+for api, cfg in SUPPORTED_APIS.items():
+    if cfg["session_key"] not in st.session_state:
+        st.session_state[cfg["session_key"]] = ""
+
+if "selected_llm" not in st.session_state:
+    st.session_state.selected_llm = "openai_gpt4"  # 기본값
+
+
+def get_api_key(api_name: str):
+    """1) Streamlit secrets → 2) user 입력 순으로 API Key 반환"""
+    cfg = SUPPORTED_APIS[api_name]
+
+    # 1. Streamlit Secrets 우선
+    try:
+        if hasattr(st, "secrets") and cfg["secret_key"] in st.secrets:
+            return st.secrets[cfg["secret_key"]]
+    except Exception:
+        pass
+
+    # 2. 사용자 입력 Key
+    if st.session_state.get(cfg["session_key"]):
+        return st.session_state[cfg["session_key"]]
+
+    # 3. 없는 경우
     return None
 
 
-def init_openai_client():
-    openai_key = get_active_api_key()
+# ========================================
+# 1. Sidebar UI: 멀티 API Key 입력 + 모델 선택
+# ========================================
+with st.sidebar:
+    st.markdown("### 🔐 API Keys 설정")
+
+    for api, cfg in SUPPORTED_APIS.items():
+        st.markdown(f"**{cfg['label']}**")
+        key_input = st.text_input(
+            cfg["label"],
+            type="password",
+            key=f"input_{api}",
+            placeholder="sk-**************************",
+        )
+
+        if st.button(f"{cfg['label']} 적용", key=f"apply_{api}"):
+            if key_input.strip():
+                st.session_state[cfg["session_key"]] = key_input.strip()
+                st.success(f"{cfg['label']} 저장됨")
+            else:
+                st.warning("API Key를 입력하세요.")
+
+    st.divider()
+    st.markdown("### 🤖 사용할 LLM 모델 선택")
+
+    MODEL_CHOICES = {
+        "openai_gpt4": "OpenAI GPT-4.1",
+        "openai_gpt35": "OpenAI GPT-3.5 Turbo",
+        "gemini_flash": "Gemini 2.0 Flash",
+        "gemini_pro": "Gemini 2.0 Pro",
+        "nvidia_llama3": "NVIDIA NIM Llama-3-70B",
+        "claude_sonnet": "Claude 3.5 Sonnet",
+        "groq_llama3": "Groq Llama-3-70B",
+        "groq_mixtral": "Groq Mixtral-8x7B",
+    }
+
+    st.session_state.selected_llm = st.selectbox(
+        "LLM 모델 선택",
+        options=list(MODEL_CHOICES.keys()),
+        format_func=lambda x: MODEL_CHOICES[x],
+        key="selected_llm_box",
+        index=list(MODEL_CHOICES.keys()).index(st.session_state.selected_llm)
+        if st.session_state.selected_llm in MODEL_CHOICES
+        else 0,
+    )
+
+
+# ========================================
+# 2. LLM 클라이언트 라우팅
+# ========================================
+def get_llm_client():
+    """선택된 모델에 맞는 클라이언트 + 모델코드 반환"""
+    model_key = st.session_state.get("selected_llm", "openai_gpt4")
+
+    # --- OpenAI ---
+    if model_key.startswith("openai"):
+        from openai import OpenAI
+
+        key = get_api_key("openai")
+        if not key:
+            return None, None
+
+        client = OpenAI(api_key=key)
+        model_name = "gpt-4.1" if model_key == "openai_gpt4" else "gpt-3.5-turbo"
+        return client, ("openai", model_name)
+
+    # --- Gemini ---
+    if model_key.startswith("gemini"):
+        import google.generativeai as genai
+
+        key = get_api_key("gemini")
+        if not key:
+            return None, None
+
+        genai.configure(api_key=key)
+        model_name = (
+            "gemini-2.0-flash" if model_key == "gemini_flash" else "gemini-2.0-pro"
+        )
+        return genai, ("gemini", model_name)
+
+    # --- NVIDIA NIM ---
+    if model_key.startswith("nvidia"):
+        import requests  # 전역에서 run_llm이 다시 사용
+
+        key = get_api_key("nvidia")
+        if not key:
+            return None, None
+
+        model_name = "meta/llama3-70b-instruct"
+        return ("nvidia", key), ("nvidia", model_name)
+
+    # --- Claude ---
+    if model_key.startswith("claude"):
+        from anthropic import Anthropic
+
+        key = get_api_key("claude")
+        if not key:
+            return None, None
+
+        client = Anthropic(api_key=key)
+        model_name = "claude-3-5-sonnet-latest"
+        return client, ("claude", model_name)
+
+    # --- Groq ---
+    if model_key.startswith("groq"):
+        from groq import Groq
+
+        key = get_api_key("groq")
+        if not key:
+            return None, None
+
+        client = Groq(api_key=key)
+        model_name = (
+            "llama3-70b-8192"
+            if "llama3" in model_key
+            else "mixtral-8x7b-32768"
+        )
+        return client, ("groq", model_name)
+
+    return None, None
+
+
+def run_llm(prompt: str) -> str:
+    """선택된 LLM으로 프롬프트 실행"""
+    client, info = get_llm_client()
+
+    if client is None or info is None:
+        return "❌ No API key for selected model."
+
+    provider, model_name = info
+
+    # --- OpenAI Chat ---
+    if provider == "openai":
+        resp = client.chat.completions.create(
+            model=model_name,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return resp.choices[0].message.content
+
+    # --- Gemini ---
+    if provider == "gemini":
+        gen_model = client.GenerativeModel(model_name)
+        resp = gen_model.generate_content(prompt)
+        return resp.text
+
+    # --- Claude ---
+    if provider == "claude":
+        resp = client.messages.create(
+            model=model_name,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return resp.content[0].text
+
+    # --- Groq ---
+    if provider == "groq":
+        resp = client.chat.completions.create(
+            model=model_name,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return resp.choices[0].message.content
+
+    # --- NVIDIA NIM ---
+    if provider == "nvidia":
+        import requests  # get_llm_client에서 이미 임포트되지만, 안전하게 한 번 더
+
+        api_key = client[1]
+        r = requests.post(
+            "https://integrate.api.nvidia.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}"},
+            json={
+                "model": model_name,
+                "messages": [{"role": "user", "content": prompt}],
+            },
+            timeout=60,
+        )
+        data = r.json()
+        return data["choices"][0]["message"]["content"]
+
+    return "❌ Unsupported provider."
+
+
+# ========================================
+# 2-A. Whisper / TTS 용 OpenAI Client 별도로 초기화
+#      (선택 모델과 무관하게, OpenAI Key만 있으면 사용)
+# ========================================
+if "openai_client" not in st.session_state:
+    st.session_state.openai_client = None
+if "openai_init_msg" not in st.session_state:
+    st.session_state.openai_init_msg = ""
+
+
+def init_openai_client_for_audio():
+    """Whisper/TTS 전용 OpenAI 클라이언트 초기화"""
+    from openai import OpenAI
+
+    openai_key = get_api_key("openai")
     if not openai_key:
-        return None, LANG[DEFAULT_LANG]["openai_missing"]
+        st.session_state.openai_client = None
+        st.session_state.openai_init_msg = LANG[DEFAULT_LANG]["openai_missing"]
+        return
+
     try:
-        client = OpenAI(api_key=openai_key)
-        return client, "✅ OpenAI 클라이언트 준비 완료"
+        st.session_state.openai_client = OpenAI(api_key=openai_key)
+        st.session_state.openai_init_msg = "✅ OpenAI TTS/Whisper client ready."
     except Exception as e:
-        return None, f"OpenAI client init error: {e}"
+        st.session_state.openai_client = None
+        st.session_state.openai_init_msg = f"OpenAI client init error: {e}"
 
 
-openai_client_obj, openai_msg = init_openai_client()
-st.session_state.openai_client = openai_client_obj
-st.session_state.openai_init_msg = openai_msg
+init_openai_client_for_audio()
+
+# LLM 사용 가능 여부 플래그 (시뮬레이터 등에서 사용)
+probe_client, _ = get_llm_client()
+st.session_state.is_llm_ready = probe_client is not None
+if not st.session_state.is_llm_ready:
+    st.session_state.llm_init_error_msg = LANG[st.session_state.language][
+        "simulation_no_key_warning"
+    ]
+else:
+    st.session_state.llm_init_error_msg = ""
 
 # ========================================
 # 3. Whisper / TTS Helper
@@ -1657,7 +1896,7 @@ elif feature_selection == L["simulator_tab"]:
                 """
 
                 with st.spinner(L["response_generating"]):
-                    reaction = st.session_state.simulator_chain.predict(input=next_prompt)
+                    reaction = run_llm(next_prompt)
 
                 st.session_state.simulator_messages.append(
                     {"role": "customer", "content": reaction}
@@ -1799,6 +2038,7 @@ elif feature_selection == L["simulator_tab"]:
                → THEN the chat MUST END.
             5. Language MUST be {LANG[st.session_state.language]['lang_select']}.
                 """
+
 
                 # LLM 실행
                 with st.spinner(L["response_generating"]):
