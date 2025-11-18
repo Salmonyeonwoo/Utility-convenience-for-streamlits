@@ -1727,7 +1727,7 @@ elif feature_selection == L["simulator_tab"]:
         if role == "customer":
             with st.chat_message("user", avatar="🙋"):
                 st.markdown(content)
-                render_tts_button(customer_message, st.session_state.language, role="customer", prefix="cust_")
+                render_tts_button(content, st.session_state.language, prefix="customer_")
 
         elif role == "supervisor":
             with st.chat_message("assistant", avatar="🤖"):
@@ -1737,7 +1737,7 @@ elif feature_selection == L["simulator_tab"]:
         elif role == "agent_response":
             with st.chat_message("user", avatar="🧑‍💻"):
                 st.markdown(content)
-                render_tts_button(agent_reply, st.session_state.language, role="agent", prefix="agt_")
+                render_tts_button(content, st.session_state.language, prefix="agent_")
 
         elif role in ["customer_rebuttal", "customer_end", "system_end"]:
             with st.chat_message("assistant", avatar="✨"):
@@ -1871,7 +1871,8 @@ elif feature_selection == L["simulator_tab"]:
                     st.session_state.simulator_messages.append(
                         {"role": "agent_response", "content": agent_response}
                     )
-                    st.session_state.simulator_memory.chat_memory.add_user_message(agent_response)
+                    agent_response = agent_response_text
+                    render_tts_button(agent_response, st.session_state.language, role="agent", prefix="agt_")
 
                     save_simulation_history_local(
                         st.session_state.customer_query_text_area,
@@ -1909,7 +1910,8 @@ elif feature_selection == L["simulator_tab"]:
                 st.session_state.simulator_messages.append(
                     {"role": "customer", "content": reaction}
                 )
-                st.session_state.simulator_memory.chat_memory.add_ai_message(reaction)
+                customer_message = reaction
+                render_tts_button(customer_message, st.session_state.language, role="customer", prefix="cust_")
 
                 st.stop()
 
