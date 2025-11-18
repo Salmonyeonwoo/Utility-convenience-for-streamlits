@@ -1963,6 +1963,7 @@ elif feature_selection == L["simulator_tab"]:
 
                     # 입력창 초기화
                     st.session_state.agent_response_area_text = ""
+                else:
                     st.session_state.last_transcript = agent_response                    
                     st.session_state.sim_audio_bytes = None
 
