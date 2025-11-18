@@ -1946,24 +1946,26 @@ elif feature_selection == L["simulator_tab"]:
             with col_button:
                 send_clicked = st.button(L["send_response_button"], key="send_response_btn")
 
-            if st.button("send_response", key="btn_send_agent"):
-                agent_response = st.session_state.agent_response_area_text.strip()
+            if send_clicked:
+                if st.button("send_response", key="btn_send_agent"):
+                    agent_response = st.session_state.agent_response_area_text.strip()
 
-                if not agent_response:
-                    st.warning("응답을 입력하세요.")
-                    st.stop()
+                    if not agent_response:
+                        st.warning("응답을 입력하세요.")
+                        st.stop()
 
-                # 메시지 저장
-                st.session_state.simulator_messages.append(
-                    {"role": "agent_response", "content": agent_response}
-                )
+                    # 메시지 저장
+                    st.session_state.simulator_messages.append(
+                        {"role": "agent_response", "content": agent_response}
+                    )
 
-                st.session_state.simulator_memory.chat_memory.add_ai_message(agent_response)
+                    st.session_state.simulator_memory.chat_memory.add_ai_message(agent_response)
 
-                # 입력창 초기화
-                st.session_state.agent_response_area_text = ""
-
-                st.experimental_rerun()
+                    # 입력창 초기화
+                    st.session_state.agent_response_area_text = ""
+                else:
+                    st.session_state.last_transcript = agent_response
+                    st.session_state.agent_response_area_text = ""
                     st.session_state.sim_audio_bytes = None
 
                     st.session_state.simulator_messages.append(
