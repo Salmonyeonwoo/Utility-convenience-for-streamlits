@@ -1962,12 +1962,7 @@ elif feature_selection == L["simulator_tab"]:
                     st.session_state.simulator_memory.chat_memory.add_ai_message(agent_response)
 
                     # 입력창 초기화
-                    st.session_state.agent_response_area_text = ""
-                else:
-                    st.session_state.last_transcript = agent_response
-                    st.session_state.agent_response_area_text = ""
-                    st.session_state.sim_audio_bytes = None
-
+                    st.session_state.agent_response_area_text = ""                
                     st.session_state.simulator_messages.append(
                         {"role": "agent_response", "content": agent_response}
                     )
