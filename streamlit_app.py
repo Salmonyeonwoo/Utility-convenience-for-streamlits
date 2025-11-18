@@ -540,8 +540,6 @@ L = LANG[st.session_state.language]
 # 0-A. API Key 안전 구조 (Secrets + User Input)
 # ========================================
 
-@st.cache_resource
-
 # Safely load API key from Streamlit secrets
 secret_key = None
 
