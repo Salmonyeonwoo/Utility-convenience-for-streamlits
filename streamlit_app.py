@@ -1629,7 +1629,34 @@ elif feature_selection == L["simulator_tab"]:
 
         # 에이전트 응답 이후: 종료/다음 반응
         last_role = st.session_state.simulator_messages[-1]["role"] if st.session_state.simulator_messages else None
-        last_role = st.session_state.simulator_messages[-1]["role"] if st.session_state.simulator_messages else None
+
+        if last_role == "agent_response":
+
+            st.markdown("### 🤖 고객 반응 생성")
+
+            if st.button(L["customer_generate_response_button"], key="btn_generate_customer"):
+                next_prompt = f"""
+                You are the CUSTOMER. Respond naturally to the agent's latest message.
+
+                RULES:
+                1. If the agent requested information → provide exactly ONE missing detail.
+                2. If the agent provided a solution → respond with appreciation.
+                3. Appreciation must include a positive phrase like:
+                   "{L['customer_positive_response']}"
+                4. After appreciation, customer MUST wait for the agent to ask:
+                   "{L['customer_closing_confirm']}"
+                5. Language must be {LANG[st.session_state.language]['lang_select']}.
+                """
+
+                with st.spinner(L["response_generating"]):
+                    reaction = st.session_state.simulator_chain.predict(input=next_prompt)
+
+                st.session_state.simulator_messages.append(
+                    {"role": "customer", "content": reaction}
+                )
+                st.session_state.simulator_memory.chat_memory.add_ai_message(reaction)
+
+                st.stop()
 
         if last_role == "customer":
             customer_text = st.session_state.simulator_messages[-1]["content"].strip().lower()
