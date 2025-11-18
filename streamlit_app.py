@@ -901,43 +901,48 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/we
 
 
 def synthesize_tts(text: str, lang_key: str):
-    L = LANG[lang_key]
-    client = st.session_state.openai_client
+    """
+    OpenAI TTS → MP3 바이트로 변환하여 반환
+    """
 
+    client = st.session_state.openai_client
     if client is None:
-        return None, f"❌ {L['tts_status_error']} (Client Missing)"
+        return None, LANG[lang_key]["tts_status_error"]
 
     try:
-        # TTS 생성: format 파라미터 절대 넣지 말 것
+        # OpenAI Audio API - TTS (모델: gpt-4o-mini-tts 권장)
         response = client.audio.speech.create(
-            model="tts-1",
-            voice="nova",
+            model="gpt-4o-mini-tts",
+            voice="alloy",
             input=text,
+            format="mp3"     # 반드시 mp3로!
         )
 
-        # 모든 SDK 버전에서 작동하는 안전한 방식
+        # response.stream.read() 로 완전한 MP3 bytes 얻기
         audio_bytes = response.read()
 
-        return audio_bytes, f"✅ {L['tts_status_success']}"
+        return audio_bytes, LANG[lang_key]["tts_status_success"]
 
     except Exception as e:
-        return None, f"❌ {L['tts_status_error']} (OpenAI TTS Error: {e})"
+        return None, f"TTS Error: {e}"
 
 
-def render_tts_button(text: str, lang_key: str, prefix: str = ""):
+def render_tts_button(text, lang_key, prefix=""):
+    """음성 버튼 렌더링 (키 충돌 방지 포함)"""
     L = LANG[lang_key]
 
-    # 완전 고유 key 생성 (message, prefix, time 조합)
-    unique_key = prefix + "_tts_" + hashlib.md5(
-        (text + prefix + str(time.time())).encode("utf-8")
-    ).hexdigest()
+    safe_key = prefix + "tts_" + hashlib.md5(text.encode()).hexdigest()
 
-    if st.button(L["button_listen_audio"], key=unique_key):
-        audio_bytes, msg = synthesize_tts(text, lang_key)
-        if audio_bytes:
-            st.audio(audio_bytes, format="audio/wav")
-        else:
-            st.error(msg)
+    if st.button(L["button_listen_audio"], key=safe_key):
+        with st.spinner(L["tts_status_generating"]):
+            audio_bytes, msg = synthesize_tts(text, lang_key)
+
+            if audio_bytes:
+                # ★ mp3 재생 확실히 되는 방식
+                st.audio(audio_bytes, format="audio/mp3")
+                st.success(msg)
+            else:
+                st.error(msg)
 
 
 # ========================================
