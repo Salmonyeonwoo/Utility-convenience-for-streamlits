@@ -218,7 +218,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "rag_tab": "RAG Knowledge Chatbot",
         "content_tab": "Custom Content Generation",
         "lstm_tab": "LSTM Achievement Prediction Dashboard",
-        "simulator_tab": "AI Customer Response Simulator",
+        "simulator_tab": "AI Customer Support Simulator",
         "rag_header": "RAG Knowledge Chatbot (Document Q&A)",
         "rag_desc": "Answer questions based on uploaded documents.",
         "rag_input_placeholder": "Ask a question about your study materials",
