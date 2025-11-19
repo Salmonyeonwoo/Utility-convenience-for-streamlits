@@ -10,6 +10,9 @@ langchain-openai
 anthropic
 openai
 groq
+langchain-nvidia-ai-endpoints
+sentence-transformers
+
 
 
 
