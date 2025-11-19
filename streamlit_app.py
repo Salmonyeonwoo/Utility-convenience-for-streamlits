@@ -37,20 +37,19 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_community.embeddings import HuggingFaceEmbeddings  # NVIDIA/Claude/Groq fallback용
-
+# ⭐ 임베딩 다각화를 위한 임포트 추가 (필요 라이브러리: langchain-google-genai, langchain-nvidia-ai-endpoints)
 try:
     from langchain_google_genai import GoogleGenerativeAIEmbeddings
-
     IS_GEMINI_EMBEDDING_AVAILABLE = True
 except ImportError:
     IS_GEMINI_EMBEDDING_AVAILABLE = False
 
 try:
     from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
-
     IS_NVIDIA_EMBEDDING_AVAILABLE = True
 except ImportError:
     IS_NVIDIA_EMBEDDING_AVAILABLE = False
+
 
 # ========================================
 # 0. 기본 경로/로컬 DB 설정
@@ -255,7 +254,7 @@ LANG: Dict[str, Dict[str, str]] = {
 
         # --- RAG 오류 메시지 추가 ---
         "rag_embed_error_openai": "RAG 임베딩 실패: OpenAI API Key가 유효하지 않거나 설정되지 않았습니다.",
-        "rag_embed_error_gemini": "RAG 임베딩 실패: Gemini API Key가 유효하지 않거나 설정되지 않았습니다.",
+        "rag_embed_error_gemini": "RAG 임베딩 실패: Gemini API Key가 유효하지 않거나 설정되지 않았습니다。",
         "rag_embed_error_nvidia": "RAG 임베딩 실패: NVIDIA API Key가 유효하지 않거나 설정되지 않았습니다。",
         "rag_embed_error_none": "RAG 임베딩에 필요한 모든 키(OpenAI, Gemini, NVIDIA)가 유효하지 않습니다. 키를 설정해 주세요。",
     },
@@ -428,10 +427,10 @@ LANG: Dict[str, Dict[str, str]] = {
         # --- 첨부 파일 기능 추가 ---
         "attachment_label": "Customer Attachment Upload (Screenshot, etc.)",
         "attachment_placeholder": "Attach a file to explain the situation (optional)",
-        "attachment_status_llm": "The customer has attached the file **{filename}** files. Assume these files are screenshots and incorporate them into the draft response and guidelines. (Total files: {count})",
+        "attachment_status_llm": "고객이 **{filename}** 파일을 첨부했습니다. 이 파일을 스크린샷이라고 가정하고 응대 초안 및 가이드라인에 반영하세요. (파일 타입: {filetype})",
         "agent_attachment_label": "Agent Attachment (Screenshot, etc.)",
         "agent_attachment_placeholder": "Select a file to attach to the response (optional)",
-        "agent_attachment_status": "📎 Agent attached **{filename}** files. (Total files: {count})",
+        "agent_attachment_status": "📎 에이전트가 **{filename}** 파일을 응답에 첨부했습니다. (파일 타입: {filetype})",
 
         # --- RAG 오류 메시지 추가 ---
         "rag_embed_error_openai": "RAG embedding failed: OpenAI API Key is invalid or not set.",
@@ -594,7 +593,7 @@ LANG: Dict[str, Dict[str, str]] = {
         # --- 첨부 파일 기능 추가 ---
         "attachment_label": "顧客の添付ファイルアップロード (スクリーンショットなど)",
         "attachment_placeholder": "ファイルを添付して状況を説明してください（オプション）",
-        "attachment_status_llm": "顧客が **{filename}** ファイルを添付しました。これをスクリーンショットと仮定し、応対草案とガイドラインに反映させてください。(ファイルタイプ: {filetype})",
+        "attachment_status_llm": "고객이 **{filename}** 파일을 첨부했습니다. 이 파일을 스크린샷이라고 가정하고 응대 초안 및 가이드라인에 반영하세요. (파일 타입: {filetype})",
         "agent_attachment_label": "エージェント添付ファイル (スクリーンショットなど)",
         "agent_attachment_placeholder": "応答に添付するファイルを選択してください（オプション）",
         "agent_attachment_status": "📎 エージェントが **{filename}** ファイルを応答に添付しました。(ファイルタイプ: {filetype})",
@@ -674,13 +673,13 @@ if "transfer_summary_text" not in st.session_state:  # 이관 시 번역된 요�
 if "language_transfer_requested" not in st.session_state:  # 고객의 언어 이관 요청 여부
     st.session_state.language_transfer_requested = False
 if "customer_attachment_file" not in st.session_state:  # 고객 첨부 파일 정보
-    # ⭐ 다중 파일 처리를 위해 리스트를 저장하도록 초기화: None 대신 빈 리스트 또는 None 사용
-    st.session_state.customer_attachment_file = None
+    # ⭐ 다중 파일 업로드를 위해 리스트로 저장
+    st.session_state.customer_attachment_file = [] 
 if "sim_attachment_context_for_llm" not in st.session_state:  # LLM 프롬프트에 사용할 첨부 파일 컨텍스트
     st.session_state.sim_attachment_context_for_llm = ""
 if "agent_attachment_file" not in st.session_state:  # 에이전트 첨부 파일 정보
-    # ⭐ 다중 파일 처리를 위해 리스트를 저장하도록 초기화: None 대신 빈 리스트 또는 None 사용
-    st.session_state.agent_attachment_file = None
+    # ⭐ 다중 파일 업로드를 위해 리스트로 저장
+    st.session_state.agent_attachment_file = []
 
 # ⭐ 2-A. Gemini 키 초기화 (잘못된 키 잔존 방지)
 # Streamlit이 시작될 때마다 사이드바에 남은 유효하지 않은 키를 강제로 비워, RAG 초기화 시도를 막습니다.
@@ -742,20 +741,24 @@ if "selected_llm" not in st.session_state:
 def get_api_key(api):
     cfg = SUPPORTED_APIS[api]
 
-    # 1. Streamlit Secrets (.streamlit/secrets.toml)
+    # ⭐ 1. User Input (Streamlit sidebar session state) - 사용자 입력 우선
+    user_key = st.session_state.get(cfg["session_key"], "")
+    if user_key:
+        return user_key
+
+    # 2. Streamlit Secrets (.streamlit/secrets.toml)
     try:
         if hasattr(st, "secrets") and cfg["secret_key"] in st.secrets:
             return st.secrets[cfg["secret_key"]]
     except Exception:
         pass
 
-    # 2. Environment Variable (os.environ) - 로컬 .env 또는 터미널 export를 위해 추가
+    # 3. Environment Variable (os.environ) - 환경 변수 (가장 낮은 우선순위)
     env_key = os.environ.get(cfg["secret_key"])
     if env_key:
         return env_key
 
-    # 3. User Input (Streamlit sidebar session state)
-    return st.session_state.get(cfg["session_key"], "")
+    return ""
 
 
 # ========================================
@@ -780,6 +783,7 @@ with st.sidebar:
                 st.success(f"{cfg['label']} 저장됨")
                 st.rerun()  # 키 변경 시 재실행
             else:
+                st.session_state[cfg["session_key"]] = ""
                 st.warning("API Key를 입력하세요.")
 
     st.divider()
@@ -1277,45 +1281,51 @@ def split_documents(docs: List[Document]) -> List[Document]:
 
 def get_embedding_function():
     """
-    RAG 임베딩에 사용할 임베딩 모델을 결정합니다.
-    API 키 유효성 순서: Gemini -> OpenAI -> NVIDIA
-    API 인증 오류 발생 시 다음 모델로 이동하도록 처리합니다.
+    완전 자동 Fallback Embedding System
+    순서: OpenAI → Gemini → NVIDIA → HuggingFace (fallback)
     """
 
-    # 1. Gemini 임베딩 시도 (최우선 순위)
-    gemini_key = get_api_key("gemini")
-    if IS_GEMINI_EMBEDDING_AVAILABLE and gemini_key:
-        try:
-            # GoogleGenerativeAIEmbeddings 초기화 시 API Key 유효성 검사에서 오류가 발생할 수 있습니다.
-            return GoogleGenerativeAIEmbeddings(google_api_key=gemini_key, model="models/text-embedding-004")
-        except Exception as e:
-            # print(f"Gemini 임베딩 시도 중 오류 발생 (스킵): {e}")
-            pass
-
-    # 2. OpenAI 임베딩 시도
+    # 1) OpenAI
     openai_key = get_api_key("openai")
     if openai_key:
         try:
-            # OpenAIEmbeddings 초기화 시 API Key 유효성 검사에서 오류가 발생할 수 있습니다.
+            st.info("🔹 RAG: OpenAI Embedding 사용 중")
             return OpenAIEmbeddings(openai_api_key=openai_key)
         except Exception as e:
-            # print(f"OpenAI 임베딩 시도 중 오류 발생 (스킵): {e}")
-            pass
+            st.warning(f"OpenAI 임베딩 실패 → Gemini로 Fallback: {e}")
 
-    # 3. NVIDIA NIM 임베딩 시도
+    # 2) Gemini
+    gemini_key = get_api_key("gemini")
+    if IS_GEMINI_EMBEDDING_AVAILABLE and gemini_key:
+        try:
+            st.info("🔹 RAG: Gemini Embedding 사용 중")
+            return GoogleGenerativeAIEmbeddings(
+                google_api_key=gemini_key,
+                model="text-embedding-004"
+            )
+        except Exception as e:
+            st.warning(f"Gemini 임베딩 실패 → NVIDIA로 Fallback: {e}")
+
+    # 3) NVIDIA
     nvidia_key = get_api_key("nvidia")
     if IS_NVIDIA_EMBEDDING_AVAILABLE and nvidia_key:
         try:
-            # NVIDIAEmbeddings 초기화 시 API Key 유효성 검사에서 오류가 발생할 수 있습니다.
-            # RAG 임베딩에 NVIDIA Embeddings를 직접 사용하려면
-            # NVIDIA API Key가 유효하고, 해당 모델을 지원하는 LangChain 라이브러리가 필요합니다.
+            st.info("🔹 RAG: NVIDIA Embedding 사용 중")
+            # NIM 모델 사용 (실제 키가 유효해야 함)
             return NVIDIAEmbeddings(api_key=nvidia_key, model="ai-embed-qa-4")
         except Exception as e:
-            # print(f"NVIDIA 임베딩 시도 중 오류 발생 (스킵): {e}")
-            pass
+            st.warning(f"NVIDIA 임베딩 실패 → HuggingFace Fallback: {e}")
 
-    return None  # 사용 가능한 임베딩 함수가 없음
+    # 4) HuggingFace Embeddings (Local Fallback - Claude/Groq 키는 사용 불가)
+    try:
+        st.info("🔹 RAG: Local HuggingFace Embedding 사용 중")
+        # 경량 모델 사용
+        return HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    except Exception as e:
+        st.warning(f"최종 Fallback 임베딩 실패: {e}")
 
+    st.error("❌ RAG 임베딩 실패: 사용 가능한 API Key가 없습니다.")
+    return None
 
 def build_rag_index(files):
     L = LANG[st.session_state.language]
@@ -1554,9 +1564,9 @@ with st.sidebar:
         st.session_state.last_transcript = ""
         st.session_state.sim_audio_bytes = None
         st.session_state.sim_stage = "WAIT_FIRST_QUERY"
-        st.session_state.customer_attachment_file = None  # 언어 변경 시 첨부 파일 초기화
+        st.session_state.customer_attachment_file = []  # 언어 변경 시 첨부 파일 초기화
         st.session_state.sim_attachment_context_for_llm = ""  # 컨텍스트 초기화
-        st.session_state.agent_attachment_file = None  # 에이전트 첨부 파일 초기화
+        st.session_state.agent_attachment_file = []  # 에이전트 첨부 파일 초기화
         st.rerun()
 
     L = LANG[st.session_state.language]
@@ -1785,9 +1795,9 @@ elif feature_selection == L["simulator_tab"]:
                     st.session_state.show_delete_confirm = False
                     st.session_state.is_chat_ended = False
                     st.session_state.sim_stage = "WAIT_FIRST_QUERY"
-                    st.session_state.customer_attachment_file = None  # 첨부 파일 초기화
+                    st.session_state.customer_attachment_file = []  # 첨부 파일 초기화
                     st.session_state.sim_attachment_context_for_llm = ""  # 컨텍스트 초기화
-                    st.session_state.agent_attachment_file = None  # 에이전트 첨부 파일 초기화
+                    st.session_state.agent_attachment_file = []  # 에이전트 첨부 파일 초기화
                     st.success(L["delete_success"])
                 st.rerun()
             if c_no.button(L["delete_confirm_no"], key="confirm_del_no"):
@@ -1859,8 +1869,8 @@ elif feature_selection == L["simulator_tab"]:
                 st.session_state.initial_advice_provided = True
                 st.session_state.is_chat_ended = h.get("is_chat_ended", False)
                 st.session_state.sim_attachment_context_for_llm = h.get("attachment_context", "")  # 컨텍스트 로드
-                st.session_state.customer_attachment_file = None  # 로드된 이력에는 파일 객체 대신 컨텍스트 문자열만 사용
-                st.session_state.agent_attachment_file = None  # 에이전트 첨부 파일 초기화
+                st.session_state.customer_attachment_file = []  # 로드된 이력에는 파일 객체 대신 컨텍스트 문자열만 사용
+                st.session_state.agent_attachment_file = []  # 에이전트 첨부 파일 초기화
 
                 # 상태 복원
                 if st.session_state.is_chat_ended:
@@ -1977,9 +1987,9 @@ elif feature_selection == L["simulator_tab"]:
             st.session_state.last_transcript = ""
             st.session_state.sim_audio_bytes = None
             st.session_state.sim_stage = "WAIT_FIRST_QUERY"
-            st.session_state.customer_attachment_file = None  # 첨부 파일 초기화
+            st.session_state.customer_attachment_file = []  # 첨부 파일 초기화
             st.session_state.sim_attachment_context_for_llm = ""  # 컨텍스트 초기화
-            st.session_state.agent_attachment_file = None  # 에이전트 첨부 파일 초기화
+            st.session_state.agent_attachment_file = []  # 에이전트 첨부 파일 초기화
             st.rerun()
         st.stop()
 
@@ -1994,29 +2004,25 @@ elif feature_selection == L["simulator_tab"]:
             placeholder=L["initial_query_sample"],
         )
 
-        # --- 고객 첨부 파일 업로더 ---
-        # 파일 업로더는 파일 객체를 직접 다루기 때문에, Streamlit의 기본 기능을 사용합니다.
+        # --- 고객 첨부 파일 업로더 (다중 파일 허용) ---
         attachment_files = st.file_uploader(
             L["attachment_label"],
             type=["png", "jpg", "jpeg", "pdf"],  # 스크린샷 및 관련 문서 타입
             key="customer_attachment_file_uploader",
             help=L["attachment_placeholder"],
-            # ⭐ 다중 파일 업로드 허용
-            accept_multiple_files=True
+            accept_multiple_files=True  # ⭐ 다중 파일 업로드 허용
         )
 
+        # 파일 리스트를 세션 상태에 저장 및 처리
         if attachment_files:
-            # 파일 리스트를 저장
             st.session_state.customer_attachment_file = [
-                {
-                    "name": f.name,
-                    "type": f.type,
-                    "size": f.size,
-                }
-                for f in attachment_files
+                {"name": f.name, "type": f.type, "size": f.size} for f in attachment_files
             ]
+            # 사용자에게 다중 파일이 업로드되었음을 피드백
+            file_names = ", ".join([f.name for f in attachment_files])
+            st.info(f"✅ {len(attachment_files)}개 파일 업로드 완료: {file_names}")
         else:
-            st.session_state.customer_attachment_file = None
+            st.session_state.customer_attachment_file = []
 
         customer_email = st.text_input(
             L["customer_email_label"],
@@ -2051,7 +2057,7 @@ elif feature_selection == L["simulator_tab"]:
             st.session_state.transfer_summary_text = ""
             st.session_state.start_time = None
             st.session_state.sim_attachment_context_for_llm = ""
-            st.session_state.agent_attachment_file = None
+            st.session_state.agent_attachment_file = []
 
             # 1) 고객 첫 메시지 추가
             st.session_state.simulator_messages.append(
@@ -2068,21 +2074,19 @@ elif feature_selection == L["simulator_tab"]:
 
             # --- 첨부 파일 컨텍스트 생성 (다중 파일 처리) ---
             attachment_block = ""
-            if st.session_state.customer_attachment_file and len(st.session_state.customer_attachment_file) > 0:
-                file_count = len(st.session_state.customer_attachment_file)
-                # LLM 프롬프트에 사용할 파일 목록 문자열 생성
-                file_names = ", ".join([f['name'] for f in st.session_state.customer_attachment_file])
+            if st.session_state.customer_attachment_file:
+                file_infos = st.session_state.customer_attachment_file
+                file_names = ", ".join([f["name"] for f in file_infos])
+                file_types = ", ".join(list(set([f["type"] for f in file_infos])))
 
-                attachment_status_msg = L["attachment_status_llm"].format(
-                    filename=file_names, count=file_count
-                )
+                attachment_status_msg = f"고객이 총 {len(file_infos)}개의 파일(예: 스크린샷)을 첨부했습니다. 파일 목록: {file_names}. (주요 파일 타입: {file_types}). 이 첨부 파일을 참고하여 응대 초안 및 가이드라인에 반영하세요."
+
                 attachment_block = f"\n\n[ATTACHMENT STATUS]\n{attachment_status_msg}\n"
                 st.session_state.sim_attachment_context_for_llm = attachment_block  # 세션에 저장
 
                 # 고객 메시지에 첨부 파일 정보 추가 (화면에 표시용)
-                display_list = ", ".join([f['name'] for f in st.session_state.customer_attachment_file])
                 st.session_state.simulator_messages[-1]["content"] += (
-                    f"\n\n📎 *총 {file_count}개의 파일 첨부됨: {display_list}*"
+                    f"\n\n📎 *총 {len(file_infos)}개 파일 첨부됨 ({file_names})*"
                 )
             # ---------------------------
 
@@ -2124,8 +2128,9 @@ Customer Inquiry:
                     f"(Mock) 에이전트 응대 초안이 여기에 들어갑니다。\n\n"
                 )
                 if attachment_block:
-                    # 다중 파일 처리된 컨텍스트를 모킹 텍스트에 포함
-                    mock_text = f"첨부 파일 정보:\n{attachment_block.replace('[ATTACHMENT STATUS]', '').strip()}\n\n" + mock_text
+                    file_infos = st.session_state.customer_attachment_file
+                    file_names = ", ".join([f["name"] for f in file_infos])
+                    mock_text = f"첨부 파일 정보: {file_names}\n\n" + mock_text
                 st.session_state.simulator_messages.append(
                     {"role": "supervisor", "content": mock_text}
                 )
@@ -2188,28 +2193,23 @@ Customer Inquiry:
             st.info(
                 f"📎 최초 문의 시 첨부된 파일 정보:\n\n{st.session_state.sim_attachment_context_for_llm.replace('[ATTACHMENT STATUS]', '').strip()}")
 
-        # --- 에이전트 첨부 파일 업로더 (다중 파일 처리) ---
+        # --- 에이전트 첨부 파일 업로더 (다중 파일 허용) ---
         agent_attachment_files = st.file_uploader(
             L["agent_attachment_label"],
             type=["png", "jpg", "jpeg", "pdf"],
             key="agent_attachment_file_uploader",
             help=L["agent_attachment_placeholder"],
-            # ⭐ 다중 파일 업로드 허용
-            accept_multiple_files=True
+            accept_multiple_files=True  # ⭐ 다중 파일 업로드 허용
         )
 
         if agent_attachment_files:
-            # 파일 리스트를 저장
             st.session_state.agent_attachment_file = [
-                {
-                    "name": f.name,
-                    "type": f.type,
-                    "size": f.size,
-                }
-                for f in agent_attachment_files
+                {"name": f.name, "type": f.type, "size": f.size} for f in agent_attachment_files
             ]
+            file_names = ", ".join([f.name for f in agent_attachment_files])
+            st.info(f"✅ {len(agent_attachment_files)}개 에이전트 첨부 파일 준비 완료: {file_names}")
         else:
-            st.session_state.agent_attachment_file = None
+            st.session_state.agent_attachment_file = []
 
         col_mic, col_text = st.columns([1, 2])
 
@@ -2291,12 +2291,11 @@ Customer Inquiry:
 
             # --- 에이전트 첨부 파일 처리 (다중 파일 처리) ---
             final_response_content = agent_response
-            if st.session_state.agent_attachment_file and len(st.session_state.agent_attachment_file) > 0:
-                file_count = len(st.session_state.agent_attachment_file)
-                file_names = ", ".join([f['name'] for f in st.session_state.agent_attachment_file])
-
+            if st.session_state.agent_attachment_file:
+                file_infos = st.session_state.agent_attachment_file
+                file_names = ", ".join([f["name"] for f in file_infos])
                 attachment_msg = L["agent_attachment_status"].format(
-                    filename=file_names, count=file_count
+                    filename=file_names, filetype=f"총 {len(file_infos)}개 파일"
                 )
                 final_response_content = f"{agent_response}\n\n---\n{attachment_msg}"
 
@@ -2310,7 +2309,7 @@ Customer Inquiry:
             # 입력창/오디오/첨부 파일 초기화
             st.session_state.agent_response_area_text = ""
             st.session_state.sim_audio_bytes = None
-            st.session_state.agent_attachment_file = None  # 첨부 파일 초기화
+            st.session_state.agent_attachment_file = []  # 첨부 파일 초기화
             st.session_state.language_transfer_requested = False
 
             # 다음 단계: 고객 반응 생성 요청
