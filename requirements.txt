@@ -7,6 +7,9 @@ langchain-core
 langchain-google-genai
 google-generativeai
 langchain-openai
+anthropic
+openai
+groq
 
 
 # Vector Store
@@ -15,7 +18,6 @@ faiss-cpu==1.8.0
 #RAG documents
 unstructured
 PyPDF2
-faiss-cpu
 psutil
 paddlepaddle
 paddlenlp
@@ -26,7 +28,6 @@ keras
 firebase-admin
 # Docs / Parsing
 unstructured==0.14.9
-PyPDF2
 beautifulsoup4
 
 # ML & Analytics
@@ -35,7 +36,6 @@ numpy
 pandas
 matplotlib
 bs4
-openai
 streamlit-mic-recorder
 streamlit-webrtc
 opencv-python-headless
