@@ -1,53 +1,2722 @@
-streamlit==1.38.0
+# ========================================
+# streamlit_app_last_correction.py
+# 로컬 전용: RAG + 시뮬레이터 + 음성 기록 + LSTM + 콘텐츠
+# Firebase/GCS 제거, local_db(JSON/파일)만 사용
+# Python 3.9 / langchain>=1.0 / streamlit-mic-recorder 0.0.8 기준
+# ========================================
 
-# LangChain (버전 제거, Cloud가 자동 설치)
-langchain
-langchain-community
-langchain-core
-langchain-google-genai
-google-generativeai
-langchain-openai
-anthropic
-openai
-groq
-langchain-nvidia-ai-endpoints
-sentence-transformers
+import os
+import io
+import json
+import time
+import uuid
+import base64
+import tempfile
+import hashlib
+from datetime import datetime, timedelta
+from typing import List, Dict, Any
+import google.generativeai as genai
+import numpy as np
+import streamlit as st
+from matplotlib import pyplot as plt
+
+from openai import OpenAI
+from anthropic import Anthropic  # Claude 임포트 추가
+
+# mic_recorder (0.0.8) - returns dict with key "bytes"
+from streamlit_mic_recorder import mic_recorder
+
+# LangChain / RAG 관련
+from langchain_core.documents import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_core.prompts import PromptTemplate
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationChain
+
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_community.document_loaders import PyPDFLoader, TextLoader
+from langchain_community.embeddings import HuggingFaceEmbeddings  # NVIDIA/Claude/Groq fallback용
+try:
+    from langchain_google_genai import GoogleGenerativeAIEmbeddings
+    IS_GEMINI_EMBEDDING_AVAILABLE = True
+except ImportError:
+    IS_GEMINI_EMBEDDING_AVAILABLE = False
+    
+try:
+    from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
+    IS_NVIDIA_EMBEDDING_AVAILABLE = True
+except ImportError:
+    IS_NVIDIA_EMBEDDING_AVAILABLE = False
+
+# ========================================
+# 0. 기본 경로/로컬 DB 설정
+# ========================================
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "local_db")
+AUDIO_DIR = os.path.join(DATA_DIR, "audio")
+RAG_INDEX_DIR = os.path.join(DATA_DIR, "rag_index")
+
+VOICE_META_FILE = os.path.join(DATA_DIR, "voice_records.json")
+SIM_META_FILE = os.path.join(DATA_DIR, "simulation_histories.json")
+
+os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(AUDIO_DIR, exist_ok=True)
+os.makedirs(RAG_INDEX_DIR, exist_ok=True)
 
 
+# ----------------------------------------
+# JSON Helper
+# ----------------------------------------
+def _load_json(path: str, default: Any):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return default
 
 
-# Vector Store
-faiss-cpu==1.8.0
+def _save_json(path: str, data: Any):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
-#RAG documents
-unstructured
-PyPDF2
-psutil
-paddlepaddle
-paddlenlp
-tensorflow
-keras
 
-#Adding Firestore Admin SDK
-firebase-admin
-# Docs / Parsing
-unstructured==0.14.9
-beautifulsoup4
+# ========================================
+# 1. 다국어 설정
+# ========================================
+# ========================================
+# 1. 다국어 설정
+# ========================================
+DEFAULT_LANG = "ko"
 
-# ML & Analytics
-#Whisper AI 사용 위해 추가
-numpy
-pandas
-matplotlib
-bs4
-streamlit-mic-recorder
-streamlit-webrtc
-opencv-python-headless
+LANG: Dict[str, Dict[str, str]] = {
+    "ko": {
+        "title": "개인 맞춤형 AI 학습 코치 (음성 및 DB 통합)",
+        "sidebar_title": "📚 AI Study Coach 설정",
+        "file_uploader": "학습 자료 업로드 (PDF, TXT, HTML)",
+        "button_start_analysis": "자료 분석 시작 (RAG Indexing)",
+        "rag_tab": "RAG 지식 챗봇",
+        "content_tab": "맞춤형 학습 콘텐츠 생성",
+        "lstm_tab": "LSTM 성취도 예측 대시보드",
+        "simulator_tab": "AI 고객 응대 시뮬레이터",
+        "rag_header": "RAG 지식 챗봇 (문서 기반 Q&A)",
+        "rag_desc": "업로드된 문서 기반으로 질문에 답변합니다。",
+        "rag_input_placeholder": "학습 자료에 대해 질문해 보세요",
+        "llm_error_key": "⚠️ 경고: GEMINI API 키가 설정되지 않았습니다. Streamlit Secrets에 'GEMINI_API_KEY'를 설정해주세요。",
+        "llm_error_init": "LLM 초기화 오류: API 키를 확인해 주세요。",
+        "content_header": "맞춤형 학습 콘텐츠 생성",
+        "content_desc": "학습 주제와 난이도에 맞춰 콘텐츠 생성",
+        "topic_label": "학습 주제",
+        "level_label": "난이도",
+        "content_type_label": "콘텐츠 형식",
+        "level_options": ["초급", "중급", "고급"],
+        "content_options": ["핵심 요약 노트", "객관식 퀴즈 10문항", "실습 예제 아이디어"],
+        "button_generate": "콘텐츠 생성",
+        "warning_topic": "학습 주제를 입력해 주세요。",
+        "lstm_header": "LSTM 기반 학습 성취도 예측 대시보드",
+        "lstm_desc": "가상의 과거 퀴즈 점수 데이터를 바탕으로 LSTM 모델을 훈련하고 미래 성취도를 예측하여 보여줍니다。",
+        "lang_select": "언어 선택",
+        "embed_success": "총 {count}개 청크로 학습 DB 구축 완료!",
+        "embed_fail": "임베딩 실패: 무료 티어 한도 초과 또는 네트워크 문제。",
+        "warning_no_files": "먼저 학습 자료를 업로드하세요。",
+        "warning_rag_not_ready": "RAG가 준비되지 않았습니다. 학습 자료를 업로드하고 분석하세요。",
+        "quiz_fail_structure": "퀴즈 데이터 구조가 올바르지 않습니다。",
+        "select_answer": "정답을 선택하세요",
+        "check_answer": "정답 확인",
+        "next_question": "다음 문항",
+        "correct_answer": "정답입니다! 🎉",
+        "incorrect_answer": "오답입니다。😞",
+        "correct_is": "정답",
+        "explanation": "해설",
+        "quiz_complete": "퀴즈 완료!",
+        "score": "점수",
+        "retake_quiz": "퀴즈 다시 풀기",
+        "quiz_error_llm": "퀴즈 생성 실패: LLM이 올바른 JSON 형식을 반환하지 않았습니다。",
+        "quiz_original_response": "LLM 원본 응답",
+        "firestore_loading": "데이터베이스에서 RAG 인덱스 로드 중...",
+        "firestore_no_index": "데이터베이스에서 기존 RAG 인덱스를 찾을 수 없습니다. 파일을 업로드하여 새로 만드세요。",
+        "db_save_complete": "(DB 저장 완료)",
+        "data_analysis_progress": "자료 분석 및 학습 DB 구축 중...",
+        "response_generating": "답변 생성 중...",
+        "lstm_result_header": "학습 성취도 예측 결과",
+        "lstm_score_metric": "현재 예측 성취도",
+        "lstm_score_info": "다음 퀴즈 예상 점수는 약 **{predicted_score:.1f}점**입니다. 학습 성과를 유지하거나 개선하세요!",
+        "lstm_rerun_button": "새로운 가상 데이터로 예측",
 
-# Utilities
-google-cloud-firestore
-protobuf
-requests
-tqdm
-markdown-it-py
-rich
+        # --- 시뮬레이터 ---
+        "simulator_header": "AI 고객 응대 시뮬레이터",
+        "simulator_desc": "까다로운 고객 문의에 AI의 응대 초안 및 가이드라인을 제공합니다。",
+        "customer_query_label": "고객 문의 내용 (링크 포함 가능)",
+        "customer_type_label": "고객 성향",
+        "customer_type_options": ["일반적인 문의", "까다로운 고객", "매우 불만족스러운 고객"],
+        "button_simulate": "응대 조언 요청",
+        "customer_generate_response_button": "고객 반응 생성",
+        "send_closing_confirm_button": "추가 문의 여부 확인 메시지 보내기",
+        "simulation_warning_query": "고객 문의 내용을 입력해 주세요。",
+        "simulation_no_key_warning": "⚠️ API Key가 없기 때문에 응답 생성은 실행되지 않습니다。",
+        "simulation_advice_header": "AI의 응대 가이드라인",
+        "simulation_draft_header": "추천 응대 초안",
+        "button_listen_audio": "음성으로 듣기",
+        "tts_status_ready": "음성으로 듣기 준비됨",
+        "tts_status_generating": "오디오 생성 중...",
+        "tts_status_success": "✅ 오디오 재생 완료!",
+        "tts_status_error": "❌ TTS 오류 발생",
+        "history_expander_title": "📝 이전 상담 이력 로드 (최근 10개)",
+        "initial_query_sample": "프랑스 파리에 도착했는데, 클룩에서 구매한 eSIM이 활성화가 안 됩니다...",
+        "button_mic_input": "🎙 음성 입력",
+        "prompt_customer_end": "고객님의 추가 문의 사항이 없어, 이 상담을 종료합니다。",
+        "prompt_survey": "지금까지 상담원 000였습니다. 즐거운 하루 되시기 바랍니다. [설문 조사 링크]",
+        "customer_closing_confirm": "다른 문의 사항은 없으십니까?",
+        "customer_positive_response": "알겠습니다. 감사합니다。",
+        "button_end_chat": "응대 종료 (설문 요청)",
+        "survey_sent_confirm": "📨 설문조사 링크가 전송되었으며, 이 상담은 종료되었습니다。",
+        "new_simulation_ready": "새 시뮬레이션을 시작할 수 있습니다。",
+        "agent_response_header": "✍️ 에이전트 응답",
+        "agent_response_placeholder": "고객에게 응답하세요...",
+        "send_response_button": "응답 전송",
+        "request_rebuttal_button": "고객의 다음 반응 요청",
+        "new_simulation_button": "새 시뮬레이션 시작",
+        "history_selectbox_label": "로드할 이력을 선택하세요:",
+        "history_load_button": "선택된 이력 로드",
+        "delete_history_button": "❌ 모든 이력 삭제",
+        "delete_confirm_message": "정말로 모든 상담 이력을 삭제하시겠습니까?",
+        "delete_confirm_yes": "예, 삭제합니다",
+        "delete_confirm_no": "아니오, 유지합니다",
+        "delete_success": "✅ 삭제 완료!",
+        "deleting_history_progress": "이력 삭제 중...",
+        "search_history_label": "이력 검색",
+        "date_range_label": "날짜 범위 필터",
+        "no_history_found": "검색 조건에 맞는 이력이 없습니다。",
+        "customer_email_label": "고객 이메일 (선택)",
+        "customer_phone_label": "고객 연락처 / 전화번호 (선택)",
+        "transfer_header": "언어 이관 요청 (다른 팀)",
+        "transfer_to_en": "🇺🇸 영어 팀으로 이관",
+        "transfer_to_ja": "🇯🇵 일본어 팀으로 이관",
+        "transfer_to_ko": "🇰🇷 한국어 팀으로 이관",
+        "transfer_system_msg": "📌 시스템 메시지: 고객 요청에 따라 상담 언어가 {target_lang} 팀으로 이관되었습니다. 새로운 상담원(AI)이 응대합니다。",
+        "transfer_loading": "이관 처리 중: 이전 대화 이력 번역 및 검토 (고객님께 3~10분 양해 요청)",
+        "transfer_summary_header": "🔍 이관된 상담원을 위한 요약 (번역됨)",
+        "transfer_summary_intro": "고객님과의 이전 대화 이력입니다. 이 내용을 바탕으로 응대를 이어나가세요。",
+        "llm_translation_error": "❌ 번역 실패: LLM 응답 오류",
+        "timer_metric": "상담 경과 시간",
+        "timer_info_ok": "AHT (15분 기준)",
+        "timer_info_warn": "AHT (10분 초과)",
+        "timer_info_risk": "🚨 15분 초과: 높은 리스크",
+        "solution_check_label": "✅ 이 응답에 솔루션/해결책이 포함되어 있습니다。",
+
+        # --- 음성 기록 ---
+        "voice_rec_header": "음성 기록 & 관리",
+        "record_help": "마이크 버튼을 눌러 녹음하거나 파일을 업로드하세요。",
+        "uploaded_file": "오디오 파일 업로드",
+        "rec_list_title": "저장된 음성 기록",
+        "transcribe_btn": "전사(Whisper)",
+        "save_btn": "음성 기록 저장",
+        "transcribing": "음성 전사 중...",
+        "transcript_result": "전사 결과:",
+        "transcript_text": "전사 텍스트",
+        "openai_missing": "OpenAI API Key가 없습니다。",
+        "whisper_client_error": "❌ Whisper API Client 초기화 실패",
+        "whisper_auth_error": "❌ Whisper API 인증 실패",
+        "whisper_format_error": "❌ 지원하지 않는 오디오 형식입니다。",
+        "whisper_success": "✅ 음성 전사 완료!",
+        "playback": "녹음 재생",
+        "retranscribe": "재전사",
+        "delete": "삭제",
+        "no_records": "저장된 음성 기록이 없습니다。",
+        "saved_success": "저장 완료!",
+        "delete_confirm_rec": "정말 삭제하시겠습니까?",
+        "gcs_not_conf": "GCS 미설정",
+        "gcs_playback_fail": "오디오 재생 실패",
+        "gcs_no_audio": "오디오 없음",
+        "error": "오류:",
+        "firestore_no_db_connect": "DB 연결 실패",
+        "save_history_success": "상담 이력이 저장되었습니다。",
+        "save_history_fail": "상담 이력 저장 실패",
+        "delete_fail": "삭제 실패",
+        "rec_header": "음성 입력 및 전사",
+        "whisper_processing": "음성 전사 처리 중",
+        "empty_response_warning": "응답을 입력하세요。",
+        "customer_no_more_inquiries": "없습니다. 감사합니다。",
+        "customer_has_additional_inquiries": "추가 문의 사항도 있습니다。",
+        "sim_end_chat_button": "설문 조사 링크 전송 및 채팅 종료",
+
+        # --- 첨부 파일 기능 추가 ---
+        "attachment_label": "고객 첨부 파일 업로드 (스크린샷 등)",
+        "attachment_placeholder": "파일을 첨부하여 상황을 설명하세요 (선택 사항)",
+        "attachment_status_llm": "고객이 **{filename}** 파일을 첨부했습니다. 이 파일을 스크린샷이라고 가정하고 응대 초안 및 가이드라인에 반영하세요. (파일 타입: {filetype})",
+        "agent_attachment_label": "에이전트 첨부 파일 (스크린샷 등)",
+        "agent_attachment_placeholder": "응답에 첨부할 파일을 선택하세요 (선택 사항)",
+        "agent_attachment_status": "📎 에이전트가 **{filename}** 파일을 응답에 첨부했습니다. (파일 타입: {filetype})",
+
+        # --- RAG 오류 메시지 추가 ---
+        "rag_embed_error_openai": "RAG 임베딩 실패: OpenAI API Key가 유효하지 않거나 설정되지 않았습니다.",
+        "rag_embed_error_gemini": "RAG 임베딩 실패: Gemini API Key가 유효하지 않거나 설정되지 않았습니다.",
+        "rag_embed_error_nvidia": "RAG 임베딩 실패: NVIDIA API Key가 유효하지 않거나 설정되지 않았습니다。",
+        "rag_embed_error_none": "RAG 임베딩에 필요한 모든 키(OpenAI, Gemini, NVIDIA)가 유효하지 않습니다. 키를 설정해 주세요。",
+    },
+
+    # --- ⭐ 영어 버전 (한국어 100% 매칭) ---
+    "en": {
+        "title": "Personalized AI Study Coach (Voice & Local DB)",
+        "sidebar_title": "📚 AI Study Coach Settings",
+        "file_uploader": "Upload Study Materials (PDF, TXT, HTML)",
+        "button_start_analysis": "Start Analysis (RAG Indexing)",
+        "rag_tab": "RAG Knowledge Chatbot",
+        "content_tab": "Custom Content Generation",
+        "lstm_tab": "LSTM Achievement Prediction Dashboard",
+        "simulator_tab": "AI Customer Support Simulator",
+        "rag_header": "RAG Knowledge Chatbot (Document Q&A)",
+        "rag_desc": "Answer questions based on uploaded documents.",
+        "rag_input_placeholder": "Ask a question about your study materials",
+        "llm_error_key": "⚠️ Warning: GEMINI_API_KEY is not set.",
+        "llm_error_init": "LLM initialization error. Please check your API key.",
+        "content_header": "Custom Learning Content Generation",
+        "content_desc": "Generate content based on the topic and difficulty.",
+        "topic_label": "Learning Topic",
+        "level_label": "Difficulty",
+        "content_type_label": "Content Type",
+        "level_options": ["Beginner", "Intermediate", "Advanced"],
+        "content_options": ["Key Summary Note", "10 MCQ Questions", "Practical Example Idea"],
+        "button_generate": "Generate Content",
+        "warning_topic": "Please enter a learning topic.",
+        "lstm_header": "LSTM Achievement Prediction Dashboard",
+        "lstm_desc": "Train an LSTM model on hypothetical quiz scores and predict performance.",
+        "lang_select": "Select Language",
+        "embed_success": "Learning DB built with {count} chunks!",
+        "embed_fail": "Embedding failed: quota exceeded or network issue.",
+        "warning_no_files": "Please upload study materials first.",
+        "warning_rag_not_ready": "RAG is not ready. Upload materials and analyze.",
+        "quiz_fail_structure": "Quiz data structure is invalid.",
+        "select_answer": "Select answer",
+        "check_answer": "Check answer",
+        "next_question": "Next question",
+        "correct_answer": "Correct! 🎉",
+        "incorrect_answer": "Incorrect 😞",
+        "correct_is": "Correct answer",
+        "explanation": "Explanation",
+        "quiz_complete": "Quiz Complete!",
+        "score": "Score",
+        "retake_quiz": "Retake Quiz",
+        "quiz_error_llm": "Quiz generation failed: invalid JSON.",
+        "quiz_original_response": "Original LLM Response",
+        "firestore_loading": "Loading RAG index...",
+        "firestore_no_index": "No existing RAG index found.",
+        "db_save_complete": "(DB Save Complete)",
+        "data_analysis_progress": "Analyzing materials and building DB...",
+        "response_generating": "Generating response...",
+        "lstm_result_header": "Achievement Prediction",
+        "lstm_score_metric": "Predicted Achievement",
+        "lstm_score_info": "Estimated next quiz score: **{predicted_score:.1f}**.",
+        "lstm_rerun_button": "Predict with New Data",
+
+        # Simulator
+        "simulator_header": "AI Customer Response Simulator",
+        "simulator_desc": "AI generates draft responses and guidelines for customer inquiries.",
+        "customer_query_label": "Customer Message (links allowed)",
+        "customer_type_label": "Customer Type",
+        "customer_type_options": ["General Inquiry", "Difficult Customer", "Highly Dissatisfied Customer"],
+        "button_simulate": "Generate Response",
+        "customer_generate_response_button": "Generate Customer Response",
+        "send_closing_confirm_button": "Send Closing Confirmation",
+        "simulation_warning_query": "Please enter the customer’s message.",
+        "simulation_no_key_warning": "⚠️ API Key missing. Simulation cannot proceed.",
+        "simulation_advice_header": "AI Response Guidelines",
+        "simulation_draft_header": "Recommended Response Draft",
+        "button_listen_audio": "Play as Audio",
+        "tts_status_ready": "Ready to generate audio",
+        "tts_status_generating": "Generating audio...",
+        "tts_status_success": "Audio ready!",
+        "tts_status_error": "TTS error occurred",
+        "history_expander_title": "📝 Load Previous Sessions (Last 10)",
+        "initial_query_sample": "I arrived in Paris but my Klook eSIM won't activate…",
+        "button_mic_input": "🎙 Voice Input",
+        "prompt_customer_end": "No further inquiries. Ending chat.",
+        "prompt_survey": "This was Agent 000. Have a nice day. [Survey Link]",
+        "customer_closing_confirm": "Is there anything else we can assist you with?",
+        "customer_positive_response": "Noted with thanks.",
+        "button_end_chat": "End Chat (Survey Request)",
+        "survey_sent_confirm": "📨 The survey link has been sent. This chat session is now closed.",
+        "new_simulation_ready": "You can now start a new simulation.",
+        "agent_response_header": "✍️ Agent Response",
+        "agent_response_placeholder": "Write a response...",
+        "send_response_button": "Send Response",
+        "request_rebuttal_button": "Request Customer Reaction",
+        "new_simulation_button": "Start New Simulation",
+        "history_selectbox_label": "Choose a record to load:",
+        "history_load_button": "Load Selected Record",
+        "delete_history_button": "❌ Delete All History",
+        "delete_confirm_message": "Are you sure you want to delete all records?",
+        "delete_confirm_yes": "Yes, Delete",
+        "delete_confirm_no": "Cancel",
+        "delete_success": "Deleted successfully!",
+        "deleting_history_progress": "Deleting history...",
+        "search_history_label": "Search History",
+        "date_range_label": "Date Filter",
+        "no_history_found": "No matching history found.",
+        "customer_email_label": "Customer Email (optional)",
+        "customer_phone_label": "Customer Phone / WhatsApp (optional)",
+        "transfer_header": "Language Transfer Request (To Other Teams)",
+        "transfer_to_en": "🇰🇷 Korean Team Transfer",
+        "transfer_to_ja": "🇯🇵 Japanese Team Transfer",
+        "transfer_to_ko": "🇺🇸 English Team Transfer",
+        "transfer_system_msg": "📌 System Message: The session language has been transferred to the {target_lang} team per customer request. A new agent (AI) will now respond.",
+        "transfer_loading": "Transferring: Translating and reviewing chat history (3-10 minute wait requested from customer)",
+        "transfer_summary_header": "🔍 Summary for Transferred Agent (Translated)",
+        "transfer_summary_intro": "This is the previous chat history. Please continue the support based on this summary.",
+        "llm_translation_error": "❌ Translation failed: LLM response error",
+        "timer_metric": "Elapsed Time",
+        "timer_info_ok": "AHT (15 min standard)",
+        "timer_info_warn": "AHT (Over 10 min)",
+        "timer_info_risk": "🚨 Over 15 min: High Risk",
+        "solution_check_label": "✅ This response includes a solution/fix.",
+
+        # Voice
+        "voice_rec_header": "Voice Record & Management",
+        "record_help": "Record using the microphone or upload a file.",
+        "uploaded_file": "Upload Audio File",
+        "rec_list_title": "Saved Voice Records",
+        "transcribe_btn": "Transcribe (Whisper)",
+        "save_btn": "Save Record",
+        "transcribing": "Transcribing...",
+        "transcript_result": "Transcription:",
+        "transcript_text": "Transcribed Text",
+        "openai_missing": "Missing OPENAI_API_KEY",
+        "whisper_client_error": "Whisper client initialization failed.",
+        "whisper_auth_error": "Whisper authentication failed.",
+        "whisper_format_error": "Unsupported audio format.",
+        "whisper_success": "Transcription complete!",
+        "playback": "Play Recording",
+        "retranscribe": "Re-transcribe",
+        "delete": "Delete",
+        "transcribe_btn": "Transcribe (Whisper)",
+        "save_btn": "Save Voice Record",
+        "transcribing": "Transcribing voice...",
+        "transcript_result": "Transcription Result:",
+        "transcript_text": "Transcribed Text",
+        "whisper_processing": "Processing voice transcription...",
+        "whisper_success": "✅ Transcription complete! Please check the text below.",
+        "openai_missing": "OpenAI API Key is missing. Please set OPENAI_API_KEY.",
+        "whisper_client_error": "❌ Error: Whisper API client not initialized.",
+        "whisper_auth_error": "❌ Whisper API authentication failed. Check your API Key.",
+        "whisper_format_error": "❌ Error: Unsupported audio format.",
+        "playback": "Playback Recording",
+        "retranscribe": "Re-transcribe",
+        "delete": "Delete",
+        "no_records": "No saved voice records.",
+        "saved_success": "Saved successfully!",
+        "delete_confirm_rec": "Are you sure you want to delete this voice record?",
+        "gcs_not_conf": "GCS not configured or no audio available",
+        "gcs_playback_fail": "Failed to play audio",
+        "gcs_no_audio": "No audio file found",
+        "error": "Error:",
+        "firestore_no_db_connect": "DB connection failed",
+        "save_history_success": "Saved successfully.",
+        "save_history_fail": "Save failed.",
+        "delete_fail": "Delete failed",
+        "rec_header": "Voice Input & Transcription",
+        "whisper_processing": "Processing...",
+        "empty_response_warning": "Please enter a response.",
+        "customer_no_more_inquiries": "No, that will be all, thank you.",
+        "customer_has_additional_inquiries": "Yes, I have an additional question.",
+        "sim_end_chat_button": "Send Survey Link and End Chat",
+
+        # --- 첨부 파일 기능 추가 ---
+        "attachment_label": "Customer Attachment Upload (Screenshot, etc.)",
+        "attachment_placeholder": "Attach a file to explain the situation (optional)",
+        "attachment_status_llm": "The customer has attached the file **{filename}** files. Assume these files are screenshots and incorporate them into the draft response and guidelines. (Total files: {count})",
+        "agent_attachment_label": "Agent Attachment (Screenshot, etc.)",
+        "agent_attachment_placeholder": "Select a file to attach to the response (optional)",
+        "agent_attachment_status": "📎 Agent attached **{filename}** files. (Total files: {count})",
+
+        # --- RAG 오류 메시지 추가 ---
+        "rag_embed_error_openai": "RAG embedding failed: OpenAI API Key is invalid or not set.",
+        "rag_embed_error_gemini": "RAG embedding failed: Gemini API Key is invalid or not set.",
+        "rag_embed_error_nvidia": "RAG embedding failed: NVIDIA API Key is invalid or not set.",
+        "rag_embed_error_none": "RAG embedding failed: All required keys (OpenAI, Gemini, NVIDIA) are invalid or not set. Please configure a key.",
+    },
+
+    # --- ⭐ 일본어 버전 (한국어 100% 매칭) ---
+    "ja": {
+        "title": "パーソナライズAI学習コーチ (音声・ローカルDB)",
+        "sidebar_title": "📚 AI学習コーチ設定",
+        "file_uploader": "学習資料をアップロード (PDF, TXT, HTML)",
+        "button_start_analysis": "資料分析開始 (RAGインデックス作成)",
+        "rag_tab": "RAG知識チャットボット",
+        "content_tab": "カスタム学習コンテンツ生成",
+        "lstm_tab": "LSTM達成度予測ダッシュボード",
+        "simulator_tab": "AI顧客対応シミュレーター",
+        "rag_header": "RAG知識チャットボット (ドキュメントQ&A)",
+        "rag_desc": "アップロードされた資料に基づいて質問に回答します。",
+        "rag_input_placeholder": "資料について質問してください",
+        "llm_error_key": "⚠️ 注意: GEMINI_API_KEY が設定されていません。",
+        "llm_error_init": "LLM 初期化エラー：APIキーを確認してください。",
+        "content_header": "カスタム学習コンテンツ生成",
+        "content_desc": "学習テーマと難易度に応じてコンテンツを生成します。",
+        "topic_label": "学習テーマ",
+        "level_label": "難易度",
+        "content_type_label": "コンテンツ種類",
+        "level_options": ["初級", "中級", "上級"],
+        "content_options": ["要点サマリー", "選択式クイズ10問", "実践例アイデア"],
+        "button_generate": "生成する",
+        "warning_topic": "学習テーマを入力してください。",
+        "lstm_header": "LSTM達成度予測ダッシュボード",
+        "lstm_desc": "仮想クイズスコアを使用して達成度を予測します。",
+        "lang_select": "言語選択",
+        "embed_success": "{count}個のチャンクでDB構築完了!",
+        "embed_fail": "埋め込み失敗：クォータ超過またはネットワーク問題。",
+        "warning_no_files": "資料をアップロードしてください。",
+        "warning_rag_not_ready": "RAGが準備できていません。",
+        "quiz_fail_structure": "クイズデータの形式が正しくありません。",
+        "select_answer": "回答を選択してください",
+        "check_answer": "回答を確認",
+        "next_question": "次の質問",
+        "correct_answer": "正解！ 🎉",
+        "incorrect_answer": "不正解 😞",
+        "correct_is": "正解",
+        "explanation": "解説",
+        "quiz_complete": "クイズ完了!",
+        "score": "スコア",
+        "retake_quiz": "再挑戦",
+        "quiz_error_llm": "퀴즈 생성 실패：JSON形式が正しくありません。",
+        "quiz_original_response": "LLM 原本回答",
+        "firestore_loading": "RAGインデックス読み込み中...",
+        "firestore_no_index": "保存されたRAGインデックスが見つかりません。",
+        "db_save_complete": "(DB保存完了)",
+        "data_analysis_progress": "資料分析中...",
+        "response_generating": "応答生成中...",
+        "lstm_result_header": "達成度予測結果",
+        "lstm_score_metric": "予測達成度",
+        "lstm_score_info": "次のスコア予測: **{predicted_score:.1f}点**",
+        "lstm_rerun_button": "新しいデータで再予測",
+
+        # --- Simulator ---
+        "simulator_header": "AI顧客対応シミュレーター",
+        "simulator_desc": "難しい顧客問い合わせに対するAIのガイドラインと草案を生成します。",
+        "customer_query_label": "顧客からの問い合わせ内容 (リンク可)",
+        "customer_type_label": "顧客タイプ",
+        "customer_type_options": ["一般的な問い合わせ", "難しい顧客", "非常に不満な顧客"],
+        "button_simulate": "応対ガイド生成",
+        "customer_generate_response_button": "顧客の返信を生成",
+        "send_closing_confirm_button": "追加のご質問有無を確認するメッセージを送信",
+        "simulation_warning_query": "お問い合わせ内容を入力してください。",
+        "simulation_no_key_warning": "⚠️ APIキー不足のため応対生成不可。",
+        "simulation_advice_header": "AI対応ガイドライン",
+        "simulation_draft_header": "推奨応対草案",
+        "button_listen_audio": "音声で聞く",
+        "tts_status_ready": "音声生成準備完了",
+        "tts_status_generating": "音声生成中...",
+        "tts_status_success": "音声準備完了！",
+        "tts_status_error": "TTS エラーが発生しました",
+        "history_expander_title": "📝 過去の対応履歴を読み込む (最新10件)",
+        "initial_query_sample": "パリに到着しましたが、KlookのeSIMが使えません…",
+        "button_mic_input": "🎙 音声入力",
+        "prompt_customer_end": "追加の質問がないためチャットを終了します。",
+        "prompt_survey": "担当エージェント000でした。良い一日をお過ごしください。 [アンケートリンク]",
+        "customer_closing_confirm": "他のお問合せはございませんでしょうか。",
+        "customer_positive_response": "はい、承知いたしました。ありがとうございます。",
+        "button_end_chat": "チャット終了（アンケート）",
+        "new_simulation_ready": "新しいシミュレーションを開始できます。",
+        "survey_sent_confirm": "📨 アンケートリンクを送信しました。このチャットは終了しました。",
+        "agent_response_header": "✍️ エージェント応答",
+        "agent_response_placeholder": "顧客へ返信内容を入力…",
+        "send_response_button": "返信送信",
+        "request_rebuttal_button": "顧客の反応を生成",
+        "new_simulation_button": "新規シミュレーション",
+        "history_selectbox_label": "履歴を選択:",
+        "history_load_button": "履歴を読み込む",
+        "delete_history_button": "❌ 全履歴削除",
+        "delete_confirm_message": "すべての履歴を削除しますか？",
+        "delete_confirm_yes": "はい、削除します。",
+        "delete_confirm_no": "いいえ、維持します。",
+        "delete_success": "削除完了！",
+        "deleting_history_progress": "削除中...",
+        "search_history_label": "履歴検索",
+        "date_range_label": "日付フィルター",
+        "no_history_found": "該当する履歴はありません。",
+        "customer_email_label": "顧客メールアドレス（任意）",
+        "customer_phone_label": "顧客連絡先 / 電話番号（任意）",
+        "transfer_header": "言語切り替え要請（他チームへ）",
+        "transfer_to_en": "🇺🇸 英語チームへ転送",
+        "transfer_to_ko": "🇰🇷 韓国語チームへ転送",
+        "transfer_system_msg": "📌 システムメッセージ: 顧客の要請により、対応言語が {target_lang} チームへ切り替えられました。新しい担当者(AI)が対応します。",
+        "transfer_loading": "転送中: 過去のチャット履歴を翻訳およびレビューしています (お客様には3〜10分のお時間をいただいています)",
+        "transfer_summary_header": "🔍 転送された担当者向けの要約 (翻訳済み)",
+        "transfer_summary_intro": "これが顧客との過去のチャット履歴です。この要約に基づいてサポートを続けてください。",
+        "llm_translation_error": "❌ 翻訳失敗: LLM応答エラー",
+        "timer_metric": "経過時間",
+        "timer_info_ok": "AHT (15분 기준)",
+        "timer_info_warn": "AHT (10분 초과)",
+        "timer_info_risk": "🚨 15분 초과: 高いリスク",
+        "solution_check_label": "✅ この応答に解決策/対応策が含まれています。",
+
+        # --- Voice ---
+        "voice_rec_header": "音声記録＆管理",
+        "record_help": "録音するか音声ファイルをアップロードします。",
+        "uploaded_file": "音声ファイルをアップロード",
+        "rec_list_title": "保存された音声記録",
+        "transcribe_btn": "転写 (Whisper)",
+        "save_btn": "音声記録を保存",
+        "transcribing": "音声を転写中...",
+        "transcript_result": "転写結果:",
+        "transcript_text": "転写テキスト",
+        "whisper_processing": "音声転写を処理中...",
+        "whisper_success": "✅ 転写が完了しました！ 以下のテキストをご確認ください。",
+        "openai_missing": "OpenAI APIキーがありません。OPENAI_API_KEYを設定してください。",
+        "whisper_client_error": "❌ エラー: Whisper APIクライアントが初期化されていません。",
+        "whisper_auth_error": "❌ Whisper API認証に失敗しました。APIキーをご確認ください。",
+        "whisper_format_error": "❌ エラー: この音声形式はサポートされていません。",
+        "playback": "録音再生",
+        "retranscribe": "再転写",
+        "delete": "削除",
+        "no_records": "保存された音声記録はありません。",
+        "saved_success": "保存しました！",
+        "delete_confirm_rec": "この音声記録を削除しますか？",
+        "gcs_not_conf": "GCSが設定されていないか、音声がありません。",
+        "gcs_playback_fail": "音声の再生に失敗しました。",
+        "gcs_no_audio": "音声ファイルがありません。",
+        "error": "エラー:",
+        "firestore_no_db_connect": "DB接続失敗",
+        "save_history_success": "保存完了。",
+        "save_history_fail": "保存失敗。",
+        "delete_fail": "削除失敗",
+        "rec_header": "音声入力＆転写",
+        "whisper_processing": "処理中...",
+        "empty_response_warning": "応答を入力してください。",
+        "customer_no_more_inquiries": "いいえ、結構です。大丈夫です。有難う御座いました。",
+        "customer_has_additional_inquiries": "はい、追加の問い合わせがあります。",
+        "sim_end_chat_button": "アンケートリンクを送信してチャット終了",
+
+        # --- 첨부 파일 기능 추가 ---
+        "attachment_label": "顧客の添付ファイルアップロード (スクリーンショットなど)",
+        "attachment_placeholder": "ファイルを添付して状況を説明してください（オプション）",
+        "attachment_status_llm": "顧客が **{filename}** ファイルを添付しました。これをスクリーンショットと仮定し、応対草案とガイドラインに反映させてください。(ファイルタイプ: {filetype})",
+        "agent_attachment_label": "エージェント添付ファイル (スクリーンショットなど)",
+        "agent_attachment_placeholder": "応答に添付するファイルを選択してください（オプション）",
+        "agent_attachment_status": "📎 エージェントが **{filename}** ファイルを応答に添付しました。(ファイルタイプ: {filetype})",
+
+        # --- RAG 오류 메시지 추가 ---
+        "rag_embed_error_openai": "RAG embedding failed: OpenAI API Key is invalid or not set.",
+        "rag_embed_error_gemini": "RAG embedding failed: Gemini API Key is invalid or not set.",
+        "rag_embed_error_nvidia": "RAG embedding failed: NVIDIA API Key is invalid or not set.",
+        "rag_embed_error_none": "RAG embedding failed: All required keys (OpenAI, Gemini, NVIDIA) are invalid or not set. Please configure a key.",
+    }
+}
+
+# ========================================
+# 1-1. Session State 초기화 (누락된 AHT/솔루션/이관 상태 추가)
+# ========================================
+
+if "language" not in st.session_state:
+    st.session_state.language = DEFAULT_LANG
+if "is_llm_ready" not in st.session_state:
+    st.session_state.is_llm_ready = False
+if "llm_init_error_msg" not in st.session_state:
+    st.session_state.llm_init_error_msg = ""
+if "uploaded_files_state" not in st.session_state:
+    st.session_state.uploaded_files_state = None
+if "is_rag_ready" not in st.session_state:
+    st.session_state.is_rag_ready = False
+if "rag_vectorstore" not in st.session_state:
+    st.session_state.rag_vectorstore = None
+if "rag_messages" not in st.session_state:
+    st.session_state.rag_messages = []
+if "agent_input" not in st.session_state:
+    st.session_state.agent_input = ""
+if "last_audio" not in st.session_state:
+    st.session_state.last_audio = None
+if "simulator_messages" not in st.session_state:
+    st.session_state.simulator_messages = []
+if "simulator_memory" not in st.session_state:
+    st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history")
+if "simulator_chain" not in st.session_state:
+    st.session_state.simulator_chain = None
+if "initial_advice_provided" not in st.session_state:
+    st.session_state.initial_advice_provided = False
+if "is_chat_ended" not in st.session_state:
+    st.session_state.is_chat_ended = False
+if "show_delete_confirm" not in st.session_state:
+    st.session_state.show_delete_confirm = False
+if "customer_query_text_area" not in st.session_state:
+    st.session_state.customer_query_text_area = ""
+if "agent_response_area_text" not in st.session_state:
+    st.session_state.agent_response_area_text = ""
+if "last_transcript" not in st.session_state:
+    st.session_state.last_transcript = ""
+if "sim_audio_bytes" not in st.session_state:
+    st.session_state.sim_audio_bytes = None
+if "chat_state" not in st.session_state:
+    st.session_state.chat_state = "idle"
+    # idle → initial_customer → supervisor_advice → agent_turn → customer_turn → closing
+if "openai_client" not in st.session_state:
+    st.session_state.openai_client = None
+if "openai_init_msg" not in st.session_state:
+    st.session_state.openai_init_msg = ""
+if "sim_stage" not in st.session_state:
+    st.session_state.sim_stage = "WAIT_FIRST_QUERY"
+    # WAIT_FIRST_QUERY (초기 문의 입력)
+    # AGENT_TURN (에이전트 응답 입력)
+    # CUSTOMER_TURN (고객 반응 생성 요청)
+    # WAIT_CLOSING_CONFIRMATION_FROM_AGENT (고객이 감사, 에이전트가 종료 확인 메시지 보내기 대기)
+    # WAIT_CUSTOMER_CLOSING_RESPONSE (종료 확인 메시지 보냄, 고객의 마지막 응답 대기)
+    # FINAL_CLOSING_ACTION (최종 종료 버튼 대기)
+    # CLOSING (채팅 종료)
+if "start_time" not in st.session_state:  # AHT 타이머 시작 시간
+    st.session_state.start_time = None
+if "is_solution_provided" not in st.session_state:  # 솔루션 제공 여부 플래그
+    st.session_state.is_solution_provided = False
+if "transfer_summary_text" not in st.session_state:  # 이관 시 번역된 요약
+    st.session_state.transfer_summary_text = ""
+if "language_transfer_requested" not in st.session_state:  # 고객의 언어 이관 요청 여부
+    st.session_state.language_transfer_requested = False
+if "customer_attachment_file" not in st.session_state:  # 고객 첨부 파일 정보
+    # ⭐ 다중 파일 처리를 위해 리스트를 저장하도록 초기화: None 대신 빈 리스트 또는 None 사용
+    st.session_state.customer_attachment_file = None
+if "sim_attachment_context_for_llm" not in st.session_state:  # LLM 프롬프트에 사용할 첨부 파일 컨텍스트
+    st.session_state.sim_attachment_context_for_llm = ""
+if "agent_attachment_file" not in st.session_state:  # 에이전트 첨부 파일 정보
+    # ⭐ 다중 파일 처리를 위해 리스트를 저장하도록 초기화: None 대신 빈 리스트 또는 None 사용
+    st.session_state.agent_attachment_file = None
+
+# ⭐ 2-A. Gemini 키 초기화 (잘못된 키 잔존 방지)
+# Streamlit이 시작될 때마다 사이드바에 남은 유효하지 않은 키를 강제로 비워, RAG 초기화 시도를 막습니다.
+if "user_gemini_key" in st.session_state and st.session_state["user_gemini_key"].startswith("AIza"):
+    # 키가 유효한지 여부를 앱 내부에서 확인할 수 없으므로, 사용자에게 유효한 키를 입력하도록 유도하는 메시지를 띄우는 것이 좋습니다.
+    # 여기서는 안전을 위해 키 입력이 명시적으로 없으면 None 처리하도록 로직을 유지하고,
+    # 키 입력 시 세션에 저장되도록 합니다.
+    pass  # 키 초기화 로직은 삭제하고, 사용자 입력에 의존하도록 합니다. (오히려 강제 초기화가 환경 변수 오버라이딩 문제 야기 가능)
+
+L = LANG[st.session_state.language]
+
+# ========================================
+# 0. 멀티 모델 API Key 안전 구조 (Secrets + User Input)
+# ========================================
+
+# 1) 지원하는 API 목록 정의
+SUPPORTED_APIS = {
+    "openai": {
+        "label": "OpenAI API Key",
+        "secret_key": "OPENAI_API_KEY",
+        "session_key": "user_openai_key",
+        "placeholder": "sk-proj-**************************",  # 업데이트
+    },
+    "gemini": {
+        "label": "Google Gemini API Key",
+        "secret_key": "GEMINI_API_KEY",
+        "session_key": "user_gemini_key",
+        "placeholder": "AIza***********************************",  # 업데이트
+    },
+    "nvidia": {
+        "label": "NVIDIA NIM API Key",
+        "secret_key": "NVIDIA_API_KEY",
+        "session_key": "user_nvidia_key",
+        "placeholder": "nvapi-**************************",  # 업데이트
+    },
+    "claude": {
+        "label": "Anthropic Claude API Key",
+        "secret_key": "CLAUDE_API_KEY",
+        "session_key": "user_claude_key",
+        "placeholder": "sk-ant-api-**************************",  # 업데이트
+    },
+    "groq": {
+        "label": "Groq API Key",
+        "secret_key": "GROQ_API_KEY",
+        "session_key": "user_groq_key",
+        "placeholder": "gsk_**************************",  # 업데이트
+    },
+}
+
+# 2) 세션 초기화
+for api, cfg in SUPPORTED_APIS.items():
+    if cfg["session_key"] not in st.session_state:
+        st.session_state[cfg["session_key"]] = ""
+
+if "selected_llm" not in st.session_state:
+    st.session_state.selected_llm = "openai_gpt4"  # 기본값
+
+
+def get_api_key(api):
+    cfg = SUPPORTED_APIS[api]
+
+    # 1. Streamlit Secrets (.streamlit/secrets.toml)
+    try:
+        if hasattr(st, "secrets") and cfg["secret_key"] in st.secrets:
+            return st.secrets[cfg["secret_key"]]
+    except Exception:
+        pass
+
+    # 2. Environment Variable (os.environ) - 로컬 .env 또는 터미널 export를 위해 추가
+    env_key = os.environ.get(cfg["secret_key"])
+    if env_key:
+        return env_key
+
+    # 3. User Input (Streamlit sidebar session state)
+    return st.session_state.get(cfg["session_key"], "")
+
+
+# ========================================
+# 1. Sidebar UI: 멀티 API Key 입력 + 모델 선택
+# ========================================
+with st.sidebar:
+    st.markdown("### 🔐 API Keys 설정")
+
+    for api, cfg in SUPPORTED_APIS.items():
+        st.markdown(f"**{cfg['label']}**")
+        key_input = st.text_input(
+            cfg["label"],
+            value=st.session_state.get(cfg["session_key"], ""),  # 이미 저장된 값 보여주기
+            type="password",
+            key=f"input_{api}",
+            placeholder=cfg["placeholder"],  # <-- placeholder 설정 업데이트
+        )
+
+        if st.button(f"{cfg['label']} 적용", key=f"apply_{api}"):
+            if key_input.strip():
+                st.session_state[cfg["session_key"]] = key_input.strip()
+                st.success(f"{cfg['label']} 저장됨")
+                st.rerun()  # 키 변경 시 재실행
+            else:
+                st.warning("API Key를 입력하세요.")
+
+    st.divider()
+    st.markdown("### 🤖 사용할 LLM 모델 선택")
+
+    MODEL_CHOICES = {
+        "openai_gpt4": "OpenAI GPT-4o",
+        "openai_gpt35": "OpenAI GPT-3.5 Turbo",
+        "gemini_flash": "Gemini 2.0 Flash",
+        "gemini_pro": "Gemini 2.0 Pro",
+        "claude_sonnet": "Claude 3.5 Sonnet",
+        "groq_llama3": "Groq Llama-3-70B",
+    }
+
+    # 기본값 설정: "openai_gpt4"가 리스트에 있다면 해당 인덱스, 없다면 0
+    default_index = list(MODEL_CHOICES.keys()).index(st.session_state.selected_llm) \
+        if st.session_state.selected_llm in MODEL_CHOICES else 0
+
+    st.session_state.selected_llm = st.selectbox(
+        "LLM 모델 선택",
+        options=list(MODEL_CHOICES.keys()),
+        format_func=lambda x: MODEL_CHOICES[x],
+        key="selected_llm_box",
+        index=default_index,
+    )
+
+
+# ========================================
+# 2. LLM 클라이언트 라우팅 & 실행
+# ========================================
+def get_llm_client():
+    """선택된 모델에 맞는 클라이언트 + 모델코드 반환"""
+    model_key = st.session_state.get("selected_llm", "openai_gpt4")
+
+    # --- OpenAI ---
+    if model_key.startswith("openai"):
+        key = get_api_key("openai")
+        if not key: return None, None
+        try:
+            client = OpenAI(api_key=key)
+            model_name = "gpt-4o" if model_key == "openai_gpt4" else "gpt-3.5-turbo"
+            return client, ("openai", model_name)
+        except Exception:
+            return None, None
+
+    # --- Gemini ---
+    if model_key.startswith("gemini"):
+        key = get_api_key("gemini")
+        if not key: return None, None
+        try:
+            genai.configure(api_key=key)
+            model_name = "gemini-2.5-pro" if model_key == "gemini_pro" else "gemini-2.5-flash"
+            return genai, ("gemini", model_name)
+        except Exception:
+            return None, None
+
+    # --- Claude ---
+    if model_key.startswith("claude"):
+        key = get_api_key("claude")
+        if not key: return None, None
+        try:
+            client = Anthropic(api_key=key)
+            model_name = "claude-3-5-sonnet-latest"
+            return client, ("claude", model_name)
+        except Exception:
+            return None, None
+
+    # --- Groq ---
+    if model_key.startswith("groq"):
+        from groq import Groq
+        key = get_api_key("groq")
+        if not key: return None, None
+        try:
+            client = Groq(api_key=key)
+            model_name = (
+                "llama3-70b-8192"
+                if "llama3" in model_key
+                else "mixtral-8x7b-32768"
+            )
+            return client, ("groq", model_name)
+        except Exception:
+            return None, None
+
+    return None, None
+
+
+def run_llm(prompt: str) -> str:
+    """선택된 LLM으로 프롬프트 실행"""
+    client, info = get_llm_client()
+
+    if client is None or info is None:
+        return "❌ No API key for selected model."
+
+    provider, model_name = info
+
+    # 메시지 리스트 생성
+    messages = [{"role": "user", "content": prompt}]
+
+    # --- OpenAI Chat ---
+    if provider == "openai":
+        resp = client.chat.completions.create(
+            model=model_name,
+            messages=messages,
+        )
+        return resp.choices[0].message.content
+
+    # --- Gemini ---
+    if provider == "gemini":
+        gen_model = client.GenerativeModel(model_name)
+        resp = gen_model.generate_content(prompt)
+        return resp.text
+
+    # --- Claude ---
+    if provider == "claude":
+        resp = client.messages.create(
+            model=model_name,
+            messages=messages,
+        )
+        return resp.content[0].text
+
+    # --- Groq ---
+    if provider == "groq":
+        resp = client.chat.completions.create(
+            model=model_name,
+            messages=messages,
+        )
+        return resp.choices[0].message.content
+
+    return "❌ Unsupported provider."
+
+
+# ========================================
+# 2-A. Whisper / TTS 용 OpenAI Client 별도로 초기화
+#      (선택 모델과 무관하게, OpenAI Key만 있으면 사용)
+# ========================================
+
+def init_openai_audio_client():
+    key = get_api_key("openai")
+    if not key:
+        return None
+    try:
+        return OpenAI(api_key=key)
+    except:
+        return None
+
+
+# LLM 클라이언트 및 상태 업데이트
+st.session_state.openai_client = init_openai_audio_client()
+probe_client, _ = get_llm_client()
+st.session_state.is_llm_ready = probe_client is not None
+
+if st.session_state.openai_client:
+    # 키를 찾았고 클라이언트 객체는 생성되었으나, 실제 인증은 API 호출 시 이루어짐 (401 오류는 여기서 발생)
+    st.session_state.openai_init_msg = "✅ OpenAI TTS/Whisper 클라이언트 준비 완료 (Key 확인됨)"
+else:
+    # 키를 찾지 못한 경우
+    st.session_state.openai_init_msg = L["openai_missing"]
+
+if not st.session_state.is_llm_ready:
+    st.session_state.llm_init_error_msg = L["simulation_no_key_warning"]
+else:
+    st.session_state.llm_init_error_msg = ""
+
+
+# ----------------------------------------
+# LLM 번역 함수 (Gemini 클라이언트 의존성 제거 및 강화)
+# ----------------------------------------
+def translate_text_with_llm(text_content: str, target_lang_code: str, source_lang_code: str) -> str:
+    """
+    주어진 텍스트를 LLM Fallback을 사용하여 대상 언어로 번역합니다.
+    """
+    target_lang = LANG.get(target_lang_code, {})
+    target_lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(target_lang_code, "English")
+    source_lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(source_lang_code, "English")
+
+    # 번역을 시도할 LLM 공급자 우선순위 리스트 (현재 작동 중인 OpenAI를 최우선)
+    TRANSLATION_FALLBACKS = [
+        ("openai", "gpt-3.5-turbo"),
+        ("gemini", "gemini-2.5-flash"),
+        ("claude", "claude-3-5-sonnet-latest"),
+    ]
+
+    system_prompt = (
+        f"You are a professional translation AI. Translate the following customer support chat history "
+        f"from '{source_lang_name}' to '{target_lang_name}'. Preserve the original format, marking "
+        f"each speaker (e.g., 'Customer:', 'Agent:'). Do not add any introductory or concluding remarks. "
+        f"Translate the content accurately and neutrally."
+    )
+    prompt = f"Original Chat History:\n\n{text_content}"
+
+    for provider, model_name in TRANSLATION_FALLBACKS:
+        key = get_api_key(provider)
+        if not key:
+            continue  # 키가 없으면 다음 제공자로 넘어감
+
+        try:
+            # 3. LLM 클라이언트 설정 및 실행
+            if provider == "openai":
+                client = OpenAI(api_key=key)
+                resp = client.chat.completions.create(
+                    model=model_name,
+                    messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
+                    temperature=0.1
+                )
+                return resp.choices[0].message.content.strip()
+
+            elif provider == "gemini":
+                genai.configure(api_key=key)
+                gen_model = genai.GenerativeModel(model_name)
+                resp = gen_model.generate_content(
+                    contents=prompt,
+                    config=genai.types.GenerateContentConfig(system_instruction=system_prompt, temperature=0.1)
+                )
+                return resp.text.strip()
+
+            elif provider == "claude":
+                client = Anthropic(api_key=key)
+                resp = client.messages.create(
+                    model=model_name,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.1
+                )
+                return resp.content[0].text.strip()
+
+        except Exception as e:
+            # 해당 API로 번역 시도 중 오류 발생 (401, 네트워크 등) -> 다음 제공자로 넘어감
+            st.error(f"❌ Translation failed with {provider.upper()} ({model_name}): {e}")
+            continue
+
+    # 모든 시도가 실패했을 경우 (키가 없거나 모든 API 호출 실패)
+    st.error(f"❌ {target_lang.get('llm_translation_error', 'Translation failed')}: 모든 API 키가 유효하지 않거나 API 호출이 실패했습니다.")
+    return ""
+
+
+# ========================================
+# 3. Whisper / TTS Helper
+# ========================================
+
+def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/webm", lang_code: str = "ko") -> str:
+    L = LANG[st.session_state.language]
+    client = st.session_state.openai_client
+    if client is None:
+        return f"❌ {L['openai_missing']}"
+
+    whisper_lang = {"ko": "ko", "en": "en", "ja": "ja"}.get(lang_code, "en")
+
+    # 임시 파일 저장 (Whisper API 호환성)
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+    tmp.write(audio_bytes)
+    tmp.flush()
+    tmp.close()
+
+    try:
+        with open(tmp.name, "rb") as f:
+            res = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=f,
+                response_format="text",
+                language=whisper_lang,
+            )
+        # res.text 속성이 있는지 확인하고 없으면 res 자체를 문자열로 변환
+        return res.text.strip() if hasattr(res, 'text') else str(res).strip()
+    except Exception as e:
+        # 파일 형식 오류 등 상세 오류 처리
+        return f"❌ {L['error']} Whisper: {e}"
+    finally:
+        try:
+            os.remove(tmp.name)
+        except OSError:
+            pass
+
+
+# 역할별 TTS 음성 스타일 설정
+TTS_VOICES = {
+    "customer": {
+        "gender": "male",
+        "voice": "alloy"  # Distinct Male, Generic/Customer
+    },
+    "agent": {
+        "gender": "female",
+        "voice": "shimmer"  # Distinct Female, Professional/Agent
+    },
+    "supervisor": {
+        "gender": "female",
+        "voice": "nova"  # Another Distinct Female, Informative/Supervisor
+    }
+}
+
+
+def synthesize_tts(text: str, lang_key: str, role: str = "agent"):
+    L = LANG[lang_key]
+    client = st.session_state.openai_client
+    if client is None:
+        return None, L["openai_missing"]
+
+    if role not in TTS_VOICES:
+        role = "agent"
+
+    voice_name = TTS_VOICES[role]["voice"]
+
+    try:
+        # tts-1 모델 사용 (안정성)
+        resp = client.audio.speech.create(
+            model="tts-1",
+            voice=voice_name,
+            input=text
+            # format="mp3"은 기본값입니다.
+        )
+        return resp.read(), L["tts_status_success"]
+
+    except Exception as e:
+        return None, f"{L['tts_status_error']}: {e}"
+
+
+def render_tts_button(text, lang_key, role="customer", prefix="", index: int = -1):
+    """
+    TTS 재생 버튼을 렌더링하고, 고유한 키를 생성합니다.
+    index: 대화 내역에서의 고유 인덱스 (DuplicateWidgetID 방지용)
+    """
+    L = LANG[lang_key]
+
+    # 텍스트의 해시값과 고유 인덱스를 결합하여 키 생성
+    # 인덱스(-1은 키가 중요하지 않은 경우, 예: 음성 기록 목록)를 사용하여 중복 방지
+    content_hash = hashlib.md5(text[:100].encode()).hexdigest()
+    safe_key = f"{prefix}_{index}_{content_hash}"
+
+    # 재생 버튼을 누를 때만 TTS 요청
+    if st.button(L["button_listen_audio"], key=safe_key):
+        with st.spinner(L["tts_status_generating"]):
+            # 감정 분석 (현재 미사용) 대신 단순 텍스트만 전달
+            audio_bytes, msg = synthesize_tts(text, lang_key, role=role)
+            if audio_bytes:
+                st.audio(audio_bytes, format="audio/mp3")
+                st.success(msg)
+            else:
+                st.error(msg)
+
+
+# ========================================
+# 4. 로컬 음성 기록 Helper
+# (RAG 및 음성 기록 관리용 함수는 그대로 유지)
+# ========================================
+
+def load_voice_records() -> List[Dict[str, Any]]:
+    return _load_json(VOICE_META_FILE, [])
+
+
+def save_voice_records(records: List[Dict[str, Any]]):
+    _save_json(VOICE_META_FILE, records)
+
+
+def save_audio_record_local(
+        audio_bytes: bytes,
+        filename: str,
+        transcript_text: str,
+        mime_type: str = "audio/webm",
+        meta: Dict[str, Any] = None,
+) -> str:
+    records = load_voice_records()
+    rec_id = str(uuid.uuid4())
+    ts = datetime.utcnow().isoformat()
+
+    ext = filename.split(".")[-1] if "." in filename else "webm"
+    audio_filename = f"{rec_id}.{ext}"
+    audio_path = os.path.join(AUDIO_DIR, audio_filename)
+    with open(audio_path, "wb") as f:
+        f.write(audio_bytes)
+
+    rec = {
+        "id": rec_id,
+        "created_at": ts,
+        "filename": filename,
+        "audio_filename": audio_filename,
+        "size": len(audio_bytes),
+        "transcript": transcript_text,
+        "mime_type": mime_type,
+        "language": st.session_state.language,
+        "meta": meta or {},
+    }
+    records.insert(0, rec)
+    save_voice_records(records)
+    return rec_id
+
+
+def delete_audio_record_local(rec_id: str) -> bool:
+    records = load_voice_records()
+    idx = next((i for i, r in enumerate(records) if r.get("id") == rec_id), None)
+    if idx is None:
+        return False
+    rec = records.pop(idx)
+    audio_filename = rec.get("audio_filename")
+    if audio_filename:
+        audio_path = os.path.join(AUDIO_DIR, audio_filename)
+        try:
+            os.remove(audio_path)
+        except FileNotFoundError:
+            pass
+    save_voice_records(records)
+    return True
+
+
+def get_audio_bytes_local(rec_id: str):
+    records = load_voice_records()
+    rec = next((r for r in records if r.get("id") == rec_id), None)
+    if not rec:
+        raise FileNotFoundError("record not found")
+    audio_filename = rec["audio_filename"]
+    audio_path = os.path.join(AUDIO_DIR, audio_filename)
+    with open(audio_path, "rb") as f:
+        b = f.read()
+    return b, rec
+
+
+# ========================================
+# 5. 로컬 시뮬레이션 이력 Helper
+# ========================================
+
+def load_simulation_histories_local(lang_key: str) -> List[Dict[str, Any]]:
+    histories = _load_json(SIM_META_FILE, [])
+    # 현재 언어와 메시지 리스트가 유효한 이력만 필터링
+    return [
+        h for h in histories
+        if h.get("language_key") == lang_key and isinstance(h.get("messages"), list)
+    ]
+
+
+def save_simulation_history_local(initial_query: str, customer_type: str, messages: List[Dict[str, Any]],
+                                  is_chat_ended: bool, attachment_context: str):
+    histories = _load_json(SIM_META_FILE, [])
+    doc_id = str(uuid.uuid4())
+    ts = datetime.utcnow().isoformat()
+    data = {
+        "id": doc_id,
+        "initial_query": initial_query,
+        "customer_type": customer_type,
+        "messages": messages,
+        "language_key": st.session_state.language,
+        "timestamp": ts,
+        "is_chat_ended": is_chat_ended,
+        "attachment_context": attachment_context,  # 첨부 파일 컨텍스트도 저장
+    }
+    # 기존 이력에 추가 (최신순)
+    histories.insert(0, data)
+    # 너무 많은 이력 방지 (예: 50개)
+    _save_json(SIM_META_FILE, histories[:50])
+    return doc_id
+
+
+def delete_all_history_local():
+    _save_json(SIM_META_FILE, [])
+
+
+# ========================================
+# 6. RAG Helper (FAISS)
+# ========================================
+# RAG 관련 함수는 시뮬레이터와 무관하므로 기존 코드를 유지합니다.
+
+def load_documents(files) -> List[Document]:
+    docs: List[Document] = []
+    for f in files:
+        name = f.name
+        lower = name.lower()
+        if lower.endswith(".pdf"):
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+            tmp.write(f.read())
+            tmp.flush()
+            tmp.close()
+            loader = PyPDFLoader(tmp.name)
+            file_docs = loader.load()
+            for d in file_docs:
+                d.metadata["source"] = name
+            docs.extend(file_docs)
+            try:
+                os.remove(tmp.name)
+            except OSError:
+                pass
+        elif lower.endswith(".txt"):
+            text = f.read().decode("utf-8", errors="ignore")
+            docs.append(Document(page_content=text, metadata={"source": name}))
+        elif lower.endswith(".html") or lower.endswith(".htm"):
+            text = f.read().decode("utf-8", errors="ignore")
+            docs.append(Document(page_content=text, metadata={"source": name}))
+    return docs
+
+
+def split_documents(docs: List[Document]) -> List[Document]:
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=800,
+        chunk_overlap=150,
+        separators=["\n\n", "\n", ".", " ", ""],
+    )
+    return splitter.split_documents(docs)
+
+
+def get_embedding_function():
+    """
+    RAG 임베딩에 사용할 임베딩 모델을 결정합니다.
+    API 키 유효성 순서: Gemini -> OpenAI -> NVIDIA
+    API 인증 오류 발생 시 다음 모델로 이동하도록 처리합니다.
+    """
+
+    # 1. Gemini 임베딩 시도 (최우선 순위)
+    gemini_key = get_api_key("gemini")
+    if IS_GEMINI_EMBEDDING_AVAILABLE and gemini_key:
+        try:
+            # GoogleGenerativeAIEmbeddings 초기화 시 API Key 유효성 검사에서 오류가 발생할 수 있습니다.
+            return GoogleGenerativeAIEmbeddings(google_api_key=gemini_key, model="text-embedding-004")
+        except Exception as e:
+            # print(f"Gemini 임베딩 시도 중 오류 발생 (스킵): {e}")
+            pass
+
+    # 2. OpenAI 임베딩 시도
+    openai_key = get_api_key("openai")
+    if openai_key:
+        try:
+            # OpenAIEmbeddings 초기화 시 API Key 유효성 검사에서 오류가 발생할 수 있습니다.
+            return OpenAIEmbeddings(openai_api_key=openai_key)
+        except Exception as e:
+            # print(f"OpenAI 임베딩 시도 중 오류 발생 (스킵): {e}")
+            pass
+
+    # 3. NVIDIA NIM 임베딩 시도
+    nvidia_key = get_api_key("nvidia")
+    if IS_NVIDIA_EMBEDDING_AVAILABLE and nvidia_key:
+        try:
+            # NVIDIAEmbeddings 초기화 시 API Key 유효성 검사에서 오류가 발생할 수 있습니다.
+            # RAG 임베딩에 NVIDIA Embeddings를 직접 사용하려면
+            # NVIDIA API Key가 유효하고, 해당 모델을 지원하는 LangChain 라이브러리가 필요합니다.
+            return NVIDIAEmbeddings(api_key=nvidia_key, model="ai-embed-qa-4")
+        except Exception as e:
+            # print(f"NVIDIA 임베딩 시도 중 오류 발생 (스킵): {e}")
+            pass
+
+    return None  # 사용 가능한 임베딩 함수가 없음
+
+
+def build_rag_index(files):
+    L = LANG[st.session_state.language]
+    if not files: return None, 0
+
+    # 임베딩 함수를 시도하는 과정에서 에러 메시지가 발생할 수 있으므로 try-except로 감쌉니다.
+    try:
+        embeddings = get_embedding_function()
+    except Exception as e:
+        st.error(f"RAG 임베딩 함수 초기화 중 치명적인 오류 발생: {e}")
+        return None, 0
+
+    if embeddings is None:
+        # 어떤 임베딩 모델도 초기화할 수 없음을 알림
+        error_msg = L["rag_embed_error_none"]
+
+        # 상세 오류 정보 구성 (실제 사용 가능한 임베딩 모델이 없는 경우)
+        if not get_api_key("openai"):
+            error_msg += f"\n- {L['rag_embed_error_openai']}"
+        if not get_api_key("gemini"):
+            error_msg += f"\n- {L['rag_embed_error_gemini']}"
+        if not get_api_key("nvidia"):
+            error_msg += f"\n- {L['rag_embed_error_nvidia']}"
+
+        st.error(error_msg)
+        return None, 0
+
+    # 임베딩 객체 초기화 성공 후, 데이터 로드 및 분할
+    docs = load_documents(files)
+    if not docs: return None, 0
+
+    chunks = split_documents(docs)
+    if not chunks: return None, 0
+
+    try:
+        vectorstore = FAISS.from_documents(chunks, embeddings)
+        # 저장
+        vectorstore.save_local(RAG_INDEX_DIR)
+    except Exception as e:
+        # API 인증 실패 등 실제 API 호출 오류 처리
+        st.error(f"RAG 인덱스 생성 중 오류: {e}")
+        return None, 0
+
+    return vectorstore, len(chunks)
+
+
+def load_rag_index():
+    # RAG 인덱스 로드 시에도 유효한 임베딩 함수가 필요합니다.
+    try:
+        embeddings = get_embedding_function()
+    except Exception:
+        # get_embedding_function 내에서 에러 메시지를 처리하거나 스킵하므로 여기서는 조용히 처리
+        return None
+
+    if embeddings is None:
+        return None
+
+    try:
+        # allow_dangerous_deserialization=True는 필수
+        vs = FAISS.load_local(RAG_INDEX_DIR, embeddings, allow_dangerous_deserialization=True)
+        return vs
+    except Exception:
+        return None
+
+
+def rag_answer(question: str, vectorstore: FAISS, lang_key: str) -> str:
+    # RAG Answer는 LLM 클라이언트 라우팅을 사용하도록 수정
+    llm_client, info = get_llm_client()
+    if llm_client is None:
+        return LANG[lang_key]["simulation_no_key_warning"]
+
+    # Langchain ChatOpenAI 대신 run_llm을 사용하기 위해 prompt를 직접 구성
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
+    docs = retriever.get_relevant_documents(question)
+    context = "\n\n".join(d.page_content[:1500] for d in docs)
+
+    prompt = (
+            "You are a helpful AI tutor. Answer the question using ONLY the provided context.\n"
+            "If you cannot find the answer in the context, say you don't know.\n"
+            "Answer in the language of the question.\n\n"
+            "Question:\n" + question + "\n\n"
+                                       "Context:\n" + context + "\n\n"
+                                                                "Answer:"
+    )
+    return run_llm(prompt)
+
+
+# ========================================
+# 7. LSTM Helper (간단 Mock + 시각화)
+# ========================================
+
+def load_or_train_lstm():
+    # 실제 LSTM 대신 랜덤 + sin 파형 기반 Mock
+    np.random.seed(42)
+    n_points = 50
+    ts = 60 + 20 * np.sin(np.linspace(0, 4 * np.pi, n_points)) + np.random.normal(0, 5, n_points)
+    ts = np.clip(ts, 50, 100).astype(np.float32)
+    return ts
+
+
+# ========================================
+# 8. LLM (ChatOpenAI) for Simulator / Content
+# (RAG와 동일하게 run_llm으로 통합)
+# ========================================
+
+# ConversationChain 대신 run_llm을 사용하여 메모리 기능을 수동으로 구현
+# st.session_state.simulator_memory는 유지하여 대화 기록을 관리합니다.
+
+def get_chat_history_for_prompt():
+    """메모리에서 대화 기록을 추출하여 프롬프트에 사용할 문자열 형태로 반환"""
+    history_str = ""
+    for msg in st.session_state.simulator_messages:
+        role = msg["role"]
+        content = msg["content"]
+        if role == "customer" or role == "customer_rebuttal":
+            history_str += f"Customer: {content}\n"
+        elif role == "agent_response":
+            history_str += f"Agent: {content}\n"
+        # supervisor 메시지는 LLM에 전달하지 않아 역할 혼동 방지
+    return history_str
+
+
+def generate_customer_reaction(current_lang_key: str) -> str:
+    """고객의 다음 반응을 생성하는 LLM 호출"""
+    history_text = get_chat_history_for_prompt()
+    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+
+    # 첨부 파일 컨텍스트 추가
+    attachment_context = st.session_state.sim_attachment_context_for_llm
+    if attachment_context:
+        # LLM에게 첨부 파일 컨텍스트를 제공하되, 에이전트에게 반복하지 않도록 주의
+        attachment_context = f"[INITIAL ATTACHMENT CONTEXT (for customer reference only, do not repeat to agent)]\n{attachment_context}\n\n"
+    else:
+        attachment_context = ""
+
+    next_prompt = f"""
+{attachment_context}
+You are now ROLEPLAYING as the CUSTOMER.
+
+Read the following conversation and respond naturally in {lang_name}.
+
+Conversation so far:
+{history_text}
+
+RULES:
+1. You are only the customer. Do not write as the agent.
+2. **[Crucial Rule for Repetition/New Inquiry]** After the agent has provided a solution:
+    - If you are still confused or the problem is not fully solved, you MUST state the remaining confusion/problem clearly and briefly. DO NOT REPEAT THE INITIAL QUERY. Focus only on the unresolved aspect or the new inquiry.
+3. If the agent requested information → provide EXACTLY ONE missing detail.
+4. If the agent provided a clear solution, or if you have no further questions,
+   you MUST respond with appreciation or satisfaction, like "{L['customer_positive_response']}".
+5. If the agent's LAST message was the closing confirmation: "{L['customer_closing_confirm']}"
+    - If you have NO additional questions: You MUST reply with "{L['customer_no_more_inquiries']}".
+    - If you DO have additional questions: You MUST reply with "{L['customer_has_additional_inquiries']}" AND MUST FOLLOW UP WITH THE NEW INQUIRY DETAILS IMMEDIATELY. DO NOT just repeat that you have an additional question.
+6. Do NOT repeat your initial message or previous responses unless necessary.
+7. Output ONLY the customer's next message.
+"""
+    try:
+        reaction = run_llm(next_prompt)
+        return reaction.strip()
+    except Exception as e:
+        return f"❌ 고객 반응 생성 오류: {e}"
+
+
+def generate_customer_closing_response(current_lang_key: str) -> str:
+    """에이전트의 마지막 확인 질문에 대한 고객의 최종 답변 생성"""
+    history_text = get_chat_history_for_prompt()
+    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+
+    # 마지막 메시지가 에이전트의 종료 확인 메시지인지 확인 (프롬프트에 포함)
+    closing_msg = L['customer_closing_confirm']
+
+    # 첨부 파일 컨텍스트 추가
+    attachment_context = st.session_state.sim_attachment_context_for_llm
+    if attachment_context:
+        attachment_context = f"[INITIAL ATTACHMENT CONTEXT (for customer reference only, do not repeat to agent)]\n{attachment_context}\n\n"
+    else:
+        attachment_context = ""
+
+    final_prompt = f"""
+{attachment_context}
+You are now ROLEPLAYING as the CUSTOMER.
+
+The agent's final message was the closing confirmation: "{closing_msg}".
+You MUST respond to this confirmation based on the overall conversation.
+
+Conversation history:
+{history_text}
+
+RULES:
+1. If the conversation seems resolved and you have NO additional questions:
+    - You MUST reply with "{L['customer_no_more_inquiries']}".
+2. If the conversation is NOT fully resolved and you DO have additional questions (or the agent provided a cancellation denial that you want to appeal):
+    - You MUST reply with "{L['customer_has_additional_inquiries']}" AND MUST FOLLOW UP WITH THE NEW INQUIRY DETAILS. DO NOT just repeat that you have an additional question.
+3. Your reply MUST be ONLY one of the two options above, in {lang_name}.
+4. Output ONLY the customer's next message (must be one of the two rule options).
+"""
+    try:
+        reaction = run_llm(final_prompt)
+        # LLM의 출력이 규칙을 따르지 않을 경우를 대비하여 강제 적용
+        reaction_text = reaction.strip()
+        # "추가 문의 사항도 있습니다"가 포함되어 있으면 그대로 반환 (상세 내용 포함 가정)
+        if L['customer_no_more_inquiries'] in reaction_text:
+            return L['customer_no_more_inquiries']
+        elif L['customer_has_additional_inquiries'] in reaction_text:
+            return reaction_text
+        else:
+            # LLM이 규칙을 어겼을 경우, "추가 문의 사항이 있다"고 가정하고 에이전트 턴으로 넘김
+            return L['customer_has_additional_inquiries']
+    except Exception as e:
+        st.error(f"고객 최종 반응 생성 오류: {e}")
+        return L['customer_has_additional_inquiries']  # 오류 시 에이전트 턴으로 유도
+
+
+# ========================================
+# 9. 사이드바
+# ========================================
+
+with st.sidebar:
+    selected_lang_key = st.selectbox(
+        L["lang_select"],
+        options=["ko", "en", "ja"],
+        index=["ko", "en", "ja"].index(st.session_state.language),
+        format_func=lambda x: {"ko": "한국어", "en": "English", "ja": "日本語"}[x],
+    )
+
+    # 🔹 언어 변경 감지
+    if selected_lang_key != st.session_state.language:
+        st.session_state.language = selected_lang_key
+        st.session_state.simulator_messages = []
+        st.session_state.simulator_memory.clear()
+        st.session_state.initial_advice_provided = False
+        st.session_state.is_chat_ended = False
+        st.session_state.agent_response_area_text = ""
+        st.session_state.customer_query_text_area = ""
+        st.session_state.last_transcript = ""
+        st.session_state.sim_audio_bytes = None
+        st.session_state.sim_stage = "WAIT_FIRST_QUERY"
+        st.session_state.customer_attachment_file = None  # 언어 변경 시 첨부 파일 초기화
+        st.session_state.sim_attachment_context_for_llm = ""  # 컨텍스트 초기화
+        st.session_state.agent_attachment_file = None  # 에이전트 첨부 파일 초기화
+        st.rerun()
+
+    L = LANG[st.session_state.language]
+
+    st.title(L["sidebar_title"])
+    st.markdown("---")
+
+    st.subheader("클라이언트 초기화 상태")
+    if st.session_state.llm_init_error_msg:
+        st.error(st.session_state.llm_init_error_msg)
+    elif st.session_state.is_llm_ready:
+        st.success("✅ LLM 클라이언트 준비 완료")
+
+    if st.session_state.openai_client:
+        st.success("✅ OpenAI TTS/Whisper 클라이언트 준비 완료")
+    else:
+        st.warning(L["openai_missing"])
+
+    st.markdown("---")
+
+    uploaded_files_widget = st.file_uploader(
+        L["file_uploader"], type=["pdf", "txt", "html"], accept_multiple_files=True
+    )
+    if uploaded_files_widget:
+        st.session_state.uploaded_files_state = uploaded_files_widget
+
+    files_to_process = st.session_state.uploaded_files_state or []
+
+    # ⭐ RAG 인덱싱 버튼 로직 수정 (get_embedding_function에 오류 메시지 통합)
+    if files_to_process and st.session_state.is_llm_ready:
+        if st.button(L["button_start_analysis"]):
+            with st.spinner(L["data_analysis_progress"]):
+                vs, count = build_rag_index(files_to_process)
+                if vs is not None:
+                    st.session_state.rag_vectorstore = vs
+                    st.session_state.is_rag_ready = True
+                    st.success(L["embed_success"].format(count=count))
+                else:
+                    # 오류는 build_rag_index 내부에서 이미 st.error로 출력됨
+                    st.session_state.is_rag_ready = False
+    elif not files_to_process:
+        st.info(L["warning_no_files"])
+
+    st.markdown("---")
+
+    feature_selection = st.radio(
+        "기능 선택",
+        [L["rag_tab"], L["content_tab"], L["lstm_tab"], L["simulator_tab"], L["voice_rec_header"]],
+    )
+
+# 메인 타이틀
+st.title(L["title"])
+
+# ========================================
+# 10. 기능별 페이지
+# ========================================
+
+# -------------------- Voice Record Tab --------------------
+if feature_selection == L["voice_rec_header"]:
+    st.header(L["voice_rec_header"])
+    st.caption(L["record_help"])
+
+    col_rec, col_list = st.columns([1, 1])
+
+    # 녹음/업로드 + 전사 + 저장
+    with col_rec:
+        st.subheader(L["rec_header"])
+        audio_file = st.file_uploader(
+            L["uploaded_file"],
+            type=["wav", "mp3", "m4a", "webm", "ogg"],
+            key="voice_rec_uploader",
+        )
+        audio_bytes = None
+        audio_mime = "audio/webm"
+
+        if audio_file is not None:
+            audio_bytes = audio_file.getvalue()
+            audio_mime = audio_file.type or "audio/webm"
+
+        # 재생
+        if audio_bytes:
+            st.audio(audio_bytes, format=audio_mime)
+
+        # 전사 버튼
+        if audio_bytes and st.button(L["transcribe_btn"]):
+            if st.session_state.openai_client is None:
+                st.error(L["openai_missing"])
+            else:
+                with st.spinner(L["transcribing"]):
+                    text = transcribe_bytes_with_whisper(
+                        audio_bytes, audio_mime, lang_code=st.session_state.language
+                    )
+                    st.session_state.last_transcript = text
+                    snippet = text[:50].replace("\n", " ")
+                    if len(text) > 50:
+                        snippet += "..."
+                    if text.startswith("❌"):
+                        st.error(text)
+                    else:
+                        st.success(f"{L['transcript_result']} **{snippet}**")
+
+        st.text_area(
+            L["transcript_text"],
+            value=st.session_state.last_transcript,
+            height=150,
+            key="voice_rec_transcript_area",
+        )
+
+        if audio_bytes and st.button(L["save_btn"]):
+            try:
+                ext = audio_mime.split("/")[-1] if "/" in audio_mime else "webm"
+                filename = f"record_{int(time.time())}.{ext}"
+                save_audio_record_local(
+                    audio_bytes,
+                    filename,
+                    st.session_state.last_transcript,
+                    mime_type=audio_mime,
+                )
+                st.success(L["saved_success"])
+                st.session_state.last_transcript = ""
+                st.rerun()
+            except Exception as e:
+                st.error(f"{L['error']} {e}")
+
+    # 저장된 기록 리스트
+    with col_list:
+        st.subheader(L["rec_list_title"])
+        try:
+            records = load_voice_records()
+        except Exception as e:
+            st.error(f"read error: {e}")
+            records = []
+
+        if not records:
+            st.info(L["no_records"])
+        else:
+            for rec in records:
+                rec_id = rec["id"]
+                created_at = rec.get("created_at")
+                try:
+                    dt = datetime.fromisoformat(created_at)
+                    created_str = dt.strftime("%Y-%m-%d %H:%M")
+                except Exception:
+                    created_str = str(created_at)
+
+                transcript_snippet = (rec.get("transcript") or "")[:50].replace("\n", " ")
+                if len(rec.get("transcript") or "") > 50:
+                    transcript_snippet += "..."
+
+                with st.expander(f"[{created_str}] {transcript_snippet}"):
+                    st.write(f"**{L['transcript_text']}:** {rec.get('transcript') or 'N/A'}")
+                    st.caption(
+                        f"**Size:** {rec.get('size')} bytes | **File:** {rec.get('audio_filename')}"
+                    )
+
+                    col_p, col_r, col_d = st.columns([2, 1, 1])
+
+                    if col_p.button(L["playback"], key=f"play_{rec_id}"):
+                        try:
+                            b, info = get_audio_bytes_local(rec_id)
+                            mime = info.get("mime_type", "audio/webm")
+                            st.audio(b, format=mime)
+                        except Exception as e:
+                            st.error(f"{L['gcs_playback_fail']}: {e}")
+
+                    if col_r.button(L["retranscribe"], key=f"re_{rec_id}"):
+                        if st.session_state.openai_client is None:
+                            st.error(L["openai_missing"])
+                        else:
+                            with st.spinner(L["transcribing"]):
+                                try:
+                                    b, info = get_audio_bytes_local(rec_id)
+                                    mime = info.get("mime_type", "audio/webm")
+                                    new_text = transcribe_bytes_with_whisper(
+                                        b, mime, lang_code=st.session_state.language
+                                    )
+                                    records = load_voice_records()
+                                    for r in records:
+                                        if r["id"] == rec_id:
+                                            r["transcript"] = new_text
+                                            break
+                                    save_voice_records(records)
+                                    st.success(L["retranscribe"] + " " + L["saved_success"])
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"{L['error']} {e}")
+
+                    if col_d.button(L["delete"], key=f"del_{rec_id}"):
+                        if st.session_state.get(f"confirm_del_{rec_id}", False):
+                            ok = delete_audio_record_local(rec_id)
+                            if ok:
+                                st.success(L["delete_success"])
+                            else:
+                                st.error(L["delete_fail"])
+                            st.session_state[f"confirm_del_{rec_id}"] = False
+                            st.rerun()
+                        else:
+                            st.session_state[f"confirm_del_{rec_id}"] = True
+                            st.warning(L["delete_confirm_rec"])
+
+# -------------------- Simulator Tab --------------------
+elif feature_selection == L["simulator_tab"]:
+    st.header(L["simulator_header"])
+    st.markdown(L["simulator_desc"])
+
+    current_lang = st.session_state.language
+    L = LANG[current_lang]  # 다시 L 업데이트
+
+    # =========================
+    # 0. 전체 이력 삭제
+    # =========================
+    col_del, _ = st.columns([1, 4])
+    with col_del:
+        if st.button(L["delete_history_button"], key="trigger_delete_hist"):
+            st.session_state.show_delete_confirm = True
+
+    if st.session_state.show_delete_confirm:
+        with st.container():
+            st.warning(L["delete_confirm_message"])
+            c_yes, c_no = st.columns(2)
+            if c_yes.button(L["delete_confirm_yes"], key="confirm_del_yes"):
+                with st.spinner(L["deleting_history_progress"]):
+                    delete_all_history_local()
+                    st.session_state.simulator_messages = []
+                    st.session_state.simulator_memory.clear()
+                    st.session_state.show_delete_confirm = False
+                    st.session_state.is_chat_ended = False
+                    st.session_state.sim_stage = "WAIT_FIRST_QUERY"
+                    st.session_state.customer_attachment_file = None  # 첨부 파일 초기화
+                    st.session_state.sim_attachment_context_for_llm = ""  # 컨텍스트 초기화
+                    st.session_state.agent_attachment_file = None  # 에이전트 첨부 파일 초기화
+                    st.success(L["delete_success"])
+                st.rerun()
+            if c_no.button(L["delete_confirm_no"], key="confirm_del_no"):
+                st.session_state.show_delete_confirm = False
+
+    # =========================
+    # 1. 이전 이력 로드 (기존 로직 유지)
+    # =========================
+    with st.expander(L["history_expander_title"]):
+        histories = load_simulation_histories_local(current_lang)
+        search_query = st.text_input(L["search_history_label"], key="sim_hist_search")
+
+        today = datetime.now().date()
+        dr = st.date_input(
+            L["date_range_label"],
+            value=[today - timedelta(days=7), today],
+            key="sim_hist_date_range",
+        )
+
+        filtered = []
+        if histories:
+            if isinstance(dr, list) and len(dr) == 2:
+                start_date = min(dr)
+                end_date = max(dr)
+            else:
+                start_date = datetime.min.date()
+                end_date = datetime.max.date()
+
+            for h in histories:
+                ok_search = True
+                if search_query:
+                    q = search_query.lower()
+                    text = (h["initial_query"] + " " + h["customer_type"]).lower()
+                    if q not in text:
+                        ok_search = False
+
+                ok_date = True
+                ts = h.get("timestamp")
+                if ts:
+                    try:
+                        d = datetime.fromisoformat(ts).date()
+                        if not (start_date <= d <= end_date):
+                            ok_date = False
+                    except Exception:
+                        pass
+
+                if ok_search and ok_date:
+                    filtered.append(h)
+
+        if filtered:
+            def _label(h):
+                try:
+                    t = datetime.fromisoformat(h["timestamp"])
+                    t_str = t.strftime("%m-%d %H:%M")
+                except Exception:
+                    t_str = h.get("timestamp", "")
+                q = h["initial_query"][:30].replace("\n", " ")
+                # 첨부 파일 여부 표시 추가
+                attachment_icon = "📎" if h.get("attachment_context") else ""
+                return f"[{t_str}] {attachment_icon} {h['customer_type']} - {q}..."
+
+
+            options_map = {_label(h): h for h in filtered}
+            sel_key = st.selectbox(L["history_selectbox_label"], options=list(options_map.keys()))
+            if st.button(L["history_load_button"], key="load_hist_btn"):
+                h = options_map[sel_key]
+                st.session_state.customer_query_text_area = h["initial_query"]
+                st.session_state.simulator_messages = h["messages"]
+                st.session_state.initial_advice_provided = True
+                st.session_state.is_chat_ended = h.get("is_chat_ended", False)
+                st.session_state.sim_attachment_context_for_llm = h.get("attachment_context", "")  # 컨텍스트 로드
+                st.session_state.customer_attachment_file = None  # 로드된 이력에는 파일 객체 대신 컨텍스트 문자열만 사용
+                st.session_state.agent_attachment_file = None  # 에이전트 첨부 파일 초기화
+
+                # 상태 복원
+                if st.session_state.is_chat_ended:
+                    st.session_state.sim_stage = "CLOSING"
+                else:
+                    last_role = h["messages"][-1]["role"] if h["messages"] else None
+                    if last_role == "agent_response":
+                        st.session_state.sim_stage = "CUSTOMER_TURN"
+                    elif last_role == "customer_rebuttal":
+                        st.session_state.sim_stage = "AGENT_TURN"
+                    elif last_role == "supervisor" and h["messages"][-1]["content"] == L["customer_closing_confirm"]:
+                        st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
+                    else:
+                        st.session_state.sim_stage = "AGENT_TURN"
+
+                st.session_state.simulator_memory.clear()  # 메모리 초기화
+                st.rerun()
+        else:
+            st.info(L["no_history_found"])
+
+    if st.session_state.sim_stage not in ["WAIT_FIRST_QUERY", "CLOSING", "idle"]:
+        elapsed_placeholder = st.empty()
+
+        if st.session_state.start_time is not None:
+            # 실시간 업데이트를 위해 페이지 로드 시마다 현재 시간 계산
+            elapsed_time = datetime.now() - st.session_state.start_time
+            total_seconds = elapsed_time.total_seconds()
+
+            # 시간 형식 포맷팅
+            minutes = int(total_seconds // 60)
+            seconds = int(total_seconds % 60)
+            time_str = f"{minutes:02d}:{seconds:02d}"
+
+            # 경고 기준
+            if total_seconds > 900:  # 15분
+                delta_str = L["timer_info_risk"]
+                delta_color = "inverse"
+            elif total_seconds > 600:  # 10분
+                delta_str = L["timer_info_warn"]
+                delta_color = "off"
+            else:
+                delta_str = L["timer_info_ok"]
+                delta_color = "normal"
+
+            elapsed_placeholder.metric(
+                L["timer_metric"],
+                time_str,
+                delta=delta_str,
+                delta_color=delta_color
+            )
+
+            # 타이머 업데이트를 위해 강제 재실행 (10분마다)
+            if seconds % 900 == 0 and total_seconds < 1000:
+                time.sleep(1)
+                st.rerun()  # 시뮬레이터가 멈춰있지 않을 때만 재실행 유도
+
+        st.markdown("---")
+
+        # =========================
+        # AHT 타이머 (화면 최상단)
+        # =========================
+        if st.session_state.sim_stage not in ["WAIT_FIRST_QUERY", "CLOSING", "idle"]:
+            col_timer, _ = st.columns([1, 4])
+
+            # start_time이 있을 때만 계산 및 표시
+            if st.session_state.start_time is not None:
+                # 현재 시간 계산
+                elapsed_time = datetime.now() - st.session_state.start_time
+                total_seconds = elapsed_time.total_seconds()
+
+                # 시간 형식 포맷팅
+                minutes = int(total_seconds // 60)
+                seconds = int(total_seconds % 60)
+                time_str = f"{minutes:02d}:{seconds:02d}"
+
+                # 경고 기준
+                if total_seconds > 900:  # 15분
+                    delta_str = L["timer_info_risk"]
+                    delta_color = "inverse"
+                elif total_seconds > 600:  # 10분
+                    delta_str = L["timer_info_warn"]
+                    delta_color = "off"
+                else:
+                    delta_str = L["timer_info_ok"]
+                    delta_color = "normal"
+
+                with col_timer:
+                    st.metric(
+                        L["timer_metric"],
+                        time_str,
+                        delta=delta_str,
+                        delta_color=delta_color
+                    )
+
+            st.markdown("---")
+
+    # =========================
+    # 2. LLM 준비 체크 & 채팅 종료 상태
+    # =========================
+    if not st.session_state.is_llm_ready:
+        st.warning(L["simulation_no_key_warning"])
+
+    if st.session_state.sim_stage == "CLOSING":
+        st.success(L["survey_sent_confirm"])
+        st.info(L["new_simulation_ready"])
+        if st.button(L["new_simulation_button"], key="new_simulation_btn"):
+            # 초기화 로직
+            st.session_state.simulator_messages = []
+            st.session_state.simulator_memory.clear()
+            st.session_state.initial_advice_provided = False
+            st.session_state.is_chat_ended = False
+            st.session_state.agent_response_area_text = ""
+            st.session_state.customer_query_text_area = ""
+            st.session_state.last_transcript = ""
+            st.session_state.sim_audio_bytes = None
+            st.session_state.sim_stage = "WAIT_FIRST_QUERY"
+            st.session_state.customer_attachment_file = None  # 첨부 파일 초기화
+            st.session_state.sim_attachment_context_for_llm = ""  # 컨텍스트 초기화
+            st.session_state.agent_attachment_file = None  # 에이전트 첨부 파일 초기화
+            st.rerun()
+        st.stop()
+
+    # ========================================
+    # 3. 초기 문의 입력 (WAIT_FIRST_QUERY)
+    # ========================================
+    if st.session_state.sim_stage == "WAIT_FIRST_QUERY":
+        customer_query = st.text_area(
+            L["customer_query_label"],
+            key="customer_query_text_area",
+            height=150,
+            placeholder=L["initial_query_sample"],
+        )
+
+        # --- 고객 첨부 파일 업로더 ---
+        # 파일 업로더는 파일 객체를 직접 다루기 때문에, Streamlit의 기본 기능을 사용합니다.
+        attachment_files = st.file_uploader(
+            L["attachment_label"],
+            type=["png", "jpg", "jpeg", "pdf"],  # 스크린샷 및 관련 문서 타입
+            key="customer_attachment_file_uploader",
+            help=L["attachment_placeholder"],
+            # ⭐ 다중 파일 업로드 허용
+            accept_multiple_files=True
+        )
+
+        if attachment_files:
+            # 파일 리스트를 저장
+            st.session_state.customer_attachment_file = [
+                {
+                    "name": f.name,
+                    "type": f.type,
+                    "size": f.size,
+                }
+                for f in attachment_files
+            ]
+        else:
+            st.session_state.customer_attachment_file = None
+
+        customer_email = st.text_input(
+            L["customer_email_label"],
+            key="customer_email",
+        )
+        customer_phone = st.text_input(
+            L["customer_phone_label"],
+            key="customer_phone",
+        )
+
+        customer_type_options = L["customer_type_options"]
+        default_idx = 1 if len(customer_type_options) > 1 else 0
+        customer_type_display = st.selectbox(
+            L["customer_type_label"],
+            customer_type_options,
+            index=default_idx,
+            key="customer_type_sim_select",
+        )
+
+        if st.button(L["button_simulate"], key="btn_simulate_initial"):
+            if not customer_query.strip():
+                st.warning(L["simulation_warning_query"])
+                st.stop()
+
+            # 초기 상태 리셋
+            st.session_state.simulator_messages = []
+            st.session_state.simulator_memory.clear()
+            st.session_state.is_chat_ended = False
+            st.session_state.initial_advice_provided = False
+            st.session_state.is_solution_provided = False
+            st.session_state.language_transfer_requested = False
+            st.session_state.transfer_summary_text = ""
+            st.session_state.start_time = None
+            st.session_state.sim_attachment_context_for_llm = ""
+            st.session_state.agent_attachment_file = None
+
+            # 1) 고객 첫 메시지 추가
+            st.session_state.simulator_messages.append(
+                {"role": "customer", "content": customer_query}
+            )
+
+            contact_info_block = ""
+            if customer_email or customer_phone:
+                contact_info_block = (
+                    f"\n\n[Customer contact info for reference (DO NOT use these in your reply draft!)]"
+                    f"\n- Email: {customer_email or 'N/A'}"
+                    f"\n- Phone: {customer_phone or 'N/A'}"
+                )
+
+            # --- 첨부 파일 컨텍스트 생성 (다중 파일 처리) ---
+            attachment_block = ""
+            if st.session_state.customer_attachment_file and len(st.session_state.customer_attachment_file) > 0:
+                file_count = len(st.session_state.customer_attachment_file)
+                # LLM 프롬프트에 사용할 파일 목록 문자열 생성
+                file_names = ", ".join([f['name'] for f in st.session_state.customer_attachment_file])
+
+                attachment_status_msg = L["attachment_status_llm"].format(
+                    filename=file_names, count=file_count
+                )
+                attachment_block = f"\n\n[ATTACHMENT STATUS]\n{attachment_status_msg}\n"
+                st.session_state.sim_attachment_context_for_llm = attachment_block  # 세션에 저장
+
+                # 고객 메시지에 첨부 파일 정보 추가 (화면에 표시용)
+                display_list = ", ".join([f['name'] for f in st.session_state.customer_attachment_file])
+                st.session_state.simulator_messages[-1]["content"] += (
+                    f"\n\n📎 *총 {file_count}개의 파일 첨부됨: {display_list}*"
+                )
+            # ---------------------------
+
+            current_lang_key = st.session_state.language
+            lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+
+            # 2) Supervisor 가이드 + 초안 생성 (첨부 파일 컨텍스트를 프롬프트에 포함)
+            initial_prompt = f"""
+{st.session_state.sim_attachment_context_for_llm}
+You are an AI Customer Support Supervisor. Your role is to analyze the following customer inquiry
+from a **{customer_type_display}** and provide:
+
+1) A detailed **response guideline for the human agent** (step-by-step).
+2) A **ready-to-send draft reply** in {lang_name}.
+
+[FORMAT]
+- Use the exact markdown headers:
+  - "### {L['simulation_advice_header']}"
+  - "### {L['simulation_draft_header']}"
+
+[CRITICAL GUIDELINE RULES]
+1. **Initial Information Collection (Req 3):** The first step in the guideline MUST be to request the necessary initial diagnostic information (e.g., device compatibility, local status/location, order number) BEFORE attempting to troubleshoot or solve the problem.
+2. **Empathy for Difficult Customers (Req 5):** If the customer type is 'Difficult Customer' or 'Highly Dissatisfied Customer', the guideline MUST emphasize extreme politeness, empathy, and apologies, even if the policy (e.g., no refund) must be enforced.
+3. **24-48 Hour Follow-up (Req 6):** If the issue cannot be solved immediately or requires confirmation from a local partner/supervisor, the guideline MUST state the procedure:
+   - Acknowledge the issue.
+   - Inform the customer they will receive a definite answer within 24 or 48 hours.
+   - Request the customer's email or phone number for follow-up contact.
+
+Customer Inquiry:
+{customer_query}
+{contact_info_block}
+"""
+
+            if not st.session_state.is_llm_ready:
+                mock_text = (
+                    f"### {L['simulation_advice_header']}\n\n"
+                    f"- (Mock) {customer_type_display} 유형 고객 응대 가이드입니다. (요청 3, 5, 6 반영)\n\n"
+                    f"### {L['simulation_draft_header']}\n\n"
+                    f"(Mock) 에이전트 응대 초안이 여기에 들어갑니다。\n\n"
+                )
+                if attachment_block:
+                    # 다중 파일 처리된 컨텍스트를 모킹 텍스트에 포함
+                    mock_text = f"첨부 파일 정보:\n{attachment_block.replace('[ATTACHMENT STATUS]', '').strip()}\n\n" + mock_text
+                st.session_state.simulator_messages.append(
+                    {"role": "supervisor", "content": mock_text}
+                )
+            else:
+                with st.spinner(L["response_generating"]):
+                    try:
+                        text = run_llm(initial_prompt)
+                        st.session_state.simulator_messages.append(
+                            {"role": "supervisor", "content": text}
+                        )
+                    except Exception as e:
+                        st.error(f"AI 조언 생성 중 오류 발생: {e}")
+
+            st.session_state.initial_advice_provided = True
+            save_simulation_history_local(
+                customer_query,
+                customer_type_display,
+                st.session_state.simulator_messages,
+                is_chat_ended=False,
+                attachment_context=st.session_state.sim_attachment_context_for_llm,  # 컨텍스트 저장
+            )
+            st.session_state.sim_stage = "AGENT_TURN"
+            st.rerun()
+
+    # =========================
+    # 4. 대화 로그 표시 (공통)
+    # =========================
+    for idx, msg in enumerate(st.session_state.simulator_messages):
+        role = msg["role"]
+        content = msg["content"]
+        avatar = {"customer": "🙋", "supervisor": "🤖", "agent_response": "🧑‍💻", "customer_rebuttal": "✨",
+                  "system_end": "📌"}.get(role, "💬")
+        tts_role = "customer" if role.startswith("customer") or role == "customer_rebuttal" else (
+            "agent" if role == "agent_response" else "supervisor")
+
+        with st.chat_message(role, avatar=avatar):
+            st.markdown(content)
+            # 인덱스를 render_tts_button에 전달하여 고유 키 생성에 사용
+            render_tts_button(content, st.session_state.language, role=tts_role, prefix=f"{role}_", index=idx)
+
+        # 이관 요약 표시 (이관 후에만)
+        if st.session_state.transfer_summary_text:
+            st.markdown("---")
+            st.markdown(f"**{L['transfer_summary_header']}**")
+            st.info(L["transfer_summary_intro"])
+            st.markdown(st.session_state.transfer_summary_text)
+            st.markdown("---")
+
+    # =========================
+    # 5. 에이전트 입력 단계 (AGENT_TURN)
+    # =========================
+    if st.session_state.sim_stage == "AGENT_TURN":
+        st.markdown(f"### {L['agent_response_header']}")
+
+        if st.session_state.language_transfer_requested:
+            st.error("🚨 고객이 언어 전환(이관)을 요청했습니다. 즉시 응대하거나 이관을 진행하세요.")
+
+        # --- 고객 첨부 파일 정보 재표시 ---
+        if st.session_state.sim_attachment_context_for_llm:
+            st.info(
+                f"📎 최초 문의 시 첨부된 파일 정보:\n\n{st.session_state.sim_attachment_context_for_llm.replace('[ATTACHMENT STATUS]', '').strip()}")
+
+        # --- 에이전트 첨부 파일 업로더 (다중 파일 처리) ---
+        agent_attachment_files = st.file_uploader(
+            L["agent_attachment_label"],
+            type=["png", "jpg", "jpeg", "pdf"],
+            key="agent_attachment_file_uploader",
+            help=L["agent_attachment_placeholder"],
+            # ⭐ 다중 파일 업로드 허용
+            accept_multiple_files=True
+        )
+
+        if agent_attachment_files:
+            # 파일 리스트를 저장
+            st.session_state.agent_attachment_file = [
+                {
+                    "name": f.name,
+                    "type": f.type,
+                    "size": f.size,
+                }
+                for f in agent_attachment_files
+            ]
+        else:
+            st.session_state.agent_attachment_file = None
+
+        col_mic, col_text = st.columns([1, 2])
+
+        # --- 마이크 녹음 ---
+        with col_mic:
+            mic_audio = mic_recorder(
+                start_prompt=L["button_mic_input"],
+                stop_prompt="⏹️ 녹음 종료",
+                just_once=False,
+                format="wav",
+                use_container_width=True,
+                key="sim_mic_recorder",
+            )
+
+        if mic_audio and mic_audio.get("bytes"):
+            st.session_state.sim_audio_bytes = mic_audio["bytes"]
+            st.info("✅ 녹음 완료! 아래 전사 버튼을 눌러 텍스트로 변환하세요.")
+
+        if st.session_state.sim_audio_bytes:
+            st.audio(st.session_state.sim_audio_bytes, format="audio/wav")
+
+        col_tr, _ = st.columns([1, 2])
+        if col_tr.button(L["transcribe_btn"], key="sim_transcribe_btn"):
+            if st.session_state.sim_audio_bytes is None:
+                st.warning("먼저 마이크로 녹음을 완료하세요.")
+            elif st.session_state.openai_client is None:
+                st.error(L["whisper_client_error"])
+            else:
+                with st.spinner(L["whisper_processing"]):
+                    transcribed_text = transcribe_bytes_with_whisper(
+                        st.session_state.sim_audio_bytes,
+                        "audio/wav",
+                        lang_code=st.session_state.language,
+                    )
+                    if transcribed_text.startswith("❌"):
+                        st.error(transcribed_text)
+                        st.session_state.last_transcript = ""
+                    else:
+                        st.session_state.last_transcript = transcribed_text.strip()
+                        # 전사된 텍스트를 입력창에 반영
+                        st.session_state.agent_response_area_text = transcribed_text.strip()
+                        snippet = transcribed_text[:50].replace("\n", " ")
+                        if len(transcribed_text) > 50:
+                            snippet += "..."
+                        st.success(L["whisper_success"] + f"\n\n**인식 내용:** *{snippet}*")
+                        st.rerun()  # 텍스트 반영을 위해 UI 재실행
+
+
+        def update_agent_response():
+            st.session_state.agent_response_area_text = st.session_state.agent_response_input_box_widget
+
+
+        col_text, col_button = st.columns([4, 1])
+
+        with col_text:
+            st.text_area(
+                L["agent_response_placeholder"],
+                value=st.session_state.agent_response_area_text,
+                key="agent_response_input_box_widget",
+                on_change=update_agent_response,
+            )
+
+            # 솔루션 제공 체크박스
+            st.session_state.is_solution_provided = st.checkbox(
+                L["solution_check_label"],
+                value=st.session_state.is_solution_provided,
+                key="solution_checkbox_widget",
+            )
+
+        with col_button:
+            send_clicked = st.button(L["send_response_button"], key="send_agent_response_btn")
+
+        if send_clicked:
+            agent_response = st.session_state.agent_response_input_box_widget.strip()
+
+            if not agent_response:
+                st.warning(L["empty_response_warning"])
+                st.stop()
+
+            # --- 에이전트 첨부 파일 처리 (다중 파일 처리) ---
+            final_response_content = agent_response
+            if st.session_state.agent_attachment_file and len(st.session_state.agent_attachment_file) > 0:
+                file_count = len(st.session_state.agent_attachment_file)
+                file_names = ", ".join([f['name'] for f in st.session_state.agent_attachment_file])
+
+                attachment_msg = L["agent_attachment_status"].format(
+                    filename=file_names, count=file_count
+                )
+                final_response_content = f"{agent_response}\n\n---\n{attachment_msg}"
+
+            st.session_state.agent_response_area_text = final_response_content  # 최종값 반영
+
+            # 로그 업데이트
+            st.session_state.simulator_messages.append(
+                {"role": "agent_response", "content": final_response_content}
+            )
+
+            # 입력창/오디오/첨부 파일 초기화
+            st.session_state.agent_response_area_text = ""
+            st.session_state.sim_audio_bytes = None
+            st.session_state.agent_attachment_file = None  # 첨부 파일 초기화
+            st.session_state.language_transfer_requested = False
+
+            # 다음 단계: 고객 반응 생성 요청
+            st.session_state.sim_stage = "CUSTOMER_TURN"
+            st.rerun()
+
+        # --- 언어 이관 버튼 ---
+        st.markdown("---")
+        st.markdown(f"**{L['transfer_header']}**")
+        transfer_cols = st.columns(len(LANG) - 1)
+
+        languages = list(LANG.keys())
+        languages.remove(current_lang)
+
+
+        def transfer_session(target_lang: str, current_messages: List[Dict[str, str]]):
+            """언어 이관 시스템 메시지를 추가하고 세션 언어를 변경합니다."""
+
+            # API 키 체크는 run_llm 내부에서 처리되지만, 명시적으로 Gemini 키를 요구함
+            if not get_api_key("gemini"):
+                st.error(LANG[current_lang]["simulation_no_key_warning"].replace('API Key', 'Gemini API Key'))
+                st.stop()
+                return
+
+            # AHT 타이머 중지
+            st.session_state.start_time = None
+
+            # 1. 로딩 시작 (시간 양해 메시지 시뮬레이션)
+            with st.spinner(L["transfer_loading"]):
+                # 실제 대기 시간 5~10초 (3~10분 시뮬레이션)
+                time.sleep(np.random.uniform(5, 10))
+
+                # 2. 대화 기록을 번역할 텍스트로 가공
+                history_text = ""
+                for msg in current_messages:
+                    role = "Customer" if msg["role"].startswith("customer") or msg[
+                        "role"] == "initial_query" else "Agent"
+                    if msg["role"] in ["initial_query", "customer_rebuttal", "agent_response",
+                                       "customer_closing_response"]:
+                        history_text += f"{role}: {msg['content']}\n"
+
+                # 3. LLM 번역 실행 (수정된 번역 함수 사용)
+                translated_summary = translate_text_with_llm(history_text, target_lang, st.session_state.language)
+
+                if translated_summary.startswith("❌"):
+                    st.session_state.transfer_summary_text = translated_summary
+                    st.rerun()
+                    return
+
+                # 4. 세션 상태 업데이트
+                st.session_state.transfer_summary_text = translated_summary
+
+                # 시스템 메시지 추가 (이관 알림)
+                target_lang_name = {"ko": "한국어", "en": "English", "ja": "Japanese"}.get(target_lang,
+                                                                                        target_lang.capitalize())
+                system_msg = L["transfer_system_msg"].format(target_lang=target_lang_name)
+                st.session_state.simulator_messages.append(
+                    {"role": "system_end", "content": system_msg}
+                )
+
+                # 기존 언어 저장
+                old_lang = st.session_state.language
+                st.session_state.language = target_lang  # 언어 변경
+                st.session_state.is_solution_provided = False  # 새로운 응대를 위해 플래그 리셋
+                st.session_state.language_transfer_requested = False  # 플래그 리셋
+                st.session_state.sim_stage = "AGENT_TURN"
+
+                # 5. 이력 저장
+                customer_type_display = st.session_state.get("customer_type_sim_select", "")
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area,
+                    customer_type_display + f" (Transferred from {old_lang} to {target_lang})",
+                    st.session_state.simulator_messages,
+                    is_chat_ended=False,
+                    attachment_context=st.session_state.sim_attachment_context_for_llm,  # 컨텍스트 저장
+                )
+
+            # 6. UI 재실행 (언어 변경 적용)
+            st.success(f"✅ {LANG[target_lang]['transfer_summary_header']}가 준비되었습니다. 새로운 응대를 시작하세요.")
+            st.rerun()
+
+
+        for i, target_lang in enumerate(languages):
+            button_label_key = f"transfer_to_{target_lang}"
+            button_label = L.get(button_label_key, f"Transfer to {target_lang.capitalize()} Team")
+
+            if transfer_cols[i].button(button_label, key=f"btn_transfer_{target_lang}"):
+                transfer_session(target_lang, st.session_state.simulator_messages)
+
+        st.markdown("---")
+
+    # --- Language Transfer Buttons End ---
+
+    # =========================
+    # 6. 고객 반응 생성 단계 (CUSTOMER_TURN)
+    #    - 고객 반응 생성 후: 감사 표현 시 -> WAIT_CLOSING_CONFIRMATION_FROM_AGENT로, 아니면 -> AGENT_TURN으로
+    # =========================
+    if st.session_state.sim_stage == "CUSTOMER_TURN":
+        st.info("에이전트 응답 전송 완료. 고객 반응 생성이 필요합니다.")
+
+        # AHT 타이머 시작
+        if st.session_state.start_time is None and len(st.session_state.simulator_messages) >= 2:
+            st.session_state.start_time = datetime.now()
+
+        if st.button(L["customer_generate_response_button"], key="sim_next_rebuttal_btn"):
+            if not st.session_state.is_llm_ready:
+                st.warning(L["simulation_no_key_warning"])
+                st.stop()
+
+            with st.spinner(L["response_generating"]):  # 로딩 표시
+                reaction = generate_customer_reaction(st.session_state.language)
+
+            if reaction.startswith("❌"):
+                st.error(reaction)
+                st.stop()
+
+            st.session_state.simulator_messages.append(
+                {"role": "customer_rebuttal", "content": reaction}
+            )
+
+            # 언어 이관 요청 키워드 확인
+            lang_request_keywords = ["english", "japanese", "한국어", "英語", "日本語", "korean"]
+            if any(k in reaction.lower() for k in lang_request_keywords):
+                st.session_state.language_transfer_requested = True
+
+            # 종료 의사 판별
+            reaction_lower = reaction.lower()
+            appreciation_signals = ["감사", "thank", "ありがとう", "noted"]
+            has_appreciation = any(k in reaction_lower for k in appreciation_signals)
+
+            is_additional_inquiry_signal = L['customer_has_additional_inquiries'] in reaction
+
+            customer_type_display = st.session_state.get("customer_type_sim_select", "")
+
+            # --- 핵심 로직 수정 ---
+            # 1. 솔루션 제공 O, 고객 감사 O -> 종료 확인 단계로 (WAIT_CLOSING_CONFIRMATION_FROM_AGENT)
+            if st.session_state.is_solution_provided and has_appreciation and not is_additional_inquiry_signal:
+                st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
+                st.session_state.is_solution_provided = False  # 종료 단계 진입 후 플래그 리셋
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area, customer_type_display,
+                    st.session_state.simulator_messages, is_chat_ended=False,
+                    attachment_context=st.session_state.sim_attachment_context_for_llm,
+                )
+            # 2. 솔루션 제공 X, 고객 반응 O (또는 추가 문의 O) -> 에이전트 턴 유지 (AGENT_TURN)
+            else:
+                st.session_state.sim_stage = "AGENT_TURN"
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area, customer_type_display,
+                    st.session_state.simulator_messages, is_chat_ended=False,
+                    attachment_context=st.session_state.sim_attachment_context_for_llm,
+                )
+
+            st.rerun()
+
+    # =========================
+    # 7. 종료 확인 메시지 대기 (WAIT_CLOSING_CONFIRMATION_FROM_AGENT)
+    #    - 고객이 감사 인사를 했으므로, 에이전트가 종료 확인 메시지를 보내야 함
+    # =========================
+    if st.session_state.sim_stage == "WAIT_CLOSING_CONFIRMATION_FROM_AGENT":
+        st.success("고객이 솔루션에 긍정적으로 반응했습니다. 추가 문의 여부를 확인해 주세요.")
+
+        # 에이전트가 "추가 문의 여부 확인 메시지"를 보내는 버튼
+        if st.button(L["send_closing_confirm_button"], key="btn_send_closing_confirm"):
+            closing_msg = L["customer_closing_confirm"]
+
+            # 에이전트 응답으로 로그 기록
+            st.session_state.simulator_messages.append(
+                {"role": "agent_response", "content": closing_msg}
+            )
+
+            # 다음 단계: 고객의 최종 답변 대기
+            st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
+
+            customer_type_display = st.session_state.get("customer_type_sim_select", "")
+            save_simulation_history_local(
+                st.session_state.customer_query_text_area, customer_type_display,
+                st.session_state.simulator_messages, is_chat_ended=False,
+                attachment_context=st.session_state.sim_attachment_context_for_llm,
+            )
+            st.rerun()
+
+    # =========================
+    # 8. 고객 최종 응답 생성 및 처리 (WAIT_CUSTOMER_CLOSING_RESPONSE)
+    #    - 고객 답변에 따라 8A(종료) 또는 8B(추가 문의) 처리
+    # =========================
+    if st.session_state.sim_stage == "WAIT_CUSTOMER_CLOSING_RESPONSE":
+        st.info("에이전트가 추가 문의 여부를 확인했습니다. 고객의 최종 답변을 생성합니다.")
+
+        # 고객 답변 자동 생성
+        if st.button(L["customer_generate_response_button"], key="btn_generate_final_response"):
+            if not st.session_state.is_llm_ready:
+                st.warning(L["simulation_no_key_warning"])
+                st.stop()
+
+            with st.spinner(L["response_generating"]):
+                # 고객의 최종 답변 생성
+                final_customer_reaction = generate_customer_closing_response(st.session_state.language)
+
+            customer_type_display = st.session_state.get("customer_type_sim_select", "")
+
+            # 로그 기록
+            st.session_state.simulator_messages.append(
+                {"role": "customer_rebuttal", "content": final_customer_reaction}
+            )
+
+            # (A) "없습니다. 감사합니다" 경로
+            if L['customer_no_more_inquiries'] in final_customer_reaction:
+                st.session_state.sim_stage = "FINAL_CLOSING_ACTION"
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area, customer_type_display,
+                    st.session_state.simulator_messages, is_chat_ended=False,
+                    attachment_context=st.session_state.sim_attachment_context_for_llm,
+                )
+            # (B) "추가 문의 사항도 있습니다" 경로
+            elif L['customer_has_additional_inquiries'] in final_customer_reaction:
+                st.session_state.sim_stage = "AGENT_TURN"  # 다시 에이전트 응답 단계로
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area, customer_type_display,
+                    st.session_state.simulator_messages, is_chat_ended=False,
+                    attachment_context=st.session_state.sim_attachment_context_for_llm,
+                )
+
+            st.rerun()
+
+    # =========================
+    # 9. 최종 종료 행동 (FINAL_CLOSING_ACTION)
+    # =========================
+    if st.session_state.sim_stage == "FINAL_CLOSING_ACTION":
+        st.success("고객이 더 이상 문의할 사항이 없다고 확인했습니다.")
+
+        if st.button(L["sim_end_chat_button"], key="btn_final_end_chat"):
+            # AHT 타이머 정지
+            st.session_state.start_time = None
+
+            end_msg = L["prompt_survey"]
+            st.session_state.simulator_messages.append(
+                {"role": "system_end", "content": end_msg}
+            )
+            st.session_state.is_chat_ended = True
+            st.session_state.sim_stage = "CLOSING"
+
+            customer_type_display = st.session_state.get("customer_type_sim_select", "")
+            save_simulation_history_local(
+                st.session_state.customer_query_text_area, customer_type_display,
+                st.session_state.simulator_messages, is_chat_ended=True,
+                attachment_context=st.session_state.sim_attachment_context_for_llm,
+            )
+
+            st.rerun()
+
+# -------------------- RAG Tab --------------------
+elif feature_selection == L["rag_tab"]:
+    st.header(L["rag_header"])
+    st.markdown(L["rag_desc"])
+
+    if not st.session_state.is_rag_ready or st.session_state.rag_vectorstore is None:
+        if st.session_state.is_llm_ready:
+            with st.spinner(L["firestore_loading"]):
+                # RAG 인덱스 로드 시에도 임베딩 함수를 사용하므로, 키 유효성 체크 필요
+                vs = load_rag_index()
+                if vs is not None:
+                    st.session_state.rag_vectorstore = vs
+                    st.session_state.is_rag_ready = True
+                else:
+                    st.info(L["firestore_no_index"])
+        else:
+            st.warning(L["warning_rag_not_ready"])
+
+    if st.session_state.is_rag_ready and st.session_state.rag_vectorstore is not None:
+        # 기존 대화 로그 표시
+        for m in st.session_state.rag_messages:
+            with st.chat_message(m["role"]):
+                st.markdown(m["content"])
+
+        user_q = st.chat_input(L["rag_input_placeholder"])
+        if user_q:
+            st.session_state.rag_messages.append({"role": "user", "content": user_q})
+            with st.chat_message("user"):
+                st.markdown(user_q)
+            with st.chat_message("assistant"):
+                with st.spinner(L["response_generating"]):
+                    try:
+                        ans = rag_answer(user_q, st.session_state.rag_vectorstore, st.session_state.language)
+                        st.markdown(ans)
+                        st.session_state.rag_messages.append({"role": "assistant", "content": ans})
+                    except Exception as e:
+                        st.error(f"챗봇 오류: {e}")
+                        msg = "오류 발생" if st.session_state.language == "ko" else "An error occurred"
+                        st.session_state.rag_messages.append({"role": "assistant", "content": msg})
+    else:
+        st.warning(L["warning_rag_not_ready"])
+
+# -------------------- Content Tab --------------------
+elif feature_selection == L["content_tab"]:
+    st.header(L["content_header"])
+    st.markdown(L["content_desc"])
+
+    if not st.session_state.is_llm_ready:
+        st.error(L["llm_error_init"])
+    else:
+        topic = st.text_input(L["topic_label"])
+        level_display = st.selectbox(L["level_label"], L["level_options"])
+        content_display = st.selectbox(L["content_type_label"], L["content_options"])
+
+        level_map = {
+            "초급": "Beginner",
+            "중급": "Intermediate",
+            "고급": "Advanced",
+            "Beginner": "Beginner",
+            "Intermediate": "Intermediate",
+            "Advanced": "Advanced",
+            "初級": "Beginner",
+            "中級": "Intermediate",
+            "上級": "Advanced",
+        }
+        content_map = {
+            "핵심 요약 노트": "summary",
+            "객관식 퀴즈 10문항": "quiz",
+            "실습 예제 아이디어": "example",
+            "Key Summary Note": "summary",
+            "10 MCQ Questions": "quiz",
+            "Practical Example Idea": "example",
+            "核心要約ノート": "summary",
+            "選択式クイズ10問": "quiz",
+            "実践例のアイデア": "example",
+        }
+
+        level = level_map.get(level_display, "Beginner")
+        content_type = content_map.get(content_display, "summary")
+
+        if st.button(L["button_generate"]):
+            if not topic.strip():
+                st.warning(L["warning_topic"])
+            else:
+                target_lang = {"ko": "Korean", "en": "English", "ja": "Japanese"}[st.session_state.language]
+
+                if content_type == "quiz":
+                    system_prompt = (
+                        "You are an expert quiz creator.\n"
+                        "Generate EXACTLY 10 multiple-choice questions.\n"
+                        "Return ONLY valid JSON wrapped inside ```json ... ```.\n"
+                        "JSON structure:\n"
+                        "{\n"
+                        '  \"quiz_questions\": [\n'
+                        "    {\n"
+                        '      \"question\": \"...\",\n'
+                        '      \"options\": [\"A\", \"B\", \"C\", \"D\"],\n'
+                        '      \"correct_index\": 0,\n'
+                        '      \"explanation\": \"...\"\n'
+                        "    }\n"
+                        "  ]\n"
+                        "}\n"
+                        f"The language of questions MUST be {target_lang}.\n"
+                    )
+                    user_msg = f"Topic: {topic} (level: {level})"
+                    with st.spinner("퀴즈 생성 중..."):
+                        try:
+                            resp = run_llm(system_prompt + "\n\n" + user_msg)
+                            # 단순 출력
+                            st.success(f"**{topic}** - {content_display}")
+                            st.code(resp, language="json")
+                        except Exception as e:
+                            st.error(f"Content Generation Error: {e}")
+                else:
+                    content_prompt = (
+                        f"You are a professional AI coach at the {level} level.\n"
+                        f"Generate clear and educational content in {target_lang}.\n"
+                        f"Content type: {content_type}.\n"
+                        f"Topic: {topic}\n"
+                    )
+                    with st.spinner("콘텐츠 생성 중..."):
+                        try:
+                            resp = run_llm(content_prompt)
+                            st.success(f"**{topic}** - {content_display}")
+                            st.markdown(resp)
+                        except Exception as e:
+                            st.error(f"Content Generation Error: {e}")
+
+# -------------------- LSTM Tab --------------------
+elif feature_selection == L["lstm_tab"]:
+    st.header(L["lstm_header"])
+    st.markdown(L["lstm_desc"])
+
+    if st.button(L["lstm_rerun_button"]):
+        st.rerun()
+
+    try:
+        data = load_or_train_lstm()
+        predicted_score = float(np.clip(data[-1] + np.random.uniform(-3, 5), 50, 100))
+
+        st.markdown("---")
+        st.subheader(L["lstm_result_header"])
+
+        col_score, col_chart = st.columns([1, 2])
+
+        with col_score:
+            suffix = "점" if st.session_state.language == "ko" else ""
+            st.metric(L["lstm_score_metric"], f"{predicted_score:.1f}{suffix}")
+            st.info(L["lstm_score_info"].format(predicted_score=predicted_score))
+
+        with col_chart:
+            fig, ax = plt.subplots(figsize=(8, 4))
+            ax.plot(data, label="Past Scores", marker="o")
+            ax.plot(len(data), predicted_score, marker="*", markersize=10)
+            ax.set_title(L["lstm_header"])
+            ax.set_xlabel("Time (attempts)")
+            ax.set_ylabel("Score (0-100)")
+            ax.legend()
+            st.pyplot(fig)
+    except Exception as e:
+        st.info(f"LSTM 기능 에러: {e}")
