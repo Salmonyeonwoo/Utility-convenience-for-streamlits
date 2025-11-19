@@ -1,49 +1,25 @@
 streamlit==1.38.0
-
-# LangChain (버전 제거, Cloud가 자동 설치)
-langchain
-langchain-community
-langchain-core
-langchain-google-genai
-google-generativeai
-langchain-openai
-anthropic
 openai
+google-generativeai
+anthropic
 groq
-
-
-# Vector Store
-faiss-cpu==1.8.0
-
-#RAG documents
-unstructured
-PyPDF2
-psutil
-paddlepaddle
-paddlenlp
-tensorflow
-keras
-
-#Adding Firestore Admin SDK
-firebase-admin
-# Docs / Parsing
-unstructured==0.14.9
-beautifulsoup4
-
-# ML & Analytics
-#Whisper AI 사용 위해 추가
 numpy
-pandas
 matplotlib
-bs4
-streamlit-mic-recorder
-streamlit-webrtc
-opencv-python-headless
 
-# Utilities
-google-cloud-firestore
-protobuf
+# RAG/LangChain Core
+
+langchain
+langchain-core
+langchain-community
+langchain-openai
+faiss-cpu
+pypdf
+
+# Text Splitter 모듈을 명확히 정의하여 ModuleNotFoundError 방지
+
+langchain-text-splitters
+
+UI & Utilities
+
+streamlit-mic-recorder==0.0.8
 requests
-tqdm
-markdown-it-py
-rich
