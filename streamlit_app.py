@@ -37,19 +37,21 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_community.embeddings import HuggingFaceEmbeddings  # NVIDIA/Claude/Groq fallback용
+
 # ⭐ 임베딩 다각화를 위한 임포트 추가 (필요 라이브러리: langchain-google-genai, langchain-nvidia-ai-endpoints)
 try:
     from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
     IS_GEMINI_EMBEDDING_AVAILABLE = True
 except ImportError:
     IS_GEMINI_EMBEDDING_AVAILABLE = False
 
 try:
     from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
+
     IS_NVIDIA_EMBEDDING_AVAILABLE = True
 except ImportError:
     IS_NVIDIA_EMBEDDING_AVAILABLE = False
-
 
 # ========================================
 # 0. 기본 경로/로컬 DB 설정
@@ -165,7 +167,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "tts_status_generating": "오디오 생성 중...",
         "tts_status_success": "✅ 오디오 재생 완료!",
         "tts_status_error": "❌ TTS 오류 발생",
-        "history_expander_title": "📝 이전 상담 이력 로드 (최근 10개)",
+        "history_expander_title": "📝 이전 상담 이력 로드 (최근 10건)",
         "initial_query_sample": "프랑스 파리에 도착했는데, 클룩에서 구매한 eSIM이 활성화가 안 됩니다...",
         "button_mic_input": "🎙 음성 입력",
         "prompt_customer_end": "고객님의 추가 문의 사항이 없어, 이 상담을 종료합니다。",
@@ -190,6 +192,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "deleting_history_progress": "이력 삭제 중...",
         "search_history_label": "이력 검색",
         "date_range_label": "날짜 범위 필터",
+        "history_search_button": "🔍 검색",  # ⭐ 추가: 검색 버튼 라벨
         "no_history_found": "검색 조건에 맞는 이력이 없습니다。",
         "customer_email_label": "고객 이메일 (선택)",
         "customer_phone_label": "고객 연락처 / 전화번호 (선택)",
@@ -253,7 +256,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "agent_attachment_status": "📎 에이전트가 **{filename}** 파일을 응답에 첨부했습니다. (파일 타입: {filetype})",
 
         # --- RAG 오류 메시지 추가 ---
-        "rag_embed_error_openai": "RAG 임베딩 실패: OpenAI API Key가 유효하지 않거나 설정되지 않았습니다.",
+        "rag_embed_error_openai": "RAG 임베딩 실패: OpenAI API Key가 유효하지 않거나 설정되지 않았습니다。",
         "rag_embed_error_gemini": "RAG 임베딩 실패: Gemini API Key가 유효하지 않거나 설정되지 않았습니다。",
         "rag_embed_error_nvidia": "RAG 임베딩 실패: NVIDIA API Key가 유효하지 않거나 설정되지 않았습니다。",
         "rag_embed_error_none": "RAG 임베딩에 필요한 모든 키(OpenAI, Gemini, NVIDIA)가 유효하지 않습니다. 키를 설정해 주세요。",
@@ -356,6 +359,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "deleting_history_progress": "Deleting history...",
         "search_history_label": "Search History",
         "date_range_label": "Date Filter",
+        "history_search_button": "🔍 Search",  # ⭐ 추가: 검색 버튼 라벨
         "no_history_found": "No matching history found.",
         "customer_email_label": "Customer Email (optional)",
         "customer_phone_label": "Customer Phone / WhatsApp (optional)",
@@ -536,6 +540,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "deleting_history_progress": "削除中...",
         "search_history_label": "履歴検索",
         "date_range_label": "日付フィルター",
+        "history_search_button": "🔍 検索",  # ⭐ 추가: 검색 버튼 라벨
         "no_history_found": "該当する履歴はありません。",
         "customer_email_label": "顧客メールアドレス（任意）",
         "customer_phone_label": "顧客連絡先 / 電話番号（任意）",
@@ -593,7 +598,7 @@ LANG: Dict[str, Dict[str, str]] = {
         # --- 첨부 파일 기능 추가 ---
         "attachment_label": "顧客の添付ファイルアップロード (スクリーンショットなど)",
         "attachment_placeholder": "ファイルを添付して状況を説明してください（オプション）",
-        "attachment_status_llm": "고객이 **{filename}** 파일을 첨부했습니다. 이 파일을 스크린샷이라고 가정하고 응대 초안 및 가이드라인에 반영하세요. (파일 타입: {filetype})",
+        "attachment_status_llm": "顧客が **{filename}** 파일을 첨부했습니다. 이 파일을 스크린샷이라고 가정하고 응대 초안과 가이드라인에 반영해주세요. (파일 타입: {filetype})",
         "agent_attachment_label": "エージェント添付ファイル (スクリーンショットなど)",
         "agent_attachment_placeholder": "応答に添付するファイルを選択してください（オプション）",
         "agent_attachment_status": "📎 エージェントが **{filename}** ファイルを応答に添付しました。(ファイルタイプ: {filetype})",
@@ -674,7 +679,7 @@ if "language_transfer_requested" not in st.session_state:  # 고객의 언어 �
     st.session_state.language_transfer_requested = False
 if "customer_attachment_file" not in st.session_state:  # 고객 첨부 파일 정보
     # ⭐ 다중 파일 업로드를 위해 리스트로 저장
-    st.session_state.customer_attachment_file = [] 
+    st.session_state.customer_attachment_file = []
 if "sim_attachment_context_for_llm" not in st.session_state:  # LLM 프롬프트에 사용할 첨부 파일 컨텍스트
     st.session_state.sim_attachment_context_for_llm = ""
 if "agent_attachment_file" not in st.session_state:  # 에이전트 첨부 파일 정보
@@ -1281,11 +1286,12 @@ def split_documents(docs: List[Document]) -> List[Document]:
 
 def get_embedding_function():
     """
-    완전 자동 Fallback Embedding System
-    순서: OpenAI → Gemini → NVIDIA → HuggingFace (fallback)
+    RAG 임베딩에 사용할 임베딩 모델을 결정합니다.
+    API 키 유효성 순서: OpenAI (사용자 설정 시) -> Gemini -> NVIDIA -> HuggingFace (fallback)
+    API 인증 오류 발생 시 다음 모델로 이동하도록 처리합니다.
     """
 
-    # 1) OpenAI
+    # 1. OpenAI 임베딩 시도 (사용자가 유효한 키를 설정했을 경우)
     openai_key = get_api_key("openai")
     if openai_key:
         try:
@@ -1294,19 +1300,17 @@ def get_embedding_function():
         except Exception as e:
             st.warning(f"OpenAI 임베딩 실패 → Gemini로 Fallback: {e}")
 
-    # 2) Gemini
+    # 2. Gemini 임베딩 시도
     gemini_key = get_api_key("gemini")
     if IS_GEMINI_EMBEDDING_AVAILABLE and gemini_key:
         try:
             st.info("🔹 RAG: Gemini Embedding 사용 중")
-            return GoogleGenerativeAIEmbeddings(
-                google_api_key=gemini_key,
-                model="text-embedding-004"
-            )
+            # ⭐ 수정: 모델 이름 형식을 'models/model-name'으로 수정
+            return GoogleGenerativeAIEmbeddings(google_api_key=gemini_key, model="models/text-embedding-004")
         except Exception as e:
             st.warning(f"Gemini 임베딩 실패 → NVIDIA로 Fallback: {e}")
 
-    # 3) NVIDIA
+    # 3. NVIDIA 임베딩 시도
     nvidia_key = get_api_key("nvidia")
     if IS_NVIDIA_EMBEDDING_AVAILABLE and nvidia_key:
         try:
@@ -1316,7 +1320,7 @@ def get_embedding_function():
         except Exception as e:
             st.warning(f"NVIDIA 임베딩 실패 → HuggingFace Fallback: {e}")
 
-    # 4) HuggingFace Embeddings (Local Fallback - Claude/Groq 키는 사용 불가)
+    # 4. HuggingFace Embeddings (Local Fallback)
     try:
         st.info("🔹 RAG: Local HuggingFace Embedding 사용 중")
         # 경량 모델 사용
@@ -1326,6 +1330,7 @@ def get_embedding_function():
 
     st.error("❌ RAG 임베딩 실패: 사용 가능한 API Key가 없습니다.")
     return None
+
 
 def build_rag_index(files):
     L = LANG[st.session_state.language]
@@ -1804,33 +1809,49 @@ elif feature_selection == L["simulator_tab"]:
                 st.session_state.show_delete_confirm = False
 
     # =========================
-    # 1. 이전 이력 로드 (기존 로직 유지)
+    # 1. 이전 이력 로드 (검색/필터링 기능 개선)
     # =========================
     with st.expander(L["history_expander_title"]):
+        # Always load all available histories for the current language (sorted by recency)
         histories = load_simulation_histories_local(current_lang)
-        search_query = st.text_input(L["search_history_label"], key="sim_hist_search")
 
+        # ⭐ 검색 폼 제거 및 독립된 위젯 사용
+        col_search, col_btn = st.columns([4, 1])
+
+        with col_search:
+            # st.text_input은 Enter 키 입력 시 앱을 재실행합니다.
+            search_query = st.text_input(L["search_history_label"], key="sim_hist_search_input_new")
+
+        with col_btn:
+            # 검색 버튼: 누르면 앱을 강제 재실행하여 검색/필터링 로직을 다시 타도록 합니다.
+            st.markdown("<br>", unsafe_allow_html=True)  # Align button vertically
+            search_clicked = st.button(L["history_search_button"], key="apply_search_btn_new")
+
+        # 날짜 범위 필터
         today = datetime.now().date()
+        date_range_value = [today - timedelta(days=7), today]
         dr = st.date_input(
             L["date_range_label"],
-            value=[today - timedelta(days=7), today],
-            key="sim_hist_date_range",
+            value=date_range_value,
+            key="sim_hist_date_range_actual",
         )
 
-        filtered = []
-        if histories:
-            if isinstance(dr, list) and len(dr) == 2:
-                start_date = min(dr)
-                end_date = max(dr)
-            else:
-                start_date = datetime.min.date()
-                end_date = datetime.max.date()
+        # --- Filtering Logic ---
+        # Note: Streamlit reruns on search_query/dr changes, applying filters immediately
 
+        current_search_query = search_query.strip()
+
+        if histories:
+            start_date = min(dr)
+            end_date = max(dr)
+
+            filtered = []
             for h in histories:
                 ok_search = True
-                if search_query:
-                    q = search_query.lower()
+                if current_search_query:
+                    q = current_search_query.lower()
                     text = (h["initial_query"] + " " + h["customer_type"]).lower()
+                    # Check if query matches in initial query or customer type
                     if q not in text:
                         ok_search = False
 
@@ -1839,15 +1860,30 @@ elif feature_selection == L["simulator_tab"]:
                 if ts:
                     try:
                         d = datetime.fromisoformat(ts).date()
+                        # Apply date filtering
                         if not (start_date <= d <= end_date):
                             ok_date = False
                     except Exception:
-                        pass
+                        pass  # Ignore histories with invalid timestamp
 
                 if ok_search and ok_date:
                     filtered.append(h)
+        else:
+            filtered = []
 
-        if filtered:
+        # Determine the list for display (⭐ 요청 사항: 검색어/필터가 없으면 최근 10건만 표시)
+        is_searching_or_filtering = bool(current_search_query) or dr != date_range_value
+
+        if not is_searching_or_filtering:
+            # 검색/필터 조건이 없으면, 전체 이력 중 최신 10건만 표시
+            filtered_for_display = histories[:10]
+        else:
+            # 검색/필터 조건이 있으면, 필터링된 모든 결과를 표시
+            filtered_for_display = filtered
+
+        # --- Display Logic ---
+
+        if filtered_for_display:
             def _label(h):
                 try:
                     t = datetime.fromisoformat(h["timestamp"])
@@ -1860,8 +1896,16 @@ elif feature_selection == L["simulator_tab"]:
                 return f"[{t_str}] {attachment_icon} {h['customer_type']} - {q}..."
 
 
-            options_map = {_label(h): h for h in filtered}
+            options_map = {_label(h): h for h in filtered_for_display}
+
+            # Show a message indicating what is displayed if filters were applied
+            if is_searching_or_filtering:
+                st.caption(f"🔎 총 {len(filtered_for_display)}개 이력 검색됨")
+            else:
+                st.caption(f"⭐ 최근 {len(filtered_for_display)}개 이력 표시 중")
+
             sel_key = st.selectbox(L["history_selectbox_label"], options=list(options_map.keys()))
+
             if st.button(L["history_load_button"], key="load_hist_btn"):
                 h = options_map[sel_key]
                 st.session_state.customer_query_text_area = h["initial_query"]
@@ -1990,6 +2034,7 @@ elif feature_selection == L["simulator_tab"]:
             st.session_state.customer_attachment_file = []  # 첨부 파일 초기화
             st.session_state.sim_attachment_context_for_llm = ""  # 컨텍스트 초기화
             st.session_state.agent_attachment_file = []  # 에이전트 첨부 파일 초기화
+            st.success(L["delete_success"])
             st.rerun()
         st.stop()
 
@@ -2055,7 +2100,7 @@ elif feature_selection == L["simulator_tab"]:
             st.session_state.is_solution_provided = False
             st.session_state.language_transfer_requested = False
             st.session_state.transfer_summary_text = ""
-            st.session_state.start_time = None
+            st.session_state.start_time = datetime.now()  # ⭐ AHT 타이머 시작
             st.session_state.sim_attachment_context_for_llm = ""
             st.session_state.agent_attachment_file = []
 
@@ -2199,7 +2244,7 @@ Customer Inquiry:
             type=["png", "jpg", "jpeg", "pdf"],
             key="agent_attachment_file_uploader",
             help=L["agent_attachment_placeholder"],
-            accept_multiple_files=True  # ⭐ 다중 파일 업로드 허용
+            accept_multiple_files=True
         )
 
         if agent_attachment_files:
