@@ -1,14 +1,49 @@
 streamlit==1.38.0
-openai
-google-generativeai
-anthropic
-groq
-numpy
-matplotlib
-streamlit-mic-recorder==0.0.8
+
+# LangChain (버전 제거, Cloud가 자동 설치)
 langchain
-langchain-core
 langchain-community
+langchain-core
+langchain-google-genai
+google-generativeai
 langchain-openai
-pypdf
-faiss-cpu
+anthropic
+openai
+groq
+
+
+# Vector Store
+faiss-cpu==1.8.0
+
+#RAG documents
+unstructured
+PyPDF2
+psutil
+paddlepaddle
+paddlenlp
+tensorflow
+keras
+
+#Adding Firestore Admin SDK
+firebase-admin
+# Docs / Parsing
+unstructured==0.14.9
+beautifulsoup4
+
+# ML & Analytics
+#Whisper AI 사용 위해 추가
+numpy
+pandas
+matplotlib
+bs4
+streamlit-mic-recorder
+streamlit-webrtc
+opencv-python-headless
+
+# Utilities
+google-cloud-firestore
+protobuf
+requests
+tqdm
+markdown-it-py
+rich
