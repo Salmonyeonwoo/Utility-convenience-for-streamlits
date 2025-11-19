@@ -19,7 +19,7 @@ pypdf
 
 langchain-text-splitters
 
-UI & Utilities
+# UI & Utilities
 
 streamlit-mic-recorder==0.0.8
 requests
