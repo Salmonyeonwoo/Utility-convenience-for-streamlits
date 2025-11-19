@@ -10,7 +10,7 @@ langchain-openai
 anthropic
 openai
 groq
-nvidia
+
 
 
 # Vector Store
