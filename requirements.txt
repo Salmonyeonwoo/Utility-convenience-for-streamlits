@@ -10,7 +10,8 @@ langchain-openai
 anthropic
 openai
 groq
-
+langchain-nvidia-ai-endpoints==0.1.3
+sentence-transformers==2.7.0
 
 # Vector Store
 faiss-cpu==1.8.0
