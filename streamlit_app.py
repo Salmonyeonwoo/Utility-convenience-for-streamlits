@@ -180,6 +180,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "error_mandatory_contact": "이메일과 전화번호 입력은 필수입니다.", # 새로운 에러 메시지
         "customer_attachment_label": "📎 고객 첨부 파일 업로드", # 파일 첨부 UI 라벨
         "attachment_info_llm": "[고객 첨부 파일: {filename}이(가) 확인되었습니다. 이 파일을 참고하여 응대하세요.]", # LLM 프롬프트용 정보
+        "button_retry_translation": "번역 다시 시도",
         "survey_sent_confirm": "📨 설문조사 링크가 전송되었으며, 이 상담은 종료되었습니다。",
         "new_simulation_ready": "새 시뮬레이션을 시작할 수 있습니다。",
         "agent_response_header": "✍️ 에이전트 응답",
@@ -352,6 +353,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "error_mandatory_contact": "Email and Phone number input are mandatory.",
         "customer_attachment_label": "📎 Customer Attachment Upload",
         "attachment_info_llm": "[Customer Attachment: {filename} is confirmed. Reference this file in your response.]",
+        "button_retry_translation": "Retry Translation",
         "survey_sent_confirm": "📨 The survey link has been sent. This chat session is now closed.",
         "new_simulation_ready": "You can now start a new simulation.",
         "agent_response_header": "✍️ Agent Response",
@@ -374,9 +376,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_email_label": "Customer Email (Mandatory)",
         "customer_phone_label": "Customer Phone / WhatsApp (Mandatory)",
         "transfer_header": "Language Transfer Request (To Other Teams)",
-        "transfer_to_en": "🇰🇷 Korean Team Transfer",
+        "transfer_to_en": "🇺🇸 English Team Transfer",
         "transfer_to_ja": "🇯🇵 Japanese Team Transfer",
-        "transfer_to_ko": "🇺🇸 English Team Transfer",
+        "transfer_to_ko": "🇰🇷 Korean Team Transfer",
         "transfer_system_msg": "📌 System Message: The session language has been transferred to the {target_lang} team per customer request. A new agent (AI) will now respond.",
         "transfer_loading": "Transferring: Translating and reviewing chat history (3-10 minute wait requested from customer)",
         "transfer_summary_header": "🔍 Summary for Transferred Agent (Translated)",
@@ -538,6 +540,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "error_mandatory_contact": "メールアドレスと電話番号の入力は必須です。",
         "customer_attachment_label": "📎 顧客添付ファイルアップロード",
         "attachment_info_llm": "[顧客添付ファイル: {filename}が確認されました。このファイルを参照して対応してください。]",
+        "button_retry_translation": "翻訳を再試行",
         "new_simulation_ready": "新しいシミュレーションを開始できます。",
         "survey_sent_confirm": "📨 アンケートリンクを送信しました。このチャットは終了しました。",
         "agent_response_header": "✍️ エージェント応答",
@@ -684,22 +687,35 @@ if "sim_stage" not in st.session_state:
     # WAIT_CUSTOMER_CLOSING_RESPONSE (종료 확인 메시지 보냄, 고객의 마지막 응답 대기)
     # FINAL_CLOSING_ACTION (최종 종료 버튼 대기)
     # CLOSING (채팅 종료)
-if "start_time" not in st.session_state:  # AHT 타이머 시작 시간
+if "start_time" not in st.session_state: # AHT 타이머 시작 시간
     st.session_state.start_time = None
-if "is_solution_provided" not in st.session_state:  # 솔루션 제공 여부 플래그
+if "is_solution_provided" not in st.session_state: # 솔루션 제공 여부 플래그
     st.session_state.is_solution_provided = False
-if "transfer_summary_text" not in st.session_state:  # 이관 시 번역된 요약
+if "transfer_summary_text" not in st.session_state: # 이관 시 번역된 요약
     st.session_state.transfer_summary_text = ""
-if "language_transfer_requested" not in st.session_state:  # 고객의 언어 이관 요청 여부
+if "language_transfer_requested" not in st.session_state: # 고객의 언어 이관 요청 여부
     st.session_state.language_transfer_requested = False
-if "customer_attachment_file" not in st.session_state:  # 고객 첨부 파일 정보
-    # ⭐ 다중 파일 업로드를 위해 리스트로 저장
-    st.session_state.customer_attachment_file = []
-if "sim_attachment_context_for_llm" not in st.session_state:  # LLM 프롬프트에 사용할 첨부 파일 컨텍스트
-    st.session_state.sim_attachment_context_for_llm = ""
-if "agent_attachment_file" not in st.session_state:  # 에이전트 첨부 파일 정보
-    # ⭐ 다중 파일 업로드를 위해 리스트로 저장
-    st.session_state.agent_attachment_file = []
+if "customer_attachment_file" not in st.session_state: # 고객 첨부 파일 정보
+    st.session_state.customer_attachment_file = None
+# --- FIX: Initialize missing transfer state variables for comparison ---
+if "language_at_transfer" not in st.session_state: # 현재 언어와 비교를 위한 변수
+    st.session_state.language_at_transfer = st.session_state.language
+if "language_at_transfer_start" not in st.session_state: # 번역 재시도를 위한 원본 언어
+    st.session_state.language_at_transfer_start = st.session_state.language
+if "customer_type_sim_select" not in st.session_state: # FIX: Attribute Error 해결
+    st.session_state.customer_type_sim_select = LANG[st.session_state.language]["customer_type_options"][1]# 기본값 설정
+if "customer_email" not in st.session_state: # FIX: customer_email 초기화
+    st.session_state.customer_email = ""
+if "customer_phone" not in st.session_state: # FIX: customer_phone 초기화
+    st.session_state.customer_phone = ""
+if "agent_response_input_box_widget" not in st.session_state: # FIX: customer_phone 초기화
+    st.session_state.agent_response_input_box_widget = ""
+if "sim_instance_id" not in st.session_state: # FIX: DuplicateWidgetID 방지용 인스턴스 ID 초기화
+    st.session_state.sim_instance_id = str(uuid.uuid4())
+# ----------------------------------------------------------------------
+
+
+L = LANG[st.session_state.language]
 
 # ⭐ 2-A. Gemini 키 초기화 (잘못된 키 잔존 방지)
 # Streamlit이 시작될 때마다 사이드바에 남은 유효하지 않은 키를 강제로 비워, RAG 초기화 시도를 막습니다.
@@ -709,7 +725,6 @@ if "user_gemini_key" in st.session_state and st.session_state["user_gemini_key"]
     # 키 입력 시 세션에 저장되도록 합니다.
     pass  # 키 초기화 로직은 삭제하고, 사용자 입력에 의존하도록 합니다. (오히려 강제 초기화가 환경 변수 오버라이딩 문제 야기 가능)
 
-L = LANG[st.session_state.language]
 
 # ========================================
 # 0. 멀티 모델 API Key 안전 구조 (Secrets + User Input)
@@ -973,69 +988,66 @@ else:
 # ----------------------------------------
 def translate_text_with_llm(text_content: str, target_lang_code: str, source_lang_code: str) -> str:
     """
-    주어진 텍스트를 LLM Fallback을 사용하여 대상 언어로 번역합니다.
+    주어진 텍스트를 LLM을 사용하여 대상 언어로 번역합니다. (안정화된 텍스트 출력)
     """
     target_lang = LANG.get(target_lang_code, {})
     target_lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(target_lang_code, "English")
     source_lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(source_lang_code, "English")
 
-    # 번역을 시도할 LLM 공급자 우선순위 리스트 (현재 작동 중인 OpenAI를 최우선)
-    TRANSLATION_FALLBACKS = [
-        ("openai", "gpt-3.5-turbo"),
-        ("gemini", "gemini-2.5-flash"),
-        ("claude", "claude-3-5-sonnet-latest"),
-    ]
-
+    # 순수한 텍스트 번역 결과만 출력하도록 강제
     system_prompt = (
-        f"You are a professional translation AI. Translate the following customer support chat history "
-        f"from '{source_lang_name}' to '{target_lang_name}'. Preserve the original format, marking "
-        f"each speaker (e.g., 'Customer:', 'Agent:'). Do not add any introductory or concluding remarks. "
-        f"Translate the content accurately and neutrally."
+        f"You are a professional translation AI. Translate the entire following customer support chat history "
+        f"from '{source_lang_name}' to '{target_lang_name}'. "
+        f"You MUST translate the content to {target_lang_name} ONLY. "
+        f"Do not include any mixed languages, the source text, or any introductory/concluding remarks. "
+        f"Output ONLY the translated chat history text. "
     )
     prompt = f"Original Chat History:\n\n{text_content}"
 
-    for provider, model_name in TRANSLATION_FALLBACKS:
-        key = get_api_key(provider)
-        if not key:
-            continue  # 키가 없으면 다음 제공자로 넘어감
+    # LLM Fallback 순서: OpenAI (가장 안정적) -> Gemini -> Claude
+    llm_attempts = [
+        ("openai", get_api_key("openai"), "gpt-4o"),
+        ("gemini", get_api_key("gemini"), "gemini-2.5-flash"),
+        ("claude", get_api_key("claude"), "claude-3-5-sonnet-latest"),
+    ]
 
-        try:
-            # 3. LLM 클라이언트 설정 및 실행
-            if provider == "openai":
-                client = OpenAI(api_key=key)
-                resp = client.chat.completions.create(
-                    model=model_name,
-                    messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
-                    temperature=0.1
-                )
-                return resp.choices[0].message.content.strip()
+    for provider, key, model_name in llm_attempts:
+        if key:
+            try:
+                # 1. LLM 호출
+                if provider == "openai":
+                    o_client = OpenAI(api_key=key)
+                    resp = o_client.chat.completions.create(
+                        model=model_name,
+                        messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
+                        temperature=0.1
+                    )
+                    return resp.choices[0].message.content.strip()
 
-            elif provider == "gemini":
-                genai.configure(api_key=key)
-                gen_model = genai.GenerativeModel(model_name)
-                resp = gen_model.generate_content(
-                    contents=prompt,
-                    config=genai.types.GenerateContentConfig(system_instruction=system_prompt, temperature=0.1)
-                )
-                return resp.text.strip()
+                elif provider == "gemini":
+                    genai.configure(api_key=key)
+                    g_model = genai.GenerativeModel(model_name)
+                    resp = g_model.generate_content(
+                        contents=prompt,
+                        config=genai.types.GenerateContentConfig(system_instruction=system_prompt, temperature=0.1)
+                    )
+                    return resp.text.strip()
 
-            elif provider == "claude":
-                client = Anthropic(api_key=key)
-                resp = client.messages.create(
-                    model=model_name,
-                    system=system_prompt,
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.1
-                )
-                return resp.content[0].text.strip()
+                elif provider == "claude":
+                    from anthropic import Anthropic
+                    c_client = Anthropic(api_key=key)
+                    resp = c_client.messages.create(
+                        model=model_name,
+                        messages=[{"role": "user", "content": prompt}],
+                        system=system_prompt
+                    )
+                    return resp.content[0].text.strip()
 
-        except Exception as e:
-            # 해당 API로 번역 시도 중 오류 발생 (401, 네트워크 등) -> 다음 제공자로 넘어감
-            st.error(f"❌ Translation failed with {provider.upper()} ({model_name}): {e}")
-            continue
+            except Exception as e:
+                print(f"Translation API call failed with {provider}: {e}")
+                continue
 
-    # 모든 시도가 실패했을 경우 (키가 없거나 모든 API 호출 실패)
-    st.error(f"❌ {target_lang.get('llm_translation_error', 'Translation failed')}: 모든 API 키가 유효하지 않거나 API 호출이 실패했습니다.")
+                # 모든 시도가 실패하면 빈 문자열 반환 (UI 오류 방지)
     return ""
 
 
@@ -1560,6 +1572,70 @@ RULES:
         return L['customer_has_additional_inquiries']  # 오류 시 에이전트 턴으로 유도
 
 
+# ----------------------------------------
+# Initial Advice/Draft Generation (이관 후 재사용)
+# ----------------------------------------
+def _generate_initial_advice(customer_query, customer_type_display, customer_email, customer_phone, current_lang_key,
+                             customer_attachment_file):
+    """Supervisor 가이드라인과 초안을 생성하는 함수"""
+    L = LANG[current_lang_key]
+    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+
+    contact_info_block = ""
+    if customer_email or customer_phone:
+        contact_info_block = (
+            f"\n\n[Customer contact info for reference (DO NOT use these in your reply draft!)]"
+            f"\n- Email: {customer_email or 'N/A'}"
+            f"\n- Phone: {customer_phone or 'N/A'}"
+        )
+
+    attachment_block = ""
+    if customer_attachment_file:
+        file_name = customer_attachment_file.name
+        attachment_block = f"\n\n[ATTACHMENT NOTE]: {L['attachment_info_llm'].format(filename=file_name)}"
+
+    # Output ALL text (guidelines and draft) STRICTLY in {lang_name}. <--- 강력한 언어 강제 지시
+    initial_prompt = f"""
+Output ALL text (guidelines and draft) STRICTLY in {lang_name}.
+
+You are an AI Customer Support Supervisor. Your role is to analyze the following customer inquiry
+from a **{customer_type_display}** and provide:
+
+1) A detailed **response guideline for the human agent** (step-by-step).
+2) A **ready-to-send draft reply** in {lang_name}.
+
+[FORMAT]
+- Use the exact markdown headers:
+  - "### {L['simulation_advice_header']}"
+  - "### {L['simulation_draft_header']}"
+
+[CRITICAL GUIDELINE RULES]
+1. **Initial Information Collection (Req 3):** The first step in the guideline MUST be to request the necessary initial diagnostic information (e.g., device compatibility, local status/location, order number) BEFORE attempting to troubleshoot or solve the problem.
+2. **Empathy for Difficult Customers (Req 5):** If the customer type is 'Difficult Customer' or 'Highly Dissatisfied Customer', the guideline MUST emphasize extreme politeness, empathy, and apologies, even if the policy (e.g., no refund) must be enforced.
+3. **24-48 Hour Follow-up (Req 6):** If the issue cannot be solved immediately or requires confirmation from a local partner/supervisor, the guideline MUST state the procedure:
+   - Acknowledge the issue.
+   - Inform the customer they will receive a definite answer within 24 or 48 hours.
+   - Request the customer's email or phone number for follow-up contact.
+
+Customer Inquiry:
+{customer_query}
+{contact_info_block}
+{attachment_block}
+"""
+    if not st.session_state.is_llm_ready:
+        mock_text = (
+            f"### {L['simulation_advice_header']}\n\n"
+            f"- (Mock) {customer_type_display} 유형 고객 응대 가이드입니다. (요청 3, 5, 6 반영)\n\n"
+            f"### {L['simulation_draft_header']}\n\n"
+            f"(Mock) 에이전트 응대 초안이 여기에 들어갑니다。\n\n"
+        )
+        return mock_text
+    else:
+        try:
+            return run_llm(initial_prompt)
+        except Exception as e:
+            st.error(f"AI 조언 생성 중 오류 발생: {e}")
+            return f"❌ AI Advice Generation Error: {e}"
 # ========================================
 # 9. 사이드바
 # ========================================
@@ -2064,39 +2140,47 @@ elif feature_selection == L["sim_tab_chat_email"] or feature_selection == L["sim
             placeholder=L["initial_query_sample"],
         )
 
-        # --- 필수 입력 필드 (요청 3 반영) ---
+        # --- 필수 입력 필드 (요청 3 반영: UI 텍스트 변경) ---
         customer_email = st.text_input(
             L["customer_email_label"],
-            key="customer_email",
+            key="customer_email_input",  # 키 변경
+            value=st.session_state.customer_email,
         )
         customer_phone = st.text_input(
             L["customer_phone_label"],
-            key="customer_phone",
+            key="customer_phone_input",  # 키 변경
+            value=st.session_state.customer_phone,
         )
-        # ----------------------------------
+        # 세션 상태 업데이트
+        st.session_state.customer_email = customer_email
+        st.session_state.customer_phone = customer_phone
+        # --------------------------------------------------
 
         customer_type_options = L["customer_type_options"]
-        default_idx = 1 if len(customer_type_options) > 1 else 0
-        customer_type_display = st.selectbox(
+        # st.session_state.customer_type_sim_select는 이미 초기화됨
+        default_idx = customer_type_options.index(
+            st.session_state.customer_type_sim_select) if st.session_state.customer_type_sim_select in customer_type_options else 0
+
+        # Selectbox는 자체적으로 세션 상태를 업데이트하므로, 여기에 value를 설정할 필요 없음
+        st.session_state.customer_type_sim_select = st.selectbox(
             L["customer_type_label"],
             customer_type_options,
             index=default_idx,
-            key="customer_type_sim_select",
+            key="customer_type_sim_select_widget",
         )
 
-        # --- 시뮬레이션 시작 버튼 클릭 시 (요청 3 검증 로직 추가) ---
-        if st.button(L["button_simulate"], key="btn_simulate_initial"):
+        if st.button(L["button_simulate"], key=f"btn_simulate_initial_{st.session_state.sim_instance_id}"):  # 고유 키 사용
             if not customer_query.strip():
                 st.warning(L["simulation_warning_query"])
                 st.stop()
 
-            # --- 필수 입력 필드 검증 (요청 3 검증 로직) ---
-            if not customer_email.strip() or not customer_phone.strip():
+            # --- 필수 입력 필드 검증 (요청 3 반영: 검증 로직 추가) ---
+            if not st.session_state.customer_email.strip() or not st.session_state.customer_phone.strip():
                 st.error(L["error_mandatory_contact"])
                 st.stop()
             # ------------------------------------------
 
-            # 초기화 및 시뮬레이션 시작 로직 유지
+            # 초기 상태 리셋
             st.session_state.simulator_messages = []
             st.session_state.simulator_memory.clear()
             st.session_state.is_chat_ended = False
@@ -2105,99 +2189,31 @@ elif feature_selection == L["sim_tab_chat_email"] or feature_selection == L["sim
             st.session_state.language_transfer_requested = False  # 언어 요청 플래그 리셋
             st.session_state.transfer_summary_text = ""  # 이관 요약 리셋
             st.session_state.start_time = None  # AHT 타이머 초기화 (첫 고객 반응 후 시작)
+            st.session_state.sim_instance_id = str(uuid.uuid4())  # 새 시뮬레이션 ID 할당
 
             # 1) 고객 첫 메시지 추가
             st.session_state.simulator_messages.append(
                 {"role": "customer", "content": customer_query}
             )
 
-            contact_info_block = ""
-            if customer_email or customer_phone:
-                contact_info_block = (
-                    f"\n\n[Customer contact info for reference (DO NOT use these in your reply draft!)]"
-                    f"\n- Email: {customer_email or 'N/A'}"
-                    f"\n- Phone: {customer_phone or 'N/A'}"
-                )
-
-            # --- 첨부 파일 컨텍스트 생성 (다중 파일 처리) ---
-            attachment_block = ""
-            if st.session_state.customer_attachment_file:
-                file_infos = st.session_state.customer_attachment_file
-                file_names = ", ".join([f["name"] for f in file_infos])
-                file_types = ", ".join(list(set([f["type"] for f in file_infos])))
-
-                attachment_status_msg = f"고객이 총 {len(file_infos)}개의 파일(예: 스크린샷)을 첨부했습니다. 파일 목록: {file_names}. (주요 파일 타입: {file_types}). 이 첨부 파일을 참고하여 응대 초안 및 가이드라인에 반영하세요."
-
-                attachment_block = f"\n\n[ATTACHMENT STATUS]\n{attachment_status_msg}\n"
-                st.session_state.sim_attachment_context_for_llm = attachment_block  # 세션에 저장
-
-                # 고객 메시지에 첨부 파일 정보 추가 (화면에 표시용)
-                st.session_state.simulator_messages[-1]["content"] += (
-                    f"\n\n📎 *총 {len(file_infos)}개 파일 첨부됨 ({file_names})*"
-                )
-            # ---------------------------
-
-            current_lang_key = st.session_state.language
-            lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
-
-            # 2) Supervisor 가이드 + 초안 생성 (첨부 파일 컨텍스트를 프롬프트에 포함)
-            initial_prompt = f"""
-{st.session_state.sim_attachment_context_for_llm}
-You are an AI Customer Support Supervisor. Your role is to analyze the following customer inquiry
-from a **{customer_type_display}** and provide:
-
-1) A detailed **response guideline for the human agent** (step-by-step).
-2) A **ready-to-send draft reply** in {lang_name}.
-
-[FORMAT]
-- Use the exact markdown headers:
-  - "### {L['simulation_advice_header']}"
-  - "### {L['simulation_draft_header']}"
-
-[CRITICAL GUIDELINE RULES]
-1. **Initial Information Collection (Req 3):** The first step in the guideline MUST be to request the necessary initial diagnostic information (e.g., device compatibility, local status/location, order number) BEFORE attempting to troubleshoot or solve the problem.
-2. **Empathy for Difficult Customers (Req 5):** If the customer type is 'Difficult Customer' or 'Highly Dissatisfied Customer', the guideline MUST emphasize extreme politeness, empathy, and apologies, even if the policy (e.g., no refund) must be enforced.
-3. **24-48 Hour Follow-up (Req 6):** If the issue cannot be solved immediately or requires confirmation from a local partner/supervisor, the guideline MUST state the procedure:
-   - Acknowledge the issue.
-   - Inform the customer they will receive a definite answer within 24 or 48 hours.
-   - Request the customer's email or phone number for follow-up contact.
-
-Customer Inquiry:
-{customer_query}
-{contact_info_block}
-"""
-
-            if not st.session_state.is_llm_ready:
-                mock_text = (
-                    f"### {L['simulation_advice_header']}\n\n"
-                    f"- (Mock) {customer_type_display} 유형 고객 응대 가이드입니다. (요청 3, 5, 6 반영)\n\n"
-                    f"### {L['simulation_draft_header']}\n\n"
-                    f"(Mock) 에이전트 응대 초안이 여기에 들어갑니다。\n\n"
-                )
-                if attachment_block:
-                    file_infos = st.session_state.customer_attachment_file
-                    file_names = ", ".join([f["name"] for f in file_infos])
-                    mock_text = f"첨부 파일 정보: {file_names}\n\n" + mock_text
-                st.session_state.simulator_messages.append(
-                    {"role": "supervisor", "content": mock_text}
-                )
-            else:
-                with st.spinner(L["response_generating"]):
-                    try:
-                        text = run_llm(initial_prompt)
-                        st.session_state.simulator_messages.append(
-                            {"role": "supervisor", "content": text}
-                        )
-                    except Exception as e:
-                        st.error(f"AI 조언 생성 중 오류 발생: {e}")
+            # 2) Supervisor 가이드 + 초안 생성
+            text = _generate_initial_advice(
+                customer_query,
+                st.session_state.customer_type_sim_select,
+                st.session_state.customer_email,
+                st.session_state.customer_phone,
+                current_lang,
+                st.session_state.customer_attachment_file
+            )
+            st.session_state.simulator_messages.append({"role": "supervisor", "content": text})
 
             st.session_state.initial_advice_provided = True
             save_simulation_history_local(
                 customer_query,
-                customer_type_display,
+                st.session_state.customer_type_sim_select,
                 st.session_state.simulator_messages,
+                attachment_context=st.session_state.sim_attachment_context_for_llm,
                 is_chat_ended=False,
-                attachment_context=st.session_state.sim_attachment_context_for_llm,  # 컨텍스트 저장
             )
             st.session_state.sim_stage = "AGENT_TURN"
             st.rerun()
@@ -2219,12 +2235,40 @@ Customer Inquiry:
             render_tts_button(content, st.session_state.language, role=tts_role, prefix=f"{role}_", index=idx)
 
         # 이관 요약 표시 (이관 후에만)
-        if st.session_state.transfer_summary_text:
-            st.markdown("---")
-            st.markdown(f"**{L['transfer_summary_header']}**")
-            st.info(L["transfer_summary_intro"])
-            st.markdown(st.session_state.transfer_summary_text)
-            st.markdown("---")
+        if st.session_state.transfer_summary_text or st.session_state.sim_stage == "AGENT_TURN":
+            if st.session_state.transfer_summary_text or st.session_state.language != st.session_state.language_at_transfer:
+                st.markdown("---")
+                st.markdown(f"**{L['transfer_summary_header']}**")
+                st.info(L["transfer_summary_intro"])
+
+                # 번역이 실패했을 경우 (빈 문자열)
+                if not st.session_state.transfer_summary_text:
+                    st.error("❌ LLM_TRANSLATION_ERROR (번역 실패). 아래 버튼을 눌러 다시 시도하세요.")
+                    # 번역 재시도 버튼 추가
+                    if st.button(L["button_retry_translation"], key="btn_retry_translation"):
+                        # 재시도 로직 실행
+                        with st.spinner(L["transfer_loading"]):
+                            # 현재 언어와 이전 언어를 사용하여 번역 재시도
+                            source_lang = st.session_state.language_at_transfer_start
+                            target_lang = st.session_state.language
+
+                            # 이전 대화 내용 재가공
+                            history_text = ""
+                            for msg in st.session_state.simulator_messages:
+                                role = "Customer" if msg["role"].startswith("customer") or msg[
+                                    "role"] == "initial_query" else "Agent"
+                                if msg["role"] in ["initial_query", "customer_rebuttal", "agent_response",
+                                                   "customer_closing_response"]:
+                                    history_text += f"{role}: {msg['content']}\n"
+
+                            translated_summary = translate_text_with_llm(history_text, target_lang, source_lang)
+                            st.session_state.transfer_summary_text = translated_summary
+                            st.rerun()
+
+                else:
+                    # 번역 성공 시 내용 표시
+                    st.markdown(st.session_state.transfer_summary_text)
+                st.markdown("---")
 
     # =========================
     # 5. 에이전트 입력 단계 (AGENT_TURN)
@@ -2381,6 +2425,8 @@ Customer Inquiry:
                 st.stop()
                 return
 
+            current_lang_at_start = st.session_state.language  # Source language
+
             # AHT 타이머 중지
             st.session_state.start_time = None
 
@@ -2399,27 +2445,33 @@ Customer Inquiry:
                         history_text += f"{role}: {msg['content']}\n"
 
                 # 3. LLM 번역 실행 (수정된 번역 함수 사용)
-                translated_summary = translate_text_with_llm(history_text, target_lang, st.session_state.language)
-
-                if translated_summary.startswith("❌"):
-                    st.session_state.transfer_summary_text = translated_summary
-                    st.rerun()
-                    return
+                translated_summary = translate_text_with_llm(history_text, target_lang, current_lang_at_start) # Use current_lang_at_start as source
 
                 # 4. 세션 상태 업데이트
                 st.session_state.transfer_summary_text = translated_summary
+                st.session_state.language_at_transfer = target_lang  # Save destination language
+                st.session_state.language_at_transfer_start = current_lang_at_start  # Save source language for retry
+                st.session_state.language = target_lang  # Language switch
 
-                # 시스템 메시지 추가 (이관 알림)
-                target_lang_name = {"ko": "한국어", "en": "English", "ja": "Japanese"}.get(target_lang,
-                                                                                        target_lang.capitalize())
-                system_msg = L["transfer_system_msg"].format(target_lang=target_lang_name)
-                st.session_state.simulator_messages.append(
-                    {"role": "system_end", "content": system_msg}
+                # --- 기존 가이드라인 삭제 및 새 가이드라인 생성 (언어 통일성 확보) ---
+                # 1. 기존 Supervisor Advice 메시지 삭제
+                st.session_state.simulator_messages = [
+                    msg for msg in st.session_state.simulator_messages
+                    if msg['role'] != 'supervisor'
+                ]
+
+                # 2. 새로운 언어로 가이드라인/초안 재생성
+                new_advice = _generate_initial_advice(
+                    st.session_state.customer_query_text_area,
+                    st.session_state.customer_type_sim_select,
+                    st.session_state.customer_email,
+                    st.session_state.customer_phone,
+                    target_lang,  # 새로운 언어로 생성
+                    st.session_state.customer_attachment_file
                 )
+                st.session_state.simulator_messages.append({"role": "supervisor", "content": new_advice})
+                # -------------------------------------------------------------------
 
-                # 기존 언어 저장
-                old_lang = st.session_state.language
-                st.session_state.language = target_lang  # 언어 변경
                 st.session_state.is_solution_provided = False  # 새로운 응대를 위해 플래그 리셋
                 st.session_state.language_transfer_requested = False  # 플래그 리셋
                 st.session_state.sim_stage = "AGENT_TURN"
@@ -2428,10 +2480,10 @@ Customer Inquiry:
                 customer_type_display = st.session_state.get("customer_type_sim_select", "")
                 save_simulation_history_local(
                     st.session_state.customer_query_text_area,
-                    customer_type_display + f" (Transferred from {old_lang} to {target_lang})",
+                    customer_type_display + f" (Transferred from {current_lang_at_start} to {target_lang})",
                     st.session_state.simulator_messages,
+                    attachment_context=st.session_state.sim_attachment_context_for_llm,
                     is_chat_ended=False,
-                    attachment_context=st.session_state.sim_attachment_context_for_llm,  # 컨텍스트 저장
                 )
 
             # 6. UI 재실행 (언어 변경 적용)
@@ -2519,21 +2571,54 @@ Customer Inquiry:
     if st.session_state.sim_stage == "WAIT_CLOSING_CONFIRMATION_FROM_AGENT":
         st.success("고객이 솔루션에 긍정적으로 반응했습니다. 추가 문의 여부를 확인해 주세요.")
 
-        col_chat_end, col_email_end = st.columns(2) # 버튼을 나란히 배치
+        col_chat_end, col_email_end = st.columns(2)  # 버튼을 나란히 배치
 
-        # [1] 채팅 - 추가 문의 확인 메시지 보내기 버튼 (기존 로직)
+        # [1] 채팅 - 추가 문의 확인 메시지 보내기 버튼 (요청 1A/1B 반영)
         with col_chat_end:
-            if st.button(L["send_closing_confirm_button"], key="btn_send_closing_confirm"):
-                # ... (기존 채팅 종료 확인 로직 유지)
+            # 상태 전환 명확화: 이 버튼 클릭 시 다음 단계인 WAIT_CUSTOMER_CLOSING_RESPONSE로 반드시 넘어감
+            if st.button(L["send_closing_confirm_button"],
+                         key=f"btn_send_closing_confirm_{st.session_state.sim_instance_id}"):
+                closing_msg = L["customer_closing_confirm"]
+
+                # 에이전트 응답으로 로그 기록
+                st.session_state.simulator_messages.append(
+                    {"role": "agent_response", "content": closing_msg}
+                )
+
+                # 다음 단계: 고객의 최종 답변 대기
+                st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
+
+                # 이력 저장
+                customer_type_display = st.session_state.get("customer_type_sim_select", "")
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area, customer_type_display,
+                    st.session_state.simulator_messages, is_chat_ended=False,
+                    attachment_context=st.session_state.sim_attachment_context_for_llm,
+                )
                 st.rerun()
 
         # [2] 이메일 - 상담 종료 버튼 (요청 2 반영: 즉시 종료)
         with col_email_end:
-            if st.button(L["button_email_end_chat"], key="btn_email_end_chat"):
+            if st.button(L["button_email_end_chat"], key=f"btn_email_end_chat_{st.session_state.sim_instance_id}"):
                 # 이메일은 끝인사에 문의 확인이 포함되므로, 바로 최종 종료 단계로 이동
-                st.session_state.sim_stage = "FINAL_CLOSING_ACTION"
+
+                # AHT 타이머 정지 (요청 2 반영)
+                st.session_state.start_time = None
+
+                # 최종 종료 메시지 (설문 조사 포함)
+                end_msg = L["prompt_survey"]
                 st.session_state.simulator_messages.append(
-                    {"role": "system_end", "content": "(시스템: 이메일 특성상, 즉시 최종 종료 단계로 진입합니다.)"}
+                    {"role": "system_end", "content": "(시스템: 이메일 상담 종료) " + end_msg}
+                )
+                st.session_state.is_chat_ended = True
+                st.session_state.sim_stage = "CLOSING"  # 바로 CLOSING으로 전환
+
+                # 이력 저장
+                customer_type_display = st.session_state.get("customer_type_sim_select", "")
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area, customer_type_display,
+                    st.session_state.simulator_messages, is_chat_ended=True,
+                    attachment_context=st.session_state.sim_attachment_context_for_llm,
                 )
                 st.rerun()
 
