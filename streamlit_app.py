@@ -181,6 +181,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_attachment_label": "📎 고객 첨부 파일 업로드", # 파일 첨부 UI 라벨
         "attachment_info_llm": "[고객 첨부 파일: {filename}이(가) 확인되었습니다. 이 파일을 참고하여 응대하세요.]", # LLM 프롬프트용 정보
         "button_retry_translation": "번역 다시 시도",
+        "button_request_hint": "💡 응대 힌트 요청 (AHT 모니터링 중)", # 힌트 요청 버튼
+        "hint_placeholder": "문의 응대에 대한 힌트:", # 힌트 표시 영역
         "survey_sent_confirm": "📨 설문조사 링크가 전송되었으며, 이 상담은 종료되었습니다。",
         "new_simulation_ready": "새 시뮬레이션을 시작할 수 있습니다。",
         "agent_response_header": "✍️ 에이전트 응답",
@@ -354,6 +356,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_attachment_label": "📎 Customer Attachment Upload",
         "attachment_info_llm": "[Customer Attachment: {filename} is confirmed. Reference this file in your response.]",
         "button_retry_translation": "Retry Translation",
+        "button_request_hint": "💡 Request Response Hint (AHT Monitored)", # 힌트 요청 버튼
+        "hint_placeholder": "Hints for responses", # 힌트 표시 영역
         "survey_sent_confirm": "📨 The survey link has been sent. This chat session is now closed.",
         "new_simulation_ready": "You can now start a new simulation.",
         "agent_response_header": "✍️ Agent Response",
@@ -541,6 +545,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_attachment_label": "📎 顧客添付ファイルアップロード",
         "attachment_info_llm": "[顧客添付ファイル: {filename}が確認されました。このファイルを参照して対応してください。]",
         "button_retry_translation": "翻訳を再試行",
+        "button_request_hint": "💡 応対ヒントを要請 (AHT モニタリング中)", # 힌트 요청 버튼
+        "hint_placeholder": "お問合せの応対に対するヒント：", # 힌트 표시 영역
         "new_simulation_ready": "新しいシミュレーションを開始できます。",
         "survey_sent_confirm": "📨 アンケートリンクを送信しました。このチャットは終了しました。",
         "agent_response_header": "✍️ エージェント応答",
@@ -714,6 +720,8 @@ if "sim_instance_id" not in st.session_state: # FIX: DuplicateWidgetID 방지용
     st.session_state.sim_instance_id = str(uuid.uuid4())
 if "sim_attachment_context_for_llm" not in st.session_state:
     st.session_state.sim_attachment_context_for_llm = ""
+if "realtime_hint_text" not in st.session_state:
+    st.session_state.realtime_hint_text = ""
 # ----------------------------------------------------------------------
 
 
@@ -1051,6 +1059,47 @@ def translate_text_with_llm(text_content: str, target_lang_code: str, source_lan
 
                 # 모든 시도가 실패하면 빈 문자열 반환 (UI 오류 방지)
     return ""
+
+
+# ----------------------------------------
+# Realtime Hint Generation (요청 1, 2 반영)
+# ----------------------------------------
+def generate_realtime_hint(current_lang_key: str):
+    """현재 대화 맥락을 기반으로 에이전트에게 실시간 응대 힌트(키워드/정책/액션)를 제공"""
+    L = LANG[current_lang_key]
+    history_text = get_chat_history_for_prompt(include_attachment=True)
+    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+
+    hint_prompt = f"""
+You are an AI Supervisor providing an **urgent, internal hint** to a human agent whose AHT is being monitored.
+Analyze the conversation history, especially the customer's last message, which might be about complex issues like JR Pass, Universal Studio Japan (USJ), or a complex refund policy.
+
+Provide ONE concise, actionable hint for the agent. The purpose is to save AHT time.
+
+Output MUST be a single paragraph/sentence in {lang_name} containing actionable advice.
+DO NOT use markdown headers or titles.
+Do NOT direct the agent to check the general website. 
+Provide an actionable fact or the next specific step (e.g., check policy section, confirm coverage).
+
+Examples of good hints (based on the content):
+- Check the official JR Pass site for current exchange rates.
+- The 'Universal Express Pass' is non-refundable; clearly cite policy section 3.2.
+- Ask for the order confirmation number before proceeding with any action.
+- The solution lies in the section of the Klook site titled '~'.
+
+Conversation History:
+{history_text}
+
+HINT:
+"""
+    if not st.session_state.is_llm_ready:
+        return "(Mock Hint: LLM Key is missing. Ask the customer for the booking number.)"
+
+    with st.spinner(f"💡 {L['button_request_hint']}..."):
+        try:
+            return run_llm(hint_prompt).strip()
+        except Exception as e:
+            return f"❌ Hint Generation Error. (Try again or check API Key: {e})"
 
 
 # ========================================
@@ -1468,7 +1517,7 @@ def load_or_train_lstm():
 # ConversationChain 대신 run_llm을 사용하여 메모리 기능을 수동으로 구현
 # st.session_state.simulator_memory는 유지하여 대화 기록을 관리합니다.
 
-def get_chat_history_for_prompt():
+def get_chat_history_for_prompt(include_attachment=False):
     """메모리에서 대화 기록을 추출하여 프롬프트에 사용할 문자열 형태로 반환"""
     history_str = ""
     for msg in st.session_state.simulator_messages:
@@ -1601,7 +1650,7 @@ def _generate_initial_advice(customer_query, customer_type_display, customer_ema
 Output ALL text (guidelines and draft) STRICTLY in {lang_name}.
 
 You are an AI Customer Support Supervisor. Your role is to analyze the following customer inquiry
-from a **{customer_type_display}** and provide:
+from a **{st.session_state.customer_type_sim_select}** and provide:
 
 1) A detailed **response guideline for the human agent** (step-by-step).
 2) A **ready-to-send draft reply** in {lang_name}.
@@ -1627,17 +1676,19 @@ Customer Inquiry:
     if not st.session_state.is_llm_ready:
         mock_text = (
             f"### {L['simulation_advice_header']}\n\n"
-            f"- (Mock) {customer_type_display} 유형 고객 응대 가이드입니다. (요청 3, 5, 6 반영)\n\n"
+            f"- (Mock) {st.session_state.customer_type_sim_select} 유형 고객 응대 가이드입니다. (요청 3, 5, 6 반영)\n\n"
             f"### {L['simulation_draft_header']}\n\n"
             f"(Mock) 에이전트 응대 초안이 여기에 들어갑니다。\n\n"
         )
         return mock_text
     else:
-        try:
-            return run_llm(initial_prompt)
-        except Exception as e:
-            st.error(f"AI 조언 생성 중 오류 발생: {e}")
-            return f"❌ AI Advice Generation Error: {e}"
+        with st.spinner(L["response_generating"]):
+            try:
+                return run_llm(initial_prompt)
+            except Exception as e:
+                st.error(f"AI 조언 생성 중 오류 발생: {e}")
+                return f"❌ AI Advice Generation Error: {e}"
+
 # ========================================
 # 9. 사이드바
 # ========================================
@@ -2237,8 +2288,8 @@ elif feature_selection == L["sim_tab_chat_email"] or feature_selection == L["sim
             render_tts_button(content, st.session_state.language, role=tts_role, prefix=f"{role}_", index=idx)
 
         # 이관 요약 표시 (이관 후에만)
-        if st.session_state.transfer_summary_text or st.session_state.sim_stage == "AGENT_TURN":
-            if st.session_state.transfer_summary_text or st.session_state.language != st.session_state.language_at_transfer:
+        if st.session_state.transfer_summary_text or st.session_state.language != st.session_state.language_at_transfer_start:
+            if st.session_state.transfer_summary_text or st.session_state.language != st.session_state.language_at_transfer_start:
                 st.markdown("---")
                 st.markdown(f"**{L['transfer_summary_header']}**")
                 st.info(L["transfer_summary_intro"])
@@ -2247,10 +2298,10 @@ elif feature_selection == L["sim_tab_chat_email"] or feature_selection == L["sim
                 if not st.session_state.transfer_summary_text:
                     st.error("❌ LLM_TRANSLATION_ERROR (번역 실패). 아래 버튼을 눌러 다시 시도하세요.")
                     # 번역 재시도 버튼 추가
-                    if st.button(L["button_retry_translation"], key="btn_retry_translation"):
+                    if st.button(L["button_retry_translation"],
+                                 key=f"btn_retry_translation_{st.session_state.sim_instance_id}"):
                         # 재시도 로직 실행
                         with st.spinner(L["transfer_loading"]):
-                            # 현재 언어와 이전 언어를 사용하여 번역 재시도
                             source_lang = st.session_state.language_at_transfer_start
                             target_lang = st.session_state.language
 
@@ -2278,6 +2329,20 @@ elif feature_selection == L["sim_tab_chat_email"] or feature_selection == L["sim
     if st.session_state.sim_stage == "AGENT_TURN":
         st.markdown(f"### {L['agent_response_header']}")
 
+        # --- 실시간 응대 힌트 영역 ---
+        hint_cols = st.columns([4, 1])
+        with hint_cols[0]:
+            st.info(L["hint_placeholder"] + st.session_state.realtime_hint_text)
+
+        with hint_cols[1]:
+            # 힌트 요청 버튼
+            if st.button(L["button_request_hint"], key=f"btn_request_hint_{st.session_state.sim_instance_id}"):
+                with st.spinner(L["response_generating"]):
+                    hint = generate_realtime_hint(current_lang)
+                    st.session_state.realtime_hint_text = hint
+                    st.rerun()  # 힌트 업데이트를 위해 재실행
+
+        # --- 언어 이관 요청 강조 표시 ---
         if st.session_state.language_transfer_requested:
             st.error("🚨 고객이 언어 전환(이관)을 요청했습니다. 즉시 응대하거나 이관을 진행하세요.")
 
