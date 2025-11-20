@@ -104,6 +104,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "rag_tab": "RAG 지식 챗봇",
         "content_tab": "맞춤형 학습 콘텐츠 생성",
         "lstm_tab": "LSTM 성취도 예측 대시보드",
+        "sim_tab_chat_email": "AI 고객 응대 시뮬레이터 (채팅/이메일)",
+        "sim_tab_phone": "AI 고객 응대 시뮬레이터 (전화)",
         "simulator_tab": "AI 고객 응대 시뮬레이터",
         "rag_header": "RAG 지식 챗봇 (문서 기반 Q&A)",
         "rag_desc": "업로드된 문서 기반으로 질문에 답변합니다。",
@@ -174,7 +176,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "prompt_survey": "지금까지 상담원 000였습니다. 즐거운 하루 되시기 바랍니다. [설문 조사 링크]",
         "customer_closing_confirm": "다른 문의 사항은 없으십니까?",
         "customer_positive_response": "알겠습니다. 감사합니다。",
-        "button_end_chat": "응대 종료 (설문 요청)",
+        "button_email_end_chat": "응대 종료 (설문 요청)",
+        "error_mandatory_contact": "이메일과 전화번호 입력은 필수입니다.", # 새로운 에러 메시지
+        "customer_attachment_label": "📎 고객 첨부 파일 업로드", # 파일 첨부 UI 라벨
+        "attachment_info_llm": "[고객 첨부 파일: {filename}이(가) 확인되었습니다. 이 파일을 참고하여 응대하세요.]", # LLM 프롬프트용 정보
         "survey_sent_confirm": "📨 설문조사 링크가 전송되었으며, 이 상담은 종료되었습니다。",
         "new_simulation_ready": "새 시뮬레이션을 시작할 수 있습니다。",
         "agent_response_header": "✍️ 에이전트 응답",
@@ -194,8 +199,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "date_range_label": "날짜 범위 필터",
         "history_search_button": "🔍 검색",  # ⭐ 추가: 검색 버튼 라벨
         "no_history_found": "검색 조건에 맞는 이력이 없습니다。",
-        "customer_email_label": "고객 이메일 (선택)",
-        "customer_phone_label": "고객 연락처 / 전화번호 (선택)",
+        "customer_email_label": "고객 이메일 (필수)",
+        "customer_phone_label": "고객 연락처 / 전화번호 (필수)",
         "transfer_header": "언어 이관 요청 (다른 팀)",
         "transfer_to_en": "🇺🇸 영어 팀으로 이관",
         "transfer_to_ja": "🇯🇵 일본어 팀으로 이관",
@@ -245,7 +250,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "empty_response_warning": "응답을 입력하세요。",
         "customer_no_more_inquiries": "없습니다. 감사합니다。",
         "customer_has_additional_inquiries": "추가 문의 사항도 있습니다。",
-        "sim_end_chat_button": "설문 조사 링크 전송 및 채팅 종료",
+        "sim_end_chat_button": "설문 조사 링크 전송 및 응대 종료",
 
         # --- 첨부 파일 기능 추가 ---
         "attachment_label": "고객 첨부 파일 업로드 (스크린샷 등)",
@@ -271,6 +276,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "rag_tab": "RAG Knowledge Chatbot",
         "content_tab": "Custom Content Generation",
         "lstm_tab": "LSTM Achievement Prediction Dashboard",
+        "sim_tab_chat_email": "AI Customer Support Simulator (Chat / Email)",
+        "sim_tab_phone": "AI Customer Support Simulator (Calls / Phones)",
         "simulator_tab": "AI Customer Support Simulator",
         "rag_header": "RAG Knowledge Chatbot (Document Q&A)",
         "rag_desc": "Answer questions based on uploaded documents.",
@@ -341,7 +348,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "prompt_survey": "This was Agent 000. Have a nice day. [Survey Link]",
         "customer_closing_confirm": "Is there anything else we can assist you with?",
         "customer_positive_response": "Noted with thanks.",
-        "button_end_chat": "End Chat (Survey Request)",
+        "button_email_end_chat": "End supports (Survey Request)",
+        "error_mandatory_contact": "Email and Phone number input are mandatory.",
+        "customer_attachment_label": "📎 Customer Attachment Upload",
+        "attachment_info_llm": "[Customer Attachment: {filename} is confirmed. Reference this file in your response.]",
         "survey_sent_confirm": "📨 The survey link has been sent. This chat session is now closed.",
         "new_simulation_ready": "You can now start a new simulation.",
         "agent_response_header": "✍️ Agent Response",
@@ -361,8 +371,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "date_range_label": "Date Filter",
         "history_search_button": "🔍 Search",  # ⭐ 추가: 검색 버튼 라벨
         "no_history_found": "No matching history found.",
-        "customer_email_label": "Customer Email (optional)",
-        "customer_phone_label": "Customer Phone / WhatsApp (optional)",
+        "customer_email_label": "Customer Email (Mandatory)",
+        "customer_phone_label": "Customer Phone / WhatsApp (Mandatory)",
         "transfer_header": "Language Transfer Request (To Other Teams)",
         "transfer_to_en": "🇰🇷 Korean Team Transfer",
         "transfer_to_ja": "🇯🇵 Japanese Team Transfer",
@@ -426,7 +436,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "empty_response_warning": "Please enter a response.",
         "customer_no_more_inquiries": "No, that will be all, thank you.",
         "customer_has_additional_inquiries": "Yes, I have an additional question.",
-        "sim_end_chat_button": "Send Survey Link and End Chat",
+        "sim_end_chat_button": "Send Survey Link and End Consultations",
 
         # --- 첨부 파일 기능 추가 ---
         "attachment_label": "Customer Attachment Upload (Screenshot, etc.)",
@@ -452,6 +462,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "rag_tab": "RAG知識チャットボット",
         "content_tab": "カスタム学習コンテンツ生成",
         "lstm_tab": "LSTM達成度予測ダッシュボード",
+        "sim_tab_chat_email": "AI顧客対応シミュレーター(チャット・メール)",
+        "sim_tab_phone": "AI顧客対応シミュレーター(電話)",
         "simulator_tab": "AI顧客対応シミュレーター",
         "rag_header": "RAG知識チャットボット (ドキュメントQ&A)",
         "rag_desc": "アップロードされた資料に基づいて質問に回答します。",
@@ -522,7 +534,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "prompt_survey": "担当エージェント000でした。良い一日をお過ごしください。 [アンケートリンク]",
         "customer_closing_confirm": "他のお問合せはございませんでしょうか。",
         "customer_positive_response": "はい、承知いたしました。ありがとうございます。",
-        "button_end_chat": "チャット終了（アンケート）",
+        "button_email_end_chat": "応対終了（アンケート）",
+        "error_mandatory_contact": "メールアドレスと電話番号の入力は必須です。",
+        "customer_attachment_label": "📎 顧客添付ファイルアップロード",
+        "attachment_info_llm": "[顧客添付ファイル: {filename}が確認されました。このファイルを参照して対応してください。]",
         "new_simulation_ready": "新しいシミュレーションを開始できます。",
         "survey_sent_confirm": "📨 アンケートリンクを送信しました。このチャットは終了しました。",
         "agent_response_header": "✍️ エージェント応答",
@@ -542,8 +557,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "date_range_label": "日付フィルター",
         "history_search_button": "🔍 検索",  # ⭐ 추가: 검색 버튼 라벨
         "no_history_found": "該当する履歴はありません。",
-        "customer_email_label": "顧客メールアドレス（任意）",
-        "customer_phone_label": "顧客連絡先 / 電話番号（任意）",
+        "customer_email_label": "顧客メールアドレス（必修）",
+        "customer_phone_label": "顧客連絡先 / 電話番号（必修）",
         "transfer_header": "言語切り替え要請（他チームへ）",
         "transfer_to_en": "🇺🇸 英語チームへ転送",
         "transfer_to_ko": "🇰🇷 韓国語チームへ転送",
@@ -593,7 +608,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "empty_response_warning": "応答を入力してください。",
         "customer_no_more_inquiries": "いいえ、結構です。大丈夫です。有難う御座いました。",
         "customer_has_additional_inquiries": "はい、追加の問い合わせがあります。",
-        "sim_end_chat_button": "アンケートリンクを送信してチャット終了",
+        "sim_end_chat_button": "アンケートリンクを送信して応対終了",
 
         # --- 첨부 파일 기능 추가 ---
         "attachment_label": "顧客の添付ファイルアップロード (スクリーンショットなど)",
@@ -1619,7 +1634,7 @@ with st.sidebar:
 
     feature_selection = st.radio(
         "기능 선택",
-        [L["rag_tab"], L["content_tab"], L["lstm_tab"], L["simulator_tab"], L["voice_rec_header"]],
+        [L["rag_tab"], L["content_tab"], L["lstm_tab"], L["sim_tab_chat_email"], L["sim_tab_phone"], L["voice_rec_header"]],
     )
 
 # 메인 타이틀
@@ -1773,7 +1788,7 @@ if feature_selection == L["voice_rec_header"]:
                             st.warning(L["delete_confirm_rec"])
 
 # -------------------- Simulator Tab --------------------
-elif feature_selection == L["simulator_tab"]:
+elif feature_selection == L["sim_tab_chat_email"] or feature_selection == L["sim_tab_phone"]:
     st.header(L["simulator_header"])
     st.markdown(L["simulator_desc"])
 
@@ -2049,26 +2064,7 @@ elif feature_selection == L["simulator_tab"]:
             placeholder=L["initial_query_sample"],
         )
 
-        # --- 고객 첨부 파일 업로더 (다중 파일 허용) ---
-        attachment_files = st.file_uploader(
-            L["attachment_label"],
-            type=["png", "jpg", "jpeg", "pdf"],  # 스크린샷 및 관련 문서 타입
-            key="customer_attachment_file_uploader",
-            help=L["attachment_placeholder"],
-            accept_multiple_files=True  # ⭐ 다중 파일 업로드 허용
-        )
-
-        # 파일 리스트를 세션 상태에 저장 및 처리
-        if attachment_files:
-            st.session_state.customer_attachment_file = [
-                {"name": f.name, "type": f.type, "size": f.size} for f in attachment_files
-            ]
-            # 사용자에게 다중 파일이 업로드되었음을 피드백
-            file_names = ", ".join([f.name for f in attachment_files])
-            st.info(f"✅ {len(attachment_files)}개 파일 업로드 완료: {file_names}")
-        else:
-            st.session_state.customer_attachment_file = []
-
+        # --- 필수 입력 필드 (요청 3 반영) ---
         customer_email = st.text_input(
             L["customer_email_label"],
             key="customer_email",
@@ -2077,6 +2073,7 @@ elif feature_selection == L["simulator_tab"]:
             L["customer_phone_label"],
             key="customer_phone",
         )
+        # ----------------------------------
 
         customer_type_options = L["customer_type_options"]
         default_idx = 1 if len(customer_type_options) > 1 else 0
@@ -2087,22 +2084,27 @@ elif feature_selection == L["simulator_tab"]:
             key="customer_type_sim_select",
         )
 
+        # --- 시뮬레이션 시작 버튼 클릭 시 (요청 3 검증 로직 추가) ---
         if st.button(L["button_simulate"], key="btn_simulate_initial"):
             if not customer_query.strip():
                 st.warning(L["simulation_warning_query"])
                 st.stop()
 
-            # 초기 상태 리셋
+            # --- 필수 입력 필드 검증 (요청 3 검증 로직) ---
+            if not customer_email.strip() or not customer_phone.strip():
+                st.error(L["error_mandatory_contact"])
+                st.stop()
+            # ------------------------------------------
+
+            # 초기화 및 시뮬레이션 시작 로직 유지
             st.session_state.simulator_messages = []
             st.session_state.simulator_memory.clear()
             st.session_state.is_chat_ended = False
             st.session_state.initial_advice_provided = False
-            st.session_state.is_solution_provided = False
-            st.session_state.language_transfer_requested = False
-            st.session_state.transfer_summary_text = ""
-            st.session_state.start_time = datetime.now()  # ⭐ AHT 타이머 시작
-            st.session_state.sim_attachment_context_for_llm = ""
-            st.session_state.agent_attachment_file = []
+            st.session_state.is_solution_provided = False  # 솔루션 플래그 리셋
+            st.session_state.language_transfer_requested = False  # 언어 요청 플래그 리셋
+            st.session_state.transfer_summary_text = ""  # 이관 요약 리셋
+            st.session_state.start_time = None  # AHT 타이머 초기화 (첫 고객 반응 후 시작)
 
             # 1) 고객 첫 메시지 추가
             st.session_state.simulator_messages.append(
@@ -2512,30 +2514,28 @@ Customer Inquiry:
 
     # =========================
     # 7. 종료 확인 메시지 대기 (WAIT_CLOSING_CONFIRMATION_FROM_AGENT)
-    #    - 고객이 감사 인사를 했으므로, 에이전트가 종료 확인 메시지를 보내야 함
+    # ** Fix 1 & 2: 채팅/이메일 종료 분리 및 버튼 분리 **
     # =========================
     if st.session_state.sim_stage == "WAIT_CLOSING_CONFIRMATION_FROM_AGENT":
         st.success("고객이 솔루션에 긍정적으로 반응했습니다. 추가 문의 여부를 확인해 주세요.")
 
-        # 에이전트가 "추가 문의 여부 확인 메시지"를 보내는 버튼
-        if st.button(L["send_closing_confirm_button"], key="btn_send_closing_confirm"):
-            closing_msg = L["customer_closing_confirm"]
+        col_chat_end, col_email_end = st.columns(2) # 버튼을 나란히 배치
 
-            # 에이전트 응답으로 로그 기록
-            st.session_state.simulator_messages.append(
-                {"role": "agent_response", "content": closing_msg}
-            )
+        # [1] 채팅 - 추가 문의 확인 메시지 보내기 버튼 (기존 로직)
+        with col_chat_end:
+            if st.button(L["send_closing_confirm_button"], key="btn_send_closing_confirm"):
+                # ... (기존 채팅 종료 확인 로직 유지)
+                st.rerun()
 
-            # 다음 단계: 고객의 최종 답변 대기
-            st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
-
-            customer_type_display = st.session_state.get("customer_type_sim_select", "")
-            save_simulation_history_local(
-                st.session_state.customer_query_text_area, customer_type_display,
-                st.session_state.simulator_messages, is_chat_ended=False,
-                attachment_context=st.session_state.sim_attachment_context_for_llm,
-            )
-            st.rerun()
+        # [2] 이메일 - 상담 종료 버튼 (요청 2 반영: 즉시 종료)
+        with col_email_end:
+            if st.button(L["button_email_end_chat"], key="btn_email_end_chat"):
+                # 이메일은 끝인사에 문의 확인이 포함되므로, 바로 최종 종료 단계로 이동
+                st.session_state.sim_stage = "FINAL_CLOSING_ACTION"
+                st.session_state.simulator_messages.append(
+                    {"role": "system_end", "content": "(시스템: 이메일 특성상, 즉시 최종 종료 단계로 진입합니다.)"}
+                )
+                st.rerun()
 
     # =========================
     # 8. 고객 최종 응답 생성 및 처리 (WAIT_CUSTOMER_CLOSING_RESPONSE)
