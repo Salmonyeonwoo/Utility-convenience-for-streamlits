@@ -712,6 +712,8 @@ if "agent_response_input_box_widget" not in st.session_state: # FIX: customer_ph
     st.session_state.agent_response_input_box_widget = ""
 if "sim_instance_id" not in st.session_state: # FIX: DuplicateWidgetID 방지용 인스턴스 ID 초기화
     st.session_state.sim_instance_id = str(uuid.uuid4())
+if "sim_attachment_context_for_llm" not in st.session_state:
+    st.session_state.sim_attachment_context_for_llm = ""
 # ----------------------------------------------------------------------
 
 
