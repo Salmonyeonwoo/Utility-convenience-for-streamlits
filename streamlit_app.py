@@ -2265,7 +2265,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
 
             # 타이머 업데이트를 위해 강제 재실행 (10분마다)
             # if seconds % 900 == 0 and total_seconds < 1000: # 10분마다 rerurn은 너무 길다.
-            if seconds % 3 == 0 and total_seconds < 1000:  # 3초마다 재실행으로 변경 (AHT 실시간성 확보)
+            if not st.session_state.is_on_hold and int(total_seconds) % 3 == 0 and total_seconds < 1000:
                 time.sleep(1)
                 st.rerun()  # 시뮬레이터가 멈춰있지 않을 때만 재실행 유도
 
