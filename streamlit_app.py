@@ -2964,9 +2964,7 @@ elif feature_selection == L["sim_tab_phone"]:
             total_seconds = elapsed_time_total.total_seconds()
             # total_seconds = max(0, total_seconds)
             # 누적 Hold 시간 계산에 현재 Hold 중인 시간 포함
-            current_hold_duration = (
-                        now - st.session_state.hold_start_time) if st.session_state.is_on_hold and st.session_state.hold_start_time else timedelta(
-                0)
+            current_hold_duration = (now - st.session_state.hold_start_time) if st.session_state.is_on_hold and st.session_state.hold_start_time else timedelta(0)
 
             # 총 상담 시간 (순수 AHT)
             elapsed_time_no_hold = (now - st.session_state.start_time)
