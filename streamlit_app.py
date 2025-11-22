@@ -2962,7 +2962,7 @@ elif feature_selection == L["sim_tab_phone"]:
             now = datetime.now()
             elapsed_time_total = now - st.session_state.start_time
             total_seconds = elapsed_time_total.total_seconds()
-            total_seconds = max(0, total_seconds)
+            # total_seconds = max(0, total_seconds)
             # 누적 Hold 시간 계산에 현재 Hold 중인 시간 포함
             current_hold_duration = (
                         now - st.session_state.hold_start_time) if st.session_state.is_on_hold and st.session_state.hold_start_time else timedelta(
@@ -3128,7 +3128,7 @@ elif feature_selection == L["sim_tab_phone"]:
                 if st.button(L["button_hold"], key="hold_call_btn", type="secondary"):
                     st.session_state.is_on_hold = True
                     st.session_state.hold_start_time = datetime.now()
-                    st.rerun() # ✅ UI 즉시 업데이트하여 마이크 비활성화/경고 표시
+                    st.rerun()  # ✅ UI 즉시 업데이트하여 마이크 비활성화/경고 표시
 
         if st.session_state.is_on_hold:
             # ⭐ 수정: 현재 Hold 시간을 계산하여 표시 (요청 2)
@@ -3191,55 +3191,63 @@ elif feature_selection == L["sim_tab_phone"]:
                 key="call_sim_mic_recorder",
             )
 
-            # 녹음 완료 후, 자동으로 전사 및 고객 반응 생성으로 전환
-        if mic_audio and mic_audio.get("bytes"):
-            if not st.session_state.openai_client:
-                st.error(L["openai_missing"])
-                st.stop()
-                
-            with st.spinner(L["whisper_processing"]):
-                # 1. 에이전트 음성 전사
-                agent_response_transcript = transcribe_bytes_with_whisper(
-                    mic_audio["bytes"], "audio/wav", lang_code=st.session_state.language
-                )
+            # 녹음 완료 (mic_audio.get("bytes")가 채워짐) 시, 바이트를 저장하고 재실행
+            if mic_audio and mic_audio.get("bytes") and "bytes_to_process" not in st.session_state:
+                st.session_state.bytes_to_process = mic_audio["bytes"]
+                st.session_state.current_agent_audio_text = "🎙️ 녹음 완료. 전사 처리 중..."  # 처리 중 메시지
+                st.rerun()  # ✅ 전사 로직을 다음 실행 주기로 분리
 
-                if agent_response_transcript.startswith("❌"):
-                    st.error(agent_response_transcript)
-                    st.session_state.current_agent_audio_text = f"[ERROR: {L['error']} Whisper failed]"
-                    # 오류 발생 시에도 CC에 오류 메시지 반영 후 UI 업데이트
+            # ⭐ 전사 로직: bytes_to_process에 데이터가 있을 때만 실행
+            if "bytes_to_process" in st.session_state and st.session_state.bytes_to_process:
+                if not st.session_state.openai_client:
+                    st.error(L["openai_missing"])
+                    st.session_state.bytes_to_process = None
                     st.rerun()
 
-                    # 2. 전사 결과를 현재 에이전트 텍스트로 반영
-                st.session_state.current_agent_audio_text = agent_response_transcript.strip()
+                with st.spinner(L["whisper_processing"]):
 
-                # 3. 고객의 다음 음성 반응 생성
-                customer_reaction = generate_customer_reaction_for_call(
-                    st.session_state.language, agent_response_transcript.strip()
-                )
+                    # 1. 에이전트 음성 전사
+                    agent_response_transcript = transcribe_bytes_with_whisper(
+                        st.session_state.bytes_to_process, "audio/wav", lang_code=st.session_state.language
+                    )
 
-                # 4. 고객 반응을 TTS로 재생 (요청 1)
-                if not customer_reaction.startswith("❌"):
-                    audio_bytes, msg = synthesize_tts(customer_reaction, st.session_state.language, role="customer")
-                    if audio_bytes:
-                        # ✅ 고객의 다음 음성 녹음 재생 (요청 1)
-                        st.audio(audio_bytes, format="audio/mp3", autoplay=True)
-                        st.success(f"🗣️ 고객이 응답했습니다: {customer_reaction.strip()[:50]}...")  # 재생 확인 메시지
-                    else:
-                        st.error(f"❌ 고객 음성 생성 오류: {msg}")
+                    # 전사 후 바이트 데이터 삭제
+                    del st.session_state.bytes_to_process
 
-                # 5. 고객 반응 텍스트를 CC 영역에 반영
-                st.session_state.current_customer_audio_text = customer_reaction.strip()
+                    if agent_response_transcript.startswith("❌"):
+                        st.error(agent_response_transcript)
+                        st.session_state.current_agent_audio_text = f"[ERROR: {L['error']} Whisper failed]"
+                        st.rerun()
 
-                # 6. 이력 저장
-                log_entry = f"Agent: {st.session_state.current_agent_audio_text} | Customer: {st.session_state.current_customer_audio_text}"
-                st.session_state.simulator_messages.append({"role": "phone_exchange", "content": log_entry})
+                        # 2. 전사 결과를 CC 텍스트로 반영
+                    st.session_state.current_agent_audio_text = agent_response_transcript.strip()
 
-                # 7. 에이전트 입력 영역 초기화
-                st.session_state.current_agent_audio_text = ""
-                st.session_state.realtime_hint_text = ""
+                    # 3. 고객의 다음 음성 반응 생성
+                    customer_reaction = generate_customer_reaction_for_call(
+                        st.session_state.language, agent_response_transcript.strip()
+                    )
 
-                # 명시적으로 rerun 호출하여 CC 자막을 업데이트하고 다음 턴을 준비
-            st.rerun()
+                    # 4. 고객 반응을 TTS로 재생 (요청 1)
+                    if not customer_reaction.startswith("❌"):
+                        audio_bytes, msg = synthesize_tts(customer_reaction, st.session_state.language, role="customer")
+                        if audio_bytes:
+                            st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+                            st.success(f"🗣️ 고객이 응답했습니다: {customer_reaction.strip()[:50]}...")
+                        else:
+                            st.error(f"❌ 고객 음성 생성 오류: {msg}")
+
+                    # 5. 고객 반응 텍스트를 CC 영역에 반영
+                    st.session_state.current_customer_audio_text = customer_reaction.strip()
+
+                    # 6. 이력 저장
+                    log_entry = f"Agent: {st.session_state.current_agent_audio_text} | Customer: {st.session_state.current_customer_audio_text}"
+                    st.session_state.simulator_messages.append({"role": "phone_exchange", "content": log_entry})
+
+                    # 7. 에이전트 입력 영역 초기화
+                    st.session_state.current_agent_audio_text = ""
+                    st.session_state.realtime_hint_text = ""
+
+                st.rerun()  # ✅ 고객 반응 후 확실하게 재실행
 
     # ------------------
     # CALL_ENDED 상태
