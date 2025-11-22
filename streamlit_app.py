@@ -278,8 +278,12 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_audio_playback": "🗣️ 고객 음성 재생",
         "agent_response_prompt": "고객에게 말할 응답을 녹음하세요.",
         "call_end_message": "통화가 종료되었습니다. AHT 및 이력을 확인하세요.",
-        "call_query_placeholder": "고객 문의 내용을 입력하세요.",
+        "call_query_placeholder": "고객 문의 내용을 입력하세요。",
         "call_number_placeholder": "+82 10-xxxx-xxxx (가상 번호)",
+        "call_summary_header": "AI 통화 요약",
+        "customer_audio_header": "고객 최초 문의 (음성)",
+        "aht_not_recorded": "⚠️ 통화 시작 시간이 기록되지 않아 AHT를 계산할 수 없습니다.", # ⭐ 추가
+        "no_audio_record": "고객의 최초 음성 기록이 없습니다。",
     },
 
     # --- ⭐ 영어 버전 (한국어 100% 매칭) ---
@@ -473,6 +477,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "call_end_message": "Call ended. Check AHT and history.",
         "call_query_placeholder": "Enter customer's initial query.",
         "call_number_placeholder": "+1 (555) 123-4567 (Mock Number)",
+        "call_summary_header": "AI Call Summary",
+        "customer_audio_header": "Customer Initial Query (Voice)",
+        "aht_not_recorded": "⚠️ Call start time not recorded. Cannot calculate AHT.", # ⭐ 추가
+        "no_audio_record": "No initial customer voice record.",
 
     },
 
@@ -666,6 +674,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "call_end_message": "通話が終了しました。AHTと履歴を確認してください。",
         "call_query_placeholder": "顧客からの最初の問い合わせ内容を入力してください。",
         "call_number_placeholder": "+81 90-xxxx-xxxx (仮想番号)",
+        "call_summary_header": "AI 通話要約",
+        "customer_audio_header": "顧客の最初の問い合わせ (音声)",
+        "aht_not_recorded": "⚠️ 通話開始時間が記録されていないため、AHTを計算できません。", # ⭐ 추가
+        "no_audio_record": "顧客の最初の音声記録はありません。",
     }
 }
 
@@ -2265,7 +2277,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
 
             # 타이머 업데이트를 위해 강제 재실행 (10분마다)
             # if seconds % 900 == 0 and total_seconds < 1000: # 10분마다 rerurn은 너무 길다.
-            if not st.session_state.is_on_hold and int(total_seconds) % 3 == 0 and total_seconds < 1000:
+            if seconds % 3 == 0 and total_seconds < 1000:  # 3초마다 재실행으로 변경 (AHT 실시간성 확보)
                 time.sleep(1)
                 st.rerun()  # 시뮬레이터가 멈춰있지 않을 때만 재실행 유도
 
@@ -2964,14 +2976,15 @@ elif feature_selection == L["sim_tab_phone"]:
             total_seconds = elapsed_time_total.total_seconds()
             # total_seconds = max(0, total_seconds)
             # 누적 Hold 시간 계산에 현재 Hold 중인 시간 포함
-            current_hold_duration = (now - st.session_state.hold_start_time) if st.session_state.is_on_hold and st.session_state.hold_start_time else timedelta(0)
+            current_hold_duration = (
+                        now - st.session_state.hold_start_time) if st.session_state.is_on_hold and st.session_state.hold_start_time else timedelta(0)
 
             # 총 상담 시간 (순수 AHT)
             elapsed_time_no_hold = (now - st.session_state.start_time)
             total_seconds = elapsed_time_no_hold.total_seconds()
 
             # ⭐ 수정: Hold 중이라면 1초마다 재실행하여 Hold 시간 실시간 카운팅 (요청 2)
-            if total_seconds < 1000 and (st.session_state.is_on_hold or (int(total_seconds) % 3 == 0)):
+            if not st.session_state.is_on_hold and int(total_seconds) % 3 == 0 and total_seconds < 1000:
                 time.sleep(1)
                 st.rerun()
 
