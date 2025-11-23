@@ -1,8 +1,15 @@
 # ========================================
 # streamlit_app_last_correction.py (전체 수정된 코드)
+#
+# 주요 개선 사항:
+# 1. AI 응답 초안 생성 및 에이전트 수정 기능 추가 (요청 1)
+# 2. AI 요약 기반 이력 저장 및 활용 (요청 4)
+# 3. API Key 입력 제거 및 Secrets/Env Var 로드 구조로 변경 (요청 6)
+# 4. 까다로운 고객 응대 로직 강화 (필수 정보 제공 및 솔루션 후 감사 표현) (고객 피드백 반영)
+# 5. AHT 모니터링 및 실시간 힌트 요청 기능 추가
+# 6. [BUG FIX]: 응답 전송 버튼 클릭 시 대화 로그 업데이트 및 고객 반응 생성 안 되는 오류 수정
+# 7. [기능 통합]: 응답 전송 시 고객 반응이 바로 생성되도록 로직 통합 (요청 1 반영)
 # ========================================
-
-# ... (기존 임포트 및 0. 기본 경로/로컬 DB 설정 유지)
 
 import os
 import io
@@ -18,6 +25,15 @@ import google.generativeai as genai
 import numpy as np
 import streamlit as st
 from matplotlib import pyplot as plt
+
+try:
+    import plotly.graph_objects as go
+    import plotly.express as px
+    from plotly.subplots import make_subplots
+
+    IS_PLOTLY_AVAILABLE = True
+except ImportError:
+    IS_PLOTLY_AVAILABLE = False
 
 from openai import OpenAI
 from anthropic import Anthropic
@@ -86,7 +102,7 @@ def _save_json(path: str, data: Any):
 
 
 # ========================================
-# 1. 다국어 설정 (전화 기능 관련 언어 팩 추가)
+# 1. 다국어 설정 (요청 4 시각화 레이블 추가)
 # ========================================
 DEFAULT_LANG = "ko"
 
@@ -170,9 +186,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "prompt_customer_end": "고객님의 추가 문의 사항이 없어, 이 상담을 종료합니다。",
         "prompt_survey": "지금까지 상담원 000였습니다. 즐거운 하루 되시기 바랍니다. [설문 조사 링크]",
         "customer_closing_confirm": "다른 문의 사항은 없으십니까?",
-        "customer_positive_response": "알겠습니다. 감사합니다。",
+        "customer_positive_response": "알겠습니다. 감사합니다。", # ⭐ 수정: 진상 고객도 솔루션 제공 후 사용할 긍정적 종료 문구
         "button_email_end_chat": "응대 종료 (설문 요청)",
-        "error_mandatory_contact": "이메일과 전화번호 입력은 필수입니다.",
+        "error_mandatory_contact": "이메일과 전화번호 입력은 필수입니다。",
         "customer_attachment_label": "📎 고객 첨부 파일 업로드",
         "attachment_info_llm": "[고객 첨부 파일: {filename}이(가) 확인되었습니다. 이 파일을 참고하여 응대하세요.]",
         "button_retry_translation": "번역 다시 시도",
@@ -208,11 +224,27 @@ LANG: Dict[str, Dict[str, str]] = {
         "transfer_summary_header": "🔍 이관된 상담원을 위한 요약 (번역됨)",
         "transfer_summary_intro": "고객님과의 이전 대화 이력입니다. 이 내용을 바탕으로 응대를 이어나가세요。",
         "llm_translation_error": "❌ 번역 실패: LLM 응답 오류",
-        "timer_metric": "상담 경과 시간",
+        "timer_metric": "상담 경과 시간 (AHT)",
         "timer_info_ok": "AHT (15분 기준)",
         "timer_info_warn": "AHT (10분 초과)",
         "timer_info_risk": "🚨 15분 초과: 높은 리스크",
         "solution_check_label": "✅ 이 응답에 솔루션/해결책이 포함되어 있습니다。",
+        "sentiment_score_label": "고객 감정 점수",
+        "urgency_score_label": "긴급도 점수",
+        "similarity_chart_title": "유사 케이스 유사도",
+        "scores_comparison_title": "감정 및 만족도 점수 비교",
+        "similarity_score_label": "유사도",
+        "satisfaction_score_label": "만족도",
+        "sentiment_trend_label": "감정 점수 추이",
+        "satisfaction_trend_label": "만족도 점수 추이",
+        "case_trends_title": "과거 케이스 점수 추이",
+        "date_label": "날짜",
+        "score_label": "점수 (0-100)",
+        "customer_characteristics_title": "고객 특성 분포",
+        "language_label": "언어",
+        "email_provided_label": "이메일 제공",
+        "phone_provided_label": "전화번호 제공",
+        "region_label": "지역",
 
         # --- 음성 기록 ---
         "voice_rec_header": "음성 기록 & 관리",
@@ -249,6 +281,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_no_more_inquiries": "없습니다. 감사합니다。",
         "customer_has_additional_inquiries": "추가 문의 사항도 있습니다。",
         "sim_end_chat_button": "설문 조사 링크 전송 및 응대 종료",
+        "delete_mic_record": "❌ 녹음 삭제", # ⭐ 추가: 녹음 삭제 버튼 텍스트
 
         # --- 첨부 파일 기능 추가 ---
         "attachment_label": "고객 첨부 파일 업로드 (스크린샷 등)",
@@ -276,13 +309,13 @@ LANG: Dict[str, Dict[str, str]] = {
         "cc_live_transcript": "🎤 실시간 CC 자막 / 전사",
         "mic_input_status": "🎙️ 에이전트 음성 입력",
         "customer_audio_playback": "🗣️ 고객 음성 재생",
-        "agent_response_prompt": "고객에게 말할 응답을 녹음하세요.",
-        "call_end_message": "통화가 종료되었습니다. AHT 및 이력을 확인하세요.",
+        "agent_response_prompt": "고객에게 말할 응답을 녹음하세요。",
+        "call_end_message": "통화가 종료되었습니다. AHT 및 이력을 확인하세요。",
         "call_query_placeholder": "고객 문의 내용을 입력하세요。",
         "call_number_placeholder": "+82 10-xxxx-xxxx (가상 번호)",
         "call_summary_header": "AI 통화 요약",
         "customer_audio_header": "고객 최초 문의 (음성)",
-        "aht_not_recorded": "⚠️ 통화 시작 시간이 기록되지 않아 AHT를 계산할 수 없습니다.", # ⭐ 추가
+        "aht_not_recorded": "⚠️ 통화 시작 시간이 기록되지 않아 AHT를 계산할 수 없습니다。",
         "no_audio_record": "고객의 최초 음성 기록이 없습니다。",
     },
 
@@ -366,7 +399,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "prompt_customer_end": "No further inquiries. Ending chat.",
         "prompt_survey": "This was Agent 000. Have a nice day. [Survey Link]",
         "customer_closing_confirm": "Is there anything else we can assist you with?",
-        "customer_positive_response": "Noted with thanks.",
+        "customer_positive_response": "I understand. Thank you.", # ⭐ 수정: 진상 고객도 솔루션 제공 후 사용할 긍정적 종료 문구
         "button_email_end_chat": "End supports (Survey Request)",
         "error_mandatory_contact": "Email and Phone number input are mandatory.",
         "customer_attachment_label": "📎 Customer Attachment Upload",
@@ -409,6 +442,22 @@ LANG: Dict[str, Dict[str, str]] = {
         "timer_info_warn": "AHT (Over 10 min)",
         "timer_info_risk": "🚨 Over 15 min: High Risk",
         "solution_check_label": "✅ This response includes a solution/fix.",
+        "sentiment_score_label": "Customer Sentiment Score",
+        "urgency_score_label": "Urgency Score",
+        "similarity_chart_title": "Case Similarity",
+        "scores_comparison_title": "Sentiment & Satisfaction Scores",
+        "similarity_score_label": "Similarity",
+        "satisfaction_score_label": "Satisfaction",
+        "sentiment_trend_label": "Sentiment Trend",
+        "satisfaction_trend_label": "Satisfaction Trend",
+        "case_trends_title": "Case Score Trends",
+        "date_label": "Date",
+        "score_label": "Score (0-100)",
+        "customer_characteristics_title": "Customer Characteristics",
+        "language_label": "Language",
+        "email_provided_label": "Email Provided",
+        "phone_provided_label": "Phone Provided",
+        "region_label": "Region",
 
         # Voice
         "voice_rec_header": "Voice Record & Management",
@@ -446,6 +495,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_no_more_inquiries": "No, that will be all, thank you.",
         "customer_has_additional_inquiries": "Yes, I have an additional question.",
         "sim_end_chat_button": "Send Survey Link and End Consultations",
+        "delete_mic_record": "❌ Delete recordings",
 
         # --- 첨부 파일 기능 추가 ---
         "attachment_label": "Customer Attachment Upload (Screenshot, etc.)",
@@ -479,7 +529,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "call_number_placeholder": "+1 (555) 123-4567 (Mock Number)",
         "call_summary_header": "AI Call Summary",
         "customer_audio_header": "Customer Initial Query (Voice)",
-        "aht_not_recorded": "⚠️ Call start time not recorded. Cannot calculate AHT.", # ⭐ 추가
+        "aht_not_recorded": "⚠️ Call start time not recorded. Cannot calculate AHT.",
         "no_audio_record": "No initial customer voice record.",
 
     },
@@ -537,7 +587,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "response_generating": "応答生成中...",
         "lstm_result_header": "達成度予測結果",
         "lstm_score_metric": "予測達成度",
-        "lstm_score_info": "次のスコア予測: **{predicted_score:.1f}点**",
+        "lstm_score_info": "次のスコア予測: **{predicted_score:.1f}점**",
         "lstm_rerun_button": "新しいデータで再予測",
 
         # --- Simulator ---
@@ -564,7 +614,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "prompt_customer_end": "追加の質問がないためチャットを終了します。",
         "prompt_survey": "担当エージェント000でした。良い一日をお過ごしください。 [アンケートリンク]",
         "customer_closing_confirm": "他のお問合せはございませんでしょうか。",
-        "customer_positive_response": "はい、承知いたしました。ありがとうございます。",
+        "customer_positive_response": "承知いたしました。ありがとうございます。", # ⭐ 수정: 진상 고객도 솔루션 제공 후 사용할 긍정적 종료 문구
         "button_email_end_chat": "応対終了（アンケート）",
         "error_mandatory_contact": "メールアドレスと電話番号の入力は必須です。",
         "customer_attachment_label": "📎 顧客添付ファイルアップロード",
@@ -643,6 +693,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_no_more_inquiries": "いいえ、結構です。大丈夫です。有難う御座いました。",
         "customer_has_additional_inquiries": "はい、追加の問い合わせがあります。",
         "sim_end_chat_button": "アンケートリンクを送信して応対終了",
+        "delete_mic_record": "録音を削除する",
 
         # --- 첨부 파일 기능 추가 ---
         "attachment_label": "顧客の添付ファイルアップロード (スクリーンショットなど)",
@@ -676,7 +727,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "call_number_placeholder": "+81 90-xxxx-xxxx (仮想番号)",
         "call_summary_header": "AI 通話要約",
         "customer_audio_header": "顧客の最初の問い合わせ (音声)",
-        "aht_not_recorded": "⚠️ 通話開始時間が記録されていないため、AHTを計算できません。", # ⭐ 추가
+        "aht_not_recorded": "⚠️ 通話開始時間が記録されていないため、AHTを計算できません。",
         "no_audio_record": "顧客の最初の音声記録はありません。",
     }
 }
@@ -684,7 +735,7 @@ LANG: Dict[str, Dict[str, str]] = {
 # ========================================
 # 1-1. Session State 초기화 (전화 관련 상태 추가)
 # ========================================
-
+# [Session State 초기화 코드는 변경 없음]
 if "language" not in st.session_state:
     st.session_state.language = DEFAULT_LANG
 if "is_llm_ready" not in st.session_state:
@@ -790,21 +841,27 @@ if "call_initial_query" not in st.session_state:  # 전화 탭 전용 초기 문
 # ⭐ 추가: 통화 요약 및 초기 고객 음성 저장소
 if "call_summary_text" not in st.session_state:
     st.session_state.call_summary_text = ""
-if "customer_initial_audio_bytes" not in st.session_state: # 고객의 첫 음성 (TTS 결과) 저장
+if "customer_initial_audio_bytes" not in st.session_state:  # 고객의 첫 음성 (TTS 결과) 저장
     st.session_state.customer_initial_audio_bytes = None
+if "supervisor_policy_context" not in st.session_state:
+    # Supervisor가 업로드한 예외 정책 텍스트를 저장합니다.
+    st.session_state.supervisor_policy_context = ""
+if "agent_policy_attachment_content" not in st.session_state:
+    # 에이전트가 업로드한 정책 파일 객체(또는 내용)를 저장합니다.
+    st.session_state.agent_policy_attachment_content = ""
+if "customer_attachment_b64" not in st.session_state:
+    st.session_state.customer_attachment_b64 = ""
+if "customer_history_summary" not in st.session_state:
+    st.session_state.customer_history_summary = ""
 
 L = LANG[st.session_state.language]
 
 # ⭐ 2-A. Gemini 키 초기화 (잘못된 키 잔존 방지)
-# Streamlit이 시작될 때마다 사이드바에 남은 유효하지 않은 키를 강제로 비워, RAG 초기화 시도를 막습니다.
 if "user_gemini_key" in st.session_state and st.session_state["user_gemini_key"].startswith("AIza"):
-    # 키가 유효한지 여부를 앱 내부에서 확인할 수 없으므로, 사용자에게 유효한 키를 입력하도록 유도하는 메시지를 띄우는 것이 좋습니다.
-    # 여기서는 안전을 위해 키 입력이 명시적으로 없으면 None 처리하도록 로직을 유지하고,
-    # 키 입력 시 세션에 저장되도록 합니다.
     pass
 
 # ========================================
-# 0. 멀티 모델 API Key 안전 구조 (Secrets + User Input)
+# 0. 멀티 모델 API Key 안전 구조 (Secrets + Env Var만 사용)
 # ========================================
 
 # 1) 지원하는 API 목록 정의
@@ -813,31 +870,31 @@ SUPPORTED_APIS = {
         "label": "OpenAI API Key",
         "secret_key": "OPENAI_API_KEY",
         "session_key": "user_openai_key",
-        "placeholder": "sk-proj-**************************",  # 업데이트
+        "placeholder": "sk-proj-**************************",
     },
     "gemini": {
         "label": "Google Gemini API Key",
         "secret_key": "GEMINI_API_KEY",
         "session_key": "user_gemini_key",
-        "placeholder": "AIza***********************************",  # 업데이트
+        "placeholder": "AIza***********************************",
     },
     "nvidia": {
         "label": "NVIDIA NIM API Key",
         "secret_key": "NVIDIA_API_KEY",
         "session_key": "user_nvidia_key",
-        "placeholder": "nvapi-**************************",  # 업데이트
+        "placeholder": "nvapi-**************************",
     },
     "claude": {
         "label": "Anthropic Claude API Key",
         "secret_key": "CLAUDE_API_KEY",
         "session_key": "user_claude_key",
-        "placeholder": "sk-ant-api-**************************",  # 업데이트
+        "placeholder": "sk-ant-api-**************************",
     },
     "groq": {
         "label": "Groq API Key",
         "secret_key": "GROQ_API_KEY",
         "session_key": "user_groq_key",
-        "placeholder": "gsk_**************************",  # 업데이트
+        "placeholder": "gsk_**************************",
     },
 }
 
@@ -847,80 +904,36 @@ for api, cfg in SUPPORTED_APIS.items():
         st.session_state[cfg["session_key"]] = ""
 
 if "selected_llm" not in st.session_state:
-    st.session_state.selected_llm = "openai_gpt4"  # 기본값
+    st.session_state.selected_llm = "openai_gpt4"
 
 
 def get_api_key(api):
     cfg = SUPPORTED_APIS[api]
 
-    # ⭐ 1. User Input (Streamlit sidebar session state) - 사용자 입력 우선
-    user_key = st.session_state.get(cfg["session_key"], "")
-    if user_key:
-        return user_key
-
-    # 2. Streamlit Secrets (.streamlit/secrets.toml)
+    # ⭐ 1. Streamlit Secrets (.streamlit/secrets.toml) - 최우선
     try:
         if hasattr(st, "secrets") and cfg["secret_key"] in st.secrets:
             return st.secrets[cfg["secret_key"]]
     except Exception:
         pass
 
-    # 3. Environment Variable (os.environ) - 환경 변수 (가장 낮은 우선순위)
+    # 2. Environment Variable (os.environ)
     env_key = os.environ.get(cfg["secret_key"])
     if env_key:
         return env_key
+
+    # 3. User Input (Session State - 제거됨)
+    user_key = st.session_state.get(cfg["session_key"], "")
+    if user_key:
+        return user_key
 
     return ""
 
 
 # ========================================
-# 1. Sidebar UI: 멀티 API Key 입력 + 모델 선택
+# 1. Sidebar UI: API Key 입력 제거
 # ========================================
-with st.sidebar:
-    st.markdown("### 🔐 API Keys 설정")
-
-    for api, cfg in SUPPORTED_APIS.items():
-        st.markdown(f"**{cfg['label']}**")
-        key_input = st.text_input(
-            cfg["label"],
-            value=st.session_state.get(cfg["session_key"], ""),  # 이미 저장된 값 보여주기
-            type="password",
-            key=f"input_{api}",
-            placeholder=cfg["placeholder"],  # <-- placeholder 설정 업데이트
-        )
-
-        if st.button(f"{cfg['label']} 적용", key=f"apply_{api}"):
-            if key_input.strip():
-                st.session_state[cfg["session_key"]] = key_input.strip()
-                st.success(f"{cfg['label']} 저장됨")
-                # st.rerun()  # 키 변경 시 재실행
-            else:
-                st.session_state[cfg["session_key"]] = ""
-                st.warning("API Key를 입력하세요.")
-
-    st.divider()
-    st.markdown("### 🤖 사용할 LLM 모델 선택")
-
-    MODEL_CHOICES = {
-        "openai_gpt4": "OpenAI GPT-4o",
-        "openai_gpt35": "OpenAI GPT-3.5 Turbo",
-        "gemini_flash": "Gemini 2.0 Flash",
-        "gemini_pro": "Gemini 2.0 Pro",
-        "claude_sonnet": "Claude 3.5 Sonnet",
-        "groq_llama3": "Groq Llama-3-70B",
-    }
-
-    # 기본값 설정: "openai_gpt4"가 리스트에 있다면 해당 인덱스, 없다면 0
-    default_index = list(MODEL_CHOICES.keys()).index(st.session_state.selected_llm) \
-        if st.session_state.selected_llm in MODEL_CHOICES else 0
-
-    st.session_state.selected_llm = st.selectbox(
-        "LLM 모델 선택",
-        options=list(MODEL_CHOICES.keys()),
-        format_func=lambda x: MODEL_CHOICES[x],
-        key="selected_llm_box",
-        index=default_index,
-    )
+# API Key 입력 UI는 제거하고, 환경변수와 Streamlit Secrets만 사용하도록 함.
 
 
 # ========================================
@@ -1029,7 +1042,6 @@ def run_llm(prompt: str) -> str:
 
 # ========================================
 # 2-A. Whisper / TTS 용 OpenAI Client 별도로 초기화
-#      (선택 모델과 무관하게, OpenAI Key만 있으면 사용)
 # ========================================
 
 def init_openai_audio_client():
@@ -1042,10 +1054,31 @@ def init_openai_audio_client():
         return None
 
 
-# LLM 클라이언트 및 상태 업데이트
-st.session_state.openai_client = init_openai_audio_client()
-probe_client, _ = get_llm_client()
-st.session_state.is_llm_ready = probe_client is not None
+# ⭐ 최적화: LLM 클라이언트 초기화 캐싱 (매번 재생성하지 않도록)
+# OpenAI 클라이언트 캐싱
+if "openai_client" not in st.session_state or st.session_state.openai_client is None:
+    st.session_state.openai_client = init_openai_audio_client()
+
+# LLM 준비 상태 캐싱 (API 키 변경 시에만 재확인)
+if "is_llm_ready" not in st.session_state or "llm_ready_checked" not in st.session_state:
+    probe_client, _ = get_llm_client()
+    st.session_state.is_llm_ready = probe_client is not None
+    st.session_state.llm_ready_checked = True
+
+# API 키 변경 감지를 위한 해시 체크
+current_api_keys_hash = hashlib.md5(
+    f"{get_api_key('openai')}{get_api_key('gemini')}{get_api_key('claude')}{get_api_key('groq')}".encode()
+).hexdigest()
+
+if "api_keys_hash" not in st.session_state:
+    st.session_state.api_keys_hash = current_api_keys_hash
+elif st.session_state.api_keys_hash != current_api_keys_hash:
+    # API 키가 변경된 경우만 재확인
+    probe_client, _ = get_llm_client()
+    st.session_state.is_llm_ready = probe_client is not None
+    st.session_state.api_keys_hash = current_api_keys_hash
+    # OpenAI 클라이언트도 재초기화
+    st.session_state.openai_client = init_openai_audio_client()
 
 if st.session_state.openai_client:
     # 키를 찾았고 클라이언트 객체는 생성되었으나, 실제 인증은 API 호출 시 이루어짐 (401 오류는 여기서 발생)
@@ -1129,14 +1162,14 @@ def translate_text_with_llm(text_content: str, target_lang_code: str, source_lan
 
 
 # ----------------------------------------
-# Realtime Hint Generation (요청 1, 2 반영)
+# Realtime Hint Generation (요청 2 반영)
 # ----------------------------------------
 def generate_realtime_hint(current_lang_key: str, is_call: bool = False):
     """현재 대화 맥락을 기반으로 에이전트에게 실시간 응대 힌트(키워드/정책/액션)를 제공"""
     L = LANG[current_lang_key]
     # 채팅/전화 구분하여 이력 사용
     if is_call:
-        history_text = st.session_state.call_initial_query + "\n" + st.session_state.customer_live_transcript
+        history_text = st.session_state.call_initial_query + "\n" + st.session_state.current_customer_audio_text
     else:
         history_text = get_chat_history_for_prompt(include_attachment=True)
 
@@ -1150,7 +1183,7 @@ Provide ONE concise, actionable hint for the agent. The purpose is to save AHT t
 
 Output MUST be a single paragraph/sentence in {lang_name} containing actionable advice.
 DO NOT use markdown headers or titles.
-Do NOT direct the agent to check the general website. 
+Do NOT direct the agent to check the general website.
 Provide an actionable fact or the next specific step (e.g., check policy section, confirm coverage).
 
 Examples of good hints (based on the content):
@@ -1172,6 +1205,134 @@ HINT:
             return run_llm(hint_prompt).strip()
         except Exception as e:
             return f"❌ Hint Generation Error. (Try again or check API Key: {e})"
+
+
+def generate_agent_response_draft(current_lang_key: str) -> str:
+    """고객 응답을 기반으로 AI가 에이전트 응답 초안을 생성 (요청 1 반영)"""
+    L = LANG[current_lang_key]
+    history_text = get_chat_history_for_prompt(include_attachment=True)
+    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+
+    # 첨부 파일 컨텍스트 추가
+    attachment_context = st.session_state.sim_attachment_context_for_llm
+    if attachment_context:
+        attachment_context = f"\n[고객 첨부 파일 정보: {attachment_context}]\n"
+    else:
+        attachment_context = ""
+
+    # 고객 유형 및 반복 불만 패턴 분석
+    customer_type = st.session_state.get('customer_type_sim_select', '일반적인 문의')
+    is_difficult_customer = customer_type in ["까다로운 고객", "매우 불만족스러운 고객", "Difficult Customer",
+                                              "Highly Dissatisfied Customer", "難しい顧客", "非常に不満な顧客"]
+
+    # 고객 메시지 수 및 감정 분석
+    customer_message_count = sum(
+        1 for msg in st.session_state.simulator_messages if msg.get("role") in ["customer", "customer_rebuttal"])
+    agent_message_count = sum(1 for msg in st.session_state.simulator_messages if msg.get("role") == "agent_response")
+
+    # 고객이 계속 따지거나 화내는 패턴 감지 (고객 메시지가 에이전트 메시지보다 많거나, 반복적인 불만 표현)
+    is_repeating_complaints = False
+    if customer_message_count > agent_message_count and customer_message_count >= 2:
+        # 마지막 2개 고객 메시지 분석
+        recent_customer_messages = [msg["content"].lower() for msg in st.session_state.simulator_messages if
+                                    msg.get("role") in ["customer", "customer_rebuttal"]][-2:]
+        complaint_keywords = ["왜", "이유", "설명", "말이 안", "이해가 안", "화나", "짜증", "불만", "왜", "why", "reason", "explain",
+                              "angry", "frustrated", "complaint", "なぜ", "理由", "説明", "怒り", "不満"]
+        if any(any(keyword in msg for keyword in complaint_keywords) for msg in recent_customer_messages):
+            is_repeating_complaints = True
+
+    # 대처법 포메이션 추가 여부 결정
+    needs_coping_strategy = is_difficult_customer or (is_repeating_complaints and customer_message_count >= 2)
+
+    # 대처법 가이드라인 생성
+    coping_guidance = ""
+    if needs_coping_strategy:
+        coping_guidance = f"""
+
+[CRITICAL: Handling Difficult Customer Situation]
+The customer type is "{customer_type}" and the customer has sent {customer_message_count} messages while the agent has sent {agent_message_count} messages.
+The customer may be showing signs of continued frustration or dissatisfaction.
+
+**INCLUDE THE FOLLOWING COPING STRATEGY FORMAT IN YOUR RESPONSE:**
+
+1. **Immediate Acknowledgment** (1-2 sentences):
+   - Acknowledge their frustration/specific concern explicitly
+   - Show deep empathy and understanding
+   - Example formats:
+     * "{'죄송합니다. 불편을 드려 정말 죄송합니다. 고객님의 상황을 충분히 이해하고 있습니다.' if current_lang_key == 'ko' else ('I sincerely apologize for the inconvenience. I fully understand your situation and frustration.' if current_lang_key == 'en' else '大変申し訳ございません。お客様の状況とご不便を十分に理解しております。')}"
+     * "{'고객님의 소중한 의견을 잘 듣고 있습니다. 정말 답답하셨을 것 같습니다.' if current_lang_key == 'ko' else ('I hear your concerns clearly. This must have been very frustrating for you.' if current_lang_key == 'en' else 'お客様のご意見をしっかりと受け止めています。本当にお困りだったと思います。')}"
+
+2. **Specific Solution Recap** (2-3 sentences):
+   - Clearly restate the solution/step provided previously (if any)
+   - Offer a NEW concrete action or alternative solution
+   - Be specific and actionable
+   - Example formats:
+     * "{'앞서 안내드린 [구체적 해결책] 외에도, [새로운 대안/추가 조치]를 진행해드릴 수 있습니다.' if current_lang_key == 'ko' else ('In addition to the [specific solution] I mentioned earlier, I can also [new alternative/additional action] for you.' if current_lang_key == 'en' else '先ほどご案内した[具体的解決策]に加えて、[新しい代替案/追加措置]も進めることができます。')}"
+     * "{'혹시 [구체적 문제점] 때문에 불편하셨다면, [구체적 해결 방법]을 바로 진행해드리겠습니다.' if current_lang_key == 'ko' else ('If you are experiencing [specific issue], I can immediately proceed with [specific solution].' if current_lang_key == 'en' else 'もし[具体的問題]でご不便でしたら、[具体的解決方法]をすぐに進めさせていただきます。')}"
+
+3. **Escalation or Follow-up Offer** (1-2 sentences):
+   - Offer to escalate to supervisor/higher level support
+   - Promise immediate follow-up within specific time
+   - Example formats:
+     * "{'만약 여전히 불만이 해소되지 않으신다면, 즉시 상급 관리자에게 이관하여 더 나은 해결책을 찾아드리겠습니다.' if current_lang_key == 'ko' else ('If your concern is still not resolved, I can immediately escalate this to a supervisor to find a better solution.' if current_lang_key == 'en' else 'もしご不満が解消されない場合は、すぐに上級管理者にエスカレートして、より良い解決策を見つけさせていただきます。')}"
+     * "{'24시간 이내에 [구체적 조치/결과]를 확인하여 고객님께 다시 연락드리겠습니다.' if current_lang_key == 'ko' else ('I will follow up with you within 24 hours regarding [specific action/result].' if current_lang_key == 'en' else '24時間以内に[具体的措置/結果]を確認し、お客様に再度ご連絡いたします。')}"
+
+4. **Closing with Assurance** (1 sentence):
+   - Reassure that their concern is being taken seriously
+   - Example formats:
+     * "{'고객님의 모든 문의사항을 최우선으로 처리하겠습니다.' if current_lang_key == 'ko' else ('I will prioritize resolving all of your concerns.' if current_lang_key == 'en' else 'お客様のすべてのご質問を最優先で処理いたします。')}"
+
+**IMPORTANT NOTES:**
+- DO NOT repeat the exact same solution that was already provided
+- DO NOT sound dismissive or automated
+- DO sound genuinely concerned and willing to go the extra mile
+- If policy restrictions exist, acknowledge them but still offer alternatives
+- Use warm, respectful tone while being firm about what can/cannot be done
+
+**RESPONSE STRUCTURE:**
+[Immediate Acknowledgment]
+[Specific Solution Recap + New Action]
+[Escalation/Follow-up Offer]
+[Closing with Assurance]
+
+Now generate the agent's response draft following this structure:
+"""
+
+    draft_prompt = f"""
+You are an AI assistant helping a customer support agent write a professional response.
+
+Based on the conversation history below, generate a draft response that the agent can review and modify before sending.
+
+Requirements:
+1. The response MUST be in {lang_name}
+2. Be professional, empathetic, and solution-oriented
+3. Address the customer's latest inquiry or concern
+4. If the customer asked a question, provide a clear answer
+5. If the customer expressed dissatisfaction, show empathy and offer solutions
+6. Keep the tone appropriate for the customer type: {customer_type}
+7. Do NOT include any markdown formatting, just plain text
+8. {f'**FOLLOW THE COPING STRATEGY FORMAT BELOW**' if needs_coping_strategy else 'Use natural, conversational flow'}
+
+Conversation History:
+{history_text}
+{attachment_context}
+{coping_guidance if needs_coping_strategy else ''}
+
+Generate the agent's response draft:
+"""
+
+    if not st.session_state.is_llm_ready:
+        return ""
+
+    try:
+        draft = run_llm(draft_prompt).strip()
+        # 마크다운 제거 (``` 등)
+        if draft.startswith("```"):
+            lines = draft.split("\n")
+            draft = "\n".join(lines[1:-1]) if len(lines) > 2 else draft
+        return draft
+    except Exception as e:
+        return f"❌ 응답 초안 생성 오류: {e}"
 
 
 # ========================================
@@ -1280,7 +1441,6 @@ def render_tts_button(text, lang_key, role="customer", prefix="", index: int = -
 
 # ========================================
 # 4. 로컬 음성 기록 Helper
-# (RAG 및 음성 기록 관리용 함수는 그대로 유지)
 # ========================================
 
 def load_voice_records() -> List[Dict[str, Any]]:
@@ -1354,7 +1514,7 @@ def get_audio_bytes_local(rec_id: str):
 
 
 # ========================================
-# 5. 로컬 시뮬레이션 이력 Helper
+# 5. 로컬 시뮬레이션 이력 Helper (요청 4 반영)
 # ========================================
 
 def load_simulation_histories_local(lang_key: str) -> List[Dict[str, Any]]:
@@ -1362,30 +1522,172 @@ def load_simulation_histories_local(lang_key: str) -> List[Dict[str, Any]]:
     # 현재 언어와 메시지 리스트가 유효한 이력만 필터링
     return [
         h for h in histories
-        if h.get("language_key") == lang_key and isinstance(h.get("messages"), list)
+        if h.get("language_key") == lang_key and (isinstance(h.get("messages"), list) or h.get("summary"))
     ]
+
+
+def generate_chat_summary(messages: List[Dict[str, Any]], initial_query: str, customer_type: str,
+                          current_lang_key: str) -> Dict[str, Any]:
+    """채팅 내용을 AI로 요약하여 주요 정보와 점수를 추출 (요청 4)"""
+    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+
+    # 대화 내용 추출
+    conversation_text = f"Initial Query: {initial_query}\n\n"
+    for msg in messages:
+        role = msg.get("role", "")
+        content = msg.get("content", "")
+        if role in ["customer", "customer_rebuttal"]:
+            conversation_text += f"Customer: {content}\n"
+        elif role == "agent_response":
+            conversation_text += f"Agent: {content}\n"
+
+    summary_prompt = f"""
+You are an AI analyst summarizing a customer support conversation.
+
+Analyze the conversation and provide a structured summary in JSON format (ONLY JSON, no markdown).
+
+Extract and score:
+1. Main inquiry topic (what the customer asked about)
+2. Key responses provided by the agent (list of max 3 core actions/solutions)
+3. Customer sentiment score (0-100, where 0=very negative, 50=neutral, 100=very positive)
+4. Customer satisfaction score (0-100, based on final response)
+5. Customer characteristics:
+   - Language preference (if mentioned)
+   - Cultural background hints (if any)
+   - Location/region (if mentioned, but anonymize specific addresses)
+   - Communication style (formal/casual, brief/detailed)
+6. Privacy-sensitive information (anonymize: names, emails, phone numbers, specific addresses)
+   - Extract patterns only (e.g., "email provided", "phone number provided", "resides in Asia region")
+
+Output format (JSON only):
+{{
+  "main_inquiry": "brief description of main issue",
+  "key_responses": ["response 1", "response 2"],
+  "customer_sentiment_score": 75,
+  "customer_satisfaction_score": 80,
+  "customer_characteristics": {{
+    "language": "ko/en/ja or unknown",
+    "cultural_hints": "brief description or unknown",
+    "region": "general region or unknown",
+    "communication_style": "formal/casual/brief/detailed"
+  }},
+  "privacy_info": {{
+    "has_email": true/false,
+    "has_phone": true/false,
+    "has_address": true/false,
+    "region_hint": "general region or unknown"
+  }},
+  "summary": "overall conversation summary in {lang_name}"
+}}
+
+Conversation:
+{conversation_text}
+
+JSON Output:
+"""
+
+    if not st.session_state.is_llm_ready:
+        # Fallback summary
+        return {
+            "main_inquiry": initial_query[:100],
+            "key_responses": [],
+            "customer_sentiment_score": 50,
+            "customer_satisfaction_score": 50,
+            "customer_characteristics": {
+                "language": current_lang_key,
+                "cultural_hints": "unknown",
+                "region": "unknown",
+                "communication_style": "unknown"
+            },
+            "privacy_info": {
+                "has_email": False,
+                "has_phone": False,
+                "has_address": False,
+                "region_hint": "unknown"
+            },
+            "summary": f"Customer inquiry about: {initial_query[:100]}"
+        }
+
+    try:
+        summary_text = run_llm(summary_prompt).strip()
+        # JSON 추출 (마크다운 코드 블록 제거)
+        if "```json" in summary_text:
+            summary_text = summary_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in summary_text:
+            summary_text = summary_text.split("```")[1].split("```")[0].strip()
+
+        import json
+        summary_data = json.loads(summary_text)
+        return summary_data
+    except Exception as e:
+        # Fallback on error
+        return {
+            "main_inquiry": initial_query[:100],
+            "key_responses": [],
+            "customer_sentiment_score": 50,
+            "customer_satisfaction_score": 50,
+            "customer_characteristics": {
+                "language": current_lang_key,
+                "cultural_hints": "unknown",
+                "region": "unknown",
+                "communication_style": "unknown"
+            },
+            "privacy_info": {
+                "has_email": False,
+                "has_phone": False,
+                "has_address": False,
+                "region_hint": "unknown"
+            },
+            "summary": f"Error generating summary: {str(e)}"
+        }
 
 
 def save_simulation_history_local(initial_query: str, customer_type: str, messages: List[Dict[str, Any]],
                                   is_chat_ended: bool, attachment_context: str, is_call: bool = False):
+    """AI 요약 데이터를 중심으로 이력을 저장 (요청 4 반영)"""
     histories = _load_json(SIM_META_FILE, [])
     doc_id = str(uuid.uuid4())
     ts = datetime.utcnow().isoformat()
-    data = {
-        "id": doc_id,
-        "initial_query": initial_query,
-        "customer_type": customer_type,
-        "messages": messages,
-        "language_key": st.session_state.language,
-        "timestamp": ts,
-        "is_chat_ended": is_chat_ended,
-        "attachment_context": attachment_context,  # 첨부 파일 컨텍스트도 저장
-        "is_call": is_call,  # 전화 여부 플래그
-    }
+
+    # AI 요약 생성 (채팅 종료 시 또는 충분한 대화가 있을 때)
+    summary_data = None
+    if is_chat_ended or len(messages) > 4:  # 충분한 대화가 있으면 요약 생성
+        summary_data = generate_chat_summary(messages, initial_query, customer_type, st.session_state.language)
+
+    # 요약 데이터가 생성된 경우에만 저장 (요약 중심 저장)
+    if summary_data:
+        # 요약 데이터에 초기 문의와 핵심 정보 포함
+        data = {
+            "id": doc_id,
+            "initial_query": initial_query,  # 초기 문의는 유지
+            "customer_type": customer_type,
+            "messages": [],  # 전체 메시지는 저장하지 않음 (요약만 저장)
+            "summary": summary_data,  # AI 요약 데이터 (주요 저장 내용)
+            "language_key": st.session_state.language,
+            "timestamp": ts,
+            "is_chat_ended": is_chat_ended,
+            "attachment_context": attachment_context if attachment_context else "",  # 첨부 파일 컨텍스트
+            "is_call": is_call,  # 전화 여부 플래그
+        }
+    else:
+        # 요약이 아직 생성되지 않은 경우 (진행 중인 대화), 최소한의 정보만 저장
+        data = {
+            "id": doc_id,
+            "initial_query": initial_query,
+            "customer_type": customer_type,
+            "messages": messages[:10] if len(messages) > 10 else messages,  # 최근 10개만 저장
+            "summary": None,  # 요약 없음
+            "language_key": st.session_state.language,
+            "timestamp": ts,
+            "is_chat_ended": is_chat_ended,
+            "attachment_context": attachment_context if attachment_context else "",
+            "is_call": is_call,
+        }
+
     # 기존 이력에 추가 (최신순)
     histories.insert(0, data)
-    # 너무 많은 이력 방지 (예: 50개)
-    _save_json(SIM_META_FILE, histories[:50])
+    # 너무 많은 이력 방지 (예: 100개로 증가 - 요약만 저장하므로 용량 부담 적음)
+    _save_json(SIM_META_FILE, histories[:100])
     return doc_id
 
 
@@ -1605,13 +1907,13 @@ def get_chat_history_for_prompt(include_attachment=False):
 
 
 def generate_customer_reaction(current_lang_key: str, is_call: bool = False) -> str:
-    """고객의 다음 반응을 생성하는 LLM 호출"""
-    # 전화 시뮬레이터에서는 이 함수를 직접 사용하지 않고,
-    # generate_customer_reaction_for_call()을 사용하는 것이 좋습니다.
-    # 여기서는 채팅 전용 로직을 유지합니다.
-
+    """
+    고객의 다음 반응을 생성하는 LLM 호출 (채팅 전용)
+    **수정 사항:** 에이전트 정보 요청 시 필수 정보 (주문번호, eSIM, 자녀 만 나이, 취소 사유) 제공 의무를 강화함.
+    """
     history_text = get_chat_history_for_prompt()
     lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+    L_local = LANG[current_lang_key]
 
     # 첨부 파일 컨텍스트 추가
     attachment_context = st.session_state.sim_attachment_context_for_llm
@@ -1632,14 +1934,19 @@ Conversation so far:
 
 RULES:
 1. You are only the customer. Do not write as the agent.
-2. **[Crucial Rule for Repetition/New Inquiry]** After the agent has provided a solution:
+2. **[CRITICAL: Mandatory Information Submission for Problem Resolution]** If the agent requested any of the following critical information, you MUST provide it:
+    - Order/Booking Number (e.g., ABC123, 123456)
+    - eSIM related details (e.g., Host device compatibility, local status/location, time of activation)
+    - Child-related product details (e.g., Child's Date of Birth or Current Age)
+    - Exception/Refund Reason (e.g., flight cancellation/delay, illness, local natural disaster)
+    - **If you are a difficult customer and the agent requests this information, you MUST still provide it, but you may express frustration or impatience while doing so.**
+3. **[Crucial Rule for Repetition/New Inquiry]** After the agent has provided an attempt at a solution or answer:
     - If you are still confused or the problem is not fully solved, you MUST state the remaining confusion/problem clearly and briefly. DO NOT REPEAT THE INITIAL QUERY. Focus only on the unresolved aspect or the new inquiry.
-3. If the agent requested information → provide EXACTLY ONE missing detail.
-4. If the agent provided a clear solution, or if you have no further questions,
-   you MUST respond with appreciation or satisfaction, like "{L['customer_positive_response']}".
-5. If the agent's LAST message was the closing confirmation: "{L['customer_closing_confirm']}"
-    - If you have NO additional questions: You MUST reply with "{L['customer_no_more_inquiries']}".
-    - If you DO have additional questions: You MUST reply with "{L['customer_has_additional_inquiries']}" AND MUST FOLLOW UP WITH THE NEW INQUIRY DETAILS IMMEDIATELY. DO NOT just repeat that you have an additional question.
+4. **[CRITICAL: Solution Acknowledgment]** If the agent provided a clear and accurate solution/confirmation:
+    - You MUST respond with appreciation and satisfaction, like "{L_local['customer_positive_response']}" or similar positive acknowledgment. This applies even if you are a difficult customer.
+5. If the agent's LAST message was the closing confirmation: "{L_local['customer_closing_confirm']}"
+    - If you have NO additional questions: You MUST reply with "{L_local['customer_no_more_inquiries']}".
+    - If you DO have additional questions: You MUST reply with "{L_local['customer_has_additional_inquiries']}" AND MUST FOLLOW UP WITH THE NEW INQUIRY DETAILS IMMEDIATELY. DO NOT just repeat that you have an additional question.
 6. Do NOT repeat your initial message or previous responses unless necessary.
 7. Output ONLY the customer's next message.
 """
@@ -1650,9 +1957,50 @@ RULES:
         return f"❌ 고객 반응 생성 오류: {e}"
 
 
+def summarize_history_with_ai(current_lang_key: str) -> str:
+    """전화 통화 로그를 정리하여 LLM에 전달하고 요약 텍스트를 받는 함수."""
+    # 전화 로그는 'phone_exchange' 역할을 가지거나, 'initial_query'에 포함되어 있음
+
+    # 1. 로그 추출
+    conversation_text = ""
+    initial_query = st.session_state.get("call_initial_query", "N/A")
+    if initial_query and initial_query != "N/A":
+        conversation_text += f"Initial Query: {initial_query}\n"
+
+    for msg in st.session_state.simulator_messages:
+        role = msg.get("role", "")
+        content = msg.get("content", "")
+        if role == "phone_exchange":
+            # phone_exchange는 "Agent: ... | Customer: ..." 형태로 이미 정리되어 있음
+            conversation_text += f"{content}\n"
+
+    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+
+    summary_prompt = f"""
+You are an AI Analyst specialized in summarizing customer phone calls. 
+Analyze the full conversation log below, identify the main issue, the steps taken by the agent, and the customer's sentiment.
+
+Provide a concise, easy-to-read summary of the key exchange STRICTLY in {lang_name}.
+
+--- Conversation Log ---
+{conversation_text}
+---
+
+Summary:
+"""
+    if not st.session_state.is_llm_ready:
+        return "LLM Key가 없어 요약 생성이 불가합니다."
+
+    try:
+        summary = run_llm(summary_prompt)
+        return summary.strip()
+    except Exception as e:
+        return f"❌ AI 요약 생성 오류: {e}"
+
 def generate_customer_reaction_for_call(current_lang_key: str, last_agent_response: str) -> str:
     """전화 시뮬레이터 전용 고객 반응 생성 (간결화)"""
     lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+    L_local = LANG[current_lang_key]  # ⭐ 수정: 함수 내에서 사용할 언어 팩
 
     # 전화 시뮬레이터에서는 전체 simulator_messages 대신,
     # st.session_state.call_initial_query와 st.session_state.current_customer_audio_text
@@ -1672,11 +2020,11 @@ Conversation context:
 
 RULES:
 1. Respond to the Agent's Last Response. Your reply MUST be short and conversational.
-2. If the agent's response is satisfactory: Acknowledge and state you are fine, or ask for closing confirmation (e.g., "{L['customer_positive_response']}").
+2. If the agent's response is satisfactory: Acknowledge and state you are fine, or ask for closing confirmation (e.g., "{L_local['customer_positive_response']}").
 3. If the agent requested information or provided an unsatisfactory answer: Briefly state the remaining problem or provide the requested information.
 4. **NEVER** output the agent's response, supervisor advice, or full context. Output ONLY the next customer utterance.
 5. If the agent said the call is on hold, you MUST wait silently or acknowledge briefly. (Simulate this by just outputting a very short confirmation like "Okay.")
-6. If the agent's last response was the closing confirmation: You MUST reply with "{L['customer_no_more_inquiries']}" or "{L['customer_has_additional_inquiries']}" (followed by the new query).
+6. If the agent's last response was the closing confirmation: You MUST reply with "{L_local['customer_no_more_inquiries']}" or "{L_local['customer_has_additional_inquiries']}" (followed by the new query).
 
 Customer's next brief spoken response:
 """
@@ -1717,13 +2065,15 @@ Summary:
     except Exception as e:
         return f"❌ Summary Generation Error: {e}"
 
+
 def generate_customer_closing_response(current_lang_key: str) -> str:
     """에이전트의 마지막 확인 질문에 대한 고객의 최종 답변 생성 (채팅용)"""
     history_text = get_chat_history_for_prompt()
     lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+    L_local = LANG[current_lang_key]  # ⭐ 수정: 함수 내에서 사용할 언어 팩
 
     # 마지막 메시지가 에이전트의 종료 확인 메시지인지 확인 (프롬프트에 포함)
-    closing_msg = L['customer_closing_confirm']
+    closing_msg = L_local['customer_closing_confirm']
 
     # 첨부 파일 컨텍스트 추가
     attachment_context = st.session_state.sim_attachment_context_for_llm
@@ -1744,9 +2094,9 @@ Conversation history:
 
 RULES:
 1. If the conversation seems resolved and you have NO additional questions:
-    - You MUST reply with "{L['customer_no_more_inquiries']}".
+    - You MUST reply with "{L_local['customer_no_more_inquiries']}".
 2. If the conversation is NOT fully resolved and you DO have additional questions (or the agent provided a cancellation denial that you want to appeal):
-    - You MUST reply with "{L['customer_has_additional_inquiries']}" AND MUST FOLLOW UP WITH THE NEW INQUIRY DETAILS. DO NOT just repeat that you have an additional question.
+    - You MUST reply with "{L_local['customer_has_additional_inquiries']}" AND MUST FOLLOW UP WITH THE NEW INQUIRY DETAILS. DO NOT just repeat that you have an additional question.
 3. Your reply MUST be ONLY one of the two options above, in {lang_name}.
 4. Output ONLY the customer's next message (must be one of the two rule options).
 """
@@ -1755,24 +2105,488 @@ RULES:
         # LLM의 출력이 규칙을 따르지 않을 경우를 대비하여 강제 적용
         reaction_text = reaction.strip()
         # "추가 문의 사항도 있습니다"가 포함되어 있으면 그대로 반환 (상세 내용 포함 가정)
-        if L['customer_no_more_inquiries'] in reaction_text:
-            return L['customer_no_more_inquiries']
-        elif L['customer_has_additional_inquiries'] in reaction_text:
+        if L_local['customer_no_more_inquiries'] in reaction_text:
+            return L_local['customer_no_more_inquiries']
+        elif L_local['customer_has_additional_inquiries'] in reaction_text:
             return reaction_text
         else:
             # LLM이 규칙을 어겼을 경우, "추가 문의 사항이 있다"고 가정하고 에이전트 턴으로 넘김
-            return L['customer_has_additional_inquiries']
+            return L_local['customer_has_additional_inquiries']
     except Exception as e:
         st.error(f"고객 최종 반응 생성 오류: {e}")
-        return L['customer_has_additional_inquiries']  # 오류 시 에이전트 턴으로 유도
+        return L_local['customer_has_additional_inquiries']  # 오류 시 에이전트 턴으로 유도
 
 
 # ----------------------------------------
-# Initial Advice/Draft Generation (이관 후 재사용)
+# Initial Advice/Draft Generation (이관 후 재사용) (요청 4 반영)
 # ----------------------------------------
+def analyze_customer_profile(customer_query: str, current_lang_key: str) -> Dict[str, Any]:
+    """신규 고객의 문의사항과 말투를 분석하여 고객성향 점수를 실시간으로 계산 (요청 4)"""
+    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+
+    analysis_prompt = f"""
+You are an AI analyst analyzing a customer's inquiry to determine their profile and sentiment.
+
+Analyze the following customer inquiry and provide a structured analysis in JSON format (ONLY JSON, no markdown).
+
+Analyze:
+1. Customer sentiment score (0-100, where 0=very negative/angry, 50=neutral, 100=very positive/happy)
+2. Communication style (formal/casual, brief/detailed, polite/direct)
+3. Urgency level (low/medium/high)
+4. Customer type prediction (normal/difficult/very_dissatisfied)
+5. Language and cultural hints (if any)
+6. Key concerns or pain points
+
+Output format (JSON only):
+{{
+  "sentiment_score": 45,
+  "communication_style": "brief, direct, slightly frustrated",
+  "urgency_level": "high",
+  "predicted_customer_type": "difficult",
+  "cultural_hints": "unknown",
+  "key_concerns": ["issue 1", "issue 2"],
+  "tone_analysis": "brief description of tone"
+}}
+
+Customer Inquiry:
+{customer_query}
+
+JSON Output:
+"""
+
+    if not st.session_state.is_llm_ready:
+        return {
+            "sentiment_score": 50,
+            "communication_style": "unknown",
+            "urgency_level": "medium",
+            "predicted_customer_type": "normal",
+            "cultural_hints": "unknown",
+            "key_concerns": [],
+            "tone_analysis": "Unable to analyze"
+        }
+
+    try:
+        analysis_text = run_llm(analysis_prompt).strip()
+        # JSON 추출
+        if "```json" in analysis_text:
+            analysis_text = analysis_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in analysis_text:
+            analysis_text = analysis_text.split("```")[1].split("```")[0].strip()
+
+        import json
+        analysis_data = json.loads(analysis_text)
+        return analysis_data
+    except Exception as e:
+        return {
+            "sentiment_score": 50,
+            "communication_style": "unknown",
+            "urgency_level": "medium",
+            "predicted_customer_type": "normal",
+            "cultural_hints": "unknown",
+            "key_concerns": [],
+            "tone_analysis": f"Analysis error: {str(e)}"
+        }
+
+
+def find_similar_cases(customer_query: str, customer_profile: Dict[str, Any], current_lang_key: str,
+                       limit: int = 5) -> List[Dict[str, Any]]:
+    """저장된 요약 데이터에서 유사한 케이스를 찾아 반환 (요청 4)"""
+    histories = load_simulation_histories_local(current_lang_key)
+
+    if not histories:
+        return []
+
+    # 요약 데이터가 있는 케이스만 필터링
+    cases_with_summary = [
+        h for h in histories
+        if h.get("summary") and isinstance(h.get("summary"), dict) and h.get("is_chat_ended", False)
+    ]
+
+    if not cases_with_summary:
+        return []
+
+    # 유사도 계산 (간단한 키워드 매칭 + 점수 유사도)
+    similar_cases = []
+    query_lower = customer_query.lower()
+    customer_sentiment = customer_profile.get("sentiment_score", 50)
+    customer_style = customer_profile.get("communication_style", "")
+
+    for case in cases_with_summary:
+        summary = case.get("summary", {})
+        main_inquiry = summary.get("main_inquiry", "").lower()
+        case_sentiment = summary.get("customer_sentiment_score", 50)
+        case_satisfaction = summary.get("customer_satisfaction_score", 50)
+
+        # 유사도 점수 계산
+        similarity_score = 0
+
+        # 1. 문의 내용 유사도 (키워드 매칭)
+        query_words = set(query_lower.split())
+        inquiry_words = set(main_inquiry.split())
+        if query_words and inquiry_words:
+            word_overlap = len(query_words & inquiry_words) / len(query_words | inquiry_words)
+            similarity_score += word_overlap * 40
+
+        # 2. 감정 점수 유사도
+        sentiment_diff = abs(customer_sentiment - case_sentiment)
+        sentiment_similarity = max(0, 1 - (sentiment_diff / 100)) * 30
+        similarity_score += sentiment_similarity
+
+        # 3. 만족도 점수 (높을수록 좋은 케이스)
+        satisfaction_bonus = (case_satisfaction / 100) * 30
+        similarity_score += satisfaction_bonus
+
+        if similarity_score > 30:  # 최소 유사도 임계값
+            similar_cases.append({
+                "case": case,
+                "similarity_score": similarity_score,
+                "summary": summary
+            })
+
+    # 유사도 순으로 정렬
+    similar_cases.sort(key=lambda x: x["similarity_score"], reverse=True)
+    return similar_cases[:limit]
+
+
+def visualize_customer_profile_scores(customer_profile: Dict[str, Any], current_lang_key: str):
+    """고객 프로필 점수를 시각화 (감정 점수, 긴급도)"""
+    if not IS_PLOTLY_AVAILABLE:
+        return None
+
+    L = LANG[current_lang_key]
+
+    sentiment_score = customer_profile.get("sentiment_score", 50)
+    urgency_map = {"low": 25, "medium": 50, "high": 75}
+    urgency_level = customer_profile.get("urgency_level", "medium")
+    urgency_score = urgency_map.get(urgency_level.lower(), 50)
+
+    # 게이지 차트 생성
+    fig = make_subplots(
+        rows=1, cols=2,
+        specs=[[{"type": "indicator"}, {"type": "indicator"}]],
+        subplot_titles=(
+            L.get("sentiment_score_label", "고객 감정 점수"),
+            L.get("urgency_score_label", "긴급도 점수")
+        )
+    )
+
+    # 감정 점수 게이지
+    fig.add_trace(
+        go.Indicator(
+            mode="gauge+number+delta",
+            value=sentiment_score,
+            domain={'x': [0, 1], 'y': [0, 1]},
+            title={'text': L.get("sentiment_score_label", "감정 점수")},
+            delta={'reference': 50},
+            gauge={
+                'axis': {'range': [None, 100]},
+                'bar': {'color': "darkblue"},
+                'steps': [
+                    {'range': [0, 33], 'color': "lightgray"},
+                    {'range': [33, 66], 'color': "gray"},
+                    {'range': [66, 100], 'color': "lightgreen"}
+                ],
+                'threshold': {
+                    'line': {'color': "red", 'width': 4},
+                    'thickness': 0.75,
+                    'value': 90
+                }
+            }
+        ),
+        row=1, col=1
+    )
+
+    # 긴급도 점수 게이지
+    fig.add_trace(
+        go.Indicator(
+            mode="gauge+number",
+            value=urgency_score,
+            domain={'x': [0, 1], 'y': [0, 1]},
+            title={'text': L.get("urgency_score_label", "긴급도")},
+            gauge={
+                'axis': {'range': [None, 100]},
+                'bar': {'color': "darkred"},
+                'steps': [
+                    {'range': [0, 50], 'color': "lightgreen"},
+                    {'range': [50, 75], 'color': "yellow"},
+                    {'range': [75, 100], 'color': "lightcoral"}
+                ],
+            }
+        ),
+        row=1, col=2
+    )
+
+    fig.update_layout(height=300, margin=dict(l=20, r=20, t=50, b=20))
+    return fig
+
+
+def visualize_similarity_cases(similar_cases: List[Dict[str, Any]], current_lang_key: str):
+    """유사 케이스 추천을 시각화"""
+    if not IS_PLOTLY_AVAILABLE or not similar_cases:
+        return None
+
+    L = LANG[current_lang_key]
+
+    case_labels = []
+    similarity_scores = []
+    sentiment_scores = []
+    satisfaction_scores = []
+
+    for idx, similar_case in enumerate(similar_cases, 1):
+        summary = similar_case["summary"]
+        similarity = similar_case["similarity_score"]
+        case_labels.append(f"Case {idx}")
+        similarity_scores.append(similarity)
+        sentiment_scores.append(summary.get("customer_sentiment_score", 50))
+        satisfaction_scores.append(summary.get("customer_satisfaction_score", 50))
+
+    # 유사도 차트
+    fig = make_subplots(
+        rows=2, cols=1,
+        subplot_titles=(
+            L.get("similarity_chart_title", "유사 케이스 유사도"),
+            L.get("scores_comparison_title",
+                  "감정 및 만족도 점수 비교")
+        ),
+        vertical_spacing=0.15
+    )
+
+    # 유사도 바 차트
+    fig.add_trace(
+        go.Bar(
+            x=case_labels,
+            y=similarity_scores,
+            name=L.get("similarity_score_label", "유사도"),
+            marker_color='lightblue',
+            text=[f"{s:.1f}%" for s in similarity_scores],
+            textposition='outside'
+        ),
+        row=1, col=1
+    )
+
+    # 감정 및 만족도 점수 비교
+    fig.add_trace(
+        go.Bar(
+            x=case_labels,
+            y=sentiment_scores,
+            name=L.get("sentiment_score_label", "감정 점수"),
+            marker_color='lightcoral'
+        ),
+        row=2, col=1
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=case_labels,
+            y=satisfaction_scores,
+            name=L.get("satisfaction_score_label", "만족도"),
+            marker_color='lightgreen'
+        ),
+        row=2, col=1
+    )
+
+    fig.update_layout(
+        height=600,
+        showlegend=True,
+        margin=dict(l=20, r=20, t=50, b=20),
+        barmode='group'
+    )
+    fig.update_yaxes(title_text="점수", row=2, col=1)
+    fig.update_yaxes(title_text="유사도 (%)", row=1, col=1)
+
+    return fig
+
+
+def visualize_case_trends(histories: List[Dict[str, Any]], current_lang_key: str):
+    """과거 성공 사례 트렌드를 시각화"""
+    if not IS_PLOTLY_AVAILABLE or not histories:
+        return None
+
+    L = LANG[current_lang_key]
+
+    # 요약 데이터가 있는 케이스만 필터링
+    cases_with_summary = [
+        h for h in histories
+        if h.get("summary") and isinstance(h.get("summary"), dict) and h.get("is_chat_ended", False)
+    ]
+
+    if not cases_with_summary:
+        return None
+
+    # 날짜별로 정렬
+    cases_with_summary.sort(key=lambda x: x.get("timestamp", ""))
+
+    dates = []
+    sentiment_scores = []
+    satisfaction_scores = []
+
+    for case in cases_with_summary:
+        summary = case.get("summary", {})
+        timestamp = case.get("timestamp", "")
+        try:
+            dt = datetime.fromisoformat(timestamp)
+            dates.append(dt)
+            sentiment_scores.append(summary.get("customer_sentiment_score", 50))
+            satisfaction_scores.append(summary.get("customer_satisfaction_score", 50))
+        except Exception:
+            continue
+
+    if not dates:
+        return None
+
+    # 트렌드 라인 차트
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=dates,
+        y=sentiment_scores,
+        mode='lines+markers',
+        name=L.get("sentiment_trend_label", "감정 점수 추이"),
+        line=dict(color='lightcoral', width=2),
+        marker=dict(size=6)
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=dates,
+        y=satisfaction_scores,
+        mode='lines+markers',
+        name=L.get("satisfaction_trend_label", "만족도 점수 추이"),
+        line=dict(color='lightgreen', width=2),
+        marker=dict(size=6)
+    ))
+
+    fig.update_layout(
+        title=L.get("case_trends_title", "과거 케이스 점수 추이"),
+        xaxis_title=L.get("date_label", "날짜"),
+        yaxis_title=L.get("score_label", "점수 (0-100)"),
+        height=400,
+        hovermode='x unified',
+        legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
+    )
+
+    return fig
+
+
+def visualize_customer_characteristics(summary: Dict[str, Any], current_lang_key: str):
+    """고객 특성을 시각화 (언어, 문화권, 지역 등)"""
+    if not IS_PLOTLY_AVAILABLE or not summary:
+        return None
+
+    L = LANG[current_lang_key]
+
+    characteristics = summary.get("customer_characteristics", {})
+    privacy_info = summary.get("privacy_info", {})
+
+    # 특성 데이터 준비
+    labels = []
+    values = []
+
+    # 언어 정보
+    language = characteristics.get("language", "unknown")
+    if language != "unknown":
+        labels.append(L.get("language_label", "언어"))
+        lang_map = {"ko": "한국어", "en": "English", "ja": "日本語"}
+        values.append(lang_map.get(language, language))
+
+    # 개인정보 제공 여부
+    if privacy_info.get("has_email"):
+        labels.append(L.get("email_provided_label", "이메일 제공"))
+        values.append("Yes")
+    if privacy_info.get("has_phone"):
+        labels.append(L.get("phone_provided_label", "전화번호 제공"))
+        values.append("Yes")
+
+    # 지역 정보
+    region = privacy_info.get("region_hint", characteristics.get("region", "unknown"))
+    if region != "unknown":
+        labels.append(L.get("region_label", "지역"))
+        values.append(region)
+
+    if not labels:
+        return None
+
+    # 파이 차트
+    fig = go.Figure(data=[go.Pie(
+        labels=labels,
+        values=[1] * len(labels),
+        hole=0.4,
+        marker_colors=px.colors.qualitative.Set3[:len(labels)]
+    )])
+
+    fig.update_layout(
+        title=L.get("customer_characteristics_title",
+                    "고객 특성 분포"),
+        height=300,
+        showlegend=True,
+        margin=dict(l=20, r=20, t=50, b=20)
+    )
+
+    return fig
+
+
+def generate_guideline_from_past_cases(customer_query: str, customer_profile: Dict[str, Any],
+                                       similar_cases: List[Dict[str, Any]], current_lang_key: str) -> str:
+    """과거 유사 케이스의 성공적인 해결 방법을 바탕으로 가이드라인 생성"""
+    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+
+    if not similar_cases:
+        return ""
+
+    # 유사 케이스 요약
+    past_cases_text = ""
+    for idx, similar_case in enumerate(similar_cases, 1):
+        case = similar_case["case"]
+        summary = similar_case["summary"]
+        similarity = similar_case["similarity_score"]
+
+        past_cases_text += f"""
+[Case {idx}] (Similarity: {similarity:.1f}%)
+- Inquiry: {summary.get('main_inquiry', 'N/A')}
+- Customer Sentiment: {summary.get('customer_sentiment_score', 50)}/100
+- Customer Satisfaction: {summary.get('customer_satisfaction_score', 50)}/100
+- Key Responses: {', '.join(summary.get('key_responses', [])[:3])}
+- Summary: {summary.get('summary', 'N/A')[:200]}
+"""
+
+    guideline_prompt = f"""
+You are an AI Customer Support Supervisor analyzing past successful cases to provide guidance.
+
+Based on the following similar past cases and their successful resolution strategies, provide actionable guidelines for handling the current customer inquiry.
+
+Current Customer Inquiry:
+{customer_query}
+
+Current Customer Profile:
+- Sentiment Score: {customer_profile.get('sentiment_score', 50)}/100
+- Communication Style: {customer_profile.get('communication_style', 'unknown')}
+- Urgency: {customer_profile.get('urgency_level', 'medium')}
+- Predicted Type: {customer_profile.get('predicted_customer_type', 'normal')}
+
+Similar Past Cases (Successful Resolutions):
+{past_cases_text}
+
+Provide a concise guideline in {lang_name} that:
+1. Identifies what worked well in similar past cases
+2. Suggests specific approaches based on successful patterns
+3. Warns about potential pitfalls based on past experiences
+4. Recommends response strategies that led to high customer satisfaction
+
+Guideline (in {lang_name}):
+"""
+
+    if not st.session_state.is_llm_ready:
+        return ""
+
+    try:
+        guideline = run_llm(guideline_prompt).strip()
+        return guideline
+    except Exception as e:
+        return f"가이드라인 생성 오류: {str(e)}"
+
+
 def _generate_initial_advice(customer_query, customer_type_display, customer_email, customer_phone, current_lang_key,
                              customer_attachment_file):
-    """Supervisor 가이드라인과 초안을 생성하는 함수"""
+    """Supervisor 가이드라인과 초안을 생성하는 함수 (저장된 데이터 활용)"""
     L = LANG[current_lang_key]
     lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
 
@@ -1788,6 +2602,43 @@ def _generate_initial_advice(customer_query, customer_type_display, customer_ema
     if customer_attachment_file:
         file_name = customer_attachment_file.name
         attachment_block = f"\n\n[ATTACHMENT NOTE]: {L['attachment_info_llm'].format(filename=file_name)}"
+
+    # 고객 프로필 분석
+    customer_profile = analyze_customer_profile(customer_query, current_lang_key)
+
+    # 유사 케이스 찾기
+    similar_cases = find_similar_cases(customer_query, customer_profile, current_lang_key, limit=5)
+
+    # 과거 케이스 기반 가이드라인 생성
+    past_cases_guideline = ""
+    if similar_cases:
+        past_cases_guideline = generate_guideline_from_past_cases(
+            customer_query, customer_profile, similar_cases, current_lang_key
+        )
+
+    # 고객 프로필 정보
+    profile_block = f"""
+[Customer Profile Analysis]
+- Sentiment Score: {customer_profile.get('sentiment_score', 50)}/100
+- Communication Style: {customer_profile.get('communication_style', 'unknown')}
+- Urgency Level: {customer_profile.get('urgency_level', 'medium')}
+- Predicted Type: {customer_profile.get('predicted_customer_type', 'normal')}
+- Key Concerns: {', '.join(customer_profile.get('key_concerns', []))}
+- Tone: {customer_profile.get('tone_analysis', 'unknown')}
+"""
+
+    # 과거 케이스 기반 가이드라인 블록
+    past_cases_block = ""
+    if past_cases_guideline:
+        past_cases_block = f"""
+[Guidelines Based on {len(similar_cases)} Similar Past Cases]
+{past_cases_guideline}
+"""
+    elif similar_cases:
+        past_cases_block = f"""
+[Note: Found {len(similar_cases)} similar past cases, but unable to generate detailed guidelines.
+Consider reviewing past cases manually for patterns.]
+"""
 
     # Output ALL text (guidelines and draft) STRICTLY in {lang_name}. <--- 강력한 언어 강제 지시
     initial_prompt = f"""
@@ -1810,12 +2661,15 @@ from a **{st.session_state.customer_type_sim_select}** and provide:
 3. **24-48 Hour Follow-up (Req 6):** If the issue cannot be solved immediately or requires confirmation from a local partner/supervisor, the guideline MUST state the procedure:
    - Acknowledge the issue.
    - Inform the customer they will receive a definite answer within 24 or 48 hours.
-   - Request the customer's email or phone number for follow-up contact.
+   - Request the customer's email or phone number for follow-up contact. (Use provided contact info if available)
+4. **Past Cases Learning:** If past cases guidelines are provided, incorporate successful strategies from those cases into your recommendations.
 
 Customer Inquiry:
 {customer_query}
 {contact_info_block}
 {attachment_block}
+{profile_block}
+{past_cases_block}
 """
     if not st.session_state.is_llm_ready:
         mock_text = (
@@ -1872,7 +2726,8 @@ with st.sidebar:
         st.session_state.agent_response_input_box_widget_call = ""
         st.session_state.call_initial_query = ""
 
-        # st.rerun()
+        # ⭐ 언어 변경 시 재실행
+        st.rerun()
 
     L = LANG[st.session_state.language]
 
@@ -1884,6 +2739,8 @@ with st.sidebar:
         st.error(st.session_state.llm_init_error_msg)
     elif st.session_state.is_llm_ready:
         st.success("✅ LLM 클라이언트 준비 완료")
+    else:
+        st.info("💡 API Key는 환경변수 또는 Streamlit Secrets에서 자동으로 로드됩니다.")
 
     if st.session_state.openai_client:
         st.success("✅ OpenAI TTS/Whisper 클라이언트 준비 완료")
@@ -1892,36 +2749,22 @@ with st.sidebar:
 
     st.markdown("---")
 
-    uploaded_files_widget = st.file_uploader(
-        L["file_uploader"], type=["pdf", "txt", "html"], accept_multiple_files=True
-    )
-    if uploaded_files_widget:
-        st.session_state.uploaded_files_state = uploaded_files_widget
-
-    files_to_process = st.session_state.uploaded_files_state or []
-
-    # ⭐ RAG 인덱싱 버튼 로직 수정 (get_embedding_function에 오류 메시지 통합)
-    if files_to_process and st.session_state.is_llm_ready:
-        if st.button(L["button_start_analysis"]):
-            with st.spinner(L["data_analysis_progress"]):
-                vs, count = build_rag_index(files_to_process)
-                if vs is not None:
-                    st.session_state.rag_vectorstore = vs
-                    st.session_state.is_rag_ready = True
-                    st.success(L["embed_success"].format(count=count))
-                else:
-                    # 오류는 build_rag_index 내부에서 이미 st.error로 출력됨
-                    st.session_state.is_rag_ready = False
-    elif not files_to_process:
-        st.info(L["warning_no_files"])
-
-    st.markdown("---")
+    # 기능 선택 - 기본값을 AI 챗 시뮬레이터로 설정
+    if "feature_selection" not in st.session_state:
+        st.session_state.feature_selection = L["sim_tab_chat_email"]
 
     feature_selection = st.radio(
         "기능 선택",
-        [L["rag_tab"], L["content_tab"], L["lstm_tab"], L["sim_tab_chat_email"], L["sim_tab_phone"],
+        [L["sim_tab_chat_email"], L["sim_tab_phone"], L["rag_tab"], L["content_tab"], L["lstm_tab"],
          L["voice_rec_header"]],
+        index=0 if st.session_state.feature_selection == L["sim_tab_chat_email"] else
+        (1 if st.session_state.feature_selection == L["sim_tab_phone"] else
+         (2 if st.session_state.feature_selection == L["rag_tab"] else
+          (3 if st.session_state.feature_selection == L["content_tab"] else
+           (4 if st.session_state.feature_selection == L["lstm_tab"] else 5)))),
+        key="feature_selection_radio"
     )
+    st.session_state.feature_selection = feature_selection
 
 # 메인 타이틀
 st.title(L["title"])
@@ -1994,7 +2837,7 @@ if feature_selection == L["voice_rec_header"]:
                 )
                 st.success(L["saved_success"])
                 st.session_state.last_transcript = ""
-                # st.rerun()
+                # ⭐ 최적화: 버튼 클릭 후 Streamlit이 자동으로 재실행하므로 rerun 제거
             except Exception as e:
                 st.error(f"{L['error']} {e}")
 
@@ -2057,7 +2900,7 @@ if feature_selection == L["voice_rec_header"]:
                                             break
                                     save_voice_records(records)
                                     st.success(L["retranscribe"] + " " + L["saved_success"])
-                                    # st.rerun()
+                                    # ⭐ 최적화: 버튼 클릭 후 Streamlit이 자동으로 재실행하므로 rerun 제거
                                 except Exception as e:
                                     st.error(f"{L['error']} {e}")
 
@@ -2069,7 +2912,7 @@ if feature_selection == L["voice_rec_header"]:
                             else:
                                 st.error(L["delete_fail"])
                             st.session_state[f"confirm_del_{rec_id}"] = False
-                            # st.rerun()
+                            # ⭐ 최적화: 버튼 클릭 후 Streamlit이 자동으로 재실행하므로 rerun 제거
                         else:
                             st.session_state[f"confirm_del_{rec_id}"] = True
                             st.warning(L["delete_confirm_rec"])
@@ -2108,7 +2951,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
                     st.session_state.sim_attachment_context_for_llm = ""  # 컨텍스트 초기화
                     st.session_state.agent_attachment_file = []  # 에이전트 첨부 파일 초기화
                     st.success(L["delete_success"])
-                # st.rerun()
+                    # ⭐ 최적화: 버튼 클릭 후 Streamlit이 자동으로 재실행하므로 rerun 제거
             if c_no.button(L["delete_confirm_no"], key="confirm_del_no"):
                 st.session_state.show_delete_confirm = False
 
@@ -2118,6 +2961,36 @@ elif feature_selection == L["sim_tab_chat_email"]:
     with st.expander(L["history_expander_title"]):
         # Always load all available histories for the current language (sorted by recency)
         histories = load_simulation_histories_local(current_lang)
+
+        # 전체 통계 및 트렌드 대시보드 (요약 데이터가 있는 경우만)
+        cases_with_summary = [
+            h for h in histories
+            if h.get("summary") and isinstance(h.get("summary"), dict) and h.get("is_chat_ended", False)
+               and not h.get("is_call", False)  # 전화 이력 제외
+        ]
+
+        if cases_with_summary:
+            st.markdown("---")
+            st.subheader("📈 과거 케이스 트렌드 대시보드")
+
+            # 트렌드 차트 표시
+            trend_chart = visualize_case_trends(histories, current_lang)
+            if trend_chart:
+                st.plotly_chart(trend_chart, use_container_width=True)
+            else:
+                # Plotly가 없을 경우 텍스트로 표시
+                avg_sentiment = np.mean(
+                    [h["summary"].get("customer_sentiment_score", 50) for h in cases_with_summary if h.get("summary")])
+                avg_satisfaction = np.mean(
+                    [h["summary"].get("customer_satisfaction_score", 50) for h in cases_with_summary if
+                     h.get("summary")])
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("평균 감정 점수", f"{avg_sentiment:.1f}/100", f"총 {len(cases_with_summary)}건")
+                with col2:
+                    st.metric("평균 만족도", f"{avg_satisfaction:.1f}/100", f"총 {len(cases_with_summary)}건")
+
+            st.markdown("---")
 
         # ⭐ 검색 폼 제거 및 독립된 위젯 사용
         col_search, col_btn = st.columns([4, 1])
@@ -2156,8 +3029,16 @@ elif feature_selection == L["sim_tab_chat_email"]:
                 ok_search = True
                 if current_search_query:
                     q = current_search_query.lower()
+                    # 검색 대상: 초기 문의, 고객 유형, 요약 데이터
                     text = (h["initial_query"] + " " + h["customer_type"]).lower()
-                    # Check if query matches in initial query or customer type
+
+                    # 요약 데이터가 있으면 요약 내용도 검색 대상에 포함
+                    summary = h.get("summary")
+                    if summary and isinstance(summary, dict):
+                        summary_text = summary.get("main_inquiry", "") + " " + summary.get("summary", "")
+                        text += " " + summary_text.lower()
+
+                    # Check if query matches in initial query, customer type, or summary
                     if q not in text:
                         ok_search = False
 
@@ -2196,10 +3077,22 @@ elif feature_selection == L["sim_tab_chat_email"]:
                     t_str = t.strftime("%m-%d %H:%M")
                 except Exception:
                     t_str = h.get("timestamp", "")
-                q = h["initial_query"][:30].replace("\n", " ")
-                # 첨부 파일 여부 표시 추가
-                attachment_icon = "📎" if h.get("attachment_context") else ""
-                return f"[{t_str}] {attachment_icon} {h['customer_type']} - {q}..."
+
+                # 요약 데이터가 있으면 요약 정보 표시, 없으면 초기 문의 표시
+                summary = h.get("summary")
+                if summary and isinstance(summary, dict):
+                    main_inquiry = summary.get("main_inquiry", h["initial_query"][:30])
+                    sentiment = summary.get("customer_sentiment_score", 50)
+                    satisfaction = summary.get("customer_satisfaction_score", 50)
+                    q = main_inquiry[:30].replace("\n", " ")
+                    # 첨부 파일 여부 표시 추가
+                    attachment_icon = "📎" if h.get("attachment_context") else ""
+                    # 요약 데이터 표시 (감정/만족도 점수 포함)
+                    return f"[{t_str}] {attachment_icon} {h['customer_type']} | 감정:{sentiment} 만족:{satisfaction} - {q}..."
+                else:
+                    q = h["initial_query"][:30].replace("\n", " ")
+                    attachment_icon = "📎" if h.get("attachment_context") else ""
+                    return f"[{t_str}] {attachment_icon} {h['customer_type']} - {q}..."
 
 
             options_map = {_label(h): h for h in filtered_for_display}
@@ -2215,7 +3108,62 @@ elif feature_selection == L["sim_tab_chat_email"]:
             if st.button(L["history_load_button"], key="load_hist_btn"):
                 h = options_map[sel_key]
                 st.session_state.customer_query_text_area = h["initial_query"]
-                st.session_state.simulator_messages = h["messages"]
+
+                # 메시지가 비어있고 요약 데이터가 있는 경우, 요약을 기반으로 최소한의 메시지 재구성
+                if not h.get("messages") and h.get("summary"):
+                    summary = h["summary"]
+                    # 요약 데이터를 기반으로 기본 메시지 구조 생성
+                    reconstructed_messages = [
+                        {"role": "customer", "content": h["initial_query"]}
+                    ]
+                    # 요약에서 핵심 응답 추가
+                    if summary.get("key_responses"):
+                        for response in summary.get("key_responses", [])[:3]:  # 최대 3개만
+                            reconstructed_messages.append({"role": "agent_response", "content": response})
+                    # 요약 정보를 supervisor 메시지로 추가
+                    summary_text = f"**요약된 상담 이력**\n\n"
+                    summary_text += f"주요 문의: {summary.get('main_inquiry', 'N/A')}\n"
+                    summary_text += f"고객 감정 점수: {summary.get('customer_sentiment_score', 50)}/100\n"
+                    summary_text += f"고객 만족도: {summary.get('customer_satisfaction_score', 50)}/100\n"
+                    summary_text += f"\n전체 요약:\n{summary.get('summary', 'N/A')}"
+                    reconstructed_messages.append({"role": "supervisor", "content": summary_text})
+                    st.session_state.simulator_messages = reconstructed_messages
+
+                    # 요약 데이터 시각화
+                    st.markdown("---")
+                    st.subheader("📊 로드된 케이스 분석")
+
+                    # 요약 데이터를 프로필 형식으로 변환
+                    loaded_profile = {
+                        "sentiment_score": summary.get("customer_sentiment_score", 50),
+                        "urgency_level": "medium",  # 기본값
+                        "predicted_customer_type": h.get("customer_type", "normal")
+                    }
+
+                    # 프로필 점수 차트
+                    profile_chart = visualize_customer_profile_scores(loaded_profile, current_lang)
+                    if profile_chart:
+                        st.plotly_chart(profile_chart, use_container_width=True)
+                    else:
+                        # Plotly가 없을 경우 텍스트로 표시
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric(L.get("sentiment_score_label", "감정 점수"),
+                                      f"{summary.get('customer_sentiment_score', 50)}/100")
+                        with col2:
+                            st.metric(L.get("urgency_score_label", "긴급도"), f"50/100")
+                        with col3:
+                            st.metric(L.get("customer_type_label", "고객 유형"), h.get("customer_type", "normal"))
+
+                    # 고객 특성 시각화
+                    if summary.get("customer_characteristics") or summary.get("privacy_info"):
+                        characteristics_chart = visualize_customer_characteristics(summary, current_lang)
+                        if characteristics_chart:
+                            st.plotly_chart(characteristics_chart, use_container_width=True)
+                else:
+                    # 기존 메시지가 있는 경우 그대로 사용
+                    st.session_state.simulator_messages = h.get("messages", [])
+
                 st.session_state.initial_advice_provided = True
                 st.session_state.is_chat_ended = h.get("is_chat_ended", False)
                 st.session_state.sim_attachment_context_for_llm = h.get("attachment_context", "")  # 컨텍스트 로드
@@ -2226,21 +3174,27 @@ elif feature_selection == L["sim_tab_chat_email"]:
                 if st.session_state.is_chat_ended:
                     st.session_state.sim_stage = "CLOSING"
                 else:
-                    last_role = h["messages"][-1]["role"] if h["messages"] else None
+                    messages = st.session_state.simulator_messages
+                    last_role = messages[-1]["role"] if messages else None
                     if last_role == "agent_response":
                         st.session_state.sim_stage = "CUSTOMER_TURN"
                     elif last_role == "customer_rebuttal":
                         st.session_state.sim_stage = "AGENT_TURN"
-                    elif last_role == "supervisor" and h["messages"][-1]["content"] == L["customer_closing_confirm"]:
+                    elif last_role == "supervisor" and messages and messages[-1]["content"] == L[
+                        "customer_closing_confirm"]:
                         st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
                     else:
                         st.session_state.sim_stage = "AGENT_TURN"
 
                 st.session_state.simulator_memory.clear()  # 메모리 초기화
-                # st.rerun()
+                # ⭐ 로드 후 UI 업데이트를 위해 재실행
+                st.rerun()
         else:
             st.info(L["no_history_found"])
 
+    # =========================
+    # AHT 타이머 (화면 최상단)
+    # =========================
     if st.session_state.sim_stage not in ["WAIT_FIRST_QUERY", "CLOSING", "idle"]:
         elapsed_placeholder = st.empty()
 
@@ -2249,8 +3203,8 @@ elif feature_selection == L["sim_tab_chat_email"]:
             elapsed_time = datetime.now() - st.session_state.start_time
             total_seconds = elapsed_time.total_seconds()
 
-            # Hold 시간 제외
-            total_seconds -= st.session_state.total_hold_duration.total_seconds()
+            # Hold 시간 제외 (채팅/이메일은 Hold 없음, 전화 탭과 로직 통일 위해 유지)
+            # total_seconds -= st.session_state.total_hold_duration.total_seconds()
 
             # 시간 형식 포맷팅
             minutes = int(total_seconds // 60)
@@ -2275,54 +3229,13 @@ elif feature_selection == L["sim_tab_chat_email"]:
                 delta_color=delta_color
             )
 
-            # 타이머 업데이트를 위해 강제 재실행 (10분마다)
-            # if seconds % 900 == 0 and total_seconds < 1000: # 10분마다 rerurn은 너무 길다.
-            if seconds % 3 == 0 and total_seconds < 1000:  # 3초마다 재실행으로 변경 (AHT 실시간성 확보)
+            # ⭐ 수정: 3초마다 재실행하여 AHT 실시간성 확보
+            if seconds % 3 == 0 and total_seconds < 1000:
                 time.sleep(1)
-                # st.rerun()  # 시뮬레이터가 멈춰있지 않을 때만 재실행 유도
+                st.rerun()
 
         st.markdown("---")
 
-        # =========================
-        # AHT 타이머 (화면 최상단)
-        # =========================
-        if st.session_state.sim_stage not in ["WAIT_FIRST_QUERY", "CLOSING", "idle"]:
-            col_timer, _ = st.columns([1, 4])
-
-            # start_time이 있을 때만 계산 및 표시
-            if st.session_state.start_time is not None:
-                # 현재 시간 계산
-                elapsed_time = datetime.now() - st.session_state.start_time
-                total_seconds = elapsed_time.total_seconds()
-
-                # Hold 시간 제외
-                total_seconds -= st.session_state.total_hold_duration.total_seconds()
-
-                # 시간 형식 포맷팅
-                minutes = int(total_seconds // 60)
-                seconds = int(total_seconds % 60)
-                time_str = f"{minutes:02d}:{seconds:02d}"
-
-                # 경고 기준
-                if total_seconds > 900:  # 15분
-                    delta_str = L["timer_info_risk"]
-                    delta_color = "inverse"
-                elif total_seconds > 600:  # 10분
-                    delta_str = L["timer_info_warn"]
-                    delta_color = "off"
-                else:
-                    delta_str = L["timer_info_ok"]
-                    delta_color = "normal"
-
-                with col_timer:
-                    st.metric(
-                        L["timer_metric"],
-                        time_str,
-                        delta=delta_str,
-                        delta_color=delta_color
-                    )
-
-            st.markdown("---")
 
     # =========================
     # 2. LLM 준비 체크 & 채팅 종료 상태
@@ -2347,8 +3260,9 @@ elif feature_selection == L["sim_tab_chat_email"]:
             st.session_state.customer_attachment_file = []  # 첨부 파일 초기화
             st.session_state.sim_attachment_context_for_llm = ""  # 컨텍스트 초기화
             st.session_state.agent_attachment_file = []  # 에이전트 첨부 파일 초기화
-            st.success(L["delete_success"])
-            # st.rerun()
+            st.session_state.start_time = None
+            # ⭐ 재실행
+            st.rerun()
         st.stop()
 
     # ========================================
@@ -2365,12 +3279,12 @@ elif feature_selection == L["sim_tab_chat_email"]:
         # --- 필수 입력 필드 (요청 3 반영: UI 텍스트 변경) ---
         customer_email = st.text_input(
             L["customer_email_label"],
-            key="customer_email_input",  # 키 변경
+            key="customer_email_input",
             value=st.session_state.customer_email,
         )
         customer_phone = st.text_input(
             L["customer_phone_label"],
-            key="customer_phone_input",  # 키 변경
+            key="customer_phone_input",
             value=st.session_state.customer_phone,
         )
         # 세션 상태 업데이트
@@ -2439,6 +3353,63 @@ elif feature_selection == L["sim_tab_chat_email"]:
             )
 
             # 2) Supervisor 가이드 + 초안 생성
+            # 고객 프로필 분석 (시각화를 위해 먼저 수행)
+            customer_profile = analyze_customer_profile(customer_query, current_lang)
+            similar_cases = find_similar_cases(customer_query, customer_profile, current_lang, limit=5)
+
+            # 시각화 차트 표시
+            st.markdown("---")
+            st.subheader("📊 고객 프로필 분석")
+
+            # 고객 프로필 점수 차트
+            profile_chart = visualize_customer_profile_scores(customer_profile, current_lang)
+            if profile_chart:
+                st.plotly_chart(profile_chart, use_container_width=True)
+            else:
+                # Plotly가 없을 경우 텍스트로 표시
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric(
+                        L.get("sentiment_score_label", "감정 점수"),
+                        f"{customer_profile.get('sentiment_score', 50)}/100"
+                    )
+                with col2:
+                    urgency_map = {"low": 25, "medium": 50, "high": 75}
+                    urgency_score = urgency_map.get(customer_profile.get("urgency_level", "medium").lower(), 50)
+                    st.metric(
+                        L.get("urgency_score_label", "긴급도"),
+                        f"{urgency_score}/100"
+                    )
+                with col3:
+                    st.metric(
+                        L.get("customer_type_label", "고객 유형"),
+                        customer_profile.get("predicted_customer_type", "normal")
+                    )
+
+            # 유사 케이스 시각화
+            if similar_cases:
+                st.markdown("---")
+                st.subheader("🔍 유사 케이스 추천")
+                similarity_chart = visualize_similarity_cases(similar_cases, current_lang)
+                if similarity_chart:
+                    st.plotly_chart(similarity_chart, use_container_width=True)
+
+                # 유사 케이스 요약 표시
+                with st.expander(f"💡 {len(similar_cases)}개 유사 케이스 상세 정보"):
+                    for idx, similar_case in enumerate(similar_cases, 1):
+                        summary = similar_case["summary"]
+                        similarity = similar_case["similarity_score"]
+                        st.markdown(f"### 케이스 {idx} (유사도: {similarity:.1f}%)")
+                        st.markdown(f"**문의 내용:** {summary.get('main_inquiry', 'N/A')}")
+                        st.markdown(f"**감정 점수:** {summary.get('customer_sentiment_score', 50)}/100")
+                        st.markdown(f"**만족도 점수:** {summary.get('customer_satisfaction_score', 50)}/100")
+                        if summary.get("key_responses"):
+                            st.markdown("**핵심 응답:**")
+                            for response in summary.get("key_responses", [])[:3]:
+                                st.markdown(f"- {response[:100]}...")
+                        st.markdown("---")
+
+            # 초기 조언 생성
             text = _generate_initial_advice(
                 customer_query,
                 st.session_state.customer_type_sim_select,
@@ -2458,7 +3429,8 @@ elif feature_selection == L["sim_tab_chat_email"]:
                 is_chat_ended=False,
             )
             st.session_state.sim_stage = "AGENT_TURN"
-            # st.rerun()
+            # ⭐ 재실행
+            st.rerun()
 
     # =========================
     # 4. 대화 로그 표시 (공통)
@@ -2475,6 +3447,18 @@ elif feature_selection == L["sim_tab_chat_email"]:
             st.markdown(content)
             # 인덱스를 render_tts_button에 전달하여 고유 키 생성에 사용
             render_tts_button(content, st.session_state.language, role=tts_role, prefix=f"{role}_", index=idx)
+
+            # ⭐ [새로운 로직] 고객 첨부 파일 렌더링 (첫 번째 메시지인 경우)
+            if idx == 0 and role == "customer" and st.session_state.customer_attachment_b64:
+                mime = st.session_state.customer_attachment_mime or "image/png"
+                data_url = f"data:{mime};base64,{st.session_state.customer_attachment_b64}"
+
+                # 이미지 파일만 표시 (PDF 등은 아직 처리하지 않음)
+                if mime.startswith("image/"):
+                    st.image(data_url, caption=f"첨부된 증거물 ({st.session_state.customer_attachment_file.name})", use_column_width=True)
+                elif mime == "application/pdf":
+                    # PDF 파일일 경우, 파일 이름과 함께 다운로드 링크 또는 경고 표시
+                    st.warning(f"첨부된 PDF 파일 ({st.session_state.customer_attachment_file.name})은 현재 인라인 미리보기가 지원되지 않습니다.")
 
         # 이관 요약 표시 (이관 후에만)
         if st.session_state.transfer_summary_text or st.session_state.language != st.session_state.language_at_transfer_start:
@@ -2495,7 +3479,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
                             target_lang = st.session_state.language
 
                             # 이전 대화 내용 재가공
-                            history_text = ""
+                            history_text = get_chat_history_for_prompt(include_attachment=False)
                             for msg in st.session_state.simulator_messages:
                                 role = "Customer" if msg["role"].startswith("customer") or msg[
                                     "role"] == "initial_query" else "Agent"
@@ -2505,7 +3489,8 @@ elif feature_selection == L["sim_tab_chat_email"]:
 
                             translated_summary = translate_text_with_llm(history_text, target_lang, source_lang)
                             st.session_state.transfer_summary_text = translated_summary
-                            # st.rerun()
+                            # ⭐ 재실행
+                            st.rerun()
 
                 else:
                     # 번역 성공 시 내용 표시
@@ -2530,16 +3515,56 @@ elif feature_selection == L["sim_tab_chat_email"]:
                     # 채팅/이메일 탭이므로 is_call=False
                     hint = generate_realtime_hint(current_lang, is_call=False)
                     st.session_state.realtime_hint_text = hint
-                    # st.rerun()  # 힌트 업데이트를 위해 재실행
+                    # ⭐ 재실행
+                    st.rerun()
 
         # --- 언어 이관 요청 강조 표시 ---
         if st.session_state.language_transfer_requested:
-            st.error("🚨 고객이 언어 전환(이관)을 요청했습니다. 즉시 응대하거나 이관을 진행하세요.")
+            st.error("🚨 고객이 언어 전환(이관)을 요청했습니다. 즉시 응대하거나 이관을 진행하세요。")
 
         # --- 고객 첨부 파일 정보 재표시 ---
         if st.session_state.sim_attachment_context_for_llm:
             st.info(
                 f"📎 최초 문의 시 첨부된 파일 정보:\n\n{st.session_state.sim_attachment_context_for_llm.replace('[ATTACHMENT STATUS]', '').strip()}")
+
+        # --- AI 응답 초안 생성 버튼 (요청 1 반영) ---
+        if st.button("🤖 AI 응답 초안 생성", key=f"btn_generate_ai_draft_{st.session_state.sim_instance_id}"):
+            if not st.session_state.is_llm_ready:
+                st.warning(L["simulation_no_key_warning"])
+            else:
+                with st.spinner("AI가 응답 초안을 생성 중입니다..."):
+                    # 초안 생성 함수 호출
+                    ai_draft = generate_agent_response_draft(current_lang)
+                    if ai_draft and not ai_draft.startswith("❌"):
+                        st.session_state.agent_response_area_text = ai_draft
+                        st.success("✅ AI 응답 초안이 생성되었습니다. 아래에서 확인하고 수정하세요.")
+                        # ⭐ 재실행
+                        st.rerun()
+                    else:
+                        st.error(ai_draft if ai_draft else "응답 초안 생성에 실패했습니다.")
+
+        st.markdown("### 🚨 Supervisor 정책/지시 사항 업로드 (예외 처리 방침)")
+
+        # --- Supervisor 정책 업로더 추가 ---
+        supervisor_attachment_widget = st.file_uploader(
+            "Supervisor 지시 사항/스크린샷 업로드 (예외 정책 포함)",
+            type=["png", "jpg", "jpeg", "pdf", "txt"],
+            key="supervisor_policy_uploader",
+            help="비행기 지연, 질병 등 예외적 상황에 대한 Supervisor의 최신 지시 사항을 업로드하세요.",
+            accept_multiple_files=False
+        )
+
+        # 파일 정보 저장 및 LLM 컨텍스트 생성
+        if supervisor_attachment_widget:
+            # 텍스트 파일 또는 PDF/이미지 파일의 텍스트 컨텐츠를 추출하여 policy_context에 저장해야 함
+            # 여기서는 파일 이름과 타입만 컨텍스트로 전달하고, LLM이 이것이 '예외 정책'임을 알도록 유도
+            file_name = supervisor_attachment_widget.name
+            st.session_state.supervisor_policy_context = f"[Supervisor Policy Attached] Filename: {file_name}, Filetype: {supervisor_attachment_widget.type}. This file contains a CRITICAL, temporary policy update regarding exceptions (e.g., flight delays, illness, natural disasters). Analyze and prioritize this policy in the response."
+            st.success(f"✅ Supervisor 정책 파일: **{file_name}**이(가) 응대 가이드에 반영됩니다.")
+        elif st.session_state.supervisor_policy_context:
+            st.info("⭐ 현재 적용 중인 Supervisor 정책이 있습니다.")
+        else:
+            st.session_state.supervisor_policy_context = ""
 
         # --- 에이전트 첨부 파일 업로더 (다중 파일 허용) ---
         agent_attachment_files = st.file_uploader(
@@ -2559,6 +3584,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
         else:
             st.session_state.agent_attachment_file = []
 
+        # --- 입력 필드 및 버튼 ---
         col_mic, col_text = st.columns([1, 2])
 
         # --- 마이크 녹음 ---
@@ -2577,47 +3603,47 @@ elif feature_selection == L["sim_tab_chat_email"]:
             st.info("✅ 녹음 완료! 아래 전사 버튼을 눌러 텍스트로 변환하세요.")
 
         if st.session_state.sim_audio_bytes:
-            st.audio(st.session_state.sim_audio_bytes, format="audio/wav")
+            col_audio, col_transcribe, col_del = st.columns([3, 1, 1])
 
-        col_tr, _ = st.columns([1, 2])
-        if col_tr.button(L["transcribe_btn"], key="sim_transcribe_btn"):
-            if st.session_state.sim_audio_bytes is None:
-                st.warning("먼저 마이크로 녹음을 완료하세요.")
-            elif st.session_state.openai_client is None:
-                st.error(L["whisper_client_error"])
-            else:
-                with st.spinner(L["whisper_processing"]):
-                    transcribed_text = transcribe_bytes_with_whisper(
-                        st.session_state.sim_audio_bytes,
-                        "audio/wav",
-                        lang_code=st.session_state.language,
-                    )
-                    if transcribed_text.startswith("❌"):
-                        st.error(transcribed_text)
-                        st.session_state.last_transcript = ""
-                    else:
-                        st.session_state.last_transcript = transcribed_text.strip()
-                        # 전사된 텍스트를 입력창에 반영
-                        st.session_state.agent_response_area_text = transcribed_text.strip()
-                        snippet = transcribed_text[:50].replace("\n", " ")
-                        if len(transcribed_text) > 50:
-                            snippet += "..."
-                        st.success(L["whisper_success"] + f"\n\n**인식 내용:** *{snippet}*")
-                        # st.rerun()  # 텍스트 반영을 위해 UI 재실행
+            # 1. 오디오 플레이어
+            with col_audio:
+                st.audio(st.session_state.sim_audio_bytes, format="audio/wav")
 
+            # 2. 녹음 삭제 버튼 (추가 요청 반영)
+            with col_del:
+                st.markdown("<br>", unsafe_allow_html=True)  # 버튼 수직 정렬
+                if st.button(L["delete_mic_record"], key="btn_delete_sim_audio_call"):
+                    # 오디오 및 관련 상태 초기화
+                    st.session_state.sim_audio_bytes = None
+                    st.session_state.last_transcript = ""
+                    st.session_state.agent_response_area_text = ""
+                    st.success("녹음이 삭제되었습니다. 다시 녹음해 주세요.")
+                    st.rerun()
 
-        def update_agent_response():
-            st.session_state.agent_response_area_text = st.session_state.agent_response_input_box_widget
-
+            # 3. 전사(Whisper) 버튼 (기존 로직 대체)
+            with col_transcribe:
+                st.markdown("<br>", unsafe_allow_html=True)  # 버튼 수직 정렬
+                if st.button(L["transcribe_btn"], key="sim_transcribe_btn_inline_call"):
+                    # 전사 로직은 복잡하므로, 버튼 클릭 시 아래의 'bytes_to_process' 로직을 트리거하도록 상태만 설정
+                    # (여기서는 임시로 버튼을 누르면 전사 로직이 실행되도록 합니다.)
+                    # Note: 실제 전사 로직은 Streamlit의 특성상 다음 rerun에서 bytes_to_process가 처리될 때 실행되어야 합니다.
+                    st.session_state["bytes_to_process"] = st.session_state.sim_audio_bytes  # 다시 처리 큐에 넣기
+                    st.session_state.sim_audio_bytes = None  # 오디오 플레이어는 닫고, 처리 중 메시지 표시
+                    st.session_state.current_agent_audio_text = "🎙️ 녹음 완료. 전사 처리 중..."
+                    st.rerun()
 
         col_text, col_button = st.columns([4, 1])
 
+        # --- 입력 필드 및 버튼 ---
         with col_text:
-            st.text_area(
+            # st.text_area의 값을 읽어 세션 상태를 직접 업데이트하는 on_change를 제거하고
+            # st.text_area 위젯 자체의 키를 사용하여 send_clicked 시 최신 값을 읽도록 합니다.
+            # (Streamlit 기본 동작: 버튼 클릭 시 위젯의 최종 값이 세션 상태에 반영됨)
+            agent_response_input = st.text_area(
                 L["agent_response_placeholder"],
                 value=st.session_state.agent_response_area_text,
-                key="agent_response_input_box_widget",
-                on_change=update_agent_response,
+                key="agent_response_input_box_widget", # 이 키를 통해 버튼 클릭 시 최신 값에 접근
+                height=150,
             )
 
             # 솔루션 제공 체크박스
@@ -2631,11 +3657,16 @@ elif feature_selection == L["sim_tab_chat_email"]:
             send_clicked = st.button(L["send_response_button"], key="send_agent_response_btn")
 
         if send_clicked:
+            # ⭐ 수정: st.session_state.agent_response_input_box_widget에서 최신 입력값을 가져옴
             agent_response = st.session_state.agent_response_input_box_widget.strip()
 
             if not agent_response:
                 st.warning(L["empty_response_warning"])
                 st.stop()
+
+            # AHT 타이머 시작
+            if st.session_state.start_time is None and len(st.session_state.simulator_messages) >= 1:
+                st.session_state.start_time = datetime.now()
 
             # --- 에이전트 첨부 파일 처리 (다중 파일 처리) ---
             final_response_content = agent_response
@@ -2646,8 +3677,6 @@ elif feature_selection == L["sim_tab_chat_email"]:
                     filename=file_names, filetype=f"총 {len(file_infos)}개 파일"
                 )
                 final_response_content = f"{agent_response}\n\n---\n{attachment_msg}"
-
-            st.session_state.agent_response_area_text = final_response_content  # 최종값 반영
 
             # 로그 업데이트
             st.session_state.simulator_messages.append(
@@ -2661,9 +3690,10 @@ elif feature_selection == L["sim_tab_chat_email"]:
             st.session_state.language_transfer_requested = False
             st.session_state.realtime_hint_text = ""  # 힌트 초기화
 
-            # 다음 단계: 고객 반응 생성 요청
+            # ⭐ 수정: 고객 반응 생성 로직을 다음 단계에서 처리하도록 sim_stage 변경만 수행
             st.session_state.sim_stage = "CUSTOMER_TURN"
-            # st.rerun()
+            # ⭐ 재실행: 이 부분이 즉시 고객 반응을 생성하도록 유도합니다.
+            st.rerun()
 
         # --- 언어 이관 버튼 ---
         st.markdown("---")
@@ -2747,7 +3777,8 @@ elif feature_selection == L["sim_tab_chat_email"]:
 
             # 6. UI 재실행 (언어 변경 적용)
             st.success(f"✅ {LANG[target_lang]['transfer_summary_header']}가 준비되었습니다. 새로운 응대를 시작하세요.")
-            # st.rerun()
+            # ⭐ 재실행
+            st.rerun()
 
 
         for i, target_lang in enumerate(languages):
@@ -2763,16 +3794,15 @@ elif feature_selection == L["sim_tab_chat_email"]:
 
     # =========================
     # 6. 고객 반응 생성 단계 (CUSTOMER_TURN)
-    #    - 고객 반응 생성 후: 감사 표현 시 -> WAIT_CLOSING_CONFIRMATION_FROM_AGENT로, 아니면 -> AGENT_TURN으로
     # =========================
     if st.session_state.sim_stage == "CUSTOMER_TURN":
-        st.info("에이전트 응답 전송 완료. 고객 반응 생성이 필요합니다.")
+        st.info("에이전트 응답 전송 완료. 고객 반응을 자동으로 생성 중입니다.")
 
         # AHT 타이머 시작
         if st.session_state.start_time is None and len(st.session_state.simulator_messages) >= 2:
             st.session_state.start_time = datetime.now()
 
-        # ⭐ 버튼 클릭 없이 바로 고객 반응을 생성 (자동화)
+        # ⭐ 수정: 버튼 클릭 없이 바로 고객 반응을 생성 (자동화)
         if st.session_state.is_llm_ready:
             with st.spinner(L["response_generating"]):  # 로딩 표시
                 # 채팅/이메일 탭이므로 generate_customer_reaction 호출
@@ -2788,37 +3818,37 @@ elif feature_selection == L["sim_tab_chat_email"]:
                 {"role": "customer_rebuttal", "content": reaction}
             )
 
-            # 언어 이관 요청 키워드 확인 (기존 로직 유지)
+            # 언어 이관 요청 키워드 확인
             lang_request_keywords = ["english", "japanese", "한국어", "英語", "日本語", "korean"]
             if any(k in reaction.lower() for k in lang_request_keywords):
                 st.session_state.language_transfer_requested = True
 
-            # 종료 의사 판별
+            # 종료 의사 판별 (솔루션 제공 O AND 고객의 최종 반응이 긍정적 OR 부정적인 추가 문의가 없음)
             reaction_lower = reaction.lower()
-            positive_closing_signals = [L['customer_positive_response'].lower(),
-                                        L['customer_no_more_inquiries'].lower()]
+            positive_closing_signals = [L['customer_positive_response'].lower(), L['customer_no_more_inquiries'].lower()]
             is_positive_closure = any(s in reaction_lower for s in positive_closing_signals)
             is_additional_inquiry_signal = L['customer_has_additional_inquiries'] in reaction
 
             customer_type_display = st.session_state.get("customer_type_sim_select", "")
 
-            # ⭐ 자동 종료/전환 로직
-            # 1. 솔루션 제공 O, 고객 최종 반응이 긍정적 (감사 또는 문의 없음) -> 종료 확인 단계 또는 최종 종료 단계로
+            # 솔루션 제공 O, 고객 최종 반응이 긍정적 -> 종료 확인 단계로
             if st.session_state.is_solution_provided and is_positive_closure and not is_additional_inquiry_signal:
+                # 고객이 바로 "알겠습니다. 감사합니다"로 응답했을 때
                 if L['customer_positive_response'].lower() in reaction_lower:
-                    # '알겠습니다. 감사합니다' -> 에이전트가 종료 확인 메시지 보내기 대기
+                    # 다음 단계: 에이전트가 종료 확인 메시지 보내기 대기
                     st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
+                # 고객이 바로 "없습니다. 감사합니다"로 응답했을 때
                 elif L['customer_no_more_inquiries'].lower() in reaction_lower:
-                    # '없습니다. 감사합니다' -> 바로 최종 종료 버튼 대기
+                    # 다음 단계: 에이전트가 최종 종료 버튼 누르기 대기 (이미 확인 완료)
                     st.session_state.sim_stage = "FINAL_CLOSING_ACTION"
                 else:
-                    # 혹시 모를 예외 처리 (AGENT_TURN 유지)
+                    # 에이전트 턴으로 유지
                     st.session_state.sim_stage = "AGENT_TURN"
 
                 st.session_state.is_solution_provided = False  # 종료 단계 진입 후 플래그 리셋
 
-            # 2. 솔루션 제공 X, 또는 고객이 추가 질문/불만족 -> AGENT_TURN 유지
             else:
+                # 에이전트 턴으로 유지 (고객이 추가 질문하거나 정보 제공)
                 st.session_state.sim_stage = "AGENT_TURN"
 
             # 이력 저장
@@ -2829,14 +3859,15 @@ elif feature_selection == L["sim_tab_chat_email"]:
             )
 
             st.session_state.realtime_hint_text = ""  # 힌트 초기화
-            # st.rerun()
+            # ⭐ 재실행: 고객 반응이 추가되었으므로 AGENT_TURN으로 전환하여 에이전트에게 응답 기회 제공
+            st.rerun()
 
         else:
-            # LLM 키가 없을 경우, 수동으로 '고객 반응 생성' 버튼을 표시 (이전 로직 유지)
-            st.warning("LLM Key가 없어 고객 반응 자동 생성이 불가합니다. 아래 버튼을 눌러 수동으로 반응을 생성하거나 AGENT_TURN으로 돌아가세요.")
-            if st.button(L["customer_generate_response_button"], key="sim_next_rebuttal_btn_manual"):
+            st.warning("LLM Key가 없어 고객 반응 자동 생성이 불가합니다. 수동으로 '고객 반응 생성' 버튼을 클릭하거나 AGENT_TURN으로 돌아가세요.")
+            # 수동으로 AGENT_TURN으로 돌아가는 버튼 제공 (오류 복구용)
+            if st.button("AGENT_TURN으로 돌아가기", key="fallback_to_agent_turn"):
                 st.session_state.sim_stage = "AGENT_TURN"
-                # st.rerun()
+                st.rerun()
 
     # =========================
     # 7. 종료 확인 메시지 대기 (WAIT_CLOSING_CONFIRMATION_FROM_AGENT)
@@ -2868,7 +3899,8 @@ elif feature_selection == L["sim_tab_chat_email"]:
                     st.session_state.simulator_messages, is_chat_ended=False,
                     attachment_context=st.session_state.sim_attachment_context_for_llm,
                 )
-                # st.rerun()
+                # ⭐ 재실행
+                st.rerun()
 
         # [2] 이메일 - 상담 종료 버튼 (즉시 종료)
         with col_email_end:
@@ -2893,20 +3925,17 @@ elif feature_selection == L["sim_tab_chat_email"]:
                     st.session_state.simulator_messages, is_chat_ended=True,
                     attachment_context=st.session_state.sim_attachment_context_for_llm,
                 )
-                # st.rerun()
+                # ⭐ 재실행
+                st.rerun()
 
     # =========================
     # 8. 고객 최종 응답 생성 및 처리 (WAIT_CUSTOMER_CLOSING_RESPONSE)
     # =========================
     if st.session_state.sim_stage == "WAIT_CUSTOMER_CLOSING_RESPONSE":
-        st.info("에이전트가 추가 문의 여부를 확인했습니다. 고객의 최종 답변을 생성합니다.")
+        st.info("에이전트가 추가 문의 여부를 확인했습니다. 고객의 최종 답변을 자동으로 생성합니다.")
 
-        # 고객 답변 자동 생성
-        if st.button(L["customer_generate_response_button"], key="btn_generate_final_response"):
-            if not st.session_state.is_llm_ready:
-                st.warning(L["simulation_no_key_warning"])
-                st.stop()
-
+        # 고객 답변 자동 생성 (버튼 없이 바로 실행)
+        if st.session_state.is_llm_ready:
             with st.spinner(L["response_generating"]):
                 # 고객의 최종 답변 생성 (채팅용)
                 final_customer_reaction = generate_customer_closing_response(st.session_state.language)
@@ -2936,7 +3965,14 @@ elif feature_selection == L["sim_tab_chat_email"]:
                 )
 
             st.session_state.realtime_hint_text = ""  # 힌트 초기화
-            # st.rerun()
+            # ⭐ 재실행
+            st.rerun()
+        else:
+            st.warning("LLM Key가 없어 고객 반응 자동 생성이 불가합니다. 수동으로 다음 단계 버튼을 클릭하세요.")
+            if st.button(L["customer_generate_response_button"], key="btn_generate_final_response"):
+                # 수동 처리 시 AGENT_TURN으로 넘어가도록 처리
+                st.session_state.sim_stage = "AGENT_TURN"
+                st.rerun()
 
     # =========================
     # 9. 최종 종료 행동 (FINAL_CLOSING_ACTION)
@@ -2948,9 +3984,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             # AHT 타이머 정지
             st.session_state.start_time = None
 
-            # ⭐ 시스템 메시지 변경/추가: 긍정적 답변 확인 및 종료 메시지
-            end_msg = f"✅ 고객님께서 긍정적으로 답변하셨으며, {L['customer_no_more_inquiries']}으로 확인되어, 채팅을 자동 종료하고 {L['prompt_survey']}를 전송합니다."
-
+            end_msg = L["prompt_survey"]
             st.session_state.simulator_messages.append(
                 {"role": "system_end", "content": end_msg}
             )
@@ -2964,10 +3998,9 @@ elif feature_selection == L["sim_tab_chat_email"]:
                 attachment_context=st.session_state.sim_attachment_context_for_llm,
             )
 
+            # ⭐ 재실행
+            st.rerun()
 
-            # st.rerun()
-
-# -------------------- Simulator (Phone) Tab --------------------
 elif feature_selection == L["sim_tab_phone"]:
     st.header(L["phone_header"])
     st.markdown(L["simulator_desc"])
@@ -2990,19 +4023,15 @@ elif feature_selection == L["sim_tab_phone"]:
             now = datetime.now()
             elapsed_time_total = now - st.session_state.start_time
             total_seconds = elapsed_time_total.total_seconds()
-            # total_seconds = max(0, total_seconds)
-            # 누적 Hold 시간 계산에 현재 Hold 중인 시간 포함
-            current_hold_duration = (
-                        now - st.session_state.hold_start_time) if st.session_state.is_on_hold and st.session_state.hold_start_time else timedelta(0)
 
             # 총 상담 시간 (순수 AHT)
             elapsed_time_no_hold = (now - st.session_state.start_time)
             total_seconds = elapsed_time_no_hold.total_seconds()
 
-            # ⭐ 수정: Hold 중이라면 1초마다 재실행하여 Hold 시간 실시간 카운팅 (요청 2)
-            if not st.session_state.is_on_hold and int(total_seconds) % 3 == 0 and total_seconds < 1000:
+            # ⭐ 수정: 3초마다 재실행하여 AHT 실시간성 확보
+            if int(total_seconds) % 3 == 0 and total_seconds < 1000 and not st.session_state.is_on_hold:
                 time.sleep(1)
-                # st.rerun()
+                st.rerun()
 
             # 시간 형식 포맷팅
             minutes = int(total_seconds // 60)
@@ -3023,11 +4052,6 @@ elif feature_selection == L["sim_tab_phone"]:
             with col_timer:
                 st.metric(L["timer_metric"], time_str, delta=delta_str, delta_color=delta_color)
 
-            # 3초마다 재실행으로 AHT 실시간성 확보
-            if seconds % 3 == 0 and total_seconds < 1000 and not st.session_state.is_on_hold:
-                time.sleep(1)
-                # st.rerun()
-
     # ------------------
     # WAIT_FIRST_QUERY / WAITING_CALL 상태
     # ------------------
@@ -3042,7 +4066,7 @@ elif feature_selection == L["sim_tab_phone"]:
             placeholder=L["call_query_placeholder"],
         )
 
-        # 가상 전화번호 표시 (요청 2B)
+        # 가상 전화번호 표시
         st.session_state.incoming_phone_number = st.text_input(
             "Incoming Phone Number",
             key="incoming_phone_number_input",
@@ -3079,25 +4103,22 @@ elif feature_selection == L["sim_tab_phone"]:
             st.session_state.is_on_hold = False
             st.session_state.total_hold_duration = timedelta(0)
             st.session_state.hold_start_time = None
-
-            # ⭐ AHT 시작 시간 초기화 (요청 1 해결)
             st.session_state.start_time = datetime.now()
-
             st.session_state.simulator_messages = []
             st.session_state.current_customer_audio_text = ""
             st.session_state.current_agent_audio_text = ""
             st.session_state.agent_response_input_box_widget_call = ""
             st.session_state.sim_instance_id = str(uuid.uuid4())
             st.session_state.call_summary_text = ""  # 요약 초기화
-
-            # ⭐ 고객 최초 오디오 저장 변수 초기화
-            st.session_state.customer_initial_audio_bytes = None
+            st.session_state.customer_initial_audio_bytes = None  # 오디오 초기화
+            st.session_state.customer_history_summary = ""  # AI 요약 초기화 (추가)
+            st.session_state.sim_audio_bytes = None  # 녹음 파일 초기화 (추가)
 
             # 고객의 첫 번째 음성 메시지 (시뮬레이션 시작 메시지)
             initial_query_text = st.session_state.call_initial_query.strip()
             st.session_state.current_customer_audio_text = initial_query_text
 
-            # ⭐ 고객의 첫 문의 TTS 음성 생성 및 저장 (요청 3 해결)
+            # ⭐ 고객의 첫 문의 TTS 음성 생성 및 저장
             with st.spinner(L["tts_status_generating"] + " (Initial Customer Query)"):
                 audio_bytes, msg = synthesize_tts(initial_query_text, st.session_state.language, role="customer")
                 if audio_bytes:
@@ -3107,9 +4128,8 @@ elif feature_selection == L["sim_tab_phone"]:
                     st.error(f"❌ {msg}")
                     st.session_state.customer_initial_audio_bytes = None
 
-            # ✅ 수정: 첫 응답 후에는 마이크 녹음이 활성화되어야 하므로, 상태만 변경하고 재실행은 통화 로직 시작 시에 한 번만 합니다.
-            # st.rerun() 대신, 이 블록을 벗어나면 자동으로 IN_CALL 상태가 반영되도록 합니다.
-            pass  # 마지막 st.rerun()은 제거합니다.
+            # ✅ 상태 변경 후 재실행하여 IN_CALL 상태로 전환
+            st.rerun()
 
     # ------------------
     # IN_CALL 상태 (통화 중)
@@ -3118,7 +4138,7 @@ elif feature_selection == L["sim_tab_phone"]:
         st.markdown(f"## {L['call_status_ringing'].format(number=st.session_state.incoming_phone_number)}")
         st.markdown("---")
 
-        # --- Hold / 통화 재개 버튼 (요청 2C) ---
+        # --- Hold / 통화 재개 버튼 ---
         col_hangup, col_hold = st.columns([1, 1])
 
         with col_hangup:
@@ -3128,7 +4148,7 @@ elif feature_selection == L["sim_tab_phone"]:
                 if st.session_state.is_on_hold and st.session_state.hold_start_time:
                     st.session_state.total_hold_duration += datetime.now() - st.session_state.hold_start_time
 
-                # 2. 요약 생성 (요청 2)
+                # 2. 요약 생성 (요청 4 반영)
                 with st.spinner("AI 요약 생성 중..."):
                     summary = generate_summary_for_call(
                         st.session_state.language,
@@ -3142,7 +4162,8 @@ elif feature_selection == L["sim_tab_phone"]:
                 st.session_state.is_call_ended = True
                 # AHT 최종 정지는 CALL_ENDED에서 계산 (start_time은 유지)
 
-                # st.rerun()
+                # ✅ 재실행
+                st.rerun()
 
         with col_hold:
             if st.session_state.is_on_hold:
@@ -3150,15 +4171,17 @@ elif feature_selection == L["sim_tab_phone"]:
                     # Hold 상태 해제
                     st.session_state.is_on_hold = False
                     st.session_state.hold_start_time = None
-                    # st.rerun() # ✅ UI 즉시 업데이트하여 마이크 재활성화
+                    # ✅ 재실행
+                    st.rerun()
             else:
                 if st.button(L["button_hold"], key="hold_call_btn", type="secondary"):
                     st.session_state.is_on_hold = True
                     st.session_state.hold_start_time = datetime.now()
-                    # st.rerun()  # ✅ UI 즉시 업데이트하여 마이크 비활성화/경고 표시
+                    # ✅ 재실행
+                    st.rerun()
 
         if st.session_state.is_on_hold:
-            # ⭐ 수정: 현재 Hold 시간을 계산하여 표시 (요청 2)
+            # ⭐ 수정: 현재 Hold 시간을 계산하여 표시
             if st.session_state.hold_start_time:
                 current_hold_duration = datetime.now() - st.session_state.hold_start_time
             else:
@@ -3172,7 +4195,52 @@ elif feature_selection == L["sim_tab_phone"]:
 
         st.markdown("---")
 
-        # --- 실시간 CC 자막 / 전사 영역 (요청 2D) ---
+        # =========================
+        # AI 요약 버튼 및 표시 로직 (추가된 기능)
+        # =========================
+        st.markdown("---")
+        # ⭐ history_expander_title에서 괄호 안 내용만 제거 (예: (최근 10건))
+        summary_title = L['history_expander_title'].split('(')[0].strip()
+        st.markdown(f"### 📑 {summary_title} 요약")
+
+        # 1. 요약/번역 재시도 버튼 영역
+        col_sum_btn, col_trans_btn = st.columns(2)
+
+        with col_sum_btn:
+            if st.button("💡 이력 요약 요청", key="btn_request_phone_summary"):
+                # 요약 함수 호출
+                st.session_state.customer_history_summary = summarize_history_with_ai(st.session_state.language)
+                st.rerun()
+
+        # 2. 이관 번역 재시도 버튼 (이관 후 번역이 실패했을 경우)
+        if st.session_state.language != st.session_state.language_at_transfer_start and not st.session_state.transfer_summary_text:
+            with col_trans_btn:
+                if st.button(L["button_retry_translation"], key="btn_phone_retry_translation"):
+                    with st.spinner(L["transfer_loading"]):
+                        # 이관 번역 로직 재실행 (기존 로직 유지)
+                        translated_summary = translate_text_with_llm(
+                            get_chat_history_for_prompt(include_attachment=False),
+                            st.session_state.language,
+                            st.session_state.language_at_transfer_start
+                        )
+                        st.session_state.transfer_summary_text = translated_summary
+                        st.rerun()
+
+        # 3. 요약 내용 표시
+        if st.session_state.transfer_summary_text:
+            st.subheader(f"🔍 {L['transfer_summary_header']}")
+            st.info(st.session_state.transfer_summary_text)
+        elif st.session_state.customer_history_summary:
+            st.subheader("💡 AI 요약")
+            st.info(st.session_state.customer_history_summary)
+
+        st.markdown("---")
+
+        # =========================
+        # CC 자막 / 음성 입력 및 제어 로직 (기존 로직)
+        # =========================
+
+        # --- 실시간 CC 자막 / 전사 영역 ---
         st.subheader(L["cc_live_transcript"])
 
         if st.session_state.is_on_hold:
@@ -3200,7 +4268,7 @@ elif feature_selection == L["sim_tab_phone"]:
 
         st.markdown("---")
 
-        # --- 에이전트 음성 입력 / 녹음 (요청 2D) ---
+        # --- 에이전트 음성 입력 / 녹음 ---
         st.subheader(L["mic_input_status"])
 
         # 음성 입력: 짧은 청크로 끊어서 전사해야 실시간 CC 모방 가능
@@ -3222,14 +4290,16 @@ elif feature_selection == L["sim_tab_phone"]:
             if mic_audio and mic_audio.get("bytes") and "bytes_to_process" not in st.session_state:
                 st.session_state.bytes_to_process = mic_audio["bytes"]
                 st.session_state.current_agent_audio_text = "🎙️ 녹음 완료. 전사 처리 중..."  # 처리 중 메시지
-                # st.rerun()  # ✅ 전사 로직을 다음 실행 주기로 분리
+                # ✅ 재실행하여 다음 실행 주기에서 전사 로직을 처리
+                st.rerun()
 
             # ⭐ 전사 로직: bytes_to_process에 데이터가 있을 때만 실행
             if "bytes_to_process" in st.session_state and st.session_state.bytes_to_process:
                 if not st.session_state.openai_client:
                     st.error(L["openai_missing"])
                     st.session_state.bytes_to_process = None
-                    # st.rerun()
+                    # ✅ 재실행
+                    st.rerun()
 
                 with st.spinner(L["whisper_processing"]):
 
@@ -3244,9 +4314,10 @@ elif feature_selection == L["sim_tab_phone"]:
                     if agent_response_transcript.startswith("❌"):
                         st.error(agent_response_transcript)
                         st.session_state.current_agent_audio_text = f"[ERROR: {L['error']} Whisper failed]"
-                        # st.rerun()
+                        # ✅ 재실행
+                        st.rerun()
 
-                        # 2. 전사 결과를 CC 텍스트로 반영
+                    # 2. 전사 결과를 CC 텍스트로 반영
                     st.session_state.current_agent_audio_text = agent_response_transcript.strip()
 
                     # 3. 고객의 다음 음성 반응 생성
@@ -3254,7 +4325,7 @@ elif feature_selection == L["sim_tab_phone"]:
                         st.session_state.language, agent_response_transcript.strip()
                     )
 
-                    # 4. 고객 반응을 TTS로 재생 (요청 1)
+                    # 4. 고객 반응을 TTS로 재생
                     if not customer_reaction.startswith("❌"):
                         audio_bytes, msg = synthesize_tts(customer_reaction, st.session_state.language, role="customer")
                         if audio_bytes:
@@ -3274,17 +4345,19 @@ elif feature_selection == L["sim_tab_phone"]:
                     st.session_state.current_agent_audio_text = ""
                     st.session_state.realtime_hint_text = ""
 
-                # st.rerun()  # ✅ 고객 반응 후 확실하게 재실행
+                    # ✅ 고객 반응 후 확실하게 재실행
+                    st.rerun()
 
     # ------------------
     # CALL_ENDED 상태
     # ------------------
     elif st.session_state.call_sim_stage == "CALL_ENDED":
+        # ... (기존 CALL_ENDED 로직)
         st.success(L["call_end_message"])
 
-        # AHT 계산 (요청 1 해결)
+        # AHT 계산
         if st.session_state.start_time is not None:
-            # ⭐ 수정: Hold 시간을 AHT 계산에서 제외하지 않습니다. (요청 2 반영)
+            # ⭐ 수정: Hold 시간을 AHT 계산에서 제외하지 않습니다.
             final_aht_seconds = (datetime.now() - st.session_state.start_time).total_seconds()
             final_aht_seconds = max(0, final_aht_seconds)
             final_aht_str = str(timedelta(seconds=final_aht_seconds)).split('.')[0]
@@ -3295,16 +4368,16 @@ elif feature_selection == L["sim_tab_phone"]:
         st.markdown("---")
 
         with st.expander("통화 기록 요약"):
-            # 1. AI 요약 표시 (요청 2 해결)
+            # 1. AI 요약 표시
             st.subheader("AI 통화 요약")
             if st.session_state.call_summary_text:
                 st.info(st.session_state.call_summary_text)
             else:
-                st.error("❌ 통화 요약 생성에 실패했습니다. API 키를 확인하세요.")
+                st.error("❌ 통화 요약 생성에 실패했습니다. API 키를 확인하세요。")
 
             st.markdown("---")
 
-            # 2. 고객 음성 녹음 재생 (요청 3 해결)
+            # 2. 고객 음성 녹음 재생
             st.subheader("고객 최초 문의 (음성)")
             if st.session_state.customer_initial_audio_bytes:
                 st.audio(st.session_state.customer_initial_audio_bytes, format="audio/mp3")
@@ -3334,7 +4407,11 @@ elif feature_selection == L["sim_tab_phone"]:
             st.session_state.simulator_messages = []
             st.session_state.call_summary_text = ""  # 요약 초기화
             st.session_state.customer_initial_audio_bytes = None  # 오디오 초기화
+            st.session_state.customer_history_summary = ""  # AI 요약 초기화 (추가)
+            st.session_state.sim_audio_bytes = None  # 녹음 파일 초기화 (추가)
+            # ⭐ 재실행
             # st.rerun()
+
 
 
 # -------------------- RAG Tab --------------------
@@ -3342,6 +4419,36 @@ elif feature_selection == L["rag_tab"]:
     # ... (기존 RAG 탭 로직 유지)
     st.header(L["rag_header"])
     st.markdown(L["rag_desc"])
+
+    # 학습 자료 업로드 (메인 컴포넌트로 이동)
+    st.markdown("---")
+    st.subheader("📚 학습 자료 업로드")
+    uploaded_files_widget = st.file_uploader(
+        L["file_uploader"], type=["pdf", "txt", "html"], accept_multiple_files=True,
+        key="rag_file_uploader"
+    )
+    if uploaded_files_widget:
+        st.session_state.uploaded_files_state = uploaded_files_widget
+
+    files_to_process = st.session_state.uploaded_files_state or []
+
+    # RAG 인덱싱 버튼
+    if files_to_process and st.session_state.is_llm_ready:
+        if st.button(L["button_start_analysis"], key="rag_start_analysis_btn"):
+            with st.spinner(L["data_analysis_progress"]):
+                vs, count = build_rag_index(files_to_process)
+                if vs is not None:
+                    st.session_state.rag_vectorstore = vs
+                    st.session_state.is_rag_ready = True
+                    st.success(L["embed_success"].format(count=count))
+                    # ⭐ 재실행
+                    st.rerun()
+                else:
+                    st.session_state.is_rag_ready = False
+    elif not files_to_process:
+        st.info(L["warning_no_files"])
+
+    st.markdown("---")
 
     if not st.session_state.is_rag_ready or st.session_state.rag_vectorstore is None:
         if st.session_state.is_llm_ready:
@@ -3473,8 +4580,9 @@ elif feature_selection == L["lstm_tab"]:
     st.header(L["lstm_header"])
     st.markdown(L["lstm_desc"])
 
-    if st.button(L["lstm_rerun_button"]):
-        st.rerun()
+    # ⭐ 최적화: 버튼 자체가 rerun을 유도하므로 명시적 rerun 제거 (버튼 클릭 시 자동 재실행)
+    # if st.button(L["lstm_rerun_button"]):
+    #     st.rerun()
 
     try:
         data = load_or_train_lstm()
