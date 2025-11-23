@@ -3778,7 +3778,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             # 6. UI 재실행 (언어 변경 적용)
             st.success(f"✅ {LANG[target_lang]['transfer_summary_header']}가 준비되었습니다. 새로운 응대를 시작하세요.")
             # ⭐ 재실행
-            st.rerun()
+            # st.rerun()
 
 
         for i, target_lang in enumerate(languages):
@@ -4192,8 +4192,96 @@ elif feature_selection == L["sim_tab_phone"]:
 
             duration_str = str(display_hold_duration).split('.')[0]
             st.warning(L["hold_status"].format(duration=duration_str))
+        def transfer_session(target_lang: str, current_messages: List[Dict[str, str]]):
+            """언어 이관 시스템 메시지를 추가하고 세션 언어를 변경합니다."""
+
+            current_lang = st.session_state.language  # 현재 언어 확인 (Source language)
+            L = LANG[current_lang]
+
+            # API 키 체크
+            if not st.session_state.is_llm_ready:
+                st.error(L["simulation_no_key_warning"].replace('API Key', 'LLM API Key'))
+                return
+
+            current_lang_at_start = st.session_state.language  # Source language
+
+            # AHT 타이머 중지
+            st.session_state.start_time = None
+
+            # 1. 로딩 시작 (시간 양해 메시지 시뮬레이션)
+            with st.spinner(L["transfer_loading"]):
+                time.sleep(np.random.uniform(5, 10))
+
+                # 2. 대화 기록을 번역할 텍스트로 가공
+                history_text = ""
+                for msg in current_messages:
+                    role = "Customer" if msg["role"].startswith("customer") or msg[
+                        "role"] == "initial_query" else "Agent"
+                    if msg["role"] in ["initial_query", "customer_rebuttal", "agent_response",
+                                       "customer_closing_response", "phone_exchange"]:  # phone_exchange 추가
+                        history_text += f"{role}: {msg['content']}\n"
+
+                # 3. LLM 번역 실행 (수정된 번역 함수 사용)
+                translated_summary = translate_text_with_llm(history_text, target_lang,
+                                                             current_lang_at_start)  # Use current_lang_at_start as source
+
+                # 4. 세션 상태 업데이트
+                st.session_state.transfer_summary_text = translated_summary
+                st.session_state.language_at_transfer = target_lang  # Save destination language
+                st.session_state.language_at_transfer_start = current_lang_at_start  # Save source language for retry
+                st.session_state.language = target_lang  # Language switch
+
+                # --- 시스템 이관 메시지 추가 ---
+                st.session_state.simulator_messages = [
+                    msg for msg in st.session_state.simulator_messages
+                    if msg['role'] != 'supervisor'
+                ]  # 기존 Supervisor 메시지는 삭제
+
+                system_transfer_msg = LANG[target_lang]['transfer_system_msg'].format(target_lang=target_lang)
+                st.session_state.simulator_messages.append({"role": "system_end", "content": system_transfer_msg})
+
+                st.session_state.is_solution_provided = False
+                st.session_state.language_transfer_requested = False
+
+                # 이관 후 상태 전환
+                if st.session_state.call_sim_stage == "IN_CALL":
+                    st.session_state.sim_stage = "AGENT_TURN"  # AGENT_TURN으로 전환하여 응대 유도
+                else:
+                    st.session_state.sim_stage = "AGENT_TURN"
+
+                # 5. 이력 저장
+                customer_type_display = st.session_state.get("customer_type_sim_select", "")
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area,
+                    customer_type_display + f" (Transferred from {current_lang_at_start} to {target_lang})",
+                    st.session_state.simulator_messages,
+                    attachment_context=st.session_state.sim_attachment_context_for_llm,
+                    is_chat_ended=False,
+                    is_call=(st.session_state.call_sim_stage == "IN_CALL")  # 전화 이력임을 표시
+                )
+
+            # 6. UI 재실행 (언어 변경 적용)
+            st.success(f"✅ {LANG[target_lang]['transfer_summary_header']}가 준비되었습니다. 새로운 응대를 시작하세요.")
+            # st.rerun()
 
         st.markdown("---")
+        st.markdown(f"**{L['transfer_header']}**")
+        transfer_cols = st.columns(len(LANG) - 1)
+
+        languages = list(LANG.keys())
+        languages.remove(current_lang)
+
+        # transfer_session 함수를 재정의하지 않고, 기존의 transfer_session 함수를 호출합니다.
+        for i, target_lang in enumerate(languages):
+            button_label_key = f"transfer_to_{target_lang}"
+            button_label = L.get(button_label_key, f"Transfer to {target_lang.capitalize()} Team")
+
+            if transfer_cols[i].button(button_label, key=f"btn_transfer_phone_{target_lang}"):
+                # transfer_session 호출 시, 현재 통화 메시지(simulator_messages)를 넘겨줍니다.
+                transfer_session(target_lang, st.session_state.simulator_messages)
+
+
+
 
         # =========================
         # AI 요약 버튼 및 표시 로직 (추가된 기능)
@@ -4210,7 +4298,7 @@ elif feature_selection == L["sim_tab_phone"]:
             if st.button("💡 이력 요약 요청", key="btn_request_phone_summary"):
                 # 요약 함수 호출
                 st.session_state.customer_history_summary = summarize_history_with_ai(st.session_state.language)
-                st.rerun()
+                # st.rerun()
 
         # 2. 이관 번역 재시도 버튼 (이관 후 번역이 실패했을 경우)
         if st.session_state.language != st.session_state.language_at_transfer_start and not st.session_state.transfer_summary_text:
@@ -4224,7 +4312,7 @@ elif feature_selection == L["sim_tab_phone"]:
                             st.session_state.language_at_transfer_start
                         )
                         st.session_state.transfer_summary_text = translated_summary
-                        st.rerun()
+                        # st.rerun()
 
         # 3. 요약 내용 표시
         if st.session_state.transfer_summary_text:
@@ -4291,7 +4379,7 @@ elif feature_selection == L["sim_tab_phone"]:
                 st.session_state.bytes_to_process = mic_audio["bytes"]
                 st.session_state.current_agent_audio_text = "🎙️ 녹음 완료. 전사 처리 중..."  # 처리 중 메시지
                 # ✅ 재실행하여 다음 실행 주기에서 전사 로직을 처리
-                st.rerun()
+                # st.rerun()
 
             # ⭐ 전사 로직: bytes_to_process에 데이터가 있을 때만 실행
             if "bytes_to_process" in st.session_state and st.session_state.bytes_to_process:
@@ -4299,7 +4387,7 @@ elif feature_selection == L["sim_tab_phone"]:
                     st.error(L["openai_missing"])
                     st.session_state.bytes_to_process = None
                     # ✅ 재실행
-                    st.rerun()
+                    # st.rerun()
 
                 with st.spinner(L["whisper_processing"]):
 
@@ -4315,7 +4403,7 @@ elif feature_selection == L["sim_tab_phone"]:
                         st.error(agent_response_transcript)
                         st.session_state.current_agent_audio_text = f"[ERROR: {L['error']} Whisper failed]"
                         # ✅ 재실행
-                        st.rerun()
+                        # st.rerun()
 
                     # 2. 전사 결과를 CC 텍스트로 반영
                     st.session_state.current_agent_audio_text = agent_response_transcript.strip()
@@ -4346,7 +4434,7 @@ elif feature_selection == L["sim_tab_phone"]:
                     st.session_state.realtime_hint_text = ""
 
                     # ✅ 고객 반응 후 확실하게 재실행
-                    st.rerun()
+                    # st.rerun()
 
     # ------------------
     # CALL_ENDED 상태
@@ -4442,7 +4530,7 @@ elif feature_selection == L["rag_tab"]:
                     st.session_state.is_rag_ready = True
                     st.success(L["embed_success"].format(count=count))
                     # ⭐ 재실행
-                    st.rerun()
+                    # st.rerun()
                 else:
                     st.session_state.is_rag_ready = False
     elif not files_to_process:
