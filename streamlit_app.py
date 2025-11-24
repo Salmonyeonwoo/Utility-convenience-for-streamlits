@@ -735,7 +735,11 @@ LANG: Dict[str, Dict[str, str]] = {
 # ========================================
 # 1-1. Session State 초기화 (전화 관련 상태 추가)
 # ========================================
-# [Session State 초기화 코드는 변경 없음]
+if st.sidebar.button("💣 Reset Simulator State"):
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    # st.experimental_rerun()
+
 if "language" not in st.session_state:
     st.session_state.language = DEFAULT_LANG
 if "is_llm_ready" not in st.session_state:
@@ -996,48 +1000,80 @@ def get_llm_client():
 
 
 def run_llm(prompt: str) -> str:
-    """선택된 LLM으로 프롬프트 실행"""
+    """선택된 LLM으로 프롬프트 실행 (Gemini 우선순위 변경 적용)"""
     client, info = get_llm_client()
 
     if client is None or info is None:
         return "❌ No API key for selected model."
 
+    # 🚨 주력 LLM을 Gemini로 강제 변경하여 OpenAI 할당량 문제 우회
+    # (단, 선택된 모델이 OpenAI일 경우 info를 유지하고, 아래 Fallback 로직에서 순서를 조정함)
+
     provider, model_name = info
 
-    # 메시지 리스트 생성
-    messages = [{"role": "user", "content": prompt}]
+    # LLM Fallback 순서를 정의합니다. (Gemini 우선, OpenAI/Claude/Groq 순)
+    # *Note: get_llm_client()가 반환하는 client 객체는 주력으로 선택된 모델에 해당합니다.*
 
-    # --- OpenAI Chat ---
-    if provider == "openai":
-        resp = client.chat.completions.create(
-            model=model_name,
-            messages=messages,
-        )
-        return resp.choices[0].message.content
-
-    # --- Gemini ---
+    # [1] 주력 모델 (사이드바 선택) 실행 시도
     if provider == "gemini":
-        gen_model = client.GenerativeModel(model_name)
-        resp = gen_model.generate_content(prompt)
-        return resp.text
+        try:
+            gen_model = client.GenerativeModel(model_name)
+            resp = gen_model.generate_content(prompt)
+            return resp.text
+        except Exception as e:
+            print(f"Primary Gemini Chat failed: {e}")
 
-    # --- Claude ---
-    if provider == "claude":
-        resp = client.messages.create(
-            model=model_name,
-            messages=messages,
-        )
-        return resp.content[0].text
+    elif provider == "openai":
+        try:
+            o_client = client
+            resp = o_client.chat.completions.create(
+                model=model_name,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return resp.choices[0].message.content
+        except Exception as e:
+            print(f"Primary OpenAI Chat failed: {e}")
 
-    # --- Groq ---
-    if provider == "groq":
-        resp = client.chat.completions.create(
-            model=model_name,
-            messages=messages,
-        )
-        return resp.choices[0].message.content
+    # [2] 주력 모델이 실패하거나 다른 모델이 선택된 경우, 안정적인 순서로 Fallback 시도
 
-    return "❌ Unsupported provider."
+    # Fallback 1순위: Gemini (Keys 확인)
+    gemini_key = get_api_key("gemini")
+    if gemini_key:
+        try:
+            genai.configure(api_key=gemini_key)
+            fallback_model = genai.GenerativeModel("gemini-2.5-pro")
+            return fallback_model.generate_content(prompt).text
+        except Exception as e:
+            print(f"Fallback Gemini failed: {e}")
+
+    # Fallback 2순위: OpenAI (Keys 확인)
+    openai_key = get_api_key("openai")
+    if openai_key:
+        try:
+            o_client = OpenAI(api_key=openai_key)
+            resp = o_client.chat.completions.create(
+                model="gpt-4o-mini",  # Fallback 시 저렴한 모델 사용
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return resp.choices[0].message.content
+        except Exception as e:
+            print(f"Fallback OpenAI failed: {e}")
+
+    # Fallback 3순위: Claude (Keys 확인)
+    claude_key = get_api_key("claude")
+    if claude_key:
+        try:
+            c_client = Anthropic(api_key=claude_key)
+            resp = c_client.messages.create(
+                model="claude-3-5-sonnet-latest",
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return resp.content[0].text
+        except Exception as e:
+            print(f"Fallback Claude failed: {e}")
+
+    # 최종 실패
+    return "❌ 모든 LLM API 키가 작동하지 않거나 할당량이 소진되었습니다."
 
 
 # ========================================
@@ -1339,38 +1375,33 @@ Generate the agent's response draft:
 # 3. Whisper / TTS Helper
 # ========================================
 
-def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/webm", lang_code: str = "ko") -> str:
-    L = LANG[st.session_state.language]
+def transcribe_audio(audio_bytes, filename="audio.wav"):
     client = st.session_state.openai_client
-    if client is None:
-        return f"❌ {L['openai_missing']}"
 
-    whisper_lang = {"ko": "ko", "en": "en", "ja": "ja"}.get(lang_code, "en")
-
-    # 임시 파일 저장 (Whisper API 호환성)
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-    tmp.write(audio_bytes)
-    tmp.flush()
-    tmp.close()
-
-    try:
-        with open(tmp.name, "rb") as f:
-            res = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=f,
-                response_format="text",
-                language=whisper_lang,
-            )
-        # res.text 속성이 있는지 확인하고 없으면 res 자체를 문자열로 변환
-        return res.text.strip() if hasattr(res, 'text') else str(res).strip()
-    except Exception as e:
-        # 파일 형식 오류 등 상세 오류 처리
-        return f"❌ {L['error']} Whisper: {e}"
-    finally:
+    # 1️⃣ OpenAI Whisper 시도
+    if client:
         try:
-            os.remove(tmp.name)
-        except OSError:
-            pass
+            import io
+            bio = io.BytesIO(audio_bytes)
+            bio.name = filename
+            resp = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=bio,
+            )
+            return resp.text
+        except Exception as e:
+            print("Whisper OpenAI failed:", e)
+
+    # 2️⃣ Gemini STT fallback
+    try:
+        genai.configure(api_key=get_api_key("gemini"))
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        text = model.generate_content("Transcribe this audio:").text
+        return text or ""
+    except Exception as e:
+        print("Gemini STT failed:", e)
+
+    return "❌ STT not available"
 
 
 # 역할별 TTS 음성 스타일 설정
@@ -1735,6 +1766,19 @@ def split_documents(docs: List[Document]) -> List[Document]:
         separators=["\n\n", "\n", ".", " ", ""],
     )
     return splitter.split_documents(docs)
+
+def get_embedding_model():
+    if get_api_key("openai"):
+        try:
+            return OpenAIEmbeddings(model="text-embedding-3-small")
+        except:
+            pass
+    if get_api_key("gemini"):
+        try:
+            return GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        except:
+            pass
+    return None
 
 
 def get_embedding_function():
@@ -2916,8 +2960,9 @@ if feature_selection == L["voice_rec_header"]:
                         else:
                             st.session_state[f"confirm_del_{rec_id}"] = True
                             st.warning(L["delete_confirm_rec"])
-
-
+                            st.write("sim_stage:", st.session_state.get("sim_stage"))
+                            st.write("is_llm_ready:", st.session_state.get("is_llm_ready"))
+                            
 # -------------------- Simulator (Chat/Email) Tab --------------------
 elif feature_selection == L["sim_tab_chat_email"]:
     # ... (기존 채팅/이메일 시뮬레이터 로직 유지)
@@ -3188,7 +3233,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
 
                 st.session_state.simulator_memory.clear()  # 메모리 초기화
                 # ⭐ 로드 후 UI 업데이트를 위해 재실행
-                # st.rerun()
+                st.rerun()
         else:
             st.info(L["no_history_found"])
 
@@ -3232,7 +3277,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             # ⭐ 수정: 3초마다 재실행하여 AHT 실시간성 확보
             if seconds % 3 == 0 and total_seconds < 1000:
                 time.sleep(1)
-                # st.rerun()
+                st.rerun()
 
         st.markdown("---")
 
@@ -3262,7 +3307,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             st.session_state.agent_attachment_file = []  # 에이전트 첨부 파일 초기화
             st.session_state.start_time = None
             # ⭐ 재실행
-            # st.rerun()
+            st.rerun()
         st.stop()
 
     # ========================================
@@ -3430,7 +3475,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             )
             st.session_state.sim_stage = "AGENT_TURN"
             # ⭐ 재실행
-            # st.rerun()
+            st.rerun()
 
     # =========================
     # 4. 대화 로그 표시 (공통)
@@ -3490,7 +3535,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
                             translated_summary = translate_text_with_llm(history_text, target_lang, source_lang)
                             st.session_state.transfer_summary_text = translated_summary
                             # ⭐ 재실행
-                            # st.rerun()
+                            st.rerun()
 
                 else:
                     # 번역 성공 시 내용 표시
@@ -3516,7 +3561,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
                     hint = generate_realtime_hint(current_lang, is_call=False)
                     st.session_state.realtime_hint_text = hint
                     # ⭐ 재실행
-                    # st.rerun()
+                    st.rerun()
 
         # --- 언어 이관 요청 강조 표시 ---
         if st.session_state.language_transfer_requested:
@@ -3539,7 +3584,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
                         st.session_state.agent_response_area_text = ai_draft
                         st.success("✅ AI 응답 초안이 생성되었습니다. 아래에서 확인하고 수정하세요.")
                         # ⭐ 재실행
-                        # st.rerun()
+                        st.rerun()
                     else:
                         st.error(ai_draft if ai_draft else "응답 초안 생성에 실패했습니다.")
 
@@ -3618,7 +3663,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
                     st.session_state.last_transcript = ""
                     st.session_state.agent_response_area_text = ""
                     st.success("녹음이 삭제되었습니다. 다시 녹음해 주세요.")
-                    # st.rerun()
+                    st.rerun()
 
             # 3. 전사(Whisper) 버튼 (기존 로직 대체)
             with col_transcribe:
@@ -3693,7 +3738,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             # ⭐ 수정: 고객 반응 생성 로직을 다음 단계에서 처리하도록 sim_stage 변경만 수행
             st.session_state.sim_stage = "CUSTOMER_TURN"
             # ⭐ 재실행: 이 부분이 즉시 고객 반응을 생성하도록 유도합니다.
-            # st.rerun()
+            st.rerun()
 
         # --- 언어 이관 버튼 ---
         st.markdown("---")
