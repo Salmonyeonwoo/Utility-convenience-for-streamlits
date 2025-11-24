@@ -4085,7 +4085,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             if st.button(L["customer_generate_response_button"], key="btn_generate_final_response"):
                 # 수동 처리 시 AGENT_TURN으로 넘어가도록 처리
                 st.session_state.sim_stage = "AGENT_TURN"
-                # st.rerun()
+                st.rerun()
                 
     # =========================
     # 9. 최종 종료 행동 (FINAL_CLOSING_ACTION)
