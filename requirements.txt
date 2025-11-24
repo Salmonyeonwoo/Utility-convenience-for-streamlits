@@ -1,21 +1,23 @@
-# 주요 LLM 라이브러리 및 Streamlit 컴포넌트
-streamlit
+streamlit==1.38.0
+# LLM Core
 openai
-google-genai # Gemini API를 위한 패키지
+google-genai
 anthropic
 groq
-# Streamlit 컴포넌트
-streamlit-mic-recorder
-# 데이터 및 RAG 관련 (필요한 경우)
-numpy
-matplotlib
-plotly
+# LangChain (LLM 라우팅 및 RAG 프레임워크)
 langchain
 langchain-core
-langchain-openai
 langchain-community
+langchain-openai
 langchain-google-genai
 langchain-nvidia-ai-endpoints
+# 전사 및 오디오
+streamlit-mic-recorder
+numpy
+# RAG (문서 처리 기능 유지 시)
 faiss-cpu
 pypdf
 sentence-transformers
+# 시각화 (선택적)
+plotly
+matplotlib
