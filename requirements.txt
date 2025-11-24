@@ -1419,7 +1419,7 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/we
             os.remove(tmp.name)
         except OSError:
             pass
-        
+
 def transcribe_audio(audio_bytes, filename="audio.wav"):
     client = st.session_state.openai_client
 
