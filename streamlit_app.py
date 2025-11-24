@@ -1003,76 +1003,85 @@ def run_llm(prompt: str) -> str:
     """선택된 LLM으로 프롬프트 실행 (Gemini 우선순위 변경 적용)"""
     client, info = get_llm_client()
 
-    if client is None or info is None:
-        return "❌ No API key for selected model."
+    # Note: info는 사이드바에서 선택된 주력 모델의 정보를 담고 있습니다.
+    provider, model_name = info if info else (None, None)
 
-    # 🚨 주력 LLM을 Gemini로 강제 변경하여 OpenAI 할당량 문제 우회
-    # (단, 선택된 모델이 OpenAI일 경우 info를 유지하고, 아래 Fallback 로직에서 순서를 조정함)
+    # Fallback 순서를 정의합니다. (Gemini 우선)
+    llm_attempts = []
 
-    provider, model_name = info
-
-    # LLM Fallback 순서를 정의합니다. (Gemini 우선, OpenAI/Claude/Groq 순)
-    # *Note: get_llm_client()가 반환하는 client 객체는 주력으로 선택된 모델에 해당합니다.*
-
-    # [1] 주력 모델 (사이드바 선택) 실행 시도
-    if provider == "gemini":
-        try:
-            gen_model = client.GenerativeModel(model_name)
-            resp = gen_model.generate_content(prompt)
-            return resp.text
-        except Exception as e:
-            print(f"Primary Gemini Chat failed: {e}")
-
-    elif provider == "openai":
-        try:
-            o_client = client
-            resp = o_client.chat.completions.create(
-                model=model_name,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            return resp.choices[0].message.content
-        except Exception as e:
-            print(f"Primary OpenAI Chat failed: {e}")
-
-    # [2] 주력 모델이 실패하거나 다른 모델이 선택된 경우, 안정적인 순서로 Fallback 시도
-
-    # Fallback 1순위: Gemini (Keys 확인)
+    # 1. Gemini를 최우선 Fallback으로 시도 (Keys 확인)
     gemini_key = get_api_key("gemini")
     if gemini_key:
-        try:
-            genai.configure(api_key=gemini_key)
-            fallback_model = genai.GenerativeModel("gemini-2.5-pro")
-            return fallback_model.generate_content(prompt).text
-        except Exception as e:
-            print(f"Fallback Gemini failed: {e}")
+        llm_attempts.append(("gemini", gemini_key, "gemini-2.5-pro" if "pro" in model_name else "gemini-2.5-flash"))
 
-    # Fallback 2순위: OpenAI (Keys 확인)
+    # 2. OpenAI를 2순위 Fallback으로 시도 (Keys 확인)
     openai_key = get_api_key("openai")
     if openai_key:
-        try:
-            o_client = OpenAI(api_key=openai_key)
-            resp = o_client.chat.completions.create(
-                model="gpt-4o-mini",  # Fallback 시 저렴한 모델 사용
-                messages=[{"role": "user", "content": prompt}],
-            )
-            return resp.choices[0].message.content
-        except Exception as e:
-            print(f"Fallback OpenAI failed: {e}")
+        llm_attempts.append(("openai", openai_key, "gpt-4o" if "4" in model_name else "gpt-3.5-turbo"))
 
-    # Fallback 3순위: Claude (Keys 확인)
+    # 3. Claude를 3순위 Fallback으로 시도 (Keys 확인)
     claude_key = get_api_key("claude")
     if claude_key:
-        try:
-            c_client = Anthropic(api_key=claude_key)
-            resp = c_client.messages.create(
-                model="claude-3-5-sonnet-latest",
-                messages=[{"role": "user", "content": prompt}],
-            )
-            return resp.content[0].text
-        except Exception as e:
-            print(f"Fallback Claude failed: {e}")
+        llm_attempts.append(("claude", claude_key, "claude-3-5-sonnet-latest"))
 
-    # 최종 실패
+    # 4. Groq를 4순위 Fallback으로 시도 (Keys 확인)
+    groq_key = get_api_key("groq")
+    if groq_key:
+        groq_model = "llama3-70b-8192" if "llama3" in model_name else "mixtral-8x7b-32768"
+        llm_attempts.append(("groq", groq_key, groq_model))
+
+    # ⭐ 순서 조정: 주력 모델(사용자가 사이드바에서 선택한 모델)을 가장 먼저 시도합니다.
+    # 만약 주력 모델이 Fallback 리스트에 포함되어 있다면, 그 모델을 첫 순서로 올립니다.
+    if provider and provider in [attempt[0] for attempt in llm_attempts]:
+        # 주력 모델을 리스트에서 찾아 제거
+        primary_attempt = next((attempt for attempt in llm_attempts if attempt[0] == provider), None)
+        if primary_attempt:
+            llm_attempts.remove(primary_attempt)
+            # 주력 모델이 Gemini나 OpenAI가 아니라면, Fallback 순서와 관계없이 가장 먼저 시도하도록 삽입
+            llm_attempts.insert(0, primary_attempt)
+
+    # LLM 순차 실행
+    for provider, key, model in llm_attempts:
+        if not key: continue
+
+        try:
+            if provider == "gemini":
+                genai.configure(api_key=key)
+                gen_model = genai.GenerativeModel(model)
+                resp = gen_model.generate_content(prompt)
+                return resp.text
+
+            elif provider == "openai":
+                o_client = OpenAI(api_key=key)
+                resp = o_client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                return resp.choices[0].message.content
+
+            elif provider == "claude":
+                c_client = Anthropic(api_key=key)
+                resp = c_client.messages.create(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                return resp.content[0].text
+
+            elif provider == "groq":
+                from groq import Groq
+                g_client = Groq(api_key=key)
+                resp = g_client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                return resp.choices[0].message.content
+
+        except Exception as e:
+            # 해당 API가 실패하면 다음 API로 넘어갑니다.
+            print(f"LLM {provider} ({model}) failed: {e}")
+            continue
+
+    # 모든 시도가 실패했을 때
     return "❌ 모든 LLM API 키가 작동하지 않거나 할당량이 소진되었습니다."
 
 
