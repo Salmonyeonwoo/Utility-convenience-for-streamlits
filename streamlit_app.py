@@ -1384,6 +1384,42 @@ Generate the agent's response draft:
 # 3. Whisper / TTS Helper
 # ========================================
 
+def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/webm", lang_code: str = "ko") -> str:
+    """
+    OpenAI Whisper API를 사용하여 오디오 바이트를 텍스트로 전사합니다.
+    """
+    L = LANG[st.session_state.language]
+    client = st.session_state.openai_client
+    if client is None:
+        return f"❌ {L['openai_missing']}"
+
+    whisper_lang = {"ko": "ko", "en": "en", "ja": "ja"}.get(lang_code, "en")
+
+    # 임시 파일 저장 (Whisper API 호환성)
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+    tmp.write(audio_bytes)
+    tmp.flush()
+    tmp.close()
+
+    try:
+        with open(tmp.name, "rb") as f:
+            res = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=f,
+                response_format="text",
+                language=whisper_lang,
+            )
+        # res.text 속성이 있는지 확인하고 없으면 res 자체를 문자열로 변환
+        return res.text.strip() if hasattr(res, 'text') else str(res).strip()
+    except Exception as e:
+        # 파일 형식 오류 등 상세 오류 처리
+        return f"❌ {L['error']} Whisper: {e}"
+    finally:
+        try:
+            os.remove(tmp.name)
+        except OSError:
+            pass
+
 def transcribe_audio(audio_bytes, filename="audio.wav"):
     client = st.session_state.openai_client
 
