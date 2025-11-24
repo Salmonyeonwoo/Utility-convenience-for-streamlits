@@ -1,50 +1,21 @@
-streamlit==1.38.0
-
-# LangChain (버전 제거, Cloud가 자동 설치)
-langchain
-langchain-community
-langchain-core
-langchain-google-genai
-google-generativeai
-langchain-openai
-anthropic
+# 주요 LLM 라이브러리 및 Streamlit 컴포넌트
+streamlit
 openai
+google-genai # Gemini API를 위한 패키지
+anthropic
 groq
-langchain-nvidia-ai-endpoints==0.1.3
-sentence-transformers==2.7.0
-
-# Vector Store
-faiss-cpu==1.8.0
-
-#RAG documents
-unstructured
-PyPDF2
-psutil
-paddlepaddle
-paddlenlp
-tensorflow
-keras
-
-#Adding Firestore Admin SDK
-firebase-admin
-# Docs / Parsing
-unstructured==0.14.9
-beautifulsoup4
-
-# ML & Analytics
-#Whisper AI 사용 위해 추가
-numpy
-pandas
-matplotlib
-bs4
+# Streamlit 컴포넌트
 streamlit-mic-recorder
-streamlit-webrtc
-opencv-python-headless
-
-# Utilities
-google-cloud-firestore
-protobuf
-requests
-tqdm
-markdown-it-py
-rich
+# 데이터 및 RAG 관련 (필요한 경우)
+numpy
+matplotlib
+plotly
+langchain
+langchain-core
+langchain-openai
+langchain-community
+langchain-google-genai
+langchain-nvidia-ai-endpoints
+faiss-cpu
+pypdf
+sentence-transformers
