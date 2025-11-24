@@ -3287,7 +3287,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
 
                 st.session_state.simulator_memory.clear()  # 메모리 초기화
                 # ⭐ 로드 후 UI 업데이트를 위해 재실행
-                st.rerun()
+                # st.rerun()
         else:
             st.info(L["no_history_found"])
 
@@ -3331,7 +3331,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             # ⭐ 수정: 3초마다 재실행하여 AHT 실시간성 확보
             if seconds % 3 == 0 and total_seconds < 1000:
                 time.sleep(1)
-                st.rerun()
+                # st.rerun()
 
         st.markdown("---")
 
@@ -3529,7 +3529,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             )
             st.session_state.sim_stage = "AGENT_TURN"
             # ⭐ 재실행
-            st.rerun()
+            # st.rerun()
 
     # =========================
     # 4. 대화 로그 표시 (공통)
@@ -3615,7 +3615,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
                     hint = generate_realtime_hint(current_lang, is_call=False)
                     st.session_state.realtime_hint_text = hint
                     # ⭐ 재실행
-                    st.rerun()
+                    # st.rerun()
 
         # --- 언어 이관 요청 강조 표시 ---
         if st.session_state.language_transfer_requested:
@@ -3638,7 +3638,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
                         st.session_state.agent_response_area_text = ai_draft
                         st.success("✅ AI 응답 초안이 생성되었습니다. 아래에서 확인하고 수정하세요.")
                         # ⭐ 재실행
-                        st.rerun()
+                        # st.rerun()
                     else:
                         st.error(ai_draft if ai_draft else "응답 초안 생성에 실패했습니다.")
 
@@ -3978,7 +3978,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             # 수동으로 AGENT_TURN으로 돌아가는 버튼 제공 (오류 복구용)
          if st.button("AGENT_TURN으로 돌아가기", key="fallback_to_agent_turn"):
             st.session_state.sim_stage = "AGENT_TURN"
-            st.rerun()
+            # st.rerun()
 
     # =========================
     # 7. 종료 확인 메시지 대기 (WAIT_CLOSING_CONFIRMATION_FROM_AGENT)
@@ -4046,13 +4046,13 @@ elif feature_selection == L["sim_tab_chat_email"]:
         L = LANG[st.session_state.language]
         st.info("에이전트가 추가 문의 여부를 확인했습니다. 고객의 최종 답변을 자동으로 생성합니다.")
 
-        # 고객 답변 자동 생성 (버튼 없이 바로 실행)
+        # 고객 답변 자동 생성 (LLM Key 검증 포함)
         if st.session_state.is_llm_ready:
             with st.spinner(L["generating_customer_response"]):
                 # 고객의 최종 답변 생성 (채팅용)
                 final_customer_reaction = generate_customer_closing_response(st.session_state.language)
 
-            customer_type_display = st.session_state.get("customer_type_sim_select", "")
+            customer_type_display = st.session_state.get("customer_type_sim_select", L["customer_type_options"][0])
 
             # 로그 기록
             st.session_state.simulator_messages.append(
@@ -4086,7 +4086,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
                 # 수동 처리 시 AGENT_TURN으로 넘어가도록 처리
                 st.session_state.sim_stage = "AGENT_TURN"
                 st.rerun()
-                
+
     # =========================
     # 9. 최종 종료 행동 (FINAL_CLOSING_ACTION)
     # =========================
