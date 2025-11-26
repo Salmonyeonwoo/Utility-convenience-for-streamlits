@@ -1,15 +1,13 @@
 # ========================================
-# streamlit_app_last_correction.py (전체 수정된 코드)
+# streamlit_app.py (전체 수정된 코드)
 #
 # 주요 개선 사항:
-# 1. AI 응답 초안 생성 및 에이전트 수정 기능 추가 (요청 1)
-# 2. AI 요약 기반 이력 저장 및 활용 (요청 4)
-# 3. API Key 입력 제거 및 Secrets/Env Var 로드 구조로 변경 (요청 6)
-# 4. 까다로운 고객 응대 로직 강화 (필수 정보 제공 및 솔루션 후 감사 표현) (고객 피드백 반영)
-# 5. AHT 모니터링 및 실시간 힌트 요청 기능 추가
-# 6. [BUG FIX]: 응답 전송 버튼 클릭 시 대화 로그 업데이트 및 고객 반응 생성 안 되는 오류 수정
-# 7. [기능 통합]: 응답 전송 시 고객 반응이 바로 생성되도록 로직 통합 (요청 1 반영)
-# 8. [BUG FIX]: 전화 시뮬레이터 (sim_tab_phone)에서 AHT 타이머가 실시간 갱신되지 않는 오류 수정
+# 1. 채팅/이메일 탭에 '전화 발신 (현지 업체/고객)' 버튼 및 기능 추가 (예외 처리 대응)
+# 2. 전화 탭에 '전화 발신' 버튼 추가 및 발신 통화 시뮬레이션 모드 지원
+# 3. 관련 언어 팩 추가 및 세션 상태 업데이트
+# 4. 퀴즈 기능의 정답 확인, 해설, 점수 표시 로직 완성
+# 5. [BUG FIX] 언어 이관 시 '번역 다시 시도' 버튼의 DuplicateWidgetID 오류 해결
+# 6. [BUG FIX] 콘텐츠 생성 탭의 LLM 응답 및 라디오 버튼 초기화 오류 해결
 # ========================================
 
 import os
@@ -103,7 +101,7 @@ def _save_json(path: str, data: Any):
 
 
 # ========================================
-# 1. 다국어 설정 (요청 4 시각화 레이블 추가)
+# 1. 다국어 설정 (전화 발신 관련 텍스트 추가)
 # ========================================
 DEFAULT_LANG = "ko"
 
@@ -187,7 +185,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "prompt_customer_end": "고객님의 추가 문의 사항이 없어, 이 상담을 종료합니다。",
         "prompt_survey": "지금까지 상담원 000였습니다. 즐거운 하루 되시기 바랍니다. [설문 조사 링크]",
         "customer_closing_confirm": "다른 문의 사항은 없으십니까?",
-        "customer_positive_response": "알겠습니다. 감사합니다。",  # ⭐ 수정: 진상 고객도 솔루션 제공 후 사용할 긍정적 종료 문구
+        "customer_positive_response": "알겠습니다. 감사합니다。",
         "button_email_end_chat": "응대 종료 (설문 요청)",
         "error_mandatory_contact": "이메일과 전화번호 입력은 필수입니다。",
         "customer_attachment_label": "📎 고객 첨부 파일 업로드",
@@ -200,9 +198,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "agent_response_header": "✍️ 에이전트 응답",
         "agent_response_placeholder": "고객에게 응답하세요...",
         "send_response_button": "응답 전송",
-        "customer_turn_info": "에이전트 응답 전송 완료. 고객 반응을 자동으로 생성 중입니다.",  # ⭐ 추가
-        "generating_customer_response": "고객 반응 생성 중...",  # ⭐ 추가
-        "customer_escalation_start": "상급자와 이야기하고 싶습니다",  # ⭐ 추가: 고객 에스컬레이션 요청 시작 문구
+        "customer_turn_info": "에이전트 응답 전송 완료. 고객 반응을 자동으로 생성 중입니다。",
+        "generating_customer_response": "고객 반응 생성 중...",
+        "customer_escalation_start": "상급자와 이야기하고 싶습니다",
         "request_rebuttal_button": "고객의 다음 반응 요청",
         "new_simulation_button": "새 시뮬레이션 시작",
         "history_selectbox_label": "로드할 이력을 선택하세요:",
@@ -250,6 +248,15 @@ LANG: Dict[str, Dict[str, str]] = {
         "phone_provided_label": "전화번호 제공",
         "region_label": "지역",
 
+        # --- 추가된 전화 발신 기능 관련 ---
+        "button_call_outbound": "전화 발신",
+        "call_outbound_system_msg": "📌 시스템 메시지: 에이전트가 {target}에게 전화 발신을 시도했습니다.",
+        "call_outbound_simulation_header": "📞 전화 발신 시뮬레이션 결과",
+        "call_outbound_summary_header": "📞 현지 업체/고객과의 통화 요약",
+        "call_outbound_loading": "전화 연결 및 통화 결과 정리 중... (LLM 호출)",
+        "call_target_customer": "고객에게 발신",
+        "call_target_partner": "현지 업체 발신",
+
         # --- 음성 기록 ---
         "voice_rec_header": "음성 기록 & 관리",
         "record_help": "마이크 버튼을 눌러 녹음하거나 파일을 업로드하세요。",
@@ -285,12 +292,12 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_no_more_inquiries": "없습니다. 감사합니다。",
         "customer_has_additional_inquiries": "추가 문의 사항도 있습니다。",
         "sim_end_chat_button": "설문 조사 링크 전송 및 응대 종료",
-        "delete_mic_record": "❌ 녹음 삭제",  # ⭐ 추가: 녹음 삭제 버튼 텍스트
+        "delete_mic_record": "❌ 녹음 삭제",
 
         # --- 첨부 파일 기능 추가 ---
         "attachment_label": "고객 첨부 파일 업로드 (스크린샷 등)",
         "attachment_placeholder": "파일을 첨부하여 상황을 설명하세요 (선택 사항)",
-        "attachment_status_llm": "고객이 **{filename}** 파일을 첨부했습니다. 이 파일을 스크린샷이라고 가정하고 응대 초안 및 가이드라인에 반영하세요. (파일 타입: {filetype})",
+        "attachment_info_llm": "[고객 첨부 파일: {filename}이(가) 확인되었습니다. 이 파일을 참고하여 응대하세요.]",
         "agent_attachment_label": "에이전트 첨부 파일 (스크린샷 등)",
         "agent_attachment_placeholder": "응답에 첨부할 파일을 선택하세요 (선택 사항)",
         "agent_attachment_status": "📎 에이전트가 **{filename}** 파일을 응답에 첨부했습니다. (파일 타입: {filetype})",
@@ -301,7 +308,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "rag_embed_error_nvidia": "RAG 임베딩 실패: NVIDIA API Key가 유효하지 않거나 설정되지 않았습니다。",
         "rag_embed_error_none": "RAG 임베딩에 필요한 모든 키(OpenAI, Gemini, NVIDIA)가 유효하지 않습니다. 키를 설정해 주세요。",
 
-        # --- ⭐ 전화 기능 관련 추가 ---
+        # --- 전화 기능 관련 추가 ---
         "phone_header": "AI 고객 응대 시뮬레이터 (전화)",
         "call_status_waiting": "수신 대기 중...",
         "call_status_ringing": "전화 수신 중: {number}",
@@ -403,7 +410,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "prompt_customer_end": "No further inquiries. Ending chat.",
         "prompt_survey": "This was Agent 000. Have a nice day. [Survey Link]",
         "customer_closing_confirm": "Is there anything else we can assist you with?",
-        "customer_positive_response": "I understand. Thank you.",  # ⭐ 수정: 진상 고객도 솔루션 제공 후 사용할 긍정적 종료 문구
+        "customer_positive_response": "I understand. Thank you.",
         "button_email_end_chat": "End supports (Survey Request)",
         "error_mandatory_contact": "Email and Phone number input are mandatory.",
         "customer_attachment_label": "📎 Customer Attachment Upload",
@@ -416,9 +423,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "agent_response_header": "✍️ Agent Response",
         "agent_response_placeholder": "Write a response...",
         "send_response_button": "Send Response",
-        "customer_turn_info": "Agent response sent. Generating customer reaction automatically.",  # ⭐ 추가
-        "generating_customer_response": "Generating customer response...",  # ⭐ 추가
-        "customer_escalation_start": "I want to speak to a supervisor",  # ⭐ 추가: 고객 에스컬레이션 요청 시작 문구
+        "customer_turn_info": "Agent response sent. Generating customer reaction automatically.",
+        "generating_customer_response": "Generating customer response...",
+        "customer_escalation_start": "I want to speak to a supervisor",
         "request_rebuttal_button": "Request Customer Reaction",
         "new_simulation_button": "Start New Simulation",
         "history_selectbox_label": "Choose a record to load:",
@@ -466,7 +473,16 @@ LANG: Dict[str, Dict[str, str]] = {
         "phone_provided_label": "Phone Provided",
         "region_label": "Region",
 
-        # Voice
+        # --- 추가된 전화 발신 기능 관련 ---
+        "button_call_outbound": "Call Outbound",
+        "call_outbound_system_msg": "📌 System Message: Agent attempted an outbound call to {target}.",
+        "call_outbound_simulation_header": "📞 Outbound Call Simulation Result",
+        "call_outbound_summary_header": "📞 Summary of Call with Local Partner/Customer",
+        "call_outbound_loading": "Connecting call and summarizing outcome... (LLM Call)",
+        "call_target_customer": "Call Customer",
+        "call_target_partner": "Call Local Partner",
+
+        # --- 음성 기록 ---
         "voice_rec_header": "Voice Record & Management",
         "record_help": "Record using the microphone or upload a file.",
         "uploaded_file": "Upload Audio File",
@@ -476,8 +492,6 @@ LANG: Dict[str, Dict[str, str]] = {
         "transcribing": "Transcribing...",
         "transcript_result": "Transcription:",
         "transcript_text": "Transcribed Text",
-        "whisper_processing": "Processing voice transcription...",
-        "whisper_success": "✅ Transcription complete! Please check the text below.",
         "openai_missing": "OpenAI API Key is missing. Please set OPENAI_API_KEY.",
         "whisper_client_error": "❌ Error: Whisper API client not initialized.",
         "whisper_auth_error": "❌ Whisper API authentication failed. Check your API Key.",
@@ -518,7 +532,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "rag_embed_error_nvidia": "RAG embedding failed: NVIDIA API Key is invalid or not set.",
         "rag_embed_error_none": "RAG embedding failed: All required keys (OpenAI, Gemini, NVIDIA) are invalid or not set. Please configure a key.",
 
-        # --- ⭐ 전화 기능 관련 추가 ---
+        # --- 전화 기능 관련 추가 ---
         "phone_header": "AI Customer Support Simulator (Phone)",
         "call_status_waiting": "Waiting for incoming call...",
         "call_status_ringing": "Incoming Call from: {number}",
@@ -621,7 +635,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "prompt_customer_end": "追加の質問がないためチャットを終了します。",
         "prompt_survey": "担当エージェント000でした。良い一日をお過ごしください。 [アンケートリンク]",
         "customer_closing_confirm": "他のお問合せはございませんでしょうか。",
-        "customer_positive_response": "承知いたしました。ありがとうございます。",  # ⭐ 수정: 진상 고객도 솔루션 제공 후 사용할 긍정적 종료 문구
+        "customer_positive_response": "承知いたしました。ありがとうございます。",
         "button_email_end_chat": "応対終了（アンケート）",
         "error_mandatory_contact": "メールアドレスと電話番号の入力は必須です。",
         "customer_attachment_label": "📎 顧客添付ファイルアップロード",
@@ -634,9 +648,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "agent_response_header": "✍️ エージェント応答",
         "agent_response_placeholder": "顧客へ返信内容を入力…",
         "send_response_button": "返信送信",
-        "customer_turn_info": "エージェント応答送信完了。顧客の反応を自動生成中です。",  # ⭐ 추가
-        "generating_customer_response": "顧客の反応を生成中...",  # ⭐ 추가
-        "customer_escalation_start": "上級の担当者と話したい",  # ⭐ 추가: 고객 에스컬레이션 요청 시작 문구
+        "customer_turn_info": "エージェント応答送信完了。顧客の反応を自動生成中です。",
+        "generating_customer_response": "顧客の反応を生成中...",
+        "customer_escalation_start": "上級の担当者と話したい",
         "request_rebuttal_button": "顧客の反応を生成",
         "new_simulation_button": "新規シミュレーション",
         "history_selectbox_label": "履歴を選択:",
@@ -655,6 +669,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_phone_label": "顧客連絡先 / 電話番号（必修）",
         "transfer_header": "言語切り替え要請（他チームへ）",
         "transfer_to_en": "🇺🇸 英語チームへ転送",
+        "transfer_to_ja": "🇯🇵 日本語チームへ転送",
         "transfer_to_ko": "🇰🇷 韓国語チームへ転送",
         "transfer_system_msg": "📌 システムメッセージ: 顧客の要請により、対応言語が {target_lang} チームへ切り替えられました。新しい担当者(AI)が対応します。",
         "transfer_loading": "転送中: 過去のチャット履歴を翻訳およびレビューしています (お客様には3〜10分のお時間をいただいています)",
@@ -664,8 +679,17 @@ LANG: Dict[str, Dict[str, str]] = {
         "timer_metric": "経過時間",
         "timer_info_ok": "AHT (15분 기준)",
         "timer_info_warn": "AHT (10분 초과)",
-        "timer_info_risk": "🚨 15분 초과: 高いリスク",
+        "timer_info_risk": "🚨 15分超: 高いリスク",
         "solution_check_label": "✅ この応答に解決策/対応策が含まれています。",
+
+        # --- 추가된 전화 발신 기능 관련 ---
+        "button_call_outbound": "電話発信",
+        "call_outbound_system_msg": "📌 システムメッセージ: エージェントが{target}へ電話発信を試みました。",
+        "call_outbound_simulation_header": "📞 電話発信シミュレーション結果",
+        "call_outbound_summary_header": "📞 現地業者/顧客との通話要約",
+        "call_outbound_loading": "電話接続と通話結果の整理中... (LLMコール)",
+        "call_target_customer": "顧客へ電話発信",
+        "call_target_partner": "現地業者へ電話発信",
 
         # --- Voice ---
         "voice_rec_header": "音声記録＆管理",
@@ -677,8 +701,6 @@ LANG: Dict[str, Dict[str, str]] = {
         "transcribing": "音声を転写中...",
         "transcript_result": "転写結果:",
         "transcript_text": "転写テキスト",
-        "whisper_processing": "音声転写を処理中...",
-        "whisper_success": "✅ 転写が完了しました！ 以下のテキストをご確認ください。",
         "openai_missing": "OpenAI APIキーがありません。OPENAI_API_KEYを設定してください。",
         "whisper_client_error": "❌ エラー: Whisper APIクライアントが初期化されていません。",
         "whisper_auth_error": "❌ Whisper API認証に失敗しました。APIキーをご確認ください。",
@@ -708,7 +730,7 @@ LANG: Dict[str, Dict[str, str]] = {
         # --- 첨부 파일 기능 추가 ---
         "attachment_label": "顧客の添付ファイルアップロード (スクリーンショットなど)",
         "attachment_placeholder": "ファイルを添付して状況を説明してください（オプション）",
-        "attachment_status_llm": "顧客が **{filename}** 파일을 첨부했습니다. 이 파일을 스크린샷이라고 가정하고 응대 초안과 가이드라인에 반영해주세요. (파일 타입: {filetype})",
+        "attachment_status_llm": "顧客が **{filename}** 파일을 첨부했습니다. 이 파일을 스크린샷이라고 가정하고 응대 초안과 가이드라인에 반영해주세요. (ファイルタイプ: {filetype})",
         "agent_attachment_label": "エージェント添付ファイル (スクリーンショットなど)",
         "agent_attachment_placeholder": "応答に添付するファイルを選択してください（オプション）",
         "agent_attachment_status": "📎 エージェントが **{filename}** ファイルを応答に添付しました。(ファイルタイプ: {filetype})",
@@ -717,9 +739,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "rag_embed_error_openai": "RAG embedding failed: OpenAI API Key is invalid or not set.",
         "rag_embed_error_gemini": "RAG embedding failed: Gemini API Key is invalid or not set.",
         "rag_embed_error_nvidia": "RAG embedding failed: NVIDIA API Key is invalid or not set.",
-        "rag_embed_error_none": "RAG embedding failed: All required keys (OpenAI, Gemini, NVIDIA) are invalid or not set. Please configure a key.",
+        "rag_embed_error_none": "RAG embedding failed: All required keys (OpenAI, Gemini, NVIDIA) are invalid or not set. Please configure a key。",
 
-        # --- ⭐ 전화 기능 관련 추가 ---
+        # --- 電話機能関連追加 ---
         "phone_header": "AI顧客対応シミュレーター(電話)",
         "call_status_waiting": "着信待ち...",
         "call_status_ringing": "着信中: {number}",
@@ -743,7 +765,7 @@ LANG: Dict[str, Dict[str, str]] = {
 }
 
 # ========================================
-# 1-1. Session State 초기화 (전화 관련 상태 추가)
+# 1-1. Session State 초기화 (전화 발신 관련 상태 추가)
 # ========================================
 if st.sidebar.button("💣 Reset Simulator State"):
     for key in list(st.session_state.keys()):
@@ -804,6 +826,7 @@ if "sim_stage" not in st.session_state:
     # WAIT_CUSTOMER_CLOSING_RESPONSE (종료 확인 메시지 보냄, 고객의 마지막 응답 대기)
     # FINAL_CLOSING_ACTION (최종 종료 버튼 대기)
     # CLOSING (채팅 종료)
+    # ⭐ 추가: OUTBOUND_CALL_IN_PROGRESS (전화 발신 진행 중)
 if "start_time" not in st.session_state:  # AHT 타이머 시작 시간
     st.session_state.start_time = None
 if "is_solution_provided" not in st.session_state:  # 솔루션 제공 여부 플래그
@@ -832,10 +855,17 @@ if "sim_attachment_context_for_llm" not in st.session_state:
     st.session_state.sim_attachment_context_for_llm = ""
 if "realtime_hint_text" not in st.session_state:
     st.session_state.realtime_hint_text = ""
+# ⭐ 추가: 전화 발신 관련 상태
+if "sim_call_outbound_summary" not in st.session_state:
+    st.session_state.sim_call_outbound_summary = ""
+if "sim_call_outbound_target" not in st.session_state:
+    st.session_state.sim_call_outbound_target = None
 # ----------------------------------------------------------------------
 # ⭐ 전화 기능 관련 상태 추가
 if "call_sim_stage" not in st.session_state:
     st.session_state.call_sim_stage = "WAITING_CALL"  # WAITING_CALL, RINGING, IN_CALL, CALL_ENDED
+if "call_sim_mode" not in st.session_state:
+    st.session_state.call_sim_mode = "INBOUND"  # INBOUND or OUTBOUND
 if "incoming_phone_number" not in st.session_state:
     st.session_state.incoming_phone_number = "+82 10-1234-5678"
 if "is_on_hold" not in st.session_state:
@@ -1180,6 +1210,14 @@ def translate_text_with_llm(text_content: str, target_lang_code: str, source_lan
         if key:
             try:
                 # 1. LLM 호출
+                if provider == "gemini":
+                    genai.configure(api_key=key)
+                    gen_model = genai.GenerativeModel(model_name)
+                    response = gen_model.generate_content(
+                        contents=system_prompt,  # system_prompt를 user content로 사용
+                    )
+                    return response.text.strip()
+
                 if provider == "openai":
                     o_client = OpenAI(api_key=key)
                     resp = o_client.chat.completions.create(
@@ -1188,15 +1226,6 @@ def translate_text_with_llm(text_content: str, target_lang_code: str, source_lan
                         temperature=0.1
                     )
                     return resp.choices[0].message.content.strip()
-
-                elif provider == "gemini":
-                    genai.configure(api_key=key)
-                    g_model = genai.GenerativeModel(model_name)
-                    resp = g_model.generate_content(
-                        contents=prompt,
-                        config=genai.types.GenerateContentConfig(system_instruction=system_prompt, temperature=0.1)
-                    )
-                    return resp.text.strip()
 
                 elif provider == "claude":
                     from anthropic import Anthropic
@@ -1393,6 +1422,57 @@ Generate the agent's response draft:
         return draft
     except Exception as e:
         return f"❌ 응답 초안 생성 오류: {e}"
+
+
+# ⭐ 새로운 함수: 전화 발신 시뮬레이션 요약 생성
+def generate_outbound_call_summary(customer_query: str, current_lang_key: str, target: str) -> str:
+    """
+    Simulates an outbound call to a local partner or customer and generates a summary of the outcome.
+    """
+    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+
+    # Get the current chat history for context
+    history_text = get_chat_history_for_prompt(include_attachment=True)
+    if not history_text:
+        history_text = f"Initial Customer Query: {customer_query}"
+
+    # Policy context (from supervisor) should be included to guide the outcome
+    policy_context = st.session_state.supervisor_policy_context or ""
+
+    summary_prompt = f"""
+You are an AI simulating a quick, high-stakes phone call placed by the customer support agent to a '{target}' (either a local partner/vendor or the customer).
+
+The purpose of the call is to resolve a complex, policy-restricted issue (like an exceptional refund for a non-refundable item, or urgent confirmation of an airport transfer change).
+
+Analyze the conversation history, the initial query, and any provided supervisor policy.
+Generate a concise summary of the OUTCOME of this simulated phone call.
+The summary MUST be professional and strictly in {lang_name}.
+
+[CRITICAL RULE]: For non-refundable items (e.g., Universal Studio Express Pass, non-refundable hotel/transfer), the local partner should only grant an exception IF the customer has provided strong, unavoidable proof (like a flight cancellation notice, doctor's note, or natural disaster notice). If no such proof is evident in the chat history, the outcome should usually be a denial or a request for more proof, but keep the tone professional.
+If the customer's query is about Airport Transfer change, the outcome should be: 'Confirmation complete. Change is approved/denied based on partner policy.'
+
+Conversation History:
+{history_text}
+
+Supervisor Policy Context (If any):
+{policy_context}
+
+Target of Call: {target}
+
+Generate the phone call summary (Outcome ONLY):
+"""
+    if not st.session_state.is_llm_ready:
+        return f"❌ LLM Key missing. (Simulated Outcome: The {target} requested the agent to send proof via email.)"
+
+    try:
+        summary = run_llm(summary_prompt).strip()
+        # 마크다운 제거 (``` 등)
+        if summary.startswith("```"):
+            lines = summary.split("\n")
+            summary = "\n".join(lines[1:-1]) if len(lines) > 2 else summary
+        return summary
+    except Exception as e:
+        return f"❌ Phone call simulation error: {e}"
 
 
 # ========================================
@@ -1966,10 +2046,14 @@ def rag_answer(question: str, vectorstore: FAISS, lang_key: str) -> str:
     docs = retriever.get_relevant_documents(question)
     context = "\n\n".join(d.page_content[:1500] for d in docs)
 
+    # ⭐ 수정된 부분: 질문 언어를 감지하여 답변 언어를 강제합니다.
+    # LLM에게 '질문의 언어'로 답변하라고 명시적으로 지시합니다.
+    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(lang_key, "English")
+
     prompt = (
             "You are a helpful AI tutor. Answer the question using ONLY the provided context.\n"
             "If you cannot find the answer in the context, say you don't know.\n"
-            "Answer in the language of the question.\n\n"
+            f"Answer STRICTLY in the language of the question (Assume the question's language is {lang_name}).\n\n"
             "Question:\n" + question + "\n\n"
                                        "Context:\n" + context + "\n\n"
                                                                 "Answer:"
@@ -2825,6 +2909,7 @@ with st.sidebar:
         st.session_state.agent_attachment_file = []  # 에이전트 첨부 파일 초기화
         # 전화 시뮬레이터 상태 초기화
         st.session_state.call_sim_stage = "WAITING_CALL"
+        st.session_state.call_sim_mode = "INBOUND"
         st.session_state.is_on_hold = False
         st.session_state.total_hold_duration = timedelta(0)
         st.session_state.hold_start_time = None
@@ -2832,6 +2917,9 @@ with st.sidebar:
         st.session_state.current_agent_audio_text = ""
         st.session_state.agent_response_input_box_widget_call = ""
         st.session_state.call_initial_query = ""
+        # 전화 발신 관련 상태 초기화
+        st.session_state.sim_call_outbound_summary = ""
+        st.session_state.sim_call_outbound_target = None
 
         # ⭐ 언어 변경 시 재실행
         st.rerun()
@@ -3368,9 +3456,56 @@ elif feature_selection == L["sim_tab_chat_email"]:
             st.session_state.sim_attachment_context_for_llm = ""  # 컨텍스트 초기화
             st.session_state.agent_attachment_file = []  # 에이전트 첨부 파일 초기화
             st.session_state.start_time = None
+            # 전화 발신 관련 상태 초기화
+            st.session_state.sim_call_outbound_summary = ""
+            st.session_state.sim_call_outbound_target = None
             # ⭐ 재실행
-            st.rerun()
+            # st.rerun()
         st.stop()
+
+    # =========================
+    # 5-A. 전화 발신 진행 중 (OUTBOUND_CALL_IN_PROGRESS)
+    # =========================
+    elif st.session_state.sim_stage == "OUTBOUND_CALL_IN_PROGRESS":
+        L = LANG[st.session_state.language]
+        target = st.session_state.get("sim_call_outbound_target", "대상")
+        st.warning(L["call_outbound_loading"])
+
+        # LLM 호출 및 요약 생성
+        with st.spinner(L["call_outbound_loading"]):
+            # 1. LLM 호출하여 통화 요약 생성
+            summary = generate_outbound_call_summary(
+                st.session_state.customer_query_text_area,
+                st.session_state.language,
+                target
+            )
+
+            # 2. 시스템 메시지 (전화 시도) 추가
+            st.session_state.simulator_messages.append(
+                {"role": "system_end", "content": L["call_outbound_system_msg"].format(target=target)}
+            )
+
+            # 3. 요약 메시지 (결과) 추가
+            summary_markdown = f"### {L['call_outbound_summary_header']}\n\n{summary}"
+            st.session_state.simulator_messages.append(
+                {"role": "supervisor", "content": summary_markdown}
+            )
+
+            # 4. Agent Turn으로 복귀
+            st.session_state.sim_stage = "AGENT_TURN"
+            st.session_state.sim_call_outbound_summary = summary_markdown  # Save for display/reference
+            st.session_state.sim_call_outbound_target = None  # Reset target
+
+            # 5. 이력 저장 (전화 발신 후 상태 저장)
+            customer_type_display = st.session_state.get("customer_type_sim_select", "")
+            save_simulation_history_local(
+                st.session_state.customer_query_text_area, customer_type_display + f" (Outbound Call to {target})",
+                st.session_state.simulator_messages, is_chat_ended=False,
+                attachment_context=st.session_state.sim_attachment_context_for_llm,
+            )
+
+        st.success(f"✅ {L['call_outbound_simulation_header']}가 완료되었습니다. 요약을 확인하고 고객에게 회신하세요.")
+        # st.rerun()
 
     # ========================================
     # 3. 초기 문의 입력 (WAIT_FIRST_QUERY)
@@ -3453,6 +3588,9 @@ elif feature_selection == L["sim_tab_chat_email"]:
             st.session_state.transfer_summary_text = ""  # 이관 요약 리셋
             st.session_state.start_time = None  # AHT 타이머 초기화 (첫 고객 반응 후 시작)
             st.session_state.sim_instance_id = str(uuid.uuid4())  # 새 시뮬레이션 ID 할당
+            # 전화 발신 관련 상태 초기화
+            st.session_state.sim_call_outbound_summary = ""
+            st.session_state.sim_call_outbound_target = None
 
             # 1) 고객 첫 메시지 추가
             st.session_state.simulator_messages.append(
@@ -3546,13 +3684,13 @@ elif feature_selection == L["sim_tab_chat_email"]:
         role = msg["role"]
         content = msg["content"]
         avatar = {"customer": "🙋", "supervisor": "🤖", "agent_response": "🧑‍💻", "customer_rebuttal": "✨",
-                  "system_end": "📌"}.get(role, "💬")
+                  "system_end": "📌", "system_transfer": "📌"}.get(role, "💬")
         tts_role = "customer" if role.startswith("customer") or role == "customer_rebuttal" else (
-            "agent" if role == "agent_response" else "supervisor")
+              "agent" if role == "agent_response" else "supervisor")
 
         with st.chat_message(role, avatar=avatar):
             st.markdown(content)
-            # 인덱스를 render_tts_button에 전달하여 고유 키 생성에 사용
+                    # 인덱스를 render_tts_button에 전달하여 고유 키 생성에 사용
             render_tts_button(content, st.session_state.language, role=tts_role, prefix=f"{role}_", index=idx)
 
             # ⭐ [새로운 로직] 고객 첨부 파일 렌더링 (첫 번째 메시지인 경우)
@@ -3577,11 +3715,13 @@ elif feature_selection == L["sim_tab_chat_email"]:
                 st.info(L["transfer_summary_intro"])
 
                 # 번역이 실패했을 경우 (빈 문자열)
+                # ⭐ 수정된 부분 1: DuplicateWidgetID 오류 해결을 위해 고유 키에 UUID 추가
+                unique_key = f"btn_retry_translation_{st.session_state.sim_instance_id}_{uuid.uuid4()}"
+
                 if not st.session_state.transfer_summary_text:
                     st.error("❌ LLM_TRANSLATION_ERROR (번역 실패). 아래 버튼을 눌러 다시 시도하세요.")
                     # 번역 재시도 버튼 추가
-                    if st.button(L["button_retry_translation"],
-                                 key=f"btn_retry_translation_{st.session_state.sim_instance_id}"):
+                    if st.button(L["button_retry_translation"], key=unique_key):  # 고유 키 사용
                         # 재시도 로직 실행
                         with st.spinner(L["transfer_loading"]):
                             source_lang = st.session_state.language_at_transfer_start
@@ -3598,8 +3738,9 @@ elif feature_selection == L["sim_tab_chat_email"]:
 
                             translated_summary = translate_text_with_llm(history_text, target_lang, source_lang)
                             st.session_state.transfer_summary_text = translated_summary
+                            st.session_state.transfer_summary_text = translated_summary
                             # ⭐ 재실행
-                            # st.rerun()
+                            st.rerun()
 
                 else:
                     # 번역 성공 시 내용 표시
@@ -3652,6 +3793,28 @@ elif feature_selection == L["sim_tab_chat_email"]:
                     else:
                         st.error(ai_draft if ai_draft else "응답 초안 생성에 실패했습니다.")
 
+        # --- 전화 발신 버튼 추가 (요청 2 반영) ---
+        st.markdown("---")
+        st.subheader(L["button_call_outbound"])
+        call_cols = st.columns(3)
+
+        with call_cols[0]:
+            if st.button(L["button_call_outbound"].replace("전화 발신", "현지 업체 전화 발신"), key="btn_call_outbound_partner"):
+                # 전화 발신 시뮬레이션: 현지 업체
+                st.session_state.sim_call_outbound_target = "현지 업체/파트너"
+                st.session_state.sim_stage = "OUTBOUND_CALL_IN_PROGRESS"
+                # st.rerun()
+
+        with call_cols[1]:
+            if st.button(L["button_call_outbound"].replace("전화 발신", "고객 전화 발신"), key="btn_call_outbound_customer"):
+                # 전화 발신 시뮬레이션: 고객
+                st.session_state.sim_call_outbound_target = "고객"
+                st.session_state.sim_stage = "OUTBOUND_CALL_IN_PROGRESS"
+                # st.rerun()
+
+        st.markdown("---")
+        # --- 전화 발신 버튼 추가 끝 ---
+
         st.markdown("### 🚨 Supervisor 정책/지시 사항 업로드 (예외 처리 방침)")
 
         # --- Supervisor 정책 업로더 추가 ---
@@ -3688,7 +3851,8 @@ elif feature_selection == L["sim_tab_chat_email"]:
             st.session_state.agent_attachment_file = [
                 {"name": f.name, "type": f.type, "size": f.size} for f in agent_attachment_files
             ]
-            file_names = ", ".join([f.name for f in agent_attachment_files])
+            file_names = ", ".join([f["name"] for f in
+                                    st.session_state.agent_attachment_file])  # 수정: file_infos 대신 st.session_state.agent_attachment_file 사용
             st.info(f"✅ {len(agent_attachment_files)}개 에이전트 첨부 파일 준비 완료: {file_names}")
         else:
             st.session_state.agent_attachment_file = []
@@ -3816,6 +3980,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             st.session_state.agent_attachment_file = []  # 첨부 파일 초기화
             st.session_state.language_transfer_requested = False
             st.session_state.realtime_hint_text = ""  # 힌트 초기화
+            st.session_state.sim_call_outbound_summary = ""  # 전화 발신 요약 초기화
 
             # ⭐ 수정: 고객 반응 생성 로직을 다음 단계에서 처리하도록 sim_stage 변경
             st.session_state.sim_stage = "CUSTOMER_TURN"
@@ -4124,461 +4289,534 @@ if st.session_state.sim_stage == "FINAL_CLOSING_ACTION":
 
 elif feature_selection == L["sim_tab_phone"]:
     st.header(L["phone_header"])
-st.markdown(L["simulator_desc"])
+    st.markdown(L["simulator_desc"])
 
-current_lang = st.session_state.language
-L = LANG[current_lang]
+    current_lang = st.session_state.language
+    L = LANG[current_lang]
 
-# ========================================
-# 전화 시뮬레이터 로직
-# ========================================
+    # ========================================
+    # 전화 시뮬레이터 로직
+    # ========================================
 
-# ------------------
-# AHT 타이머 표시 (전화 시뮬레이션에서만)
-# ------------------
-if st.session_state.call_sim_stage == "IN_CALL":
-    # AHT 타이머 계산 로직
-    col_timer, col_duration = st.columns([1, 4])
+    # ------------------
+    # AHT 타이머 표시 (전화 시뮬레이션에서만)
+    # ------------------
+    if st.session_state.call_sim_stage == "IN_CALL":
+        # AHT 타이머 계산 로직
+        col_timer, col_duration = st.columns([1, 4])
 
-    if st.session_state.start_time is not None:
-        now = datetime.now()
+        if st.session_state.start_time is not None:
+            now = datetime.now()
 
-        # Hold 중이라면, Hold 상태가 된 이후의 시간을 현재 total_hold_duration에 더하지 않음 (Resume 시 정산)
-        if st.session_state.is_on_hold and st.session_state.hold_start_time:
-            # Hold 중이지만 AHT 타이머는 계속 흘러가야 하므로, Hold 시간은 제외하지 않고 최종 AHT 계산에만 사용
-            elapsed_time_total = now - st.session_state.start_time
-        else:
-            elapsed_time_total = now - st.session_state.start_time
-
-        # ⭐ AHT는 통화 시작부터 현재까지의 총 경과 시간입니다.
-        total_seconds = elapsed_time_total.total_seconds()
-        total_seconds = max(0, total_seconds)  # 음수 방지
-
-        # 시간 형식 포맷팅
-        minutes = int(total_seconds // 60)
-        seconds = int(total_seconds % 60)
-        time_str = f"{minutes:02d}:{seconds:02d}"
-
-        # 경고 기준
-        if total_seconds > 900:  # 15분
-            delta_str = L["timer_info_risk"]
-            delta_color = "inverse"
-        elif total_seconds > 600:  # 10분
-            delta_str = L["timer_info_warn"]
-            delta_color = "off"
-        else:
-            delta_str = L["timer_info_ok"]
-            delta_color = "normal"
-
-        with col_timer:
-            # AHT 타이머 표시
-            st.metric(L["timer_metric"], time_str, delta=delta_str, delta_color=delta_color)
-
-        # ⭐ 수정: AHT 타이머 실시간 갱신을 위한 강제 재실행 로직 추가
-        # 통화 중이고, Hold 상태가 아닐 때만 1초마다 업데이트하여 실시간성을 확보
-        if not st.session_state.is_on_hold and total_seconds < 1000:
-            time.sleep(1)
-            # st.rerun()  # 매 초마다 재실행하여 AHT 갱신
-
-# ------------------
-# WAIT_FIRST_QUERY / WAITING_CALL 상태
-# ------------------
-if st.session_state.call_sim_stage in ["WAITING_CALL", "RINGING"]:
-    st.subheader(L["call_status_waiting"])
-
-    # 초기 문의 입력 (고객이 전화로 말할 내용)
-    st.session_state.call_initial_query = st.text_area(
-        L["customer_query_label"],
-        key="call_initial_query_text_area",
-        height=100,
-        placeholder=L["call_query_placeholder"],
-    )
-
-    # 가상 전화번호 표시
-    st.session_state.incoming_phone_number = st.text_input(
-        "Incoming Phone Number",
-        key="incoming_phone_number_input",
-        value=st.session_state.incoming_phone_number,
-        placeholder=L["call_number_placeholder"],
-    )
-
-    # 고객 유형 선택
-    customer_type_options = L["customer_type_options"]
-    default_idx = customer_type_options.index(
-        st.session_state.customer_type_sim_select) if st.session_state.customer_type_sim_select in customer_type_options else 0
-
-    st.session_state.customer_type_sim_select = st.selectbox(
-        L["customer_type_label"],
-        customer_type_options,
-        index=default_idx,
-        key="call_customer_type_sim_select_widget",
-    )
-
-    st.markdown("---")
-
-    if st.button(L["button_answer"], key="answer_call_btn"):
-        if not st.session_state.call_initial_query.strip():
-            st.warning(L["simulation_warning_query"])
-            st.stop()
-
-        if not st.session_state.is_llm_ready or st.session_state.openai_client is None:
-            st.error(L["simulation_no_key_warning"] + " " + L["openai_missing"])
-            st.stop()
-
-        # 시뮬레이션 초기화 및 시작
-        st.session_state.call_sim_stage = "IN_CALL"
-        st.session_state.is_call_ended = False
-        st.session_state.is_on_hold = False
-        st.session_state.total_hold_duration = timedelta(0)
-        st.session_state.hold_start_time = None
-        st.session_state.start_time = datetime.now()  # 통화 시작 시간 (AHT 시작)
-        st.session_state.simulator_messages = []
-        st.session_state.current_customer_audio_text = ""
-        st.session_state.current_agent_audio_text = ""
-        st.session_state.agent_response_input_box_widget_call = ""
-        st.session_state.sim_instance_id = str(uuid.uuid4())
-        st.session_state.call_summary_text = ""  # 요약 초기화
-        st.session_state.customer_initial_audio_bytes = None  # 오디오 초기화
-        st.session_state.customer_history_summary = ""  # AI 요약 초기화 (추가)
-        st.session_state.sim_audio_bytes = None  # 녹음 파일 초기화 (추가)
-
-        # 고객의 첫 번째 음성 메시지 (시뮬레이션 시작 메시지)
-        initial_query_text = st.session_state.call_initial_query.strip()
-        st.session_state.current_customer_audio_text = initial_query_text
-
-        # ⭐ 고객의 첫 문의 TTS 음성 생성 및 저장
-        with st.spinner(L["tts_status_generating"] + " (Initial Customer Query)"):
-            audio_bytes, msg = synthesize_tts(initial_query_text, st.session_state.language, role="customer")
-            if audio_bytes:
-                st.session_state.customer_initial_audio_bytes = audio_bytes
-                st.audio(audio_bytes, format="audio/mp3", autoplay=True)
-            else:
-                st.error(f"❌ {msg}")
-                st.session_state.customer_initial_audio_bytes = None
-
-        # ✅ 상태 변경 후 재실행하여 IN_CALL 상태로 전환
-        st.rerun()
-
-# ------------------
-# IN_CALL 상태 (통화 중)
-# ------------------
-elif st.session_state.call_sim_stage == "IN_CALL":
-    st.markdown(f"## {L['call_status_ringing'].format(number=st.session_state.incoming_phone_number)}")
-    st.markdown("---")
-
-    # --- Hold / 통화 재개 버튼 ---
-    col_hangup, col_hold = st.columns([1, 1])
-
-    with col_hangup:
-        if st.button(L["button_hangup"], key="hangup_call_btn", type="primary"):
-
-            # 1. Hold 중이었다면, Hold 시간 최종 정산
+            # Hold 중이라면, Hold 상태가 된 이후의 시간을 현재 total_hold_duration에 더하지 않음 (Resume 시 정산)
             if st.session_state.is_on_hold and st.session_state.hold_start_time:
-                st.session_state.total_hold_duration += datetime.now() - st.session_state.hold_start_time
+                # Hold 중이지만 AHT 타이머는 계속 흘러가야 하므로, Hold 시간은 제외하지 않고 최종 AHT 계산에만 사용
+                elapsed_time_total = now - st.session_state.start_time
+            else:
+                elapsed_time_total = now - st.session_state.start_time
 
-            # 2. 요약 생성 (요청 4 반영)
-            with st.spinner("AI 요약 생성 중..."):
-                summary = generate_summary_for_call(
-                    st.session_state.language,
-                    st.session_state.simulator_messages,
-                    st.session_state.call_initial_query
-                )
-                st.session_state.call_summary_text = summary
+            # ⭐ AHT는 통화 시작부터 현재까지의 총 경과 시간입니다.
+            total_seconds = elapsed_time_total.total_seconds()
+            total_seconds = max(0, total_seconds)  # 음수 방지
 
-            # 3. 상태 전환 및 AHT 정지
-            st.session_state.call_sim_stage = "CALL_ENDED"
-            st.session_state.is_call_ended = True
-            # AHT 최종 정지는 CALL_ENDED에서 계산 (start_time은 유지)
+            # 시간 형식 포맷팅
+            minutes = int(total_seconds // 60)
+            seconds = int(total_seconds % 60)
+            time_str = f"{minutes:02d}:{seconds:02d}"
 
-            # ✅ 재실행
-            # st.rerun()
+            # 경고 기준
+            if total_seconds > 900:  # 15분
+                delta_str = L["timer_info_risk"]
+                delta_color = "inverse"
+            elif total_seconds > 600:  # 10분
+                delta_str = L["timer_info_warn"]
+                delta_color = "off"
+            else:
+                delta_str = L["timer_info_ok"]
+                delta_color = "normal"
 
-    with col_hold:
-        if st.session_state.is_on_hold:
-            if st.button(L["button_resume"], key="resume_call_btn", type="secondary"):
-                # Hold 상태 해제 및 시간 정산
+            with col_timer:
+                # AHT 타이머 표시
+                st.metric(L["timer_metric"], time_str, delta=delta_str, delta_color=delta_color)
+
+            # ⭐ 수정: AHT 타이머 실시간 갱신을 위한 강제 재실행 로직 추가
+            # 통화 중이고, Hold 상태가 아닐 때만 1초마다 업데이트하여 실시간성을 확보
+            if not st.session_state.is_on_hold and total_seconds < 1000:
+                time.sleep(1)
+                # st.rerun()  # 매 초마다 재실행하여 AHT 갱신
+
+    # ------------------
+    # WAIT_FIRST_QUERY / WAITING_CALL 상태
+    # ------------------
+    if st.session_state.call_sim_stage in ["WAITING_CALL", "RINGING"]:
+
+        if "call_sim_mode" not in st.session_state:
+            st.session_state.call_sim_mode = "INBOUND" # INBOUND or OUTBOUND
+
+        if st.session_state.call_sim_mode == "INBOUND":
+            st.subheader(L["call_status_waiting"])
+        else:
+            st.subheader(L["button_call_outbound"])
+
+        # 초기 문의 입력 (고객이 전화로 말할 내용)
+        st.session_state.call_initial_query = st.text_area(
+            L["customer_query_label"],
+            key="call_initial_query_text_area",
+            height=100,
+            placeholder=L["call_query_placeholder"],
+        )
+
+        # 가상 전화번호 표시
+        st.session_state.incoming_phone_number = st.text_input(
+            "Incoming/Outgoing Phone Number",
+            key="incoming_phone_number_input",
+            value=st.session_state.incoming_phone_number,
+            placeholder=L["call_number_placeholder"],
+        )
+
+        # 고객 유형 선택
+        customer_type_options = L["customer_type_options"]
+        default_idx = customer_type_options.index(
+            st.session_state.customer_type_sim_select) if st.session_state.customer_type_sim_select in customer_type_options else 0
+
+        st.session_state.customer_type_sim_select = st.selectbox(
+            L["customer_type_label"],
+            customer_type_options,
+            index=default_idx,
+            key="call_customer_type_sim_select_widget",
+        )
+
+        st.markdown("---")
+
+        col_in, col_out = st.columns(2)
+
+        # 전화 응답 (수신)
+        with col_in:
+            if st.button(L["button_answer"], key="answer_call_btn"):
+                # 입력 검증
+                if not st.session_state.call_initial_query.strip():
+                    st.warning(L["simulation_warning_query"])
+                    st.stop()
+
+                if not st.session_state.is_llm_ready or st.session_state.openai_client is None:
+                    st.error(L["simulation_no_key_warning"] + " " + L["openai_missing"])
+                    st.stop()
+
+                # INBOUND 모드 설정
+                st.session_state.call_sim_mode = "INBOUND"
+
+                # 시뮬레이션 초기화 및 시작
+                st.session_state.call_sim_stage = "IN_CALL"
+                st.session_state.is_call_ended = False
                 st.session_state.is_on_hold = False
-                if st.session_state.hold_start_time:
-                    st.session_state.total_hold_duration += datetime.now() - st.session_state.hold_start_time
-                    st.session_state.hold_start_time = None
-                # ✅ 재실행
-                # st.rerun()
-        else:
-            if st.button(L["button_hold"], key="hold_call_btn", type="secondary"):
-                st.session_state.is_on_hold = True
-                st.session_state.hold_start_time = datetime.now()
-                # ✅ 재실행
-                # st.rerun()
+                st.session_state.total_hold_duration = timedelta(0)
+                st.session_state.hold_start_time = None
+                st.session_state.start_time = datetime.now()  # 통화 시작 시간 (AHT 시작)
+                st.session_state.simulator_messages = []
+                st.session_state.current_customer_audio_text = ""
+                st.session_state.current_agent_audio_text = ""
+                st.session_state.agent_response_input_box_widget_call = ""
+                st.session_state.sim_instance_id = str(uuid.uuid4())
+                st.session_state.call_summary_text = ""  # 요약 초기화
+                st.session_state.customer_initial_audio_bytes = None  # 오디오 초기화
+                st.session_state.customer_history_summary = ""  # AI 요약 초기화 (추가)
+                st.session_state.sim_audio_bytes = None  # 녹음 파일 초기화 (추가)
 
-    if st.session_state.is_on_hold:
-        # ⭐ 수정: 현재 Hold 시간을 계산하여 표시
-        if st.session_state.hold_start_time:
-            # 현재 Hold 중인 시간
-            current_hold_duration = datetime.now() - st.session_state.hold_start_time
-        else:
-            current_hold_duration = timedelta(0)
+                # 고객의 첫 번째 음성 메시지 (시뮬레이션 시작 메시지)
+                initial_query_text = st.session_state.call_initial_query.strip()
+                st.session_state.current_customer_audio_text = initial_query_text
 
-        # 누적 Hold 시간 + 현재 Hold 중인 시간
-        display_hold_duration = st.session_state.total_hold_duration + current_hold_duration
+                # ⭐ 고객의 첫 문의 TTS 음성 생성 및 저장
+                with st.spinner(L["tts_status_generating"] + " (Initial Customer Query)"):
+                    audio_bytes, msg = synthesize_tts(initial_query_text, st.session_state.language, role="customer")
+                    if audio_bytes:
+                        st.session_state.customer_initial_audio_bytes = audio_bytes
+                        st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+                    else:
+                        st.error(f"❌ {msg}")
+                        st.session_state.customer_initial_audio_bytes = None
 
-        # str(timedelta) 형식: D days, H:MM:SS.microseconds
-        duration_str = str(display_hold_duration).split('.')[0]
-        st.warning(L["hold_status"].format(duration=duration_str))
+                # ✅ 상태 변경 후 재실행하여 IN_CALL 상태로 전환
+                st.rerun()
 
-        # Hold 중일 때도 AHT 타이머 갱신을 위해 1초마다 재실행
-        time.sleep(1)
-        # st.rerun()
+        # 전화 발신 (새로운 세션 시작)
+        with col_out:
+            st.markdown(f"### {L['button_call_outbound']}")
+            call_targets = [
+                L["call_target_customer"],
+                L["call_target_partner"]
+            ]
 
-
-    def transfer_session(target_lang: str, current_messages: List[Dict[str, str]]):
-        """언어 이관 시스템 메시지를 추가하고 세션 언어를 변경합니다."""
-
-        current_lang = st.session_state.language  # 현재 언어 확인 (Source language)
-        L = LANG[current_lang]
-
-        # API 키 체크
-        if not st.session_state.is_llm_ready:
-            st.error(L["simulation_no_key_warning"].replace('API Key', 'LLM API Key'))
-            return
-
-        current_lang_at_start = st.session_state.language  # Source language
-
-        # AHT 타이머 정지 (실제로 통화가 종료되는 것은 아니므로, AHT는 계속 흐름)
-        # st.session_state.start_time = None
-
-        # 1. 로딩 시작 (시간 양해 메시지 시뮬레이션)
-        with st.spinner(L["transfer_loading"]):
-            time.sleep(np.random.uniform(5, 10))
-
-            # 2. 대화 기록을 번역할 텍스트로 가공
-            history_text = ""
-            for msg in current_messages:
-                role = "Customer" if msg["role"].startswith("customer") or msg[
-                    "role"] == "initial_query" else "Agent"
-                if msg["role"] in ["initial_query", "customer_rebuttal", "agent_response",
-                                   "customer_closing_response", "phone_exchange"]:  # phone_exchange 추가
-                    history_text += f"{role}: {msg['content']}\n"
-
-            # 3. LLM 번역 실행 (수정된 번역 함수 사용)
-            translated_summary = translate_text_with_llm(history_text, target_lang,
-                                                         current_lang_at_start)  # Use current_lang_at_start as source
-
-            # 4. 세션 상태 업데이트
-            st.session_state.transfer_summary_text = translated_summary
-            st.session_state.language_at_transfer = target_lang  # Save destination language
-            st.session_state.language_at_transfer_start = current_lang_at_start  # Save source language for retry
-            st.session_state.language = target_lang  # Language switch
-
-            # --- 시스템 이관 메시지 추가 ---
-            # 전화에서는 별도의 Supervisor 메시지 없이 로그에만 남김
-            st.session_state.simulator_messages.append(
-                {"role": "system_transfer",
-                 "content": LANG[target_lang]['transfer_system_msg'].format(target_lang=target_lang)})
-
-            st.session_state.is_solution_provided = False
-            st.session_state.language_transfer_requested = False
-
-            # 이관 후 상태 전환: 통화 중인 상태는 유지
-            st.session_state.call_sim_stage = "IN_CALL"
-
-            # 5. 이력 저장
-            customer_type_display = st.session_state.get("customer_type_sim_select", "")
-            save_simulation_history_local(
-                st.session_state.call_initial_query,
-                customer_type_display + f" (Transferred from {current_lang_at_start} to {target_lang})",
-                st.session_state.simulator_messages,
-                attachment_context=st.session_state.sim_attachment_context_for_llm,
-                is_chat_ended=False,
-                is_call=(st.session_state.call_sim_stage == "IN_CALL")  # 전화 이력임을 표시
+            call_target_selection = st.radio(
+                "발신 대상 선택",
+                call_targets,
+                key="outbound_call_target_radio",
+                horizontal=True
             )
 
-        # 6. UI 재실행 (언어 변경 적용)
-        st.success(f"✅ {LANG[target_lang]['transfer_summary_header']}가 준비되었습니다. 새로운 응대를 시작하세요.")
-        st.rerun()
+            if st.button(L["button_call_outbound"], key="outbound_call_start_btn", type="secondary"):
+                # 입력 검증
+                if not st.session_state.call_initial_query.strip():
+                    st.warning("전화 발신 목표 (고객 문의 내용)를 입력해 주세요.")
+                    st.stop()
 
+                if not st.session_state.is_llm_ready or st.session_state.openai_client is None:
+                    st.error(L["simulation_no_key_warning"] + " " + L["openai_missing"])
+                    st.stop()
 
-    st.markdown("---")
-    st.markdown(f"**{L['transfer_header']}**")
-    transfer_cols = st.columns(len(LANG) - 1)
+                # OUTBOUND 모드 설정 및 시뮬레이션 시작
+                st.session_state.call_sim_mode = "OUTBOUND"
 
-    languages = list(LANG.keys())
-    languages.remove(current_lang)
+                # 시뮬레이션 초기화 및 시작
+                st.session_state.call_sim_stage = "IN_CALL"
+                st.session_state.is_call_ended = False
+                st.session_state.is_on_hold = False
+                st.session_state.total_hold_duration = timedelta(0)
+                st.session_state.hold_start_time = None
+                st.session_state.start_time = datetime.now()  # 통화 시작 시간 (AHT 시작)
+                st.session_state.simulator_messages = []
 
-    # transfer_session 함수를 재정의하지 않고, 기존의 transfer_session 함수를 호출합니다.
-    for i, target_lang in enumerate(languages):
-        button_label_key = f"transfer_to_{target_lang}"
-        button_label = L.get(button_label_key, f"Transfer to {target_lang.capitalize()} Team")
+                initial_query_text = st.session_state.call_initial_query.strip()
 
-        if transfer_cols[i].button(button_label, key=f"btn_transfer_phone_{target_lang}"):
-            # transfer_session 호출 시, 현재 통화 메시지(simulator_messages)를 넘겨줍니다.
-            transfer_session(target_lang, st.session_state.simulator_messages)
+                # 발신 시뮬레이션에서는 에이전트가 먼저 말해야 하므로, 고객 CC 텍스트는 안내 메시지로 설정
+                st.session_state.current_customer_audio_text = f"📞 {L['button_call_outbound']} 성공! {call_target_selection}이(가) 받았습니다. 잠시 후 응답이 시작됩니다. (문의 목표: {initial_query_text[:50]}...)"
+                st.session_state.current_agent_audio_text = ""  # Agent speaks first
+                st.session_state.agent_response_input_box_widget_call = ""
+                st.session_state.sim_instance_id = str(uuid.uuid4())
+                st.session_state.call_summary_text = ""
+                st.session_state.customer_initial_audio_bytes = None
+                st.session_state.customer_history_summary = ""
+                st.session_state.sim_audio_bytes = None
 
-    # =========================
-    # AI 요약 버튼 및 표시 로직 (추가된 기능)
-    # =========================
-    st.markdown("---")
-    # ⭐ history_expander_title에서 괄호 안 내용만 제거 (예: (최근 10건))
-    summary_title = L['history_expander_title'].split('(')[0].strip()
-    st.markdown(f"### 📑 {summary_title} 요약")
-
-    # 1. 요약/번역 재시도 버튼 영역
-    col_sum_btn, col_trans_btn = st.columns(2)
-
-    with col_sum_btn:
-        if st.button("💡 이력 요약 요청", key="btn_request_phone_summary"):
-            # 요약 함수 호출
-            st.session_state.customer_history_summary = summarize_history_with_ai(st.session_state.language)
-            # st.rerun()
-
-    # 2. 이관 번역 재시도 버튼 (이관 후 번역이 실패했을 경우)
-    if st.session_state.language != st.session_state.language_at_transfer_start and not st.session_state.transfer_summary_text:
-        with col_trans_btn:
-            if st.button(L["button_retry_translation"], key="btn_phone_retry_translation"):
-                with st.spinner(L["transfer_loading"]):
-                    # 이관 번역 로직 재실행 (기존 로직 유지)
-                    translated_summary = translate_text_with_llm(
-                        get_chat_history_for_prompt(include_attachment=False),
-                        st.session_state.language,
-                        st.session_state.language_at_transfer_start
-                    )
-                    st.session_state.transfer_summary_text = translated_summary
-                    # st.rerun()
-
-    # 3. 요약 내용 표시
-    if st.session_state.transfer_summary_text:
-        st.subheader(f"🔍 {L['transfer_summary_header']}")
-        st.info(st.session_state.transfer_summary_text)
-    elif st.session_state.customer_history_summary:
-        st.subheader("💡 AI 요약")
-        st.info(st.session_state.customer_history_summary)
-
-    st.markdown("---")
-
-    # --- 실시간 응대 힌트 영역 ---
-    hint_cols = st.columns([4, 1])
-    with hint_cols[0]:
-        st.info(L["hint_placeholder"] + st.session_state.realtime_hint_text)
-
-    with hint_cols[1]:
-        # 힌트 요청 버튼
-        if st.button(L["button_request_hint"], key=f"btn_request_hint_call_{st.session_state.sim_instance_id}"):
-            with st.spinner(L["response_generating"]):
-                # 전화 탭이므로 is_call=True
-                hint = generate_realtime_hint(current_lang, is_call=True)
-                st.session_state.realtime_hint_text = hint
+                st.success(f"'{call_target_selection}'에게 전화 발신 시뮬레이션이 시작되었습니다. 에이전트의 첫 응답을 녹음하세요.")
                 # st.rerun()
 
-    # =========================
-    # CC 자막 / 음성 입력 및 제어 로직 (기존 로직)
-    # =========================
+   # ------------------
+   # IN_CALL 상태 (통화 중)
+   # ------------------
+    elif st.session_state.call_sim_stage == "IN_CALL":
+        # ⭐ 발신/수신 모드에 따라 제목 변경
+        if st.session_state.get("call_sim_mode", "INBOUND") == "INBOUND":
+            title = L['call_status_ringing'].format(number=st.session_state.incoming_phone_number)
+        else:
+            title = L['button_call_outbound'] + f" ({st.session_state.incoming_phone_number})"
 
-    # --- 실시간 CC 자막 / 전사 영역 ---
-    st.subheader(L["cc_live_transcript"])
+        st.markdown(f"## {title}")
+        st.markdown("---")
 
-    if st.session_state.is_on_hold:
-        st.text_area("Customer", value="[고객: 잠시 대기 중입니다...]", height=50, disabled=True, key="customer_live_cc_area")
-        st.text_area("Agent", value="[에이전트: Hold 중입니다. 통화 재개 버튼을 눌러주세요.]", height=50, disabled=True,
-                     key="agent_live_cc_area")
-    else:
-        # 고객 CC (LLM 생성 텍스트)
-        st.text_area(
-            "Customer",
-            value=st.session_state.current_customer_audio_text,
-            height=50,
-            disabled=True,
-            key="customer_live_cc_area",
-        )
+        # --- Hold / 통화 재개 버튼 ---
+        col_hangup, col_hold = st.columns([1, 1])
 
-        # 에이전트 CC (마이크 전사)
-        st.text_area(
-            "Agent",
-            value=st.session_state.current_agent_audio_text,
-            height=50,
-            disabled=True,
-            key="agent_live_cc_area",
-        )
+        with col_hangup:
+            if st.button(L["button_hangup"], key="hangup_call_btn", type="primary"):
 
-    st.markdown("---")
+                # 1. Hold 중이었다면, Hold 시간 최종 정산
+                if st.session_state.is_on_hold and st.session_state.hold_start_time:
+                    st.session_state.total_hold_duration += datetime.now() - st.session_state.hold_start_time
 
-    # --- 에이전트 음성 입력 / 녹음 ---
-    st.subheader(L["mic_input_status"])
+                # 2. 요약 생성 (요청 4 반영)
+                with st.spinner("AI 요약 생성 중..."):
+                    summary = generate_summary_for_call(
+                        st.session_state.language,
+                        st.session_state.simulator_messages,
+                        st.session_state.call_initial_query
+                    )
+                    st.session_state.call_summary_text = summary
 
-    # 음성 입력: 짧은 청크로 끊어서 전사해야 실시간 CC 모방 가능
-    if st.session_state.is_on_hold:
-        st.info("통화가 Hold 중입니다. 통화 재개 후 녹음이 가능합니다.")
-        mic_audio = None
-    else:
-        # ✅ 마이크 위젯을 항상 렌더링하여 활성화 상태를 유지
-        mic_audio = mic_recorder(
-            start_prompt=L["agent_response_prompt"],
-            stop_prompt="⏹️ 녹음 종료 및 응답 전송",
-            just_once=True,
-            format="wav",
-            use_container_width=True,
-            key="call_sim_mic_recorder",
-        )
+                # 3. 상태 전환 및 AHT 정지
+                st.session_state.call_sim_stage = "CALL_ENDED"
+                st.session_state.is_call_ended = True
+                # AHT 최종 정지는 CALL_ENDED에서 계산 (start_time은 유지)
 
-        # 녹음 완료 (mic_audio.get("bytes")가 채워짐) 시, 바이트를 저장하고 재실행
-        if mic_audio and mic_audio.get("bytes") and "bytes_to_process" not in st.session_state:
-            st.session_state.bytes_to_process = mic_audio["bytes"]
-            st.session_state.current_agent_audio_text = "🎙️ 녹음 완료. 전사 처리 중..."  # 처리 중 메시지
-            # ✅ 재실행하여 다음 실행 주기에서 전사 로직을 처리
-            # st.rerun()
-
-        # ⭐ 전사 로직: bytes_to_process에 데이터가 있을 때만 실행
-        if "bytes_to_process" in st.session_state and st.session_state.bytes_to_process:
-            if not st.session_state.openai_client:
-                st.error(L["openai_missing"])
-                st.session_state.bytes_to_process = None
                 # ✅ 재실행
                 # st.rerun()
 
-            with st.spinner(L["whisper_processing"]):
-
-                # 1. 에이전트 음성 전사
-                agent_response_transcript = transcribe_bytes_with_whisper(
-                    st.session_state.bytes_to_process, "audio/wav", lang_code=st.session_state.language
-                )
-
-                # 전사 후 바이트 데이터 삭제
-                del st.session_state.bytes_to_process
-
-                if agent_response_transcript.startswith("❌"):
-                    st.error(agent_response_transcript)
-                    st.session_state.current_agent_audio_text = f"[ERROR: {L['error']} Whisper failed]"
+        with col_hold:
+            if st.session_state.is_on_hold:
+                if st.button(L["button_resume"], key="resume_call_btn", type="secondary"):
+                    # Hold 상태 해제 및 시간 정산
+                    st.session_state.is_on_hold = False
+                    if st.session_state.hold_start_time:
+                        st.session_state.total_hold_duration += datetime.now() - st.session_state.hold_start_time
+                        st.session_state.hold_start_time = None
+                    # ✅ 재실행
+                    # st.rerun()
+            else:
+                if st.button(L["button_hold"], key="hold_call_btn", type="secondary"):
+                    st.session_state.is_on_hold = True
+                    st.session_state.hold_start_time = datetime.now()
                     # ✅ 재실행
                     # st.rerun()
 
-                # 2. 전사 결과를 CC 텍스트로 반영
-                st.session_state.current_agent_audio_text = agent_response_transcript.strip()
+        if st.session_state.is_on_hold:
+            # ⭐ 수정: 현재 Hold 시간을 계산하여 표시
+            if st.session_state.hold_start_time:
+                # 현재 Hold 중인 시간
+                current_hold_duration = datetime.now() - st.session_state.hold_start_time
+            else:
+                current_hold_duration = timedelta(0)
 
-                # 3. 고객의 다음 음성 반응 생성
-                customer_reaction = generate_customer_reaction_for_call(
-                    st.session_state.language, agent_response_transcript.strip()
+            # 누적 Hold 시간 + 현재 Hold 중인 시간
+            display_hold_duration = st.session_state.total_hold_duration + current_hold_duration
+
+            # str(timedelta) 형식: D days, H:MM:SS.microseconds
+            duration_str = str(display_hold_duration).split('.')[0]
+            st.warning(L["hold_status"].format(duration=duration_str))
+
+            # Hold 중일 때도 AHT 타이머 갱신을 위해 1초마다 재실행
+            time.sleep(1)
+            # st.rerun()
+
+
+        def transfer_session(target_lang: str, current_messages: List[Dict[str, str]]):
+            """언어 이관 시스템 메시지를 추가하고 세션 언어를 변경합니다."""
+
+            current_lang = st.session_state.language  # 현재 언어 확인 (Source language)
+            L = LANG[current_lang]
+
+            # API 키 체크
+            if not st.session_state.is_llm_ready:
+                st.error(L["simulation_no_key_warning"].replace('API Key', 'LLM API Key'))
+                return
+
+            current_lang_at_start = st.session_state.language  # Source language
+
+            # AHT 타이머 정지 (실제로 통화가 종료되는 것은 아니므로, AHT는 계속 흐름)
+            # st.session_state.start_time = None
+
+            # 1. 로딩 시작 (시간 양해 메시지 시뮬레이션)
+            with st.spinner(L["transfer_loading"]):
+                time.sleep(np.random.uniform(5, 10))
+
+                # 2. 대화 기록을 번역할 텍스트로 가공
+                history_text = ""
+                for msg in current_messages:
+                    role = "Customer" if msg["role"].startswith("customer") or msg[
+                        "role"] == "initial_query" else "Agent"
+                    if msg["role"] in ["initial_query", "customer_rebuttal", "agent_response",
+                                       "customer_closing_response", "phone_exchange"]:  # phone_exchange 추가
+                        history_text += f"{role}: {msg['content']}\n"
+
+                # 3. LLM 번역 실행 (수정된 번역 함수 사용)
+                translated_summary = translate_text_with_llm(history_text, target_lang,
+                                                             current_lang_at_start)  # Use current_lang_at_start as source
+
+                # 4. 세션 상태 업데이트
+                st.session_state.transfer_summary_text = translated_summary
+                st.session_state.language_at_transfer = target_lang  # Save destination language
+                st.session_state.language_at_transfer_start = current_lang_at_start  # Save source language for retry
+                st.session_state.language = target_lang  # Language switch
+
+                # --- 시스템 이관 메시지 추가 ---
+                # 전화에서는 별도의 Supervisor 메시지 없이 로그에만 남김
+                st.session_state.simulator_messages.append(
+                    {"role": "system_transfer",
+                     "content": LANG[target_lang]['transfer_system_msg'].format(target_lang=target_lang)})
+
+                st.session_state.is_solution_provided = False
+                st.session_state.language_transfer_requested = False
+
+                # 이관 후 상태 전환: 통화 중인 상태는 유지
+                st.session_state.call_sim_stage = "IN_CALL"
+
+                # 5. 이력 저장
+                customer_type_display = st.session_state.get("customer_type_sim_select", "")
+                save_simulation_history_local(
+                    st.session_state.call_initial_query,
+                    customer_type_display + f" (Transferred from {current_lang_at_start} to {target_lang})",
+                    st.session_state.simulator_messages,
+                    attachment_context=st.session_state.sim_attachment_context_for_llm,
+                    is_chat_ended=False,
+                    is_call=(st.session_state.call_sim_stage == "IN_CALL")  # 전화 이력임을 표시
                 )
 
-                # 4. 고객 반응을 TTS로 재생
-                if not customer_reaction.startswith("❌"):
-                    audio_bytes, msg = synthesize_tts(customer_reaction, st.session_state.language, role="customer")
-                    if audio_bytes:
-                        st.audio(audio_bytes, format="audio/mp3", autoplay=True)
-                        st.success(f"🗣️ 고객이 응답했습니다: {customer_reaction.strip()[:50]}...")
-                    else:
-                        st.error(f"❌ 고객 음성 생성 오류: {msg}")
+            # 6. UI 재실행 (언어 변경 적용)
+            st.success(f"✅ {LANG[target_lang]['transfer_summary_header']}가 준비되었습니다. 새로운 응대를 시작하세요.")
+            st.rerun()
 
-                # 5. 고객 반응 텍스트를 CC 영역에 반영
-                st.session_state.current_customer_audio_text = customer_reaction.strip()
 
-                # 6. 이력 저장
-                log_entry = f"Agent: {st.session_state.current_agent_audio_text} | Customer: {st.session_state.current_customer_audio_text}"
-                st.session_state.simulator_messages.append({"role": "phone_exchange", "content": log_entry})
+        st.markdown("---")
+        st.markdown(f"**{L['transfer_header']}**")
+        transfer_cols = st.columns(len(LANG) - 1)
 
-                # 7. 에이전트 입력 영역 초기화
-                st.session_state.current_agent_audio_text = ""
-                st.session_state.realtime_hint_text = ""
+        languages = list(LANG.keys())
+        languages.remove(current_lang)
 
-                # ✅ 고객 반응 후 확실하게 재실행
+        # transfer_session 함수를 재정의하지 않고, 기존의 transfer_session 함수를 호출합니다.
+        for i, target_lang in enumerate(languages):
+            button_label_key = f"transfer_to_{target_lang}"
+            button_label = L.get(button_label_key, f"Transfer to {target_lang.capitalize()} Team")
+
+            if transfer_cols[i].button(button_label, key=f"btn_transfer_phone_{target_lang}"):
+                # transfer_session 호출 시, 현재 통화 메시지(simulator_messages)를 넘겨줍니다.
+                transfer_session(target_lang, st.session_state.simulator_messages)
+
+        # =========================
+        # AI 요약 버튼 및 표시 로직 (추가된 기능)
+        # =========================
+        st.markdown("---")
+        # ⭐ history_expander_title에서 괄호 안 내용만 제거 (예: (최근 10건))
+        summary_title = L['history_expander_title'].split('(')[0].strip()
+        st.markdown(f"### 📑 {summary_title} 요약")
+
+        # 1. 요약/번역 재시도 버튼 영역
+        col_sum_btn, col_trans_btn = st.columns(2)
+
+        with col_sum_btn:
+            if st.button("💡 이력 요약 요청", key="btn_request_phone_summary"):
+                # 요약 함수 호출
+                st.session_state.customer_history_summary = summarize_history_with_ai(st.session_state.language)
                 # st.rerun()
+
+        # 2. 이관 번역 재시도 버튼 (이관 후 번역이 실패했을 경우)
+        if st.session_state.language != st.session_state.language_at_transfer_start and not st.session_state.transfer_summary_text:
+            with col_trans_btn:
+                if st.button(L["button_retry_translation"], key="btn_phone_retry_translation"):
+                    with st.spinner(L["transfer_loading"]):
+                        # 이관 번역 로직 재실행 (기존 로직 유지)
+                        translated_summary = translate_text_with_llm(
+                            get_chat_history_for_prompt(include_attachment=False),
+                            st.session_state.language,
+                            st.session_state.language_at_transfer_start
+                        )
+                        st.session_state.transfer_summary_text = translated_summary
+                        # st.rerun()
+
+        # 3. 요약 내용 표시
+        if st.session_state.transfer_summary_text:
+            st.subheader(f"🔍 {L['transfer_summary_header']}")
+            st.info(st.session_state.transfer_summary_text)
+        elif st.session_state.customer_history_summary:
+            st.subheader("💡 AI 요약")
+            st.info(st.session_state.customer_history_summary)
+
+        st.markdown("---")
+
+        # --- 실시간 응대 힌트 영역 ---
+        hint_cols = st.columns([4, 1])
+        with hint_cols[0]:
+            st.info(L["hint_placeholder"] + st.session_state.realtime_hint_text)
+
+        with hint_cols[1]:
+            # 힌트 요청 버튼
+            if st.button(L["button_request_hint"], key=f"btn_request_hint_call_{st.session_state.sim_instance_id}"):
+                with st.spinner(L["response_generating"]):
+                    # 전화 탭이므로 is_call=True
+                    hint = generate_realtime_hint(current_lang, is_call=True)
+                    st.session_state.realtime_hint_text = hint
+                    # st.rerun()
+
+        # =========================
+        # CC 자막 / 음성 입력 및 제어 로직 (기존 로직)
+        # =========================================
+
+        # --- 실시간 CC 자막 / 전사 영역 ---
+        st.subheader(L["cc_live_transcript"])
+
+        if st.session_state.is_on_hold:
+            st.text_area("Customer", value="[고객: 잠시 대기 중입니다...]", height=50, disabled=True, key="customer_live_cc_area")
+            st.text_area("Agent", value="[에이전트: Hold 중입니다. 통화 재개 버튼을 눌러주세요.]", height=50, disabled=True,
+                         key="agent_live_cc_area")
+        else:
+            # 고객 CC (LLM 생성 텍스트)
+            st.text_area(
+                "Customer",
+                value=st.session_state.current_customer_audio_text,
+                height=50,
+                disabled=True,
+                key="customer_live_cc_area",
+            )
+
+            # 에이전트 CC (마이크 전사)
+            st.text_area(
+                "Agent",
+                value=st.session_state.current_agent_audio_text,
+                height=50,
+                disabled=True,
+                key="agent_live_cc_area",
+            )
+
+        st.markdown("---")
+
+        # --- 에이전트 음성 입력 / 녹음 ---
+        st.subheader(L["mic_input_status"])
+
+        # 음성 입력: 짧은 청크로 끊어서 전사해야 실시간 CC 모방 가능
+        if st.session_state.is_on_hold:
+            st.info("통화가 Hold 중입니다. 통화 재개 후 녹음이 가능합니다.")
+            mic_audio = None
+        else:
+            # ✅ 마이크 위젯을 항상 렌더링하여 활성화 상태를 유지
+            mic_audio = mic_recorder(
+                start_prompt=L["agent_response_prompt"],
+                stop_prompt="⏹️ 녹음 종료 및 응답 전송",
+                just_once=True,
+                format="wav",
+                use_container_width=True,
+                key="call_sim_mic_recorder",
+            )
+
+            # 녹음 완료 (mic_audio.get("bytes")가 채워짐) 시, 바이트를 저장하고 재실행
+            if mic_audio and mic_audio.get("bytes") and "bytes_to_process" not in st.session_state:
+                st.session_state.bytes_to_process = mic_audio["bytes"]
+                st.session_state.current_agent_audio_text = "🎙️ 녹음 완료. 전사 처리 중..."  # 처리 중 메시지
+                # ✅ 재실행하여 다음 실행 주기에서 전사 로직을 처리
+                # st.rerun()
+
+            # ⭐ 전사 로직: bytes_to_process에 데이터가 있을 때만 실행
+            if "bytes_to_process" in st.session_state and st.session_state.bytes_to_process:
+                if not st.session_state.openai_client:
+                    st.error(L["openai_missing"])
+                    st.session_state.bytes_to_process = None
+                    # ✅ 재실행
+                    # st.rerun()
+
+                with st.spinner(L["whisper_processing"]):
+
+                    # 1. 에이전트 음성 전사
+                    agent_response_transcript = transcribe_bytes_with_whisper(
+                        st.session_state.bytes_to_process, "audio/wav", lang_code=st.session_state.language
+                    )
+
+                    # 전사 후 바이트 데이터 삭제
+                    del st.session_state.bytes_to_process
+
+                    if agent_response_transcript.startswith("❌"):
+                        st.error(agent_response_transcript)
+                        st.session_state.current_agent_audio_text = f"[ERROR: {L['error']} Whisper failed]"
+                        # ✅ 재실행
+                        # st.rerun()
+
+                    # 2. 전사 결과를 CC 텍스트로 반영
+                    st.session_state.current_agent_audio_text = agent_response_transcript.strip()
+
+                    # 3. 고객의 다음 음성 반응 생성
+                    customer_reaction = generate_customer_reaction_for_call(
+                        st.session_state.language, agent_response_transcript.strip()
+                    )
+
+                    # 4. 고객 반응을 TTS로 재생
+                    if not customer_reaction.startswith("❌"):
+                        audio_bytes, msg = synthesize_tts(customer_reaction, st.session_state.language, role="customer")
+                        if audio_bytes:
+                            st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+                            st.success(f"🗣️ 고객이 응답했습니다: {customer_reaction.strip()[:50]}...")
+                        else:
+                            st.error(f"❌ 고객 음성 생성 오류: {msg}")
+
+                    # 5. 고객 반응 텍스트를 CC 영역에 반영
+                    st.session_state.current_customer_audio_text = customer_reaction.strip()
+
+                    # 6. 이력 저장
+                    log_entry = f"Agent: {st.session_state.current_agent_audio_text} | Customer: {st.session_state.current_customer_audio_text}"
+                    st.session_state.simulator_messages.append({"role": "phone_exchange", "content": log_entry})
+
+                    # 7. 에이전트 입력 영역 초기화
+                    st.session_state.current_agent_audio_text = ""
+                    st.session_state.realtime_hint_text = ""
+
+                    # ✅ 고객 반응 후 확실하게 재실행
+                    # st.rerun()
 
 # ------------------
 # CALL_ENDED 상태
@@ -4633,6 +4871,7 @@ elif st.session_state.call_sim_stage == "CALL_ENDED":
     if st.button(L["new_simulation_button"], key="new_call_sim_btn"):
         # ... (초기화 로직 유지)
         st.session_state.call_sim_stage = "WAITING_CALL"
+        st.session_state.call_sim_mode = "INBOUND"
         st.session_state.is_on_hold = False
         st.session_state.total_hold_duration = timedelta(0)
         st.session_state.hold_start_time = None
@@ -4649,17 +4888,368 @@ elif st.session_state.call_sim_stage == "CALL_ENDED":
         # ⭐ 재실행
         # st.rerun()
 
-
-
 # -------------------- RAG Tab --------------------
+elif feature_selection == L["rag_tab"]:
+    st.header(L["rag_header"])
+    st.markdown(L["rag_desc"])
+    st.markdown("---")
+
+    # --- 파일 업로드 섹션 ---
+    # ⭐ 수정된 부분: RAG 탭 전용 키 사용
+    uploaded_files = st.file_uploader(
+        L["file_uploader"],
+        type=["pdf", "txt", "html"],
+        key="rag_file_uploader", # RAG 전용 키
+        accept_multiple_files=True
+    )
+
+    if uploaded_files:
+        if uploaded_files != st.session_state.uploaded_files_state:
+            # 파일이 변경되면 RAG 상태 초기화
+            st.session_state.is_rag_ready = False
+            st.session_state.rag_vectorstore = None
+            st.session_state.uploaded_files_state = uploaded_files
+
+        if not st.session_state.is_rag_ready:
+            if st.button(L["button_start_analysis"]):
+                if not st.session_state.is_llm_ready:
+                    st.error(L["simulation_no_key_warning"])
+                    st.stop()
+
+                with st.spinner(L["data_analysis_progress"]):
+                    vectorstore, count = build_rag_index(uploaded_files)
+
+                if vectorstore:
+                    st.session_state.rag_vectorstore = vectorstore
+                    st.session_state.is_rag_ready = True
+                    st.success(L["embed_success"].format(count=count))
+                    st.session_state.rag_messages = [
+                        {"role": "assistant", "content": f"✅ {len(uploaded_files)}개 파일 분석 완료. 질문해 주세요."}
+                    ]
+                else:
+                    st.error(L["embed_fail"])
+                    st.session_state.is_rag_ready = False
+    else:
+        st.info(L["warning_no_files"])
+        st.session_state.is_rag_ready = False
+        st.session_state.rag_vectorstore = None
+        st.session_state.rag_messages = []
+
+    st.markdown("---")
+
+    # --- 챗봇 섹션 ---
+    if st.session_state.is_rag_ready and st.session_state.rag_vectorstore:
+        if "rag_messages" not in st.session_state:
+            st.session_state.rag_messages = [{"role": "assistant", "content": "분석된 자료에 대해 질문해 주세요."}]
+
+        for message in st.session_state.rag_messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+        if prompt := st.chat_input(L["rag_input_placeholder"]):
+            st.session_state.rag_messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            with st.chat_message("assistant"):
+                with st.spinner(L["response_generating"]):
+                    response = rag_answer(
+                        prompt,
+                        st.session_state.rag_vectorstore,
+                        st.session_state.language
+                    )
+                    st.markdown(response)
+
+            st.session_state.rag_messages.append({"role": "assistant", "content": response})
+    else:
+        st.warning(L["warning_rag_not_ready"])
+
+# -------------------- Content Generation Tab --------------------
+elif feature_selection == L["content_tab"]:
+    st.header(L["content_header"])
+    st.markdown(L["content_desc"])
+    st.markdown("---")
+
+    if not st.session_state.is_llm_ready:
+        st.warning(L["simulation_no_key_warning"])
+        st.stop()
+
+    topic = st.text_input(L["topic_label"], key="content_topic_input")
+    level = st.selectbox(L["level_label"], L["level_options"], key="content_level_select")
+    content_type = st.selectbox(L["content_type_label"], L["content_options"], key="content_type_select")
+
+    # 콘텐츠 탭 전용 파일 업로더 키 사용 (RAG와의 충돌 방지)
+    content_files = st.file_uploader(
+        L["file_uploader"],
+        type=["pdf", "txt", "html"],
+        key="content_file_uploader",  # 콘텐츠 탭 전용 키
+        accept_multiple_files=True
+    )
+
+    if st.button(L["button_generate"], key="btn_generate_content"):
+        if not topic.strip():
+            st.warning(L["warning_topic"])
+            st.stop()
+
+        # LLM 프롬프트 구성 (기본 템플릿)
+        lang_name = {"ko": "한국어", "en": "English", "ja": "日本語"}[st.session_state.language]
+        system_prompt = f"""
+            You are an expert content creator. Generate learning content in {lang_name} based on the user's request.
+
+            - Topic: {topic}
+            - Difficulty: {level}
+            - Format: {content_type}
+
+            If the format is '{L['content_options'][0]}', provide a structured summary with key concepts and definitions.
+            If the format is '{L['content_options'][1]}', provide a JSON array of 10 questions. Each object must have keys: 'question', 'options' (array of 4 strings), 'answer' (1-4 index), and 'explanation'.
+            If the format is '{L['content_options'][2]}', provide a scenario and actionable steps.
+
+            Ensure the content complexity matches the '{level}' difficulty.
+            Output ONLY the requested content, without any introductory or concluding remarks.
+            """
+
+        # ⭐ 수정된 부분 3: 퀴즈 타입 비교 로직 수정 및 일반 텍스트 콘텐츠 생성 로직 명확화
+        if content_type == L["content_options"][1]:  # 객관식 퀴즈 10문항
+            # 퀴즈 생성 로직 (이전 수정 사항 유지)
+            quiz_schema_str = json.dumps({
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "question": {"type": "string", "description": "The quiz question."},
+                        "options": {
+                            "type": "array",
+                            "description": "An array of 4 options.",
+                            "items": {"type": "string"},
+                            "minItems": 4,
+                            "maxItems": 4
+                        },
+                        "answer": {"type": "integer", "description": "The index of the correct option (1 to 4)."},
+                        "explanation": {"type": "string", "description": "A brief explanation of the correct answer."}
+                    },
+                    "required": ["question", "options", "answer", "explanation"]
+                }
+            }, indent=2)
+
+            system_prompt = f"""
+                You are an expert quiz generator. Based on the topic '{topic}' and difficulty '{level}', generate 10 multiple-choice questions.
+                Your output MUST be a **raw JSON array** that strictly follows the provided schema.
+                DO NOT include any explanation, introductory text, or markdown code blocks (e.g., ```json).
+                Output ONLY the raw JSON array, starting with `[` and ending with `]`.
+
+                JSON Schema to follow:
+                {quiz_schema_str}
+                """
+
+            generated_json_text = None
+
+            llm_attempts = []
+            if get_api_key("gemini"):
+                llm_attempts.append(("gemini", get_api_key("gemini"), "gemini-2.5-flash"))
+            if get_api_key("openai"):
+                llm_attempts.append(("openai", get_api_key("openai"), "gpt-4o"))
+
+            with st.spinner(L["response_generating"]):
+                for provider, api_key, model_name in llm_attempts:
+                    try:
+                        if provider == "gemini":
+                            client = genai
+                            client.configure(api_key=api_key)
+                            g_model = client.GenerativeModel(model_name)
+
+                            response = g_model.generate_content(
+                                contents=system_prompt  # system_prompt를 user content로 사용
+                            )
+                            generated_json_text = response.text.strip()
+                            break
+                        elif provider == "openai":
+                            client = OpenAI(api_key=api_key)
+                            response = client.chat.completions.create(
+                                model=model_name,
+                                messages=[{"role": "user", "content": system_prompt}],
+                                response_format={"type": "json_object"},
+                            )
+                            generated_json_text = response.choices[0].message.content.strip()
+
+                            if not generated_json_text.startswith('['):
+                                try:
+                                    parsed_obj = json.loads(generated_json_text)
+                                    if isinstance(parsed_obj, dict) and 'quiz' in parsed_obj and isinstance(
+                                            parsed_obj['quiz'], list):
+                                        generated_json_text = json.dumps(parsed_obj['quiz'])
+                                    elif isinstance(parsed_obj, list):
+                                        generated_json_text = json.dumps(parsed_obj)
+                                except Exception:
+                                    pass
+
+                            if generated_json_text and generated_json_text.startswith('['):
+                                break
+
+                    except Exception as e:
+                        print(f"JSON generation failed with {provider}: {e}")
+                        continue
+
+            if generated_json_text and generated_json_text.startswith('['):
+                try:
+                    quiz_data = json.loads(generated_json_text)
+                    if not isinstance(quiz_data, list) or not all(
+                            isinstance(q, dict) and 'answer' in q for q in quiz_data):
+                        st.error(L["quiz_error_llm"] + " (Invalid data structure/Missing answer key)")
+                        st.text(generated_json_text)
+                        st.stop()
+
+                    st.session_state.quiz_data = quiz_data
+                    st.session_state.current_question_index = 0
+                    st.session_state.quiz_score = 0
+                    st.session_state.quiz_answers = [1] * len(quiz_data)
+                    st.session_state.show_explanation = False
+                    st.session_state.is_quiz_active = True
+                    st.session_state.quiz_type_key = str(uuid.uuid4())  # Quiz ID
+                except json.JSONDecodeError:
+                    st.error(L["quiz_error_llm"])
+                    st.text_area(L["quiz_original_response"], generated_json_text, height=200)
+                    st.stop()
+            else:
+                st.error(L["quiz_error_llm"])
+                if generated_json_text:
+                    st.text_area(L["quiz_original_response"], generated_json_text, height=200)
+                st.stop()
+
+        else:  # '핵심 요약 노트' 또는 '실습 예제 아이디어' (일반 텍스트 생성)
+            # 퀴즈가 아닌 일반 콘텐츠의 경우, is_quiz_active를 False로 설정하고 run_llm으로 일반 텍스트를 생성
+            st.session_state.is_quiz_active = False
+            with st.spinner(L["response_generating"]):
+                # system_prompt는 이미 공통 템플릿으로 설정되어 있음
+                content = run_llm(system_prompt)
+            st.session_state.generated_content = content
+
+            # 생성된 콘텐츠를 바로 출력합니다.
+            st.markdown("---")
+            st.markdown(f"### {content_type}")
+            st.markdown(st.session_state.generated_content)
+
+    # --- 콘텐츠 출력 ---
+    if st.session_state.get("is_quiz_active", False) and st.session_state.get("quiz_data"):
+        quiz_data = st.session_state.quiz_data
+        idx = st.session_state.current_question_index
+
+        # ⭐ 수정된 부분: 퀴즈 완료 시 IndexError 방지 로직 (idx >= len(quiz_data))
+        if idx >= len(quiz_data):
+            # 퀴즈 완료 시 최종 점수 표시
+            st.success(L["quiz_complete"])
+            total_questions = len(quiz_data)
+            score = st.session_state.quiz_score
+            st.subheader(f"{L['score']}: {score} / {total_questions} ({(score / total_questions) * 100:.1f}%)")
+
+            if st.button(L["retake_quiz"], key="retake_quiz_btn"):
+                # 퀴즈 상태 초기화
+                st.session_state.is_quiz_active = False
+                st.session_state.quiz_data = None
+                st.session_state.current_question_index = 0
+                st.session_state.quiz_score = 0
+                st.session_state.quiz_answers = []
+                st.session_state.show_explanation = False
+                st.rerun()  # 상태 초기화 후 즉시 재실행
+            st.stop()  # 퀴즈 완료 후 스크립트 실행을 완전히 중단
+
+        # 퀴즈 진행 (현재 문항)
+        question_data = quiz_data[idx]
+        st.subheader(f"Question {idx + 1}/{len(quiz_data)}")
+        st.markdown(f"**{question_data['question']}**")
+
+        current_selection_index = st.session_state.quiz_answers[idx]
+
+        if current_selection_index is None or isinstance(current_selection_index, str):
+            radio_index = -1
+        else:
+            radio_index = current_selection_index - 1
+
+        # 선택지 표시
+        options = question_data['options']
+        current_answer = st.session_state.quiz_answers[idx]
+
+        # 라디오 인덱스 계산 시 None/문자열 상태에 따라 0으로 fallback하여 오류 방지
+        if current_answer is None or not isinstance(current_answer, int) or current_answer <= 0:
+            radio_index = 0  # st.radio는 index >= 0 이어야 하므로 0으로 fallback (첫 번째 옵션)
+        else:
+            radio_index = min(current_answer - 1, len(options) - 1)
+
+        selected_option = st.radio(
+            L["select_answer"],
+            options,
+            index=radio_index,
+            key=f"quiz_radio_{st.session_state.quiz_type_key}_{idx}"
+        )
+
+        # 선택된 옵션의 인덱스 (1부터 시작)
+        selected_option_index = options.index(selected_option) + 1 if selected_option in options else None
+
+        # 정답 확인 버튼 및 로직
+        check_col, next_col = st.columns([1, 1])
+
+        if check_col.button(L["check_answer"], key=f"check_answer_btn_{idx}"):
+            if selected_option_index is None:
+                st.warning("선택지를 선택해 주세요.")
+            else:
+                st.session_state.quiz_answers[idx] = selected_option_index
+                correct_answer = question_data['answer']
+
+                # 점수 계산 및 피드백
+                if selected_option_index == correct_answer:
+                    if st.session_state.quiz_answers[idx] != 'Correctly Scored':
+                        st.session_state.quiz_score += 1
+                        st.session_state.quiz_answers[idx] = 'Correctly Scored'  # 점수 처리 완료 표시
+                    st.success(L["correct_answer"])
+                else:
+                    st.error(L["incorrect_answer"])
+
+                st.session_state.show_explanation = True
+                st.rerun()
+
+        # 정답 및 해설 표시
+        if st.session_state.show_explanation:
+            correct_index = question_data['answer']
+            correct_answer_text = question_data['options'][correct_index - 1]
+
+            st.markdown("---")
+            st.markdown(f"**{L['correct_is']}:** {correct_answer_text}")
+            with st.expander(f"**{L['explanation']}**", expanded=True):
+                st.info(question_data['explanation'])
+
+            # 다음 문항 버튼
+            if next_col.button(L["next_question"], key=f"next_question_btn_{idx}"):
+                st.session_state.current_question_index += 1
+                st.session_state.show_explanation = False
+                st.rerun()
+
+        else:
+            # 사용자가 이미 정답을 체크했고 (다시 로드된 경우), 다음 버튼을 바로 표시
+            if st.session_state.quiz_answers[idx] in [selected_option_index, 'Correctly Scored']:
+                st.info("답변을 확인했습니다. 해설을 보려면 정답 확인 버튼을 누르거나 다음 문항으로 이동하세요.")
+                if next_col.button(L["next_question"], key=f"next_question_btn_after_check_{idx}"):
+                    st.session_state.current_question_index += 1
+                    st.session_state.show_explanation = False
+                    st.rerun()
+
+    else:
+        # 일반 콘텐츠 (핵심 요약 노트, 실습 예제 아이디어) 출력
+        if st.session_state.get("generated_content"):
+            st.markdown("---")
+            st.markdown(f"### {content_type}")
+            st.markdown(st.session_state.generated_content)
+
+    # --- 퀴즈 완료 후 로직은 위쪽 (idx >= len(quiz_data))에서 처리됨 --
+
+# -------------------- LSTM Tab --------------------
 elif feature_selection == L["lstm_tab"]:
     # ... (기존 LSTM 탭 로직 유지)
     st.header(L["lstm_header"])
     st.markdown(L["lstm_desc"])
 
     # ⭐ 최적화: 버튼 자체가 rerun을 유도하므로 명시적 rerun 제거 (버튼 클릭 시 자동 재실행)
-    # if st.button(L["lstm_rerun_button"]):
-    #     st.rerun()
+    if st.button(L["lstm_rerun_button"]):
+        # 버튼 클릭 시 Streamlit이 자동으로 재실행
+        pass
 
     try:
         data = load_or_train_lstm()
