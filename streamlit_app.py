@@ -1658,27 +1658,37 @@ def synthesize_tts(text: str, lang_key: str, role: str = "agent"):
     except Exception as e:
         return None, f"{L['tts_status_error']}: {e}"
 
+# ----------------------------------------
+# TTS Helper
+# ----------------------------------------
 
 def render_tts_button(text, lang_key, role="customer", prefix="", index: int = -1):
-    """
-    TTS 재생 버튼을 렌더링하고, 고유한 키를 생성합니다.
-    index: 대화 내역에서의 고유 인덱스 (DuplicateWidgetID 방지용)
-    """
     L = LANG[lang_key]
 
+    # ⭐ 수정: index=-1인 경우, 매 실행마다 고유한 UUID를 사용하여 키 충돌 방지
+    if index == -1:
+        # 고유성 확보: prefix + 텍스트 해시 + 매 실행마다 달라지는 UUID
+        content_hash = hashlib.md5(text[:100].encode()).hexdigest()
+        unique_run_id = str(uuid.uuid4())  # 매 실행마다 새로운 ID 생성
+        session_id_part = st.session_state.get('sim_instance_id', 'default_session')
+        safe_key = f"{prefix}_SUMMARY_{session_id_part}_{content_hash}_{time.time_ns()}"
+    else:
+        # 대화 로그처럼 인덱스가 존재하는 경우 (기존 로직 유지)
+        content_hash = hashlib.md5(text[:100].encode()).hexdigest()
+        safe_key = f"{prefix}_{index}_{content_hash}"
+
     # 텍스트의 해시값과 고유 인덱스를 결합하여 키 생성
-    # 인덱스(-1은 키가 중요하지 않은 경우, 예: 음성 기록 목록)를 사용하여 중복 방지
-    content_hash = hashlib.md5(text[:100].encode()).hexdigest()
-    safe_key = f"{prefix}_{index}_{content_hash}"
+    # content_hash = hashlib.md5(text[:100].encode()).hexdigest()
+    # safe_key = f"{prefix}_{index}_{content_hash}"
 
     # 재생 버튼을 누를 때만 TTS 요청
     if st.button(L["button_listen_audio"], key=safe_key):
         with st.spinner(L["tts_status_generating"]):
-            # 감정 분석 (현재 미사용) 대신 단순 텍스트만 전달
             audio_bytes, msg = synthesize_tts(text, lang_key, role=role)
             if audio_bytes:
-                st.audio(audio_bytes, format="audio/mp3")
+                st.audio(audio_bytes, format="audio/mp3", autoplay=True)
                 st.success(msg)
+                time.sleep(1)  # ⭐ 재생 안정성을 위한 1초 대기 추가
             else:
                 st.error(msg)
 
@@ -3758,11 +3768,11 @@ elif feature_selection == L["sim_tab_chat_email"]:
         avatar = {"customer": "🙋", "supervisor": "🤖", "agent_response": "🧑‍💻", "customer_rebuttal": "✨",
                   "system_end": "📌", "system_transfer": "📌"}.get(role, "💬")
         tts_role = "customer" if role.startswith("customer") or role == "customer_rebuttal" else (
-              "agent" if role == "agent_response" else "supervisor")
+            "agent" if role == "agent_response" else "supervisor")
 
         with st.chat_message(role, avatar=avatar):
             st.markdown(content)
-                    # 인덱스를 render_tts_button에 전달하여 고유 키 생성에 사용
+            # 인덱스를 render_tts_button에 전달하여 고유 키 생성에 사용
             render_tts_button(content, st.session_state.language, role=tts_role, prefix=f"{role}_", index=idx)
 
             # ⭐ [새로운 로직] 고객 첨부 파일 렌더링 (첫 번째 메시지인 경우)
@@ -3788,10 +3798,12 @@ elif feature_selection == L["sim_tab_chat_email"]:
 
                 # 번역이 실패했을 경우 (빈 문자열)
                 # ⭐ 수정된 부분 1: DuplicateWidgetID 오류 해결을 위해 고유 키에 UUID 추가
-                unique_key = f"btn_retry_translation_{st.session_state.sim_instance_id}_{uuid.uuid4()}"
+                is_translation_failed = not st.session_state.transfer_summary_text or st.session_state.transfer_summary_text.startswith(
+                    "❌ Translation Error")
 
-                if not st.session_state.transfer_summary_text:
-                    st.error("❌ LLM_TRANSLATION_ERROR (번역 실패). 아래 버튼을 눌러 다시 시도하세요.")
+                if is_translation_failed:
+                    st.error(f"❌ LLM_TRANSLATION_ERROR (번역 실패). 상세 정보는 아래 요약 박스를 확인하세요.")
+                    st.info(st.session_state.transfer_summary_text)
                     # 번역 재시도 버튼 추가
                     if st.button(L["button_retry_translation"], key=unique_key):  # 고유 키 사용
                         # 재시도 로직 실행
@@ -3814,9 +3826,18 @@ elif feature_selection == L["sim_tab_chat_email"]:
                             # ⭐ 재실행
                             # st.rerun()
 
+
                 else:
-                    # 번역 성공 시 내용 표시
+                    # [수정 2] 번역 성공 시 내용 표시 및 TTS 버튼 추가
                     st.markdown(st.session_state.transfer_summary_text)
+                    # ⭐ 수정: index=-1을 사용하여 고유 세션 ID 기반의 키를 생성하도록 변경
+                    render_tts_button(
+                        st.session_state.transfer_summary_text,
+                        st.session_state.language,
+                        role="agent",
+                        prefix="trans_summary_tts",
+                        index=-1  # 고유 세션 ID 기반의 키를 생성하도록 지시
+                    )
                 st.markdown("---")
 
     # =========================
@@ -4057,7 +4078,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             # ⭐ 수정: 고객 반응 생성 로직을 다음 단계에서 처리하도록 sim_stage 변경
             st.session_state.sim_stage = "CUSTOMER_TURN"
             # ⭐ 재실행: 이 부분이 즉시 고객 반응을 생성하도록 유도합니다.
-            st.rerun()
+            # st.rerun()
 
         # --- 언어 이관 버튼 ---
         st.markdown("---")
@@ -4216,7 +4237,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
 
         st.session_state.realtime_hint_text = ""  # 힌트 초기화
         # ⭐ 재실행: 고객 반응이 추가되었으므로 AGENT_TURN으로 전환하여 에이전트에게 응답 기회 제공
-        st.rerun()
+        # st.rerun()
 
     else:
         st.warning("LLM Key가 없어 고객 반응 자동 생성이 불가합니다. 수동으로 '고객 반응 생성' 버튼을 클릭하거나 AGENT_TURN으로 돌아가세요.")
@@ -4235,9 +4256,10 @@ elif st.session_state.sim_stage == "WAIT_CLOSING_CONFIRMATION_FROM_AGENT":
 
     # [1] 채팅 - 추가 문의 확인 메시지 보내기 버튼
     with col_chat_end:
-        # 상태 전환 명확화: 이 버튼 클릭 시 다음 단계인 WAIT_CUSTOMER_CLOSING_RESPONSE로 반드시 넘어감
+        # [수정 1] 다국어 레이블 사용
         if st.button(L["send_closing_confirm_button"],
                      key=f"btn_send_closing_confirm_{st.session_state.sim_instance_id}"):
+            # [수정 1] 다국어 레이블 사용
             closing_msg = L["customer_closing_confirm"]
 
             # 에이전트 응답으로 로그 기록
@@ -4245,43 +4267,28 @@ elif st.session_state.sim_stage == "WAIT_CLOSING_CONFIRMATION_FROM_AGENT":
                 {"role": "agent_response", "content": closing_msg}
             )
 
-            # 다음 단계: 고객의 최종 답변 대기
+            # [추가] TTS 버튼 렌더링을 위해 sleep/rerun 강제
+            time.sleep(0.1)
             st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
-
-            # 이력 저장
-            customer_type_display = st.session_state.get("customer_type_sim_select", "")
-            save_simulation_history_local(
-                st.session_state.customer_query_text_area, customer_type_display,
-                st.session_state.simulator_messages, is_chat_ended=False,
-                attachment_context=st.session_state.sim_attachment_context_for_llm,
-            )
-            # ⭐ 재실행
             # st.rerun()
 
     # [2] 이메일 - 상담 종료 버튼 (즉시 종료)
     with col_email_end:
+        # [수정 1] 다국어 레이블 사용
         if st.button(L["button_email_end_chat"], key=f"btn_email_end_chat_{st.session_state.sim_instance_id}"):
-            # 이메일은 끝인사에 문의 확인이 포함되므로, 바로 최종 종료 단계로 이동
-
             # AHT 타이머 정지
             st.session_state.start_time = None
 
-            # 최종 종료 메시지 (설문 조사 포함)
+            # [수정 1] 다국어 레이블 사용
             end_msg = L["prompt_survey"]
             st.session_state.simulator_messages.append(
                 {"role": "system_end", "content": "(시스템: 이메일 상담 종료) " + end_msg}
             )
+
+            # [추가] TTS 버튼 렌더링을 위해 sleep/rerun 강제
+            time.sleep(0.1)
             st.session_state.is_chat_ended = True
             st.session_state.sim_stage = "CLOSING"  # 바로 CLOSING으로 전환
-
-            # 이력 저장
-            customer_type_display = st.session_state.get("customer_type_sim_select", "")
-            save_simulation_history_local(
-                st.session_state.customer_query_text_area, customer_type_display,
-                st.session_state.simulator_messages, is_chat_ended=True,
-                attachment_context=st.session_state.sim_attachment_context_for_llm,
-            )
-            # ⭐ 재실행
             # st.rerun()
 
 # =========================
@@ -4335,28 +4342,23 @@ elif st.session_state.sim_stage == "WAIT_CUSTOMER_CLOSING_RESPONSE":
 # =========================
 # 9. 최종 종료 행동 (FINAL_CLOSING_ACTION)
 # =========================
-if st.session_state.sim_stage == "FINAL_CLOSING_ACTION":
+elif st.session_state.sim_stage == "FINAL_CLOSING_ACTION":
     st.success("고객이 더 이상 문의할 사항이 없다고 확인했습니다.")
 
     if st.button(L["sim_end_chat_button"], key="btn_final_end_chat"):
         # AHT 타이머 정지
         st.session_state.start_time = None
 
+        # [수정 1] 다국어 레이블 사용
         end_msg = L["prompt_survey"]
         st.session_state.simulator_messages.append(
             {"role": "system_end", "content": end_msg}
         )
+
+        # [추가] TTS 버튼 렌더링을 위해 sleep/rerun 강제
+        time.sleep(0.1)
         st.session_state.is_chat_ended = True
         st.session_state.sim_stage = "CLOSING"
-
-        customer_type_display = st.session_state.get("customer_type_sim_select", "")
-        save_simulation_history_local(
-            st.session_state.customer_query_text_area, customer_type_display,
-            st.session_state.simulator_messages, is_chat_ended=True,
-            attachment_context=st.session_state.sim_attachment_context_for_llm,
-        )
-
-        # ⭐ 재실행
         # st.rerun()
 
 elif feature_selection == L["sim_tab_phone"]:
@@ -5166,7 +5168,7 @@ elif feature_selection == L["content_tab"]:
                     st.session_state.quiz_type_key = str(uuid.uuid4())
 
                     st.success(f"**{topic}** - {content_display} 생성 완료")
-                    st.rerun()  # 퀴즈 UI로 전환
+                    # st.rerun()  # 퀴즈 UI로 전환
 
                 except (json.JSONDecodeError, ValueError) as e:
                     # 4. 파싱 실패 또는 데이터 구조 문제 시 에러 메시지 출력
@@ -5214,7 +5216,7 @@ elif feature_selection == L["content_tab"]:
                 st.session_state.quiz_score = 0
                 st.session_state.quiz_answers = []
                 st.session_state.show_explanation = False
-                st.rerun()  # 상태 초기화 후 즉시 재실행
+                # st.rerun()  # 상태 초기화 후 즉시 재실행
             st.stop()  # 퀴즈 완료 후 스크립트 실행을 완전히 중단
 
         # 퀴즈 진행 (현재 문항)
@@ -5260,7 +5262,7 @@ elif feature_selection == L["content_tab"]:
                         st.error(L["incorrect_answer"])
 
                 st.session_state.show_explanation = True
-                st.rerun()
+                # st.rerun()
 
         # 정답 및 해설 표시
         if st.session_state.show_explanation:
@@ -5277,7 +5279,7 @@ elif feature_selection == L["content_tab"]:
             if next_col.button(L["next_question"], key=f"next_question_btn_{idx}"):
                 st.session_state.current_question_index += 1
                 st.session_state.show_explanation = False
-                st.rerun()
+                # st.rerun()
 
         else:
             # 사용자가 이미 정답을 체크했고 (다시 로드된 경우), 다음 버튼을 바로 표시
@@ -5286,7 +5288,7 @@ elif feature_selection == L["content_tab"]:
                 if next_col.button(L["next_question"], key=f"next_question_btn_after_check_{idx}"):
                     st.session_state.current_question_index += 1
                     st.session_state.show_explanation = False
-                    st.rerun()
+                    # st.rerun()
 
     else:
         # 일반 콘텐츠 (핵심 요약 노트, 실습 예제 아이디어) 출력
