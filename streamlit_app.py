@@ -5488,7 +5488,7 @@ elif feature_selection == L["content_tab"]:
                 # 1단계: 네이티브 공유 API 호출 시도 (모바일 환경 대상)
                 share_title = f"{content_display} ({topic})"
                 share_text = content[:150] + "..."
-                share_url = "https://your-streamlit-app-url.com"  # 실제 배포 URL로 가정
+                share_url = "https://utility-convenience-salmonyeonwoo.streamlit.app/"  # 실제 배포 URL로 가정
 
                 # JavaScript 실행: 네이티브 공유 호출
                 st.components.v1.html(
@@ -5535,7 +5535,7 @@ elif feature_selection == L["content_tab"]:
 
             # 5. 더보기 버튼 (기능 활성화 - 파일 옵션 모의)
             with col_more:
-                more_clicked = st.button("•••", key="content_more")
+                more_clicked = st.button("•••", key=f"content_more_{current_content_id}")
 
             if more_clicked:
                 st.toast(L["toast_more"])
@@ -5589,11 +5589,11 @@ elif feature_selection == L["content_tab"]:
             current_content_id = str(uuid.uuid4())
 
             # ⭐ 1. 좋아요 버튼 (기능 활성화)
-            if col_like.button("👍", key="content_like"):
+            if col_like.button("👍", key=f"content_like_{current_content_id}"):
                 st.toast(L["toast_like"])
 
             # ⭐ 2. 싫어요 버튼 (기능 활성화)
-            if col_dislike.button("👎", key="content_dislike"):
+            if col_dislike.button("👎", key=f"content_dislike_{current_content_id}"):
                 st.toast(L["toast_dislike"])
 
             # ⭐ 3. 공유 버튼 (기능 활성화)
@@ -5622,7 +5622,7 @@ elif feature_selection == L["content_tab"]:
                 st.toast(L["toast_share"])
 
             # 4. 복사 버튼 (기능 활성화)
-            if col_copy.button("📋", key="content_copy"):
+            if col_copy.button("📋", key=f"content_copy_{current_content_id}"):
                 # Streamlit에서 직접 JavaScript를 실행하여 복사
                 st.components.v1.html(
                     f"""<script>{js_copy_script}</script>""",
@@ -5631,7 +5631,7 @@ elif feature_selection == L["content_tab"]:
                 st.toast(L["toast_copy"])
 
             # ⭐ 5. 더보기 버튼 (기능 활성화)
-            if col_more.button("•••", key="content_more"):
+            if col_more.button("•••", key=f"content_more_{current_content_id}"):
                 st.toast(L["toast_more"])
             # --- END: 아이콘 버튼 추가 ---
 
