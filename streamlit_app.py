@@ -5002,176 +5002,170 @@ elif feature_selection == L["rag_tab"]:
     else:
         st.warning(L["warning_rag_not_ready"])
 
-# -------------------- Content Generation Tab --------------------
+# -------------------- Content Tab --------------------
 elif feature_selection == L["content_tab"]:
     st.header(L["content_header"])
     st.markdown(L["content_desc"])
-    st.markdown("---")
+    st.markdown("---")  # UI 구분선 추가
 
     if not st.session_state.is_llm_ready:
         st.warning(L["simulation_no_key_warning"])
         st.stop()
 
-    topic = st.text_input(L["topic_label"], key="content_topic_input")
-    level = st.selectbox(L["level_label"], L["level_options"], key="content_level_select")
-    content_type = st.selectbox(L["content_type_label"], L["content_options"], key="content_type_select")
+    # 다국어 맵핑 변수는 그대로 사용
+    level_map = {
+        "초급": "Beginner",
+        "중급": "Intermediate",
+        "고급": "Advanced",
+        "Beginner": "Beginner",
+        "Intermediate": "Intermediate",
+        "Advanced": "Advanced",
+        "初級": "Beginner",
+        "中級": "Intermediate",
+        "上級": "Advanced",
+    }
+    content_map = {
+        "핵심 요약 노트": "summary",
+        "객관식 퀴즈 10문항": "quiz",
+        "실습 예제 아이디어": "example",
+        "Key Summary Note": "summary",
+        "10 MCQ Questions": "quiz",
+        "Practical Example Idea": "example",
+        "核心要約ノート": "summary",
+        "中級": "Intermediate",
+        "選択式クイズ10問": "quiz",
+        "実践例のアイデア": "example",
+    }
 
-    # 콘텐츠 탭 전용 파일 업로더 키 사용 (RAG와의 충돌 방지)
-    content_files = st.file_uploader(
-        L["file_uploader"],
-        type=["pdf", "txt", "html"],
-        key="content_file_uploader",  # 콘텐츠 탭 전용 키
-        accept_multiple_files=True
-    )
+    topic = st.text_input(L["topic_label"])
+    level_display = st.selectbox(L["level_label"], L["level_options"])
+    content_display = st.selectbox(L["content_type_label"], L["content_options"])
 
-    if st.button(L["button_generate"], key="btn_generate_content"):
+    level = level_map.get(level_display, "Beginner")
+    content_type = content_map.get(content_display, "summary")
+
+    if st.button(L["button_generate"]):
         if not topic.strip():
             st.warning(L["warning_topic"])
             st.stop()
 
-        # LLM 프롬프트 구성 (기본 템플릿)
-        lang_name = {"ko": "한국어", "en": "English", "ja": "日本語"}[st.session_state.language]
+        target_lang = {"ko": "Korean", "en": "English", "ja": "Japanese"}[st.session_state.language]
+
+        # 공통 프롬프트 설정 (퀴즈 형식을 포함하지 않는 기본 템플릿)
         system_prompt = f"""
-            You are an expert content creator. Generate learning content in {lang_name} based on the user's request.
+            You are a professional AI coach. Generate learning content in {target_lang} for the topic '{topic}' at the '{level}' difficulty.
+            The content format requested is: {content_display}.
+            Output ONLY the raw content.
+        """
 
-            - Topic: {topic}
-            - Difficulty: {level}
-            - Format: {content_type}
-
-            If the format is '{L['content_options'][0]}', provide a structured summary with key concepts and definitions.
-            If the format is '{L['content_options'][1]}', provide a JSON array of 10 questions. Each object must have keys: 'question', 'options' (array of 4 strings), 'answer' (1-4 index), and 'explanation'.
-            If the format is '{L['content_options'][2]}', provide a scenario and actionable steps.
-
-            Ensure the content complexity matches the '{level}' difficulty.
-            Output ONLY the requested content, without any introductory or concluding remarks.
-            """
-
-        # ⭐ 수정된 부분 3: 퀴즈 타입 비교 로직 수정 및 일반 텍스트 콘텐츠 생성 로직 명확화
-        if content_type == L["content_options"][1]:  # 객관식 퀴즈 10문항
-            # 퀴즈 생성 로직 (이전 수정 사항 유지)
-            quiz_schema_str = json.dumps({
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "question": {"type": "string", "description": "The quiz question."},
-                        "options": {
-                            "type": "array",
-                            "description": "An array of 4 options.",
-                            "items": {"type": "string"},
-                            "minItems": 4,
-                            "maxItems": 4
-                        },
-                        "answer": {"type": "integer", "description": "The index of the correct option (1 to 4)."},
-                        "explanation": {"type": "string", "description": "A brief explanation of the correct answer."}
-                    },
-                    "required": ["question", "options", "answer", "explanation"]
-                }
-            }, indent=2)
-
-            system_prompt = f"""
+        if content_type == "quiz":
+            # 퀴즈 전용 프롬프트 및 JSON 구조 강제
+            quiz_prompt = f"""
                 You are an expert quiz generator. Based on the topic '{topic}' and difficulty '{level}', generate 10 multiple-choice questions.
-                Your output MUST be a **raw JSON array** that strictly follows the provided schema.
+                Your output MUST be a **raw JSON object** containing a single key "quiz_questions" which holds an array of 10 questions.
+                Each object in the array must strictly follow the required keys: "question", "options" (array of 4 strings), and "answer" (an integer index starting from 1).
                 DO NOT include any explanation, introductory text, or markdown code blocks (e.g., ```json).
-                Output ONLY the raw JSON array, starting with `[` and ending with `]`.
-
-                JSON Schema to follow:
-                {quiz_schema_str}
+                Output ONLY the raw JSON object, starting with '{{' and ending with '}}'.
                 """
 
             generated_json_text = None
-
             llm_attempts = []
-            if get_api_key("gemini"):
-                llm_attempts.append(("gemini", get_api_key("gemini"), "gemini-2.5-flash"))
+
+            # 1순위: OpenAI (JSON mode가 가장 안정적)
             if get_api_key("openai"):
                 llm_attempts.append(("openai", get_api_key("openai"), "gpt-4o"))
+            # 2순위: Gemini (Fallback)
+            if get_api_key("gemini"):
+                llm_attempts.append(("gemini", get_api_key("gemini"), "gemini-2.5-flash"))
 
             with st.spinner(L["response_generating"]):
                 for provider, api_key, model_name in llm_attempts:
                     try:
-                        if provider == "gemini":
-                            client = genai
-                            client.configure(api_key=api_key)
-                            g_model = client.GenerativeModel(model_name)
-
-                            response = g_model.generate_content(
-                                contents=system_prompt  # system_prompt를 user content로 사용
-                            )
-                            generated_json_text = response.text.strip()
-                            break
-                        elif provider == "openai":
+                        if provider == "openai":
                             client = OpenAI(api_key=api_key)
                             response = client.chat.completions.create(
                                 model=model_name,
-                                messages=[{"role": "user", "content": system_prompt}],
+                                messages=[{"role": "user", "content": quiz_prompt}],
+                                # JSON Mode 강제
                                 response_format={"type": "json_object"},
                             )
+                            # OpenAI는 JSON 객체를 반환하므로, 펜스 제거 없이 바로 사용 가능해야 함
                             generated_json_text = response.choices[0].message.content.strip()
+                            break
 
-                            if not generated_json_text.startswith('['):
-                                try:
-                                    parsed_obj = json.loads(generated_json_text)
-                                    if isinstance(parsed_obj, dict) and 'quiz' in parsed_obj and isinstance(
-                                            parsed_obj['quiz'], list):
-                                        generated_json_text = json.dumps(parsed_obj['quiz'])
-                                    elif isinstance(parsed_obj, list):
-                                        generated_json_text = json.dumps(parsed_obj)
-                                except Exception:
-                                    pass
+                        elif provider == "gemini":
+                            # Gemini는 response_format을 지원하지 않으므로, run_llm을 통해 일반 텍스트로 호출
+                            generated_json_text = run_llm(quiz_prompt)
+                            # Markdown 펜스 제거 시도
+                            raw_text = generated_json_text.strip()
+                            if raw_text.startswith("```json"):
+                                generated_json_text = raw_text.split("```json")[1].split("```")[0].strip()
+                            elif raw_text.startswith("```"):
+                                generated_json_text = raw_text.split("```")[1].split("```")[0].strip()
 
-                            if generated_json_text and generated_json_text.startswith('['):
+                            # Gemini의 응답이 JSON처럼 보이면 시도를 멈춤
+                            if generated_json_text.startswith('{'):
                                 break
 
                     except Exception as e:
                         print(f"JSON generation failed with {provider}: {e}")
                         continue
 
-            if generated_json_text and generated_json_text.startswith('['):
+            # --- START: JSON Parsing and Error Handling Logic ---
+            if generated_json_text and generated_json_text.startswith('{'):
                 try:
-                    quiz_data = json.loads(generated_json_text)
-                    if not isinstance(quiz_data, list) or not all(
-                            isinstance(q, dict) and 'answer' in q for q in quiz_data):
-                        st.error(L["quiz_error_llm"] + " (Invalid data structure/Missing answer key)")
-                        st.text(generated_json_text)
-                        st.stop()
+                    # JSON 객체 파싱 시도 (최상위는 객체여야 함)
+                    parsed_obj = json.loads(generated_json_text)
 
+                    # 'quiz_questions' 키에서 배열 추출
+                    quiz_data = parsed_obj.get("quiz_questions")
+
+                    if not isinstance(quiz_data, list) or len(quiz_data) < 1:
+                        raise ValueError("Missing 'quiz_questions' key or empty array.")
+
+                    # 3. 파싱 성공 및 데이터 유효성 검사 후 상태 저장
                     st.session_state.quiz_data = quiz_data
                     st.session_state.current_question_index = 0
                     st.session_state.quiz_score = 0
                     st.session_state.quiz_answers = [1] * len(quiz_data)
                     st.session_state.show_explanation = False
                     st.session_state.is_quiz_active = True
-                    st.session_state.quiz_type_key = str(uuid.uuid4())  # Quiz ID
-                except json.JSONDecodeError:
+                    st.session_state.quiz_type_key = str(uuid.uuid4())
+
+                    st.success(f"**{topic}** - {content_display} 생성 완료")
+                    st.rerun()  # 퀴즈 UI로 전환
+
+                except (json.JSONDecodeError, ValueError) as e:
+                    # 4. 파싱 실패 또는 데이터 구조 문제 시 에러 메시지 출력
                     st.error(L["quiz_error_llm"])
-                    st.text_area(L["quiz_original_response"], generated_json_text, height=200)
+                    st.caption(f"Error Details: {type(e).__name__} - {e}")
+                    st.subheader(L["quiz_original_response"])
+                    st.code(generated_json_text, language="json")
                     st.stop()
             else:
                 st.error(L["quiz_error_llm"])
                 if generated_json_text:
                     st.text_area(L["quiz_original_response"], generated_json_text, height=200)
                 st.stop()
+            # --- END: JSON Parsing and Error Handling Logic ---
 
-        else:  # '핵심 요약 노트' 또는 '실습 예제 아이디어' (일반 텍스트 생성)
-            # 퀴즈가 아닌 일반 콘텐츠의 경우, is_quiz_active를 False로 설정하고 run_llm으로 일반 텍스트를 생성
+        else:  # 일반 텍스트 생성
             st.session_state.is_quiz_active = False
             with st.spinner(L["response_generating"]):
-                # system_prompt는 이미 공통 템플릿으로 설정되어 있음
                 content = run_llm(system_prompt)
             st.session_state.generated_content = content
 
-            # 생성된 콘텐츠를 바로 출력합니다.
             st.markdown("---")
-            st.markdown(f"### {content_type}")
+            st.markdown(f"### {content_display}")
             st.markdown(st.session_state.generated_content)
 
-    # --- 콘텐츠 출력 ---
+    # --- 퀴즈/일반 콘텐츠 출력 로직 ---
     if st.session_state.get("is_quiz_active", False) and st.session_state.get("quiz_data"):
+        # 퀴즈 진행 로직 (생략 - 기존 로직 유지)
         quiz_data = st.session_state.quiz_data
         idx = st.session_state.current_question_index
 
-        # ⭐ 수정된 부분: 퀴즈 완료 시 IndexError 방지 로직 (idx >= len(quiz_data))
+        # ⭐ 퀴즈 완료 시 IndexError 방지 로직 (idx >= len(quiz_data))
         if idx >= len(quiz_data):
             # 퀴즈 완료 시 최종 점수 표시
             st.success(L["quiz_complete"])
@@ -5187,7 +5181,7 @@ elif feature_selection == L["content_tab"]:
                 st.session_state.quiz_score = 0
                 st.session_state.quiz_answers = []
                 st.session_state.show_explanation = False
-                # st.rerun()  # 상태 초기화 후 즉시 재실행
+                st.rerun()  # 상태 초기화 후 즉시 재실행
             st.stop()  # 퀴즈 완료 후 스크립트 실행을 완전히 중단
 
         # 퀴즈 진행 (현재 문항)
@@ -5195,20 +5189,14 @@ elif feature_selection == L["content_tab"]:
         st.subheader(f"Question {idx + 1}/{len(quiz_data)}")
         st.markdown(f"**{question_data['question']}**")
 
+        # 기존 퀴즈 진행 및 채점 로직 (변화 없음)
         current_selection_index = st.session_state.quiz_answers[idx]
 
-        if current_selection_index is None or isinstance(current_selection_index, str):
-            radio_index = -1
-        else:
-            radio_index = current_selection_index - 1
-
-        # 선택지 표시
         options = question_data['options']
         current_answer = st.session_state.quiz_answers[idx]
 
-        # 라디오 인덱스 계산 시 None/문자열 상태에 따라 0으로 fallback하여 오류 방지
         if current_answer is None or not isinstance(current_answer, int) or current_answer <= 0:
-            radio_index = 0  # st.radio는 index >= 0 이어야 하므로 0으로 fallback (첫 번째 옵션)
+            radio_index = 0
         else:
             radio_index = min(current_answer - 1, len(options) - 1)
 
@@ -5219,51 +5207,49 @@ elif feature_selection == L["content_tab"]:
             key=f"quiz_radio_{st.session_state.quiz_type_key}_{idx}"
         )
 
-        # 선택된 옵션의 인덱스 (1부터 시작)
         selected_option_index = options.index(selected_option) + 1 if selected_option in options else None
 
-        # 정답 확인 버튼 및 로직
         check_col, next_col = st.columns([1, 1])
 
         if check_col.button(L["check_answer"], key=f"check_answer_btn_{idx}"):
             if selected_option_index is None:
                 st.warning("선택지를 선택해 주세요.")
             else:
-                st.session_state.quiz_answers[idx] = selected_option_index
-                correct_answer = question_data['answer']
-
-                # 점수 계산 및 피드백
-                if selected_option_index == correct_answer:
-                    if st.session_state.quiz_answers[idx] != 'Correctly Scored':
+                # 점수 계산 로직
+                if st.session_state.quiz_answers[idx] != 'Correctly Scored':
+                    correct_answer = question_data.get('answer')  # answer 키가 없을 경우 대비
+                    if selected_option_index == correct_answer:
                         st.session_state.quiz_score += 1
-                        st.session_state.quiz_answers[idx] = 'Correctly Scored'  # 점수 처리 완료 표시
-                    st.success(L["correct_answer"])
-                else:
-                    st.error(L["incorrect_answer"])
+                        st.session_state.quiz_answers[idx] = 'Correctly Scored'
+                        st.success(L["correct_answer"])
+                    else:
+                        st.session_state.quiz_answers[idx] = selected_option_index  # 오답은 선택지 인덱스 저장
+                        st.error(L["incorrect_answer"])
 
                 st.session_state.show_explanation = True
-                # st.rerun()
+                st.rerun()
 
         # 정답 및 해설 표시
         if st.session_state.show_explanation:
-            correct_index = question_data['answer']
-            correct_answer_text = question_data['options'][correct_index - 1]
+            correct_index = question_data.get('answer', 1)
+            correct_answer_text = question_data['options'][correct_index - 1] if 0 < correct_index <= len(
+                question_data['options']) else "N/A"
 
             st.markdown("---")
             st.markdown(f"**{L['correct_is']}:** {correct_answer_text}")
             with st.expander(f"**{L['explanation']}**", expanded=True):
-                st.info(question_data['explanation'])
+                st.info(question_data.get('explanation', '해설이 제공되지 않았습니다.'))
 
             # 다음 문항 버튼
             if next_col.button(L["next_question"], key=f"next_question_btn_{idx}"):
                 st.session_state.current_question_index += 1
                 st.session_state.show_explanation = False
-                # st.rerun()
+                st.rerun()
 
         else:
             # 사용자가 이미 정답을 체크했고 (다시 로드된 경우), 다음 버튼을 바로 표시
-            if st.session_state.quiz_answers[idx] in [selected_option_index, 'Correctly Scored']:
-                st.info("답변을 확인했습니다. 해설을 보려면 정답 확인 버튼을 누르거나 다음 문항으로 이동하세요.")
+            if st.session_state.quiz_answers[idx] == 'Correctly Scored' or (
+                    isinstance(st.session_state.quiz_answers[idx], int) and st.session_state.quiz_answers[idx] > 0):
                 if next_col.button(L["next_question"], key=f"next_question_btn_after_check_{idx}"):
                     st.session_state.current_question_index += 1
                     st.session_state.show_explanation = False
@@ -5273,10 +5259,8 @@ elif feature_selection == L["content_tab"]:
         # 일반 콘텐츠 (핵심 요약 노트, 실습 예제 아이디어) 출력
         if st.session_state.get("generated_content"):
             st.markdown("---")
-            st.markdown(f"### {content_type}")
+            st.markdown(f"### {content_display}")
             st.markdown(st.session_state.generated_content)
-
-    # --- 퀴즈 완료 후 로직은 위쪽 (idx >= len(quiz_data))에서 처리됨 --
 
 # -------------------- LSTM Tab --------------------
 elif feature_selection == L["lstm_tab"]:
