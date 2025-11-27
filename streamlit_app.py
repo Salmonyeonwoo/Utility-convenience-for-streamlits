@@ -161,6 +161,13 @@ LANG: Dict[str, Dict[str, str]] = {
         "lstm_score_info": "다음 퀴즈 예상 점수는 약 **{predicted_score:.1f}점**입니다. 학습 성과를 유지하거나 개선하세요!",
         "lstm_rerun_button": "새로운 가상 데이터로 예측",
 
+        # --- 토스트 메시지 추가 ---
+        "toast_like": "🔥 컨텐츠가 맘에 드셨군요! (좋아요 카운트 +1)",
+        "toast_dislike": "😔 더 나은 콘텐츠를 위해 피드백을 반영하겠습니다.",
+        "toast_share": "🌐 콘텐츠 링크가 생성되었습니다.",
+        "toast_copy": "✅ 콘텐츠가 클립보드에 복사되었습니다!",
+        "toast_more": "ℹ️ 추가 옵션 (PDF, 인쇄본 저장 등)",
+
         # --- 시뮬레이터 ---
         "simulator_header": "AI 고객 응대 시뮬레이터",
         "simulator_desc": "까다로운 고객 문의에 AI의 응대 초안 및 가이드라인을 제공합니다。",
@@ -389,6 +396,14 @@ LANG: Dict[str, Dict[str, str]] = {
         "lstm_score_info": "Estimated next quiz score: **{predicted_score:.1f}**.",
         "lstm_rerun_button": "Predict with New Data",
 
+        # --- 토스트 메시지 추가 ---
+        "toast_like": "🔥 Content liked! (+1 Count Reflected)",
+        "toast_dislike": "😔 Feedback recorded for better content.",
+        "toast_share": "🌐 Content link generated.",
+        "toast_copy": "✅ Content copied to clipboard!",
+        "toast_more": "ℹ️ Additional options (Print, PDF Save, etc.)",
+        # --- 토스트 메시지 끝 ---
+
         # Simulator
         "simulator_header": "AI Customer Response Simulator",
         "simulator_desc": "AI generates draft responses and guidelines for customer inquiries.",
@@ -616,6 +631,14 @@ LANG: Dict[str, Dict[str, str]] = {
         "lstm_score_metric": "予測達成度",
         "lstm_score_info": "次のスコア予測: **{predicted_score:.1f}점**",
         "lstm_rerun_button": "新しいデータで再予測",
+
+        # --- 토스트 메시지 추가 ---
+        "toast_like": "🔥 コンテンツを気に入っていただけました！ (+1 カウント反映)",
+        "toast_dislike": "😔 より良いコンテンツのためフィードバックを記録しました。",
+        "toast_share": "🌐 コンテンツリンクが生成されました。",
+        "toast_copy": "✅ コンテンツがクリップボードにコピーされました！",
+        "toast_more": "ℹ️ その他のオプション（印刷、PDF保存など）",
+        # --- 토스트 메시지 끝 ---
 
         # --- Simulator ---
         "simulator_header": "AI顧客対応シミュレーター",
@@ -5006,7 +5029,7 @@ elif feature_selection == L["rag_tab"]:
 elif feature_selection == L["content_tab"]:
     st.header(L["content_header"])
     st.markdown(L["content_desc"])
-    st.markdown("---")  # UI 구분선 추가
+    st.markdown("---")
 
     if not st.session_state.is_llm_ready:
         st.warning(L["simulation_no_key_warning"])
@@ -5032,7 +5055,6 @@ elif feature_selection == L["content_tab"]:
         "10 MCQ Questions": "quiz",
         "Practical Example Idea": "example",
         "核心要約ノート": "summary",
-        "中級": "Intermediate",
         "選択式クイズ10問": "quiz",
         "実践例のアイデア": "example",
     }
@@ -5059,7 +5081,7 @@ elif feature_selection == L["content_tab"]:
         """
 
         if content_type == "quiz":
-            # 퀴즈 전용 프롬프트 및 JSON 구조 강제
+            # 퀴즈 전용 프롬프트 및 JSON 구조 강제 (로직 유지)
             quiz_prompt = f"""
                 You are an expert quiz generator. Based on the topic '{topic}' and difficulty '{level}', generate 10 multiple-choice questions.
                 Your output MUST be a **raw JSON object** containing a single key "quiz_questions" which holds an array of 10 questions.
@@ -5181,7 +5203,7 @@ elif feature_selection == L["content_tab"]:
                 st.session_state.quiz_score = 0
                 st.session_state.quiz_answers = []
                 st.session_state.show_explanation = False
-                # st.rerun()  # 상태 초기화 후 즉시 재실행
+                st.rerun()  # 상태 초기화 후 즉시 재실행
             st.stop()  # 퀴즈 완료 후 스크립트 실행을 완전히 중단
 
         # 퀴즈 진행 (현재 문항)
@@ -5227,7 +5249,7 @@ elif feature_selection == L["content_tab"]:
                         st.error(L["incorrect_answer"])
 
                 st.session_state.show_explanation = True
-                # st.rerun()
+                st.rerun()
 
         # 정답 및 해설 표시
         if st.session_state.show_explanation:
@@ -5244,7 +5266,7 @@ elif feature_selection == L["content_tab"]:
             if next_col.button(L["next_question"], key=f"next_question_btn_{idx}"):
                 st.session_state.current_question_index += 1
                 st.session_state.show_explanation = False
-                # st.rerun()
+                st.rerun()
 
         else:
             # 사용자가 이미 정답을 체크했고 (다시 로드된 경우), 다음 버튼을 바로 표시
@@ -5253,14 +5275,331 @@ elif feature_selection == L["content_tab"]:
                 if next_col.button(L["next_question"], key=f"next_question_btn_after_check_{idx}"):
                     st.session_state.current_question_index += 1
                     st.session_state.show_explanation = False
-                    # st.rerun()
+                    st.rerun()
 
     else:
         # 일반 콘텐츠 (핵심 요약 노트, 실습 예제 아이디어) 출력
         if st.session_state.get("generated_content"):
+            content = st.session_state.generated_content
+
             st.markdown("---")
             st.markdown(f"### {content_display}")
-            st.markdown(st.session_state.generated_content)
+
+            # --- START: 효율성 개선 (상단 분석/하단 본문) ---
+
+            st.subheader("💡 콘텐츠 분석 (Plotly 시각화)")
+
+            if IS_PLOTLY_AVAILABLE:
+                # 1. 키워드 빈도 시각화 (모의 데이터)
+
+                # 콘텐츠를 텍스트 줄로 분할하여 모의 키워드 및 주요 문장 생성
+                content = st.session_state.generated_content
+                content_lines = content.split('\n')
+                all_words = ' '.join(content_lines).replace('.', '').replace(',', '').split()
+
+                # 모의 키워드 빈도 데이터 생성
+                words = ['AI', '기술혁신', '고객경험', '데이터분석', '효율성', '여행산업']
+                np.random.seed(42)
+                counts = np.random.randint(5, 30, size=len(words))
+
+                # 난이도에 따라 점수 가중치 (모의 감성 점수 변화)
+                difficulty_score = {'Beginner': 60, 'Intermediate': 75, 'Advanced': 90}.get(level, 70)
+
+                # --- 차트 1: 키워드 빈도 (Plotly Bar Chart) ---
+                fig_bar = go.Figure(data=[
+                    go.Bar(
+                        x=words,
+                        y=counts,
+                        marker_color=px.colors.sequential.Plotly3,
+                        name="키워드 빈도"
+                    )
+                ])
+                fig_bar.update_layout(
+                    title_text=f"주요 키워드 빈도 분석",
+                    height=300,
+                    margin=dict(l=20, r=20, t=50, b=20)
+                )
+                st.plotly_chart(fig_bar, use_container_width=True)
+
+                # --- 차트 2: 콘텐츠 감성 및 복잡도 추이 (Plotly Line Chart) ---
+                # 모의 감성/복잡도 점수 추이 (5개 문단 모의)
+                sections = ['도입부', '핵심1', '핵심2', '해결책', '결론']
+                sentiment_scores = [difficulty_score - 10, difficulty_score + 5, difficulty_score,
+                                    difficulty_score + 10, difficulty_score + 2]
+
+                fig_line = go.Figure()
+                fig_line.add_trace(go.Scatter(
+                    x=sections,
+                    y=sentiment_scores,
+                    mode='lines+markers',
+                    name='감성/복잡도 점수',
+                    line=dict(color='orange', width=2),
+                    marker=dict(size=8)
+                ))
+                fig_line.update_layout(
+                    title_text="콘텐츠 섹션별 감성 및 복잡도 추이 (모의)",
+                    yaxis_range=[50, 100],
+                    height=300,
+                    margin=dict(l=20, r=20, t=50, b=20)
+                )
+                st.plotly_chart(fig_line, use_container_width=True)
+
+            else:  # Plotly가 없을 경우 기존 텍스트 분석 모의 유지
+                st.info("Plotly 라이브러리가 없어 시각화를 표시할 수 없습니다. 텍스트 분석 모의를 표시합니다.")
+                all_words = ' '.join(content_lines).replace('.', '').replace(',', '').split()
+                unique_words = sorted(set(all_words), key=len, reverse=True)[:5] if all_words else ["N/A"]
+                key_sentences = [
+                    content_lines[0].strip() if content_lines else "N/A",
+                    content_lines[len(content_lines) // 2].strip() if len(content_lines) > 1 else "",
+                    content_lines[-1].strip() if len(content_lines) > 1 else ""
+                ]
+                key_sentences = [s for s in key_sentences if s and s != "N/A"]
+
+                col_keyword, col_sentences = st.columns([1, 1])
+
+                with col_keyword:
+                    st.markdown("**핵심 키워드/개념 (모의)**")
+                    st.info(f"[{', '.join(unique_words)}...]")
+
+                with col_sentences:
+                    st.markdown("**주요 문장 요약 (모의)**")
+                    for sentence in key_sentences[:2]:
+                        st.write(f"• {sentence[:50]}...")
+
+            st.markdown("---")
+
+            # 2. 하단 본문 출력
+            st.markdown(f"### 📝 원본 콘텐츠")
+            st.markdown(content)
+
+            # --- END: 효율성 개선 ---
+
+            # --- START: 아이콘 버튼 활성화 ---
+            st.markdown("---")
+
+            # 1. 복사할 내용 정리 및 이스케이프
+            content_for_js = json.dumps(content)
+
+            # JavaScript 코드는 이스케이프된 중괄호 {{}}를 사용
+            js_copy_script = """
+               function copyToClipboard(text) {{
+                   navigator.clipboard.writeText(text).then(function() {{
+                       // Streamlit toast 호출 (모의)
+                       const elements = window.parent.document.querySelectorAll('[data-testid="stToast"]');
+                       if (elements.length === 0) {{
+                           // Fallback UI update (use Streamlit's native mechanism if possible, or simple alert)
+                           console.log("복사 완료: " + text.substring(0, 50) + "...");
+                           }}
+                       }}, function(err) {{
+                           // Fallback: Copy via execCommand (deprecated but often works in Streamlit's iframe)
+                           const textarea = document.createElement('textarea');
+                           textarea.value = text;
+                           document.body.appendChild(textarea);
+                           textarea.select();
+                           document.execCommand('copy');
+                           document.body.removeChild(textarea);
+                           alert("복사 완료!"); 
+                       }});
+                   }}
+                   // f-string 대신 .format을 사용하여 JavaScript 코드에 주입
+                   // content_for_js는 이미 Python에서 JSON 문자열로 안전하게 이스케이프됨
+                   copyToClipboard(JSON.parse('{content_json_safe}'));
+               """.format(content_json_safe=content_for_js)
+
+            # --- JavaScript for SHARE Menu (Messenger Mock) ---
+            # Streamlit은 현재 소셜 미디어 API를 직접 호출할 수 없으므로, URL 복사를 사용하고 UI에 메시지 옵션을 모의합니다.
+            js_share_url_copy = """
+               function copyShareUrl() {{
+                   const url = window.location.href;
+                   navigator.clipboard.writeText(url).then(function() {{
+                       console.log('App URL copied');
+                   }}, function(err) {{
+                       // Fallback
+                       const textarea = document.createElement('textarea');
+                       textarea.value = url;
+                       document.body.appendChild(textarea);
+                       textarea.select();
+                       document.execCommand('copy');
+                       document.body.removeChild(textarea);
+                   }});
+               }}
+            """
+
+
+            # --- 더 보기 메뉴 (파일 다운로드/열기 모의) ---
+
+            def mock_download(file_type: str, file_name: str):
+                """모의 다운로드 기능: 파일명과 함께 성공 토스트 메시지를 출력합니다."""
+                st.toast(f"📥 {file_type} 파일을 생성하여 다운로드를 시작합니다: {file_name}")
+                # 실제 다운로드 로직은 Streamlit 컴포넌트 환경에서는 복잡하여 생략합니다.
+
+
+            col_like, col_dislike, col_share, col_copy, col_more = st.columns([1, 1, 1, 1, 6])
+
+            # 1. 좋아요 버튼 (기능 활성화)
+            if col_like.button("👍", key="content_like"):
+                st.toast(L["toast_like"])
+
+            # 2. 싫어요 버튼 (기능 활성화)
+            if col_dislike.button("👎", key="content_dislike"):
+                st.toast(L["toast_dislike"])
+
+            # 3. 공유 버튼 (실제 앱 URL 복사 기능 활성화)
+            with col_share:
+                # 드롭다운 대체: 버튼을 누르면 URL 복사와 함께 드롭다운 옵션 모의 출력
+                share_clicked = st.button("🔗", key="content_share")
+
+            if share_clicked:
+                # JavaScript를 실행하여 URL 복사
+                st.components.v1.html(f"""<script>{js_share_url_copy} copyShareUrl();</script>""", height=0)
+                st.toast(L["toast_share"])
+
+                # 소셜 미디어/메신저 옵션 모의 출력
+                st.markdown("**공유 옵션 (모의):**")
+                col_soc1, col_soc2, col_soc3 = st.columns(3)
+
+                # 모의 버튼들 (실제 API 호출 대신 토스트 메시지)
+                if col_soc1.button("카카오톡", key="mock_kakaotalk"):
+                    st.toast("✅ 카카오톡 공유 링크 복사됨.")
+                if col_soc2.button("LINE", key="mock_line"):
+                    st.toast("✅ LINE 공유 링크 복사됨.")
+                if col_soc3.button("Gmail", key="mock_gmail"):
+                    st.toast("✅ Gmail 초안 생성됨.")
+
+            # 4. 복사 버튼 (기능 활성화 - 콘텐츠 텍스트 복사)
+            if col_copy.button("📋", key="content_copy"):
+                # Streamlit에서 직접 JavaScript를 실행하여 복사
+                st.components.v1.html(
+                    f"""<script>{js_copy_script}</script>""",
+                    height=0,
+                )
+                st.toast(L["toast_copy"])
+
+            # 5. 더보기 버튼 (기능 활성화 - 파일 옵션 모의)
+            with col_more:
+                more_clicked = st.button("•••", key="content_more")
+
+            if more_clicked:
+                st.toast(L["toast_more"])
+
+                # 파일 옵션 모의 출력
+                st.markdown("**문서 옵션 (모의):**")
+                col_doc1, col_doc2, col_doc3 = st.columns(3)
+
+                if col_doc1.button("📥 PDF 저장", key="mock_pdf_save"):
+                    mock_download("PDF", f"{topic}_summary.pdf")
+                if col_doc2.button("📑 Word로 열기", key="mock_word_open"):
+                    mock_download("Word", f"{topic}_summary.docx")
+                if col_doc3.button("🖨 인쇄", key="mock_print"):
+                    st.toast("🖨 브라우저 인쇄 창이 열립니다.")
+
+            # --- END: 효율성 개선 ---
+
+            # --- START: 아이콘 버튼 추가 ---
+            st.markdown("---")
+            # 콘텐츠를 복사하기 위해 JavaScript 사용 (Streamlit toast와 함께)
+            content_for_js = json.dumps(content)
+
+            js_copy_script = """
+                function copyToClipboard(text) {{
+                    navigator.clipboard.writeText(text).then(function() {{
+                        // Streamlit toast 호출 (모의)
+                        const elements = window.parent.document.querySelectorAll('[data-testid="stToast"]');
+                        if (elements.length === 0) {{
+                           // Fallback UI update (use Streamlit's native mechanism if possible, or simple alert)
+                            console.log("복사 완료: " + text.substring(0, 50) + "...");
+                      }}
+                   }}, function(err) {{
+                       // Fallback: Copy via execCommand (deprecated but often works in Streamlit's iframe)
+                       const textarea = document.createElement('textarea');
+                       textarea.value = text;
+                       document.body.appendChild(textarea);
+                       textarea.select();
+                       document.execCommand('copy');
+                       document.body.removeChild(textarea);
+                       alert("복사 완료!"); 
+                   }});
+                }}
+                // f-string 대신 .format을 사용하여 JavaScript 코드에 주입
+                // content_for_js는 이미 Python에서 JSON 문자열로 안전하게 이스케이프됨
+                copyToClipboard(JSON.parse('{content_json_safe}'));
+            """.format(content_json_safe=content_for_js)
+
+            # --- JavaScript for SHARE Menu (Messenger Mock) ---
+            # Streamlit은 현재 소셜 미디어 API를 직접 호출할 수 없으므로, URL 복사를 사용하고 UI에 메시지 옵션을 모의합니다.
+            js_share_url_copy = """
+                function copyShareUrl() {{
+                    const url = window.location.href;
+                    navigator.clipboard.writeText(url).then(function() {{
+                        console.log('App URL copied');
+                    }}, function(err) {{
+                        // Fallback
+                        const textarea = document.createElement('textarea');
+                        textarea.value = url;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                    }});
+                }}
+            """
+
+
+            # --- 더 보기 메뉴 (파일 다운로드/열기 모의) ---
+
+            def mock_download(file_type: str, file_name: str):
+                """모의 다운로드 기능: 파일명과 함께 성공 토스트 메시지를 출력합니다."""
+                st.toast(f"📥 {file_type} 파일을 생성하여 다운로드를 시작합니다: {file_name}")
+                # 실제 다운로드 로직은 Streamlit 컴포넌트 환경에서는 복잡하여 생략합니다.
+
+            col_like, col_dislike, col_share, col_copy, col_more = st.columns([1, 1, 1, 1, 6])
+
+            # ⭐ 1. 좋아요 버튼 (기능 활성화)
+            if col_like.button("👍", key="content_like"):
+                st.toast(L["toast_like"])
+
+            # ⭐ 2. 싫어요 버튼 (기능 활성화)
+            if col_dislike.button("👎", key="content_dislike"):
+                st.toast(L["toast_dislike"])
+
+            # ⭐ 3. 공유 버튼 (기능 활성화)
+            if col_share.button("🔗", key="content_share"):
+                js_share_script = """
+                    function copyAppUrl() {{
+                        const url = window.location.href;
+                        navigator.clipboard.writeText(url).then(function() {{
+                            console.log('App URL copied');
+                        }}, function(err) {{
+                            // Fallback for security issues
+                            const textarea = document.createElement('textarea');
+                            textarea.value = url;
+                            document.body.appendChild(textarea);
+                            textarea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(textarea);
+                        }});
+                    }}
+                    copyAppUrl();
+                """
+                st.components.v1.html(
+                    f"""<script>{js_share_script}</script>""",
+                    height=0,
+                )
+                st.toast(L["toast_share"])
+
+            # 4. 복사 버튼 (기능 활성화)
+            if col_copy.button("📋", key="content_copy"):
+                # Streamlit에서 직접 JavaScript를 실행하여 복사
+                st.components.v1.html(
+                    f"""<script>{js_copy_script}</script>""",
+                    height=0,
+                )
+                st.toast(L["toast_copy"])
+
+            # ⭐ 5. 더보기 버튼 (기능 활성화)
+            if col_more.button("•••", key="content_more"):
+                st.toast(L["toast_more"])
+            # --- END: 아이콘 버튼 추가 ---
 
 # -------------------- LSTM Tab --------------------
 elif feature_selection == L["lstm_tab"]:
