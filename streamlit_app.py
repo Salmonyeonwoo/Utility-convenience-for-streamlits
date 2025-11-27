@@ -4632,7 +4632,7 @@ elif feature_selection == L["sim_tab_phone"]:
 
             # 6. UI 재실행 (언어 변경 적용)
             st.success(f"✅ {LANG[target_lang]['transfer_summary_header']}가 준비되었습니다. 새로운 응대를 시작하세요.")
-            st.rerun()
+            # st.rerun()
 
 
         st.markdown("---")
@@ -5149,7 +5149,7 @@ elif feature_selection == L["content_tab"]:
                 st.session_state.quiz_score = 0
                 st.session_state.quiz_answers = []
                 st.session_state.show_explanation = False
-                st.rerun()  # 상태 초기화 후 즉시 재실행
+                # st.rerun()  # 상태 초기화 후 즉시 재실행
             st.stop()  # 퀴즈 완료 후 스크립트 실행을 완전히 중단
 
         # 퀴즈 진행 (현재 문항)
@@ -5204,7 +5204,7 @@ elif feature_selection == L["content_tab"]:
                     st.error(L["incorrect_answer"])
 
                 st.session_state.show_explanation = True
-                st.rerun()
+                # st.rerun()
 
         # 정답 및 해설 표시
         if st.session_state.show_explanation:
@@ -5220,7 +5220,7 @@ elif feature_selection == L["content_tab"]:
             if next_col.button(L["next_question"], key=f"next_question_btn_{idx}"):
                 st.session_state.current_question_index += 1
                 st.session_state.show_explanation = False
-                st.rerun()
+                # st.rerun()
 
         else:
             # 사용자가 이미 정답을 체크했고 (다시 로드된 경우), 다음 버튼을 바로 표시
