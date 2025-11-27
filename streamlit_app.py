@@ -167,6 +167,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "toast_share": "🌐 콘텐츠 링크가 생성되었습니다.",
         "toast_copy": "✅ 콘텐츠가 클립보드에 복사되었습니다!",
         "toast_more": "ℹ️ 추가 옵션 (PDF, 인쇄본 저장 등)",
+        "mock_pdf_save": "📥 PDF 저장",
+        "mock_word_open": "📑 Word로 열기",
+        "mock_print": "🖨 인쇄",
 
         # --- 시뮬레이터 ---
         "simulator_header": "AI 고객 응대 시뮬레이터",
@@ -402,6 +405,11 @@ LANG: Dict[str, Dict[str, str]] = {
         "toast_share": "🌐 Content link generated.",
         "toast_copy": "✅ Content copied to clipboard!",
         "toast_more": "ℹ️ Additional options (Print, PDF Save, etc.)",
+        "mock_pdf_save": "📥 Save as PDF",
+        "mock_word_open": "📑 Open via Word",
+        "mock_print": "🖨 Print",
+
+
         # --- 토스트 메시지 끝 ---
 
         # Simulator
@@ -638,6 +646,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "toast_share": "🌐 コンテンツリンクが生成されました。",
         "toast_copy": "✅ コンテンツがクリップボードにコピーされました！",
         "toast_more": "ℹ️ その他のオプション（印刷、PDF保存など）",
+        "mock_pdf_save": "📥 PDFで保存",
+        "mock_word_open": "📑 Wordで開く",
+        "mock_print": "🖨 印刷",
         # --- 토스트 메시지 끝 ---
 
         # --- Simulator ---
@@ -5280,7 +5291,8 @@ elif feature_selection == L["content_tab"]:
     else:
         # 일반 콘텐츠 (핵심 요약 노트, 실습 예제 아이디어) 출력
         if st.session_state.get("generated_content"):
-            content = st.session_state.generated_content
+            content = st.session_state.generated_content  # Content를 다시 가져옴
+            content_lines = content.split('\n')
 
             st.markdown("---")
             st.markdown(f"### {content_display}")
@@ -5425,6 +5437,29 @@ elif feature_selection == L["content_tab"]:
                }}
             """
 
+            # --- JavaScript for SHARE Menu (Messenger Mock) ---
+            # Streamlit은 현재 소셜 미디어 API를 직접 호출할 수 없으므로, URL 복사를 사용하고 UI에 메시지 옵션을 모의합니다.
+            js_native_share = """
+               function triggerNativeShare(title, text, url) {{
+                   if (navigator.share) {{
+                       // 1. 네이티브 공유 API 지원 시 사용
+                       navigator.share({{
+                           title: title,
+                           text: text,
+                           url: url,
+                       }}).then(() => {{
+                           console.log('Successful share');
+                       }}).catch((error) => {{
+                           console.log('Error sharing', error);
+                       }});
+                       return true;
+                   }} else {{
+                      // 2. 네이티브 공유 API 미지원 시 (PC 환경 등)
+                      return false;
+                   }}
+               }}
+            """
+
 
             # --- 더 보기 메뉴 (파일 다운로드/열기 모의) ---
 
@@ -5435,40 +5470,63 @@ elif feature_selection == L["content_tab"]:
 
 
             col_like, col_dislike, col_share, col_copy, col_more = st.columns([1, 1, 1, 1, 6])
+            current_content_id = str(uuid.uuid4())  # 동적 ID 생성
 
             # 1. 좋아요 버튼 (기능 활성화)
-            if col_like.button("👍", key="content_like"):
+            if col_like.button("👍", key=f"content_like_{current_content_id}"):
                 st.toast(L["toast_like"])
 
             # 2. 싫어요 버튼 (기능 활성화)
-            if col_dislike.button("👎", key="content_dislike"):
+            if col_dislike.button("👎", key=f"content_dislike_{current_content_id}"):
                 st.toast(L["toast_dislike"])
 
-            # 3. 공유 버튼 (실제 앱 URL 복사 기능 활성화)
+            # 3. 공유 버튼 (Web Share API 호출 통합)
             with col_share:
-                # 드롭다운 대체: 버튼을 누르면 URL 복사와 함께 드롭다운 옵션 모의 출력
-                share_clicked = st.button("🔗", key="content_share")
+                share_clicked = st.button("🔗", key=f"content_share_{current_content_id}")
 
             if share_clicked:
-                # JavaScript를 실행하여 URL 복사
-                st.components.v1.html(f"""<script>{js_share_url_copy} copyShareUrl();</script>""", height=0)
+                # 1단계: 네이티브 공유 API 호출 시도 (모바일 환경 대상)
+                share_title = f"{content_display} ({topic})"
+                share_text = content[:150] + "..."
+                share_url = "https://your-streamlit-app-url.com"  # 실제 배포 URL로 가정
+
+                # JavaScript 실행: 네이티브 공유 호출
+                st.components.v1.html(
+                    f"""
+                    <script>{js_native_share}
+                        const shared = triggerNativeShare('{share_title}', '{share_text}', '{share_url}');
+                        if (shared) {{
+                           // 네이티브 공유 성공 시 (토스트 메시지는 브라우저가 관리)
+                            console.log("Native Share Attempted.");
+                        }} else {{
+                           // 네이티브 공유 미지원 시, 대신 URL 복사
+                           const url = window.location.href;
+                           const textarea = document.createElement('textarea');
+                           textarea.value = url;
+                           document.body.appendChild(textarea);
+                           textarea.select();
+                           document.execCommand('copy');
+                           document.body.removeChild(textarea);
+                           // PC 환경에서 URL 복사 완료 토스트 메시지 출력
+                           const toastElement = window.parent.document.querySelector('[data-testid="stToast"]');
+                           if (toastElement) {{
+                               // 이미 토스트 메시지가 열려 있다면 갱신 (Streamlit의 toast 기능을 가정)
+                           }} else {{
+                              alert('URL이 클립보드에 복사되었습니다.');
+                           }}
+                        }}
+                    </script>
+                    """,
+                    height=0,
+                )
+
+                # Streamlit의 toast 메시지는 네이티브 공유 성공 여부를 알 수 없으므로 URL 복사 완료를 알림
                 st.toast(L["toast_share"])
 
-                # 소셜 미디어/메신저 옵션 모의 출력
-                st.markdown("**공유 옵션 (모의):**")
-                col_soc1, col_soc2, col_soc3 = st.columns(3)
-
-                # 모의 버튼들 (실제 API 호출 대신 토스트 메시지)
-                if col_soc1.button("카카오톡", key="mock_kakaotalk"):
-                    st.toast("✅ 카카오톡 공유 링크 복사됨.")
-                if col_soc2.button("LINE", key="mock_line"):
-                    st.toast("✅ LINE 공유 링크 복사됨.")
-                if col_soc3.button("Gmail", key="mock_gmail"):
-                    st.toast("✅ Gmail 초안 생성됨.")
 
             # 4. 복사 버튼 (기능 활성화 - 콘텐츠 텍스트 복사)
-            if col_copy.button("📋", key="content_copy"):
-                # Streamlit에서 직접 JavaScript를 실행하여 복사
+            if col_copy.button("📋", key=f"content_copy_{current_content_id}"):
+                # JavaScript를 실행하여 복사 (execCommand 사용으로 안정화)
                 st.components.v1.html(
                     f"""<script>{js_copy_script}</script>""",
                     height=0,
@@ -5482,15 +5540,16 @@ elif feature_selection == L["content_tab"]:
             if more_clicked:
                 st.toast(L["toast_more"])
 
-                # 파일 옵션 모의 출력
+                # 파일 옵션 모의 출력 (버튼 배치)
                 st.markdown("**문서 옵션 (모의):**")
                 col_doc1, col_doc2, col_doc3 = st.columns(3)
 
-                if col_doc1.button("📥 PDF 저장", key="mock_pdf_save"):
+                # 다국어 레이블 적용
+                if col_doc1.button(L["mock_pdf_save"], key=f"mock_pdf_save_{current_content_id}"):  # 동적 ID 적용
                     mock_download("PDF", f"{topic}_summary.pdf")
-                if col_doc2.button("📑 Word로 열기", key="mock_word_open"):
+                if col_doc2.button(L["mock_word_open"], key=f"mock_word_open_{current_content_id}"):  # 동적 ID 적용
                     mock_download("Word", f"{topic}_summary.docx")
-                if col_doc3.button("🖨 인쇄", key="mock_print"):
+                if col_doc3.button(L["mock_print"], key=f"mock_print_{current_content_id}"):  # 동적 ID 적용
                     st.toast("🖨 브라우저 인쇄 창이 열립니다.")
 
             # --- END: 효율성 개선 ---
@@ -5502,14 +5561,6 @@ elif feature_selection == L["content_tab"]:
 
             js_copy_script = """
                 function copyToClipboard(text) {{
-                    navigator.clipboard.writeText(text).then(function() {{
-                        // Streamlit toast 호출 (모의)
-                        const elements = window.parent.document.querySelectorAll('[data-testid="stToast"]');
-                        if (elements.length === 0) {{
-                           // Fallback UI update (use Streamlit's native mechanism if possible, or simple alert)
-                            console.log("복사 완료: " + text.substring(0, 50) + "...");
-                      }}
-                   }}, function(err) {{
                        // Fallback: Copy via execCommand (deprecated but often works in Streamlit's iframe)
                        const textarea = document.createElement('textarea');
                        textarea.value = text;
@@ -5525,24 +5576,6 @@ elif feature_selection == L["content_tab"]:
                 copyToClipboard(JSON.parse('{content_json_safe}'));
             """.format(content_json_safe=content_for_js)
 
-            # --- JavaScript for SHARE Menu (Messenger Mock) ---
-            # Streamlit은 현재 소셜 미디어 API를 직접 호출할 수 없으므로, URL 복사를 사용하고 UI에 메시지 옵션을 모의합니다.
-            js_share_url_copy = """
-                function copyShareUrl() {{
-                    const url = window.location.href;
-                    navigator.clipboard.writeText(url).then(function() {{
-                        console.log('App URL copied');
-                    }}, function(err) {{
-                        // Fallback
-                        const textarea = document.createElement('textarea');
-                        textarea.value = url;
-                        document.body.appendChild(textarea);
-                        textarea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(textarea);
-                    }});
-                }}
-            """
 
 
             # --- 더 보기 메뉴 (파일 다운로드/열기 모의) ---
@@ -5553,6 +5586,7 @@ elif feature_selection == L["content_tab"]:
                 # 실제 다운로드 로직은 Streamlit 컴포넌트 환경에서는 복잡하여 생략합니다.
 
             col_like, col_dislike, col_share, col_copy, col_more = st.columns([1, 1, 1, 1, 6])
+            current_content_id = str(uuid.uuid4())
 
             # ⭐ 1. 좋아요 버튼 (기능 활성화)
             if col_like.button("👍", key="content_like"):
