@@ -182,6 +182,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "history_expander_title": "📝 이전 상담 이력 로드 (최근 10건)",
         "initial_query_sample": "프랑스 파리에 도착했는데, 클룩에서 구매한 eSIM이 활성화가 안 됩니다...",
         "button_mic_input": "🎙 음성 입력",
+        "button_mic_stop": "⏹️ 녹음 종료",
         "prompt_customer_end": "고객님의 추가 문의 사항이 없어, 이 상담을 종료합니다。",
         "prompt_survey": "지금까지 상담원 000였습니다. 즐거운 하루 되시기 바랍니다. [설문 조사 링크]",
         "customer_closing_confirm": "다른 문의 사항은 없으십니까?",
@@ -247,6 +248,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "email_provided_label": "이메일 제공",
         "phone_provided_label": "전화번호 제공",
         "region_label": "지역",
+        "btn_request_phone_summary": "이력 요약 요청",
 
         # --- 추가된 전화 발신 기능 관련 ---
         "button_call_outbound": "전화 발신",
@@ -321,6 +323,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "mic_input_status": "🎙️ 에이전트 음성 입력",
         "customer_audio_playback": "🗣️ 고객 음성 재생",
         "agent_response_prompt": "고객에게 말할 응답을 녹음하세요。",
+        "agent_response_stop_and_send": "⏹️ 녹음 종료 및 응답 전송",
         "call_end_message": "통화가 종료되었습니다. AHT 및 이력을 확인하세요。",
         "call_query_placeholder": "고객 문의 내용을 입력하세요。",
         "call_number_placeholder": "+82 10-xxxx-xxxx (가상 번호)",
@@ -407,6 +410,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "history_expander_title": "📝 Load Previous Sessions (Last 10)",
         "initial_query_sample": "I arrived in Paris but my Klook eSIM won't activate…",
         "button_mic_input": "🎙 Voice Input",
+        "button_mic_stop": "⏹️ Stop recording",
         "prompt_customer_end": "No further inquiries. Ending chat.",
         "prompt_survey": "This was Agent 000. Have a nice day. [Survey Link]",
         "customer_closing_confirm": "Is there anything else we can assist you with?",
@@ -472,6 +476,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "email_provided_label": "Email Provided",
         "phone_provided_label": "Phone Provided",
         "region_label": "Region",
+        "btn_request_phone_summary": "Request to summarize histories",
 
         # --- 추가된 전화 발신 기능 관련 ---
         "button_call_outbound": "Call Outbound",
@@ -545,6 +550,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "mic_input_status": "🎙️ Agent Voice Input",
         "customer_audio_playback": "🗣️ Customer Audio Playback",
         "agent_response_prompt": "Record your response to the customer.",
+        "agent_response_stop_and_send": "⏹️ Stop and share recording to customers",
         "call_end_message": "Call ended. Check AHT and history.",
         "call_query_placeholder": "Enter customer's initial query.",
         "call_number_placeholder": "+1 (555) 123-4567 (Mock Number)",
@@ -632,6 +638,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "history_expander_title": "📝 過去の対応履歴を読み込む (最新10件)",
         "initial_query_sample": "パリに到着しましたが、KlookのeSIMが使えません…",
         "button_mic_input": "🎙 音声入力",
+        "button_mic_stop": "⏹️ 録音終了",
         "prompt_customer_end": "追加の質問がないためチャットを終了します。",
         "prompt_survey": "担当エージェント000でした。良い一日をお過ごしください。 [アンケートリンク]",
         "customer_closing_confirm": "他のお問合せはございませんでしょうか。",
@@ -677,10 +684,27 @@ LANG: Dict[str, Dict[str, str]] = {
         "transfer_summary_intro": "これが顧客との過去のチャット履歴です。この要約に基づいてサポートを続けてください。",
         "llm_translation_error": "❌ 翻訳失敗: LLM応答エラー",
         "timer_metric": "経過時間",
-        "timer_info_ok": "AHT (15분 기준)",
-        "timer_info_warn": "AHT (10분 초과)",
-        "timer_info_risk": "🚨 15分超: 高いリスク",
+        "timer_info_ok": "AHT (15分基準)",
+        "timer_info_warn": "AHT (10分経過)",
+        "timer_info_risk": "🚨 15分経過: 高いリスク",
         "solution_check_label": "✅ この応答に解決策/対応策が含まれています。",
+        "sentiment_score_label": "顧客の感情スコア",  # <--- 추가/수정
+        "urgency_score_label": "緊急度スコア",
+        "similarity_chart_title": "類似性ケースの比率",
+        "scores_comparison_title": "感情及び満足度のスコア",
+        "similarity_score_label": "類似性",
+        "satisfaction_score_label": "満足度",
+        "sentiment_trend_label": "感情のスコアの推測",
+        "satisfaction_trend_label": "満足度のスコアの推測",
+        "case_trends_title": "過去に推定されたスコア",
+        "date_label": "日付",
+        "score_label": "スコア (0-100)",
+        "customer_characteristics_title": "顧客の性格",
+        "language_label": "言語",
+        "email_provided_label": "提供されたメールアドレス",
+        "phone_provided_label": "提供された電話番号",
+        "region_label": "地域",
+        "btn_request_phone_summary": "履歴を要約する",
 
         # --- 추가된 전화 발신 기능 관련 ---
         "button_call_outbound": "電話発信",
@@ -754,6 +778,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "mic_input_status": "🎙️ エージェントの音声入力",
         "customer_audio_playback": "🗣️ 顧客の音声再生",
         "agent_response_prompt": "顧客への応答を録音してください。",
+        "agent_response_stop_and_send": "⏹️録音を終了して、顧客へ転送する",
         "call_end_message": "通話が終了しました。AHTと履歴を確認してください。",
         "call_query_placeholder": "顧客からの最初の問い合わせ内容を入力してください。",
         "call_number_placeholder": "+81 90-xxxx-xxxx (仮想番号)",
@@ -1184,8 +1209,8 @@ else:
 def translate_text_with_llm(text_content: str, target_lang_code: str, source_lang_code: str) -> str:
     """
     주어진 텍스트를 LLM을 사용하여 대상 언어로 번역합니다. (안정화된 텍스트 출력)
+    **수정 사항:** LLM Fallback 순서를 OpenAI 우선으로 조정하고, 응답이 비어있을 경우 명시적인 오류 메시지를 반환하도록 변경
     """
-    target_lang = LANG.get(target_lang_code, {})
     target_lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(target_lang_code, "English")
     source_lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(source_lang_code, "English")
 
@@ -1199,50 +1224,63 @@ def translate_text_with_llm(text_content: str, target_lang_code: str, source_lan
     )
     prompt = f"Original Chat History:\n\n{text_content}"
 
-    # LLM Fallback 순서: OpenAI (가장 안정적) -> Gemini -> Claude
+    # LLM Fallback 순서: OpenAI -> Gemini -> Claude (OpenAI를 최우선으로 조정)
     llm_attempts = [
-        ("openai", get_api_key("openai"), "gpt-4o"),
-        ("gemini", get_api_key("gemini"), "gemini-2.5-flash"),
-        ("claude", get_api_key("claude"), "claude-3-5-sonnet-latest"),
+        ("openai", get_api_key("openai"), "gpt-4o"),  # 1순위: OpenAI (가장 안정적)
+        ("gemini", get_api_key("gemini"), "gemini-2.5-flash"),  # 2순위
+        ("claude", get_api_key("claude"), "claude-3-5-sonnet-latest"),  # 3순위
     ]
 
+    last_error = ""
+
     for provider, key, model_name in llm_attempts:
-        if key:
-            try:
-                # 1. LLM 호출
-                if provider == "gemini":
-                    genai.configure(api_key=key)
-                    gen_model = genai.GenerativeModel(model_name)
-                    response = gen_model.generate_content(
-                        contents=system_prompt,  # system_prompt를 user content로 사용
-                    )
-                    return response.text.strip()
+        if not key: continue
 
-                if provider == "openai":
-                    o_client = OpenAI(api_key=key)
-                    resp = o_client.chat.completions.create(
-                        model=model_name,
-                        messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
-                        temperature=0.1
-                    )
-                    return resp.choices[0].message.content.strip()
+        try:
+            translated_text = ""
 
-                elif provider == "claude":
-                    from anthropic import Anthropic
-                    c_client = Anthropic(api_key=key)
-                    resp = c_client.messages.create(
-                        model=model_name,
-                        messages=[{"role": "user", "content": prompt}],
-                        system=system_prompt
-                    )
-                    return resp.content[0].text.strip()
+            if provider == "openai":
+                o_client = OpenAI(api_key=key)
+                resp = o_client.chat.completions.create(
+                    model=model_name,
+                    messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
+                    temperature=0.1
+                )
+                translated_text = resp.choices[0].message.content.strip()
 
-            except Exception as e:
-                print(f"Translation API call failed with {provider}: {e}")
-                continue
+            elif provider == "gemini":
+                genai.configure(api_key=key)
+                g_model = genai.GenerativeModel(model_name)
+                resp = g_model.generate_content(
+                    contents=prompt,
+                    config=genai.types.GenerateContentConfig(system_instruction=system_prompt, temperature=0.1)
+                )
+                translated_text = resp.text.strip()
 
-                # 모든 시도가 실패하면 빈 문자열 반환 (UI 오류 방지)
-    return ""
+            elif provider == "claude":
+                from anthropic import Anthropic
+                c_client = Anthropic(api_key=key)
+                resp = c_client.messages.create(
+                    model=model_name,
+                    messages=[{"role": "user", "content": prompt}],
+                    system=system_prompt
+                )
+                translated_text = resp.content[0].text.strip()
+
+            # 번역 결과가 유효한지 확인
+            if translated_text:
+                return translated_text
+            else:
+                last_error = f"Translation failed: {provider} returned empty response."
+                continue  # 다음 LLM 시도
+
+        except Exception as e:
+            last_error = f"Translation API call failed with {provider} ({model_name}): {e}"  # 모델명 추가
+            print(last_error)
+            continue  # 다음 LLM 시도
+
+    # 모든 시도가 실패했을 때, 상세 오류 메시지 반환
+    return f"❌ Translation Error: All LLM attempts failed. Last error: {last_error or 'No active API key found.'}"
 
 
 # ----------------------------------------
@@ -3864,7 +3902,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
         with col_mic:
             mic_audio = mic_recorder(
                 start_prompt=L["button_mic_input"],
-                stop_prompt="⏹️ 녹음 종료",
+                stop_prompt=L["button_mic_stop"],
                 just_once=False,
                 format="wav",
                 use_container_width=True,
@@ -4663,7 +4701,7 @@ elif feature_selection == L["sim_tab_phone"]:
         col_sum_btn, col_trans_btn = st.columns(2)
 
         with col_sum_btn:
-            if st.button("💡 이력 요약 요청", key="btn_request_phone_summary"):
+            if st.button(L["btn_request_phone_summary"], key="btn_request_phone_summary"):
                 # 요약 함수 호출
                 st.session_state.customer_history_summary = summarize_history_with_ai(st.session_state.language)
                 # st.rerun()
@@ -4749,7 +4787,7 @@ elif feature_selection == L["sim_tab_phone"]:
             # ✅ 마이크 위젯을 항상 렌더링하여 활성화 상태를 유지
             mic_audio = mic_recorder(
                 start_prompt=L["agent_response_prompt"],
-                stop_prompt="⏹️ 녹음 종료 및 응답 전송",
+                stop_prompt=L["agent_response_stop_and_send"],
                 just_once=True,
                 format="wav",
                 use_container_width=True,
