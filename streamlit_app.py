@@ -1665,21 +1665,17 @@ def synthesize_tts(text: str, lang_key: str, role: str = "agent"):
 def render_tts_button(text, lang_key, role="customer", prefix="", index: int = -1):
     L = LANG[lang_key]
 
-    # ⭐ 수정: index=-1인 경우, 매 실행마다 고유한 UUID를 사용하여 키 충돌 방지
+    # ⭐ 수정: index=-1인 경우, UUID를 사용하여 safe_key 생성
     if index == -1:
-        # 고유성 확보: prefix + 텍스트 해시 + 매 실행마다 달라지는 UUID
+        # 이관 요약처럼 인덱스가 고정되지 않는 경우, 텍스트 해시와 세션 인스턴스 ID를 조합
         content_hash = hashlib.md5(text[:100].encode()).hexdigest()
-        unique_run_id = str(uuid.uuid4())  # 매 실행마다 새로운 ID 생성
         session_id_part = st.session_state.get('sim_instance_id', 'default_session')
+        # ⭐ 최종 수정: 키에 Session ID와 나노초를 조합하여 매번 고유성을 보장합니다.
         safe_key = f"{prefix}_SUMMARY_{session_id_part}_{content_hash}_{time.time_ns()}"
     else:
         # 대화 로그처럼 인덱스가 존재하는 경우 (기존 로직 유지)
         content_hash = hashlib.md5(text[:100].encode()).hexdigest()
         safe_key = f"{prefix}_{index}_{content_hash}"
-
-    # 텍스트의 해시값과 고유 인덱스를 결합하여 키 생성
-    # content_hash = hashlib.md5(text[:100].encode()).hexdigest()
-    # safe_key = f"{prefix}_{index}_{content_hash}"
 
     # 재생 버튼을 누를 때만 TTS 요청
     if st.button(L["button_listen_audio"], key=safe_key):
@@ -1688,16 +1684,25 @@ def render_tts_button(text, lang_key, role="customer", prefix="", index: int = -
             return  # 키 없으면 종료
 
         with st.spinner(L["tts_status_generating"]):
-            audio_bytes, msg = synthesize_tts(text, lang_key, role=role)
-            if audio_bytes:
-                st.audio(audio_bytes, format="audio/mp3", autoplay=True)  # ⭐ autoplay=True 유지
-                st.success(msg)
-                # ⭐ 수정: 재생이 시작될 충분한 시간을 확보하기 위해 대기 시간을 2초로 늘림
-                time.sleep(2)
-            else:
-                st.error(msg)
-                time.sleep(1)  # 에러 발생 시도 잠시 대기
+            try:
+                audio_bytes, msg = synthesize_tts(text, lang_key, role=role)
+                if audio_bytes:
+                    # ⭐ st.audio 호출 시 성공한 경우에만 재생 시간을 확보
+                    st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+                    st.success(msg)
+                    # ⭐ 수정: 재생이 시작될 충분한 시간을 확보하기 위해 대기 시간을 3초로 늘림
+                    time.sleep(3)
+                else:
+                    st.error(msg)
+                    time.sleep(1)  # 에러 발생 시도 잠시 대기
+            except Exception as e:
+                # TTS API 호출 자체에서 예외 발생 시 (네트워크 등)
+                st.error(f"❌ TTS 생성 중 치명적인 오류 발생: {e}")
+                time.sleep(1)
 
+            # 버튼 클릭 이벤트 후, 불필요한 재실행을 막기 위해 여기서 함수 종료
+            return
+        # [중략: TTS Helper 끝]
 
 # ========================================
 # 4. 로컬 음성 기록 Helper
@@ -2134,20 +2139,19 @@ def rag_answer(question: str, vectorstore: FAISS, lang_key: str) -> str:
     docs = retriever.get_relevant_documents(question)
     context = "\n\n".join(d.page_content[:1500] for d in docs)
 
-    # ⭐ 수정된 부분: 질문 언어를 감지하여 답변 언어를 강제합니다.
-    # LLM에게 '질문의 언어'로 답변하라고 명시적으로 지시합니다.
+    # ⭐ RAG 다국어 인식 오류 해결: 답변 생성 모델에게 질문 언어로 일관되게 답하도록 강력히 지시
     lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(lang_key, "English")
 
     prompt = (
-            "You are a helpful AI tutor. Answer the question using ONLY the provided context.\n"
-            "If you cannot find the answer in the context, say you don't know.\n"
-            f"Answer STRICTLY in the language of the question (Assume the question's language is {lang_name}).\n\n"
+            f"You are a helpful AI tutor. Answer the question using ONLY the provided context.\n"
+            f"The answer MUST be STRICTLY in {lang_name}, which is the language of the question.\n"
+            f"If you cannot find the answer in the context, say you don't know in {lang_name}.\n"
+            f"Note: The context may be in a different language, but you must still answer in {lang_name}.\n\n"
             "Question:\n" + question + "\n\n"
-                                       "Context:\n" + context + "\n\n"
-                                                                "Answer:"
+            "Context:\n" + context + "\n\n"
+            f"Answer (in {lang_name}):"
     )
     return run_llm(prompt)
-
 
 # ========================================
 # 7. LSTM Helper (간단 Mock + 시각화)
