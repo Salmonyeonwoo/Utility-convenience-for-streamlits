@@ -1683,14 +1683,20 @@ def render_tts_button(text, lang_key, role="customer", prefix="", index: int = -
 
     # 재생 버튼을 누를 때만 TTS 요청
     if st.button(L["button_listen_audio"], key=safe_key):
+        if not st.session_state.openai_client:
+            st.error(L["openai_missing"])
+            return  # 키 없으면 종료
+
         with st.spinner(L["tts_status_generating"]):
             audio_bytes, msg = synthesize_tts(text, lang_key, role=role)
             if audio_bytes:
-                st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+                st.audio(audio_bytes, format="audio/mp3", autoplay=True)  # ⭐ autoplay=True 유지
                 st.success(msg)
-                time.sleep(1)  # ⭐ 재생 안정성을 위한 1초 대기 추가
+                # ⭐ 수정: 재생이 시작될 충분한 시간을 확보하기 위해 대기 시간을 2초로 늘림
+                time.sleep(2)
             else:
                 st.error(msg)
+                time.sleep(1)  # 에러 발생 시도 잠시 대기
 
 
 # ========================================
