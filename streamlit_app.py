@@ -4910,6 +4910,7 @@ elif feature_selection == L["sim_tab_phone"]:
                     if audio_bytes:
                         st.audio(audio_bytes, format="audio/mp3", autoplay=True)
                         st.success("✅ 에이전트 인사말 자동 재생 완료")
+                        time.sleep(1)
                     else:
                         st.error(f"❌ TTS 오류: {msg}")
 
@@ -4923,7 +4924,43 @@ elif feature_selection == L["sim_tab_phone"]:
             st.session_state.customer_avatar["state"] = "NEUTRAL"
             st.session_state.just_entered_call = False
 
-        # ------------------------------
+            # ----------------------------------------------------
+            # ⭐ [CRITICAL FIX] 인사말 후 고객의 첫 문의 메시지 재생
+            # ----------------------------------------------------
+
+            customer_first_utterance = st.session_state.call_initial_query.strip()
+
+            # 고객의 첫 문의 TTS 음성 생성 및 재생
+            if st.session_state.openai_client and customer_first_utterance:
+                with st.spinner(L["tts_status_generating"] + " (Customer Initial Query)"):
+                    audio_bytes, msg = synthesize_tts(
+                        customer_first_utterance, st.session_state.language, role="customer"
+                    )
+                    if audio_bytes:
+                        st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+                        st.success("✅ 고객의 최초 문의 자동 재생 완료")
+                    else:
+                        st.error(f"❌ TTS 오류: {msg}")
+
+            # 3. 고객의 첫 문의 CC에 반영 (에이전트가 들었음을 시뮬레이션)
+            st.session_state.current_customer_audio_text = customer_first_utterance
+
+            # 4. 로그에 고객 문의 기록 (이전 에이전트 인사말과의 교환으로 간주)
+            log_entry = f"Agent (Greeting): {agent_greeting} | Customer (Initial Query): {customer_first_utterance}"
+            # 기존의 "agent" 역할 메시지를 삭제하고, 교환 로그로 대체
+            st.session_state.simulator_messages = [
+            msg for msg in st.session_state.simulator_messages if msg.get("role") != "agent"
+            ]
+            st.session_state.simulator_messages.append({"role": "phone_exchange", "content": log_entry})
+
+            # 아바타 표정 초기화
+            st.session_state.customer_avatar["state"] = "NEUTRAL"
+            st.session_state.just_entered_call = False
+
+            # 5. rerun하여 CC 영역에 고객의 문의가 보이도록 하고, 에이전트 녹음을 대기함
+            st.rerun()
+
+                        # ------------------------------
         # 전화 통화 제목
         # ------------------------------
         if st.session_state.call_sim_mode == "INBOUND":
@@ -5270,7 +5307,7 @@ elif feature_selection == L["sim_tab_phone"]:
                     # ✅ 고객 반응 후 확실하게 재실행
                     # st.rerun()
 
-        
+
 
     # ========================================
     # CALL_ENDED 상태
