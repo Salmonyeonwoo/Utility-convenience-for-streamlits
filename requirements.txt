@@ -40,6 +40,7 @@ streamlit-webrtc
 opencv-python-headless
 protobuf
 requests
+streamlit-lottie
 tqdm
 markdown-it-py
 rich<14,>=10.14.0
