@@ -23,6 +23,7 @@ PyPDF2
 psutil
 paddlepaddle
 paddlenlp
+langchain-text-splitters
 
 # Docs / Parsing
 
