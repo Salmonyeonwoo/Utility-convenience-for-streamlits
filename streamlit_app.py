@@ -1333,13 +1333,24 @@ def init_openai_audio_client():
 
 # ⭐ 최적화: LLM 클라이언트 초기화 캐싱 (매번 재생성하지 않도록)
 # OpenAI 클라이언트 캐싱
+# ⭐ 수정: 초기화 시 블로킹 방지를 위해 try-except 추가
 if "openai_client" not in st.session_state or st.session_state.openai_client is None:
-    st.session_state.openai_client = init_openai_audio_client()
+    try:
+        st.session_state.openai_client = init_openai_audio_client()
+    except Exception as e:
+        st.session_state.openai_client = None
+        print(f"OpenAI 클라이언트 초기화 중 오류 (무시됨): {e}")
 
 # LLM 준비 상태 캐싱 (API 키 변경 시에만 재확인)
+# ⭐ 수정: 초기화 시 블로킹 방지를 위해 try-except 추가
 if "is_llm_ready" not in st.session_state or "llm_ready_checked" not in st.session_state:
-    probe_client, _ = get_llm_client()
-    st.session_state.is_llm_ready = probe_client is not None
+    try:
+        probe_client, _ = get_llm_client()
+        st.session_state.is_llm_ready = probe_client is not None
+    except Exception as e:
+        # 초기화 실패 시에도 앱이 계속 실행되도록 False로 설정
+        st.session_state.is_llm_ready = False
+        print(f"LLM 초기화 중 오류 (무시됨): {e}")
     st.session_state.llm_ready_checked = True
 
 # API 키 변경 감지를 위한 해시 체크
@@ -1351,11 +1362,20 @@ if "api_keys_hash" not in st.session_state:
     st.session_state.api_keys_hash = current_api_keys_hash
 elif st.session_state.api_keys_hash != current_api_keys_hash:
     # API 키가 변경된 경우만 재확인
-    probe_client, _ = get_llm_client()
-    st.session_state.is_llm_ready = probe_client is not None
+    # ⭐ 수정: 초기화 시 블로킹 방지를 위해 try-except 추가
+    try:
+        probe_client, _ = get_llm_client()
+        st.session_state.is_llm_ready = probe_client is not None
+    except Exception as e:
+        st.session_state.is_llm_ready = False
+        print(f"LLM 재초기화 중 오류 (무시됨): {e}")
     st.session_state.api_keys_hash = current_api_keys_hash
     # OpenAI 클라이언트도 재초기화
-    st.session_state.openai_client = init_openai_audio_client()
+    try:
+        st.session_state.openai_client = init_openai_audio_client()
+    except Exception as e:
+        st.session_state.openai_client = None
+        print(f"OpenAI 클라이언트 재초기화 중 오류 (무시됨): {e}")
 
 if st.session_state.openai_client:
     # 키를 찾았고 클라이언트 객체는 생성되었으나, 실제 인증은 API 호출 시 이루어짐 (401 오류는 여기서 발생)
@@ -3486,8 +3506,13 @@ with st.sidebar:
         # 전화 발신 관련 상태 초기화
         st.session_state.sim_call_outbound_summary = ""
         st.session_state.sim_call_outbound_target = None
-        # ⭐ 언어 변경 시 재실행
-        st.rerun()
+        # ⭐ 언어 변경 시 재실행 - 무한 루프 방지를 위해 플래그 사용
+        if "language_changed" not in st.session_state or not st.session_state.language_changed:
+            st.session_state.language_changed = True
+            st.rerun()
+        else:
+            # 이미 한 번 재실행했으면 플래그 초기화
+            st.session_state.language_changed = False
 
     L = LANG[st.session_state.language]
 
@@ -5899,7 +5924,7 @@ elif feature_selection == L["rag_tab"]:
             if st.button(L["button_start_analysis"]):
                 if not st.session_state.is_llm_ready:
                     st.error(L["simulation_no_key_warning"])
-                    # st.stop()
+                    st.stop()
 
                 with st.spinner(L["data_analysis_progress"]):
                     vectorstore, count = build_rag_index(uploaded_files)
@@ -6097,10 +6122,10 @@ elif feature_selection == L["content_tab"]:
                 if generated_json_text:
                     st.text_area(L["quiz_original_response"], generated_json_text, height=200)
                 # st.stop() 제거: 에러 표시 후 계속 진행
-            # --- END: JSON Parsing and Error Handling Logic ---
+                # --- END: JSON Parsing and Error Handling Logic ---
 
                 else:  # 일반 텍스트 생성
-                     st.session_state.is_quiz_active = False
+                    st.session_state.is_quiz_active = False
                 with st.spinner(L["response_generating"]):
                     content = run_llm(system_prompt)
                 st.session_state.generated_content = content
