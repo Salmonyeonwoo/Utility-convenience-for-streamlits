@@ -13,7 +13,7 @@ langchain-community
 langchain-openai
 langchain-google-genai
 langchain-nvidia-ai-endpoints
-langchain-text-splitters
+
 
 # 전사 및 오디오
 streamlit-mic-recorder
