@@ -166,9 +166,10 @@ def load_lottie_json(filename: str):
             return "https://lottie.host/c3a0680a-9d9f-4df0-b21a-e99d25514f7b/69493-call-centre-support-agent.json"
 
     except Exception as e:
-        st.error(f"❌ Lottie 파일 로딩 오류: {filename} ({e})")
-        # 오류 발생 시 기본 URL 반환
-        return "https://lottie.host/c3a0680a-9d9f-4df0-b21a-e99d25514f7b/69493-call-centre-support-agent.json"
+        # ⭐ 수정: 초기화 단계에서 블로킹 방지를 위해 st.error 대신 print 사용
+        print(f"⚠️ Lottie 파일 로딩 오류 (무시됨): {filename} ({e})")
+        # 오류 발생 시 기본 URL 반환 (없으면 None 반환하여 대체 UI 표시)
+        return None
 
 
 # Lottie 파일 읽기 (사용하지 않음)
@@ -5137,23 +5138,38 @@ elif feature_selection == L["sim_tab_phone"]:
             # ⭐ [수정 3]: get_lottie_avatar_path 대신 get_lottie_avatar_filename 사용
             lottie_filename = get_lottie_avatar_filename(avatar_state)
 
-            # ⭐ [수정 4]: 로딩 함수가 Content Fetch ID를 반환하도록 수정
-            lottie_path_id = load_lottie_json(lottie_filename)
-
-            # ⭐ [수정 5]: st_lottie에 Content Fetch ID를 전달
-            if lottie_path_id:
+            # ⭐ [수정]: Lottie 로딩 실패 시에도 앱이 계속 실행되도록 안전하게 처리
+            if IS_LOTTIE_AVAILABLE:
                 try:
-                    # Content Fetch ID를 JSON 객체로 가정하고 로드합니다.
-                    # st_lottie가 Content Fetch ID를 직접 지원해야 합니다.
-                    st_lottie(
-                        lottie_path_id,  # 이제 이 값은 "uploaded:avatar_xxx.json" 형태의 ID입니다.
-                        height=280,
-                        key=f"lottie_{avatar_state}"
-                    )
+                    # ⭐ [수정 4]: 로딩 함수가 Content Fetch ID를 반환하도록 수정
+                    lottie_path_id = load_lottie_json(lottie_filename)
+
+                    # ⭐ [수정 5]: st_lottie에 Content Fetch ID를 전달
+                    if lottie_path_id:
+                        try:
+                            # Content Fetch ID를 JSON 객체로 가정하고 로드합니다.
+                            # st_lottie가 Content Fetch ID를 직접 지원해야 합니다.
+                            st_lottie(
+                                lottie_path_id,  # 이제 이 값은 "uploaded:avatar_xxx.json" 형태의 ID입니다.
+                                height=280,
+                                key=f"lottie_{avatar_state}"
+                            )
+                        except Exception as e:
+                            # Lottie 렌더링 실패 시에도 앱이 계속 실행되도록 에러만 표시
+                            st.warning(f"⚠️ 아바타 애니메이션 로딩 실패 (무시됨): {e}")
+                            # 대체 UI 표시
+                            st.info("📺 고객 아바타 (애니메이션 로딩 실패)")
+                    else:
+                        # 경로 오류 시에도 앱이 계속 실행되도록 경고만 표시
+                        st.warning("⚠️ 아바타 애니메이션 경로를 찾을 수 없습니다.")
+                        st.info("📺 고객 아바타 (기본 모드)")
                 except Exception as e:
-                    st.error(f"❌ 아바타 애니메이션 로딩 실패 (컴포넌트 오류): {e}")
+                    # Lottie 로딩 중 예외 발생 시에도 앱이 계속 실행되도록
+                    st.warning(f"⚠️ 아바타 애니메이션 초기화 실패 (무시됨): {e}")
+                    st.info("📺 고객 아바타 (기본 모드)")
             else:
-                st.error("❌ 아바타 애니메이션 로딩 실패 (경로 오류)")
+                # Lottie 패키지가 설치되지 않은 경우
+                st.info("📺 고객 아바타 (Lottie 패키지 미설치)")
 
     with col_cc:
         st.markdown(
