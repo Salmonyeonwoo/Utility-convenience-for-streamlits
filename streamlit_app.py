@@ -4148,7 +4148,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             st.session_state.sim_call_outbound_target = None
             # ⭐ 재실행
             # st.rerun()
-        st.stop()
+        # st.stop()
 
     # =========================
     # 5-A. 전화 발신 진행 중 (OUTBOUND_CALL_IN_PROGRESS)
@@ -4257,12 +4257,12 @@ elif feature_selection == L["sim_tab_chat_email"]:
         if st.button(L["button_simulate"], key=f"btn_simulate_initial_{st.session_state.sim_instance_id}"):  # 고유 키 사용
             if not customer_query.strip():
                 st.warning(L["simulation_warning_query"])
-                st.stop()
+                # st.stop()
 
             # --- 필수 입력 필드 검증 (요청 3 반영: 검증 로직 추가) ---
             if not st.session_state.customer_email.strip() or not st.session_state.customer_phone.strip():
                 st.error(L["error_mandatory_contact"])
-                st.stop()
+                # st.stop()
             # ------------------------------------------
 
             # 초기 상태 리셋
@@ -4659,7 +4659,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
 
             if not agent_response:
                 st.warning(L["empty_response_warning"])
-                st.stop()
+                # st.stop()
 
             # AHT 타이머 시작
             if st.session_state.start_time is None and len(st.session_state.simulator_messages) >= 1:
@@ -4708,7 +4708,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             # API 키 체크는 run_llm 내부에서 처리되지만, 명시적으로 Gemini 키를 요구함
             if not get_api_key("gemini"):
                 st.error(LANG[current_lang]["simulation_no_key_warning"].replace('API Key', 'Gemini API Key'))
-                st.stop()
+                # st.stop()
                 return
 
             current_lang_at_start = st.session_state.language  # Source language
@@ -5187,11 +5187,11 @@ elif feature_selection == L["sim_tab_phone"]:
                 # 입력 검증
                 if not st.session_state.call_initial_query.strip():
                     st.warning(L["simulation_warning_query"])
-                    st.stop()
+                    # st.stop()
 
                 if not st.session_state.is_llm_ready or st.session_state.openai_client is None:
                     st.error(L["simulation_no_key_warning"] + " " + L["openai_missing"])
-                    st.stop()
+                    # st.stop()
 
                 # INBOUND 모드 설정
                 st.session_state.call_sim_mode = "INBOUND"
@@ -5252,11 +5252,11 @@ elif feature_selection == L["sim_tab_phone"]:
                 # 입력 검증
                 if not st.session_state.call_initial_query.strip():
                     st.warning("전화 발신 목표 (고객 문의 내용)를 입력해 주세요。")
-                    st.stop()
+                    # st.stop()
 
                 if not st.session_state.is_llm_ready or st.session_state.openai_client is None:
                     st.error(L["simulation_no_key_warning"] + " " + L["openai_missing"])
-                    st.stop()
+                    # st.stop()
 
                 # OUTBOUND 모드 설정 및 시뮬레이션 시작
                 st.session_state.call_sim_mode = "OUTBOUND"
@@ -5899,7 +5899,7 @@ elif feature_selection == L["rag_tab"]:
             if st.button(L["button_start_analysis"]):
                 if not st.session_state.is_llm_ready:
                     st.error(L["simulation_no_key_warning"])
-                    st.stop()
+                    # st.stop()
 
                 with st.spinner(L["data_analysis_progress"]):
                     vectorstore, count = build_rag_index(uploaded_files)
