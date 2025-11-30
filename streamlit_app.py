@@ -5313,9 +5313,9 @@ elif feature_selection == L["sim_tab_phone"]:
                         # Streamlit 문서: autoplay는 브라우저 정책상 제한될 수 있음
                         try:
                             st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
-                        st.success("✅ 에이전트 인사말 자동 재생 완료. 고객 문의 재생을 준비합니다.")
-                        # ⭐ 수정: TTS 동기화 문제 방지를 위해 짧은 대기 후 rerun
-                        time.sleep(1)
+                            st.success("✅ 에이전트 인사말 자동 재생 완료. 고객 문의 재생을 준비합니다.")
+                            # ⭐ 수정: TTS 동기화 문제 방지를 위해 짧은 대기 후 rerun
+                            time.sleep(1)
                         except Exception as e:
                             st.warning(f"자동 재생 실패 (브라우저 정책): {e}. 수동으로 재생해주세요.")
                             st.audio(audio_bytes, format="audio/mp3", autoplay=False)
