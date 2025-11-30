@@ -78,13 +78,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
-# ⭐ Lottie 제거: 로딩 문제로 인해 완전히 제거
-# try:
-#     from streamlit_lottie import st_lottie
-#     IS_LOTTIE_AVAILABLE = True
-# except Exception:
-#     IS_LOTTIE_AVAILABLE = False
-IS_LOTTIE_AVAILABLE = False
+
 
 try:
     from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -119,28 +113,6 @@ os.makedirs(RAG_INDEX_DIR, exist_ok=True)
 
 
 
-
-# ========================================
-# ⭐ Lottie Loader 제거: 로딩 문제로 인해 완전히 제거
-# ========================================
-# def load_lottie_json(filename: str):
-#     """Lottie 파일 로더 - 제거됨"""
-#     return None
-
-
-# Lottie 파일 읽기 (사용하지 않음)
-def load_lottie(path):
-    # 이 함수는 사용하지 않도록 주석 처리합니다.
-    return None
-
-
-# lottie_avatar = load_lottie("assets/lottie/avatar_ai_specialist.json")
-
-
-# 화면에 출력
-# st_lottie(lottie_avatar, height=280, key="ai_avatar")
-
-
 # ----------------------------------------
 # JSON Helper
 # ----------------------------------------
@@ -159,12 +131,7 @@ def _save_json(path: str, data: Any):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-# ==================================================
-# ⭐ Lottie 기반 고객 아바타 상태 선택 시스템 제거
-# ==================================================
-# def get_lottie_avatar_filename(state: str):
-#     """Lottie 아바타 파일명 반환 함수 - 제거됨"""
-#     return None
+
 
 
 # ========================================
@@ -2408,108 +2375,7 @@ def load_or_train_lstm():
     return ts
 
 
-# ⭐ Lottie 제거: 로딩 문제로 인해 완전히 제거
-# Mock Image URLs for Animation (Placeholder 사용)
-# LOTTIE_RESOURCES = {
-#     "MALE_NEUTRAL": "https://lottie.host/...",
-#     "MALE_ANGRY": "https://lottie.host/...",
-#     "FEMALE_NEUTRAL": "https://lottie.host/...",
-#     "FEMALE_ANGRY": "https://lottie.host/...",
-#     "ON_HOLD": "https://lottie.host/...",
-#     "FALLBACK": "https://lottie.host/...",
-# }
-LOTTIE_RESOURCES = {}  # 빈 딕셔너리로 설정
 
-
-# ========================================
-# ⭐ 이미지 생성 기능 (Gemini)
-# ========================================
-
-def generate_avatar_image(prompt: str, size: str = "400x400") -> Union[str, None]:
-    """Gemini Image API를 사용하여 Base64 인코딩된 이미지를 생성합니다."""
-    # nano-banana 모델은 gemini-2.5-flash-image-preview를 의미합니다.
-    # 안전성을 위해 기본 이미징 모델인 imagen-4.0-generate-001을 사용합니다.
-
-    key = get_api_key("gemini")
-    if not key:
-        return None
-
-    # Payload for image generation
-    payload = {
-        "instances": {
-            "prompt": prompt,
-        },
-        "parameters": {
-            "sampleCount": 1,
-            "output_size": size,
-            "aspect_ratio": "1:1"
-        }
-    }
-
-    # API Endpoint (Imagen 4.0 Predict Endpoint)
-    apiUrl = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key={key}"
-
-    try:
-        response = requests.post(apiUrl, json=payload)
-        response.raise_for_status()  # HTTP 오류 발생 시 예외 발생
-        result = response.json()
-
-        if result.get('predictions') and len(result['predictions']) > 0:
-            # Base64 encoded PNG data
-            base64_data = result['predictions'][0]['bytesBase64Encoded']
-            return f"data:image/png;base64,{base64_data}"
-        else:
-            print("Image generation failed: No predictions returned.")
-            return None
-    except requests.exceptions.RequestException as e:
-        print(f"Image API call failed: {e}")
-        return None
-    except Exception as e:
-        print(f"General Image Generation Error: {e}")
-        return None
-
-
-# ⭐ 통화 시작 시 아바타 이미지 생성 (Session State에 저장)
-if "avatar_images" not in st.session_state:
-    st.session_state.avatar_images = {}
-
-
-def ensure_avatar_images_exist():
-    """아바타 이미지가 세션 상태에 없으면 생성 (최초 1회만 호출)"""
-    if st.session_state.avatar_images:
-        return
-
-    st.subheader("아바타 이미지 생성 중 (최초 1회)")
-    st.info("애니메이션 아바타의 이미지를 생성하고 있습니다. 몇 초 소요될 수 있습니다.")
-
-    avatar_prompts = {
-        "MALE_NEUTRAL": "A professional customer service agent, male, in 2D anime style, facing forward with a neutral, calm expression. Minimalist background.",
-        "MALE_ANGRY": "A professional customer service agent, male, in 2D anime style, facing forward with a clearly frustrated and slightly angry expression. Minimalist background.",
-        "FEMALE_NEUTRAL": "A professional customer service agent, female, in 2D anime style, facing forward with a neutral, friendly expression. Minimalist background.",
-        "FEMALE_ANGRY": "A professional customer service agent, female, in 2D anime style, facing forward with a clearly frustrated and slightly angry expression. Minimalist background.",
-    }
-
-    placeholder = st.empty()
-    new_images = {}
-
-    with placeholder.container():
-        st.info("이미지 생성 시작...")
-
-        for key, prompt in avatar_prompts.items():
-            if get_api_key("gemini"):  # Gemini 키를 사용하여 이미지 생성
-                image_url = generate_avatar_image(prompt)
-                new_images[key] = image_url if image_url else "PLACEHOLDER_FAILED"
-            else:
-                # LLM 키가 없을 경우 placeholder 유지 (Lottie 제거로 인해 기본값 사용)
-                new_images[key] = "https://placehold.co/400x400/cccccc/ffffff?text=Avatar"  # 기본 placeholder
-
-    st.session_state.avatar_images = new_images
-    placeholder.empty()
-    # 생성된 이미지 중 Placeholder가 남아있는지 확인하여 경고 표시
-    if any(url.startswith("https://placehold.co") for url in new_images.values()):
-        st.warning("⚠️ Gemini API 키가 없거나 이미지 생성에 실패했습니다. Placeholder 이미지를 사용합니다.")
-    else:
-        st.success("아바타 이미지 생성 완료.")
 
 
 # ========================================
@@ -4942,9 +4808,7 @@ elif feature_selection == L["sim_tab_phone"]:
     current_lang = st.session_state.language
     L = LANG[current_lang]
 
-    # ⭐ Lottie 제거: 로딩 문제로 인해 완전히 제거
-    # if not IS_LOTTIE_AVAILABLE:
-    #     st.error("❌ Lottie 애니메이션을 사용하려면 'pip install streamlit-lottie'가 필요합니다。")
+
 
     # ========================================
     # AHT 타이머 (IN_CALL 상태에서만 동작)
