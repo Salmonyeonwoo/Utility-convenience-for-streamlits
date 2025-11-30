@@ -57,19 +57,21 @@ except ImportError:
     )
 from langchain_core.prompts import PromptTemplate
 try:
-    from langchain.memory import ConversationBufferMemory
-    from langchain.chains import ConversationChain
+from langchain.memory import ConversationBufferMemory
 except ImportError:
-    # 최신 LangChain에서는 langchain-core로 이동했을 수 있음
-    try:
-        from langchain_core.memory import ConversationBufferMemory
-        from langchain_core.chains import ConversationChain
-    except ImportError:
-        raise ImportError(
-            "❌ 'langchain' 또는 'langchain-core' 패키지에서 memory/chains 모듈을 찾을 수 없습니다.\n"
-            "다음 명령어로 설치해주세요: pip install langchain langchain-core\n"
-            "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
-        )
+    raise ImportError(
+        "❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.memory' 모듈을 찾을 수 없습니다.\n"
+        "다음 명령어로 설치해주세요: pip install langchain\n"
+        "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
+    )
+try:
+from langchain.chains import ConversationChain
+except ImportError:
+    raise ImportError(
+        "❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.chains' 모듈을 찾을 수 없습니다.\n"
+        "다음 명령어로 설치해주세요: pip install langchain\n"
+        "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
+    )
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -1823,9 +1825,9 @@ def render_tts_button(text, lang_key, role="customer", prefix="", index: int = -
                     # Streamlit 문서: autoplay는 브라우저 정책상 사용자 상호작용 없이는 작동하지 않을 수 있음
                     try:
                         st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
-                        st.success(msg)
-                        # ⭐ 수정: 재생이 시작될 충분한 시간을 확보하기 위해 대기 시간을 3초로 늘림
-                        time.sleep(3)
+                    st.success(msg)
+                    # ⭐ 수정: 재생이 시작될 충분한 시간을 확보하기 위해 대기 시간을 3초로 늘림
+                    time.sleep(3)
                     except Exception as e:
                         st.warning(f"오디오 재생 중 오류: {e}. 오디오 파일은 생성되었지만 자동 재생에 실패했습니다.")
                         st.audio(audio_bytes, format="audio/mp3", autoplay=False)
@@ -3666,7 +3668,7 @@ if feature_selection == L["voice_rec_header"]:
                 if audio_mime not in valid_formats:
                     # MIME 타입이 유효하지 않으면 파일 확장자로 추정
                     audio_mime = "audio/wav"  # 기본값
-                st.audio(audio_bytes, format=audio_mime)
+            st.audio(audio_bytes, format=audio_mime)
             except Exception as e:
                 st.error(f"오디오 재생 오류: {e}")
                 # 기본 포맷으로 재시도
@@ -5311,9 +5313,9 @@ elif feature_selection == L["sim_tab_phone"]:
                         # Streamlit 문서: autoplay는 브라우저 정책상 제한될 수 있음
                         try:
                             st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
-                            st.success("✅ 에이전트 인사말 자동 재생 완료. 고객 문의 재생을 준비합니다.")
-                            # ⭐ 수정: TTS 동기화 문제 방지를 위해 짧은 대기 후 rerun
-                            time.sleep(1)
+                        st.success("✅ 에이전트 인사말 자동 재생 완료. 고객 문의 재생을 준비합니다.")
+                        # ⭐ 수정: TTS 동기화 문제 방지를 위해 짧은 대기 후 rerun
+                        time.sleep(1)
                         except Exception as e:
                             st.warning(f"자동 재생 실패 (브라우저 정책): {e}. 수동으로 재생해주세요.")
                             st.audio(audio_bytes, format="audio/mp3", autoplay=False)
@@ -5714,36 +5716,36 @@ elif feature_selection == L["sim_tab_phone"]:
                         # 전사 후 바이트 데이터 삭제
                         del st.session_state.bytes_to_process
 
-                    # 2) 전사 실패 처리
+                        # 2) 전사 실패 처리
                     if agent_response_transcript and agent_response_transcript.startswith("❌"):
-                        st.error(agent_response_transcript)
-                        st.session_state.current_agent_audio_text = f"[ERROR: {L['error']} Whisper failed]"
+                            st.error(agent_response_transcript)
+                            st.session_state.current_agent_audio_text = f"[ERROR: {L['error']} Whisper failed]"
                         # 전사 실패 시에도 CC에 반영되도록 재실행
                         st.rerun()
                     elif agent_response_transcript:
                         # 3) CC에 반영 (전사 결과를 먼저 CC 영역에 표시)
-                        st.session_state.current_agent_audio_text = agent_response_transcript.strip()
+                            st.session_state.current_agent_audio_text = agent_response_transcript.strip()
 
-                        # ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
-                        # 🎯 아바타 표정 업데이트 (최종 정리본)
-                        response_text = agent_response_transcript.lower()
-                        # ... (아바타 표정 업데이트 로직) ...
-                        if "refund" in response_text or "환불" in response_text:
-                            st.session_state.customer_avatar["state"] = "HAPPY"
-                        elif ("wait" in response_text or "기다려" in response_text or "잠시만" in response_text):
-                            st.session_state.customer_avatar["state"] = "ASKING"
-                        elif ("no" in response_text or "불가" in response_text or "안 됩니다" in response_text or "cannot" in response_text):
-                            st.session_state.customer_avatar["state"] = "ANGRY"
-                        else:
-                            st.session_state.customer_avatar["state"] = "NEUTRAL"
-                        # ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
+                            # ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
+                            # 🎯 아바타 표정 업데이트 (최종 정리본)
+                            response_text = agent_response_transcript.lower()
+                            # ... (아바타 표정 업데이트 로직) ...
+                            if "refund" in response_text or "환불" in response_text:
+                                st.session_state.customer_avatar["state"] = "HAPPY"
+                            elif ("wait" in response_text or "기다려" in response_text or "잠시만" in response_text):
+                                st.session_state.customer_avatar["state"] = "ASKING"
+                            elif ("no" in response_text or "불가" in response_text or "안 됩니다" in response_text or "cannot" in response_text):
+                                st.session_state.customer_avatar["state"] = "ANGRY"
+                            else:
+                                st.session_state.customer_avatar["state"] = "NEUTRAL"
+                            # ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
 
                         # ⭐ 수정: 전사 결과가 CC에 반영되도록 먼저 재실행
                         # 채팅과 동일하게 전사 결과를 먼저 화면에 표시한 후 고객 반응 생성
                         # 다음 실행 주기에서 고객 반응을 생성하도록 플래그 설정
                         st.session_state.process_customer_reaction = True
                         st.session_state.pending_agent_transcript = agent_response_transcript.strip()
-                        st.rerun()
+                    st.rerun()
 
 
     # ========================================
