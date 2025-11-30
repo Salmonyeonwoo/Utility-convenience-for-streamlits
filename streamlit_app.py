@@ -95,6 +95,16 @@ except ImportError:
     IS_NVIDIA_EMBEDDING_AVAILABLE = False
 
 # ========================================
+# Streamlit 페이지 설정 (반드시 최상단에 위치)
+# ========================================
+st.set_page_config(
+    page_title="AI Study Coach & Customer Service Simulator",
+    page_icon="📚",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# ========================================
 # 0. 기본 경로/로컬 DB 설정
 # ========================================
 
@@ -3293,7 +3303,16 @@ with st.sidebar:
         st.session_state.language = selected_lang_key
         # 채팅/전화 공통 상태 초기화
         st.session_state.simulator_messages = []
-        st.session_state.simulator_memory.clear()
+        # ⭐ 안전한 메모리 초기화
+        try:
+            if hasattr(st.session_state, 'simulator_memory') and st.session_state.simulator_memory is not None:
+                st.session_state.simulator_memory.clear()
+        except Exception:
+            # 메모리 초기화 실패 시 새로 생성
+            try:
+                st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history")
+            except Exception:
+                pass  # 초기화 실패해도 계속 진행
         st.session_state.initial_advice_provided = False
         st.session_state.is_chat_ended = False
         st.session_state.agent_response_area_text = ""
