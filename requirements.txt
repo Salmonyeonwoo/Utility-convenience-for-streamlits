@@ -14,6 +14,7 @@ langchain-openai
 langchain-google-genai
 langchain-nvidia-ai-endpoints
 langchain-text-splitters
+google.generativeai
 
 # 전사 및 오디오
 streamlit-mic-recorder
