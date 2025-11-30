@@ -5,7 +5,6 @@ openai
 google-genai
 anthropic
 groq
-google.generativeai
 
 # LangChain (LLM 라우팅 및 RAG 프레임워크)
 langchain
@@ -33,5 +32,4 @@ plotly-express
 
 # 추가 필수 패키지
 requests
-streamlit-lottie
 openpyxl
