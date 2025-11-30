@@ -78,12 +78,13 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
-try:
-    from streamlit_lottie import st_lottie
-
-    IS_LOTTIE_AVAILABLE = True
-except Exception:
-    IS_LOTTIE_AVAILABLE = False
+# ⭐ Lottie 제거: 로딩 문제로 인해 완전히 제거
+# try:
+#     from streamlit_lottie import st_lottie
+#     IS_LOTTIE_AVAILABLE = True
+# except Exception:
+#     IS_LOTTIE_AVAILABLE = False
+IS_LOTTIE_AVAILABLE = False
 
 try:
     from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -120,56 +121,11 @@ os.makedirs(RAG_INDEX_DIR, exist_ok=True)
 
 
 # ========================================
-# Lottie Loader (업로드된 파일 사용을 위해 수정)
+# ⭐ Lottie Loader 제거: 로딩 문제로 인해 완전히 제거
 # ========================================
-def load_lottie_json(filename: str):
-    """
-    Lottie 파일을 로드하여 URL 또는 JSON 객체를 반환합니다.
-    먼저 업로드된 파일에서 찾고, 없으면 LOTTIE_RESOURCES의 URL을 사용합니다.
-    """
-    try:
-        # 전역 변수 LOTTIE_RESOURCES 참조 (함수 호출 시점에 이미 정의되어 있어야 함)
-        global LOTTIE_RESOURCES
-        
-        # 1. 업로드된 파일에서 찾기 시도 (Streamlit의 파일 업로드 시스템 사용)
-        # 주의: 실제 구현에서는 업로드된 파일 관리 시스템에 따라 다를 수 있습니다.
-        # 여기서는 파일명만으로는 업로드된 파일에 접근할 수 없으므로,
-        # LOTTIE_RESOURCES의 URL을 우선 사용합니다.
-        
-        # 2. LOTTIE_RESOURCES에서 해당 상태의 URL 찾기
-        # 파일명에서 상태 추출 (예: "avatar_neutral.json" -> "NEUTRAL")
-        state_key = filename.replace("avatar_", "").replace(".json", "").upper()
-        
-        # LOTTIE_RESOURCES에서 매핑 확인
-        resource_key = None
-        if state_key == "NEUTRAL":
-            resource_key = "MALE_NEUTRAL"  # 기본값
-        elif state_key == "HAPPY":
-            resource_key = "MALE_NEUTRAL"  # HAPPY는 별도 리소스가 없으면 NEUTRAL 사용
-        elif state_key == "ANGRY":
-            resource_key = "MALE_ANGRY"
-        elif state_key == "ASKING":
-            resource_key = "FEMALE_NEUTRAL"  # ASKING은 별도 리소스가 없으면 NEUTRAL 사용
-        elif state_key == "HOLD":
-            resource_key = "ON_HOLD"
-        else:
-            resource_key = "FALLBACK"
-        
-        # URL 반환 (st_lottie는 URL을 직접 지원합니다)
-        # LOTTIE_RESOURCES가 아직 정의되지 않았을 수 있으므로 안전하게 처리
-        if 'LOTTIE_RESOURCES' in globals() and resource_key in LOTTIE_RESOURCES:
-            return LOTTIE_RESOURCES[resource_key]
-        elif 'LOTTIE_RESOURCES' in globals():
-            return LOTTIE_RESOURCES.get("FALLBACK", None)
-        else:
-            # LOTTIE_RESOURCES가 아직 정의되지 않은 경우 기본 URL 반환
-            return "https://lottie.host/c3a0680a-9d9f-4df0-b21a-e99d25514f7b/69493-call-centre-support-agent.json"
-
-    except Exception as e:
-        # ⭐ 수정: 초기화 단계에서 블로킹 방지를 위해 st.error 대신 print 사용
-        print(f"⚠️ Lottie 파일 로딩 오류 (무시됨): {filename} ({e})")
-        # 오류 발생 시 기본 URL 반환 (없으면 None 반환하여 대체 UI 표시)
-        return None
+# def load_lottie_json(filename: str):
+#     """Lottie 파일 로더 - 제거됨"""
+#     return None
 
 
 # Lottie 파일 읽기 (사용하지 않음)
@@ -204,19 +160,11 @@ def _save_json(path: str, data: Any):
 
 
 # ==================================================
-# Lottie 기반 고객 아바타 상태 선택 시스템 (State Machine)
-# ⭐ [수정 2] : 파일명을 직접 반환하도록 수정
+# ⭐ Lottie 기반 고객 아바타 상태 선택 시스템 제거
 # ==================================================
-def get_lottie_avatar_filename(state: str):
-    RESOURCES = {
-        "NEUTRAL": "avatar_neutral.json",
-        "HAPPY": "avatar_happy.json",
-        "ANGRY": "avatar_angry.json",
-        "ASKING": "avatar_asking.json",
-        "HOLD": "avatar_hold.json",
-    }
-    # 파일명이 세션 상태에 존재하지 않는 경우 기본 파일명 사용
-    return RESOURCES.get(state, RESOURCES["NEUTRAL"])
+# def get_lottie_avatar_filename(state: str):
+#     """Lottie 아바타 파일명 반환 함수 - 제거됨"""
+#     return None
 
 
 # ========================================
@@ -2460,21 +2408,17 @@ def load_or_train_lstm():
     return ts
 
 
+# ⭐ Lottie 제거: 로딩 문제로 인해 완전히 제거
 # Mock Image URLs for Animation (Placeholder 사용)
-LOTTIE_RESOURCES = {
-    # MALE_NEUTRAL/SPEAKING (Speaking animation)
-    "MALE_NEUTRAL": "https://lottie.host/80148b53-4171-4648-936b-29d6d84953c8/1097262_Chatting.json",
-    "MALE_ANGRY": "https://lottie.host/d193f350-f706-444a-9b59-009772c72b22/86603-error-page-404.json",
-    # Angry (Error/Frustrated mock)
-    # FEMALE_NEUTRAL/SPEAKING (Speaking animation)
-    "FEMALE_NEUTRAL": "https://lottie.host/78c7b8e1-e124-4f01-a15d-85f0c117b8f9/108343-working-laptop.json",
-    "FEMALE_ANGRY": "https://lottie.host/78c7b8e1-e124-4f01-a15d-85f0c117b8f9/108343-working-laptop.json",
-    # Angry (Error/Frustrated mock)
-    "ON_HOLD": "https://lottie.host/c3a0680a-9d9f-4df0-b21a-e99d25514f7b/69493-call-centre-support-agent.json",
-    # 대기/Hold
-    "FALLBACK": "https://lottie.host/c3a0680a-9d9f-4df0-b21a-e99d25514f7b/69493-call-centre-support-agent.json",
-    # Fallback
-}
+# LOTTIE_RESOURCES = {
+#     "MALE_NEUTRAL": "https://lottie.host/...",
+#     "MALE_ANGRY": "https://lottie.host/...",
+#     "FEMALE_NEUTRAL": "https://lottie.host/...",
+#     "FEMALE_ANGRY": "https://lottie.host/...",
+#     "ON_HOLD": "https://lottie.host/...",
+#     "FALLBACK": "https://lottie.host/...",
+# }
+LOTTIE_RESOURCES = {}  # 빈 딕셔너리로 설정
 
 
 # ========================================
@@ -2556,8 +2500,8 @@ def ensure_avatar_images_exist():
                 image_url = generate_avatar_image(prompt)
                 new_images[key] = image_url if image_url else "PLACEHOLDER_FAILED"
             else:
-                # LLM 키가 없을 경우 placeholder 유지
-                new_images[key] = LOTTIE_RESOURCES[key.replace('_SPEAKING', '_NEUTRAL')]  # PLACEHOLDER URL 사용
+                # LLM 키가 없을 경우 placeholder 유지 (Lottie 제거로 인해 기본값 사용)
+                new_images[key] = "https://placehold.co/400x400/cccccc/ffffff?text=Avatar"  # 기본 placeholder
 
     st.session_state.avatar_images = new_images
     placeholder.empty()
@@ -4998,9 +4942,9 @@ elif feature_selection == L["sim_tab_phone"]:
     current_lang = st.session_state.language
     L = LANG[current_lang]
 
-    # ⭐ Lottie 체크
-    if not IS_LOTTIE_AVAILABLE:
-        st.error("❌ Lottie 애니메이션을 사용하려면 'pip install streamlit-lottie'가 필요합니다。")
+    # ⭐ Lottie 제거: 로딩 문제로 인해 완전히 제거
+    # if not IS_LOTTIE_AVAILABLE:
+    #     st.error("❌ Lottie 애니메이션을 사용하려면 'pip install streamlit-lottie'가 필요합니다。")
 
     # ========================================
     # AHT 타이머 (IN_CALL 상태에서만 동작)
@@ -5135,41 +5079,17 @@ elif feature_selection == L["sim_tab_phone"]:
             else:
                 avatar_state = st.session_state.customer_avatar.get("state", "NEUTRAL")
 
-            # ⭐ [수정 3]: get_lottie_avatar_path 대신 get_lottie_avatar_filename 사용
-            lottie_filename = get_lottie_avatar_filename(avatar_state)
-
-            # ⭐ [수정]: Lottie 로딩 실패 시에도 앱이 계속 실행되도록 안전하게 처리
-            if IS_LOTTIE_AVAILABLE:
-                try:
-                    # ⭐ [수정 4]: 로딩 함수가 Content Fetch ID를 반환하도록 수정
-                    lottie_path_id = load_lottie_json(lottie_filename)
-
-                    # ⭐ [수정 5]: st_lottie에 Content Fetch ID를 전달
-                    if lottie_path_id:
-                        try:
-                            # Content Fetch ID를 JSON 객체로 가정하고 로드합니다.
-                            # st_lottie가 Content Fetch ID를 직접 지원해야 합니다.
-                            st_lottie(
-                                lottie_path_id,  # 이제 이 값은 "uploaded:avatar_xxx.json" 형태의 ID입니다.
-                                height=280,
-                                key=f"lottie_{avatar_state}"
-                            )
-                        except Exception as e:
-                            # Lottie 렌더링 실패 시에도 앱이 계속 실행되도록 에러만 표시
-                            st.warning(f"⚠️ 아바타 애니메이션 로딩 실패 (무시됨): {e}")
-                            # 대체 UI 표시
-                            st.info("📺 고객 아바타 (애니메이션 로딩 실패)")
-                    else:
-                        # 경로 오류 시에도 앱이 계속 실행되도록 경고만 표시
-                        st.warning("⚠️ 아바타 애니메이션 경로를 찾을 수 없습니다.")
-                        st.info("📺 고객 아바타 (기본 모드)")
-                except Exception as e:
-                    # Lottie 로딩 중 예외 발생 시에도 앱이 계속 실행되도록
-                    st.warning(f"⚠️ 아바타 애니메이션 초기화 실패 (무시됨): {e}")
-                    st.info("📺 고객 아바타 (기본 모드)")
-            else:
-                # Lottie 패키지가 설치되지 않은 경우
-                st.info("📺 고객 아바타 (Lottie 패키지 미설치)")
+            # ⭐ Lottie 제거: 로딩 문제로 인해 완전히 제거하고 간단한 텍스트로 대체
+            avatar_emoji = {
+                "NEUTRAL": "😐",
+                "HAPPY": "😊",
+                "ANGRY": "😠",
+                "ASKING": "🤔",
+                "HOLD": "⏸️"
+            }.get(avatar_state, "😐")
+            
+            st.markdown(f"### {avatar_emoji} 고객 아바타")
+            st.info(f"상태: {avatar_state}")
 
     with col_cc:
         st.markdown(
