@@ -47,6 +47,7 @@ from streamlit_mic_recorder import mic_recorder
 
 # LangChain / RAG 관련
 from langchain_core.documents import Document
+
 try:
     from langchain_text_splitters import RecursiveCharacterTextSplitter
 except ImportError:
@@ -56,6 +57,7 @@ except ImportError:
         "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
     )
 from langchain_core.prompts import PromptTemplate
+
 try:
     from langchain.memory import ConversationBufferMemory
 except ImportError:
@@ -77,8 +79,6 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_community.embeddings import HuggingFaceEmbeddings
-
-
 
 try:
     from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -121,8 +121,6 @@ os.makedirs(AUDIO_DIR, exist_ok=True)
 os.makedirs(RAG_INDEX_DIR, exist_ok=True)
 
 
-
-
 # ----------------------------------------
 # JSON Helper
 # ----------------------------------------
@@ -139,9 +137,6 @@ def _save_json(path: str, data: Any):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-
-
-
 
 
 # ========================================
@@ -2090,12 +2085,12 @@ def export_history_to_text(histories: List[Dict[str, Any]], filename: str = None
     if filename is None:
         filename = f"customer_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
     filepath = os.path.join(DATA_DIR, filename)
-    
+
     with open(filepath, "w", encoding="utf-8") as f:
         f.write("=" * 80 + "\n")
         f.write("고객 응대 이력 요약\n")
         f.write("=" * 80 + "\n\n")
-        
+
         for i, hist in enumerate(histories, 1):
             f.write(f"[이력 #{i}]\n")
             f.write(f"ID: {hist.get('id', 'N/A')}\n")
@@ -2103,7 +2098,7 @@ def export_history_to_text(histories: List[Dict[str, Any]], filename: str = None
             f.write(f"초기 문의: {hist.get('initial_query', 'N/A')}\n")
             f.write(f"고객 유형: {hist.get('customer_type', 'N/A')}\n")
             f.write(f"언어: {hist.get('language_key', 'N/A')}\n")
-            
+
             summary = hist.get('summary', {})
             if summary:
                 f.write(f"\n[요약]\n")
@@ -2111,25 +2106,25 @@ def export_history_to_text(histories: List[Dict[str, Any]], filename: str = None
                 f.write(f"핵심 응답: {', '.join(summary.get('key_responses', []))}\n")
                 f.write(f"고객 감정 점수: {summary.get('customer_sentiment_score', 'N/A')}/100\n")
                 f.write(f"고객 만족도 점수: {summary.get('customer_satisfaction_score', 'N/A')}/100\n")
-                
+
                 characteristics = summary.get('customer_characteristics', {})
                 f.write(f"\n[고객 특성]\n")
                 f.write(f"언어: {characteristics.get('language', 'N/A')}\n")
                 f.write(f"문화적 배경: {characteristics.get('cultural_hints', 'N/A')}\n")
                 f.write(f"지역: {characteristics.get('region', 'N/A')}\n")
                 f.write(f"소통 스타일: {characteristics.get('communication_style', 'N/A')}\n")
-                
+
                 privacy = summary.get('privacy_info', {})
                 f.write(f"\n[개인정보 요약]\n")
                 f.write(f"이메일 제공: {'예' if privacy.get('has_email') else '아니오'}\n")
                 f.write(f"전화번호 제공: {'예' if privacy.get('has_phone') else '아니오'}\n")
                 f.write(f"주소 제공: {'예' if privacy.get('has_address') else '아니오'}\n")
                 f.write(f"지역 힌트: {privacy.get('region_hint', 'N/A')}\n")
-                
+
                 f.write(f"\n전체 요약: {summary.get('summary', 'N/A')}\n")
-            
+
             f.write("\n" + "-" * 80 + "\n\n")
-    
+
     return filepath
 
 
@@ -2139,18 +2134,18 @@ def export_history_to_excel(histories: List[Dict[str, Any]], filename: str = Non
         import pandas as pd
     except ImportError:
         raise ImportError("Excel 저장을 위해 pandas와 openpyxl이 필요합니다: pip install pandas openpyxl")
-    
+
     if filename is None:
         filename = f"customer_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     filepath = os.path.join(DATA_DIR, filename)
-    
+
     # 데이터 정리
     rows = []
     for hist in histories:
         summary = hist.get('summary', {})
         characteristics = summary.get('customer_characteristics', {}) if summary else {}
         privacy = summary.get('privacy_info', {}) if summary else {}
-        
+
         row = {
             'ID': hist.get('id', ''),
             '날짜': hist.get('timestamp', ''),
@@ -2172,7 +2167,7 @@ def export_history_to_excel(histories: List[Dict[str, Any]], filename: str = Non
             '전체 요약': summary.get('summary', '') if summary else ''
         }
         rows.append(row)
-    
+
     df = pd.DataFrame(rows)
     df.to_excel(filepath, index=False, engine='openpyxl')
     return filepath
@@ -2383,9 +2378,6 @@ def load_or_train_lstm():
     ts = 60 + 20 * np.sin(np.linspace(0, 4 * np.pi, n_points)) + np.random.normal(0, 5, n_points)
     ts = np.clip(ts, 50, 100).astype(np.float32)
     return ts
-
-
-
 
 
 # ========================================
@@ -3229,13 +3221,13 @@ Customer Inquiry:
 with st.sidebar:
     # ⭐ 회사별 언어 우선순위 설정
     st.subheader("🌍 회사별 언어 설정")
-    
+
     if "company_language_priority" not in st.session_state:
         st.session_state.company_language_priority = {
             "default": ["ko", "en", "ja"],
             "companies": {}
         }
-    
+
     # 회사명 입력 및 추가
     with st.expander("회사 추가/관리"):
         new_company = st.text_input("회사명", key="new_company_input", placeholder="예: Company A")
@@ -3244,7 +3236,7 @@ with st.sidebar:
                 st.session_state.company_language_priority["companies"][new_company] = ["ko", "en", "ja"]
                 st.success(f"{new_company} 추가됨")
                 st.rerun()
-    
+
     # 현재 회사 선택
     company_list = list(st.session_state.company_language_priority["companies"].keys())
     if company_list:
@@ -3253,12 +3245,13 @@ with st.sidebar:
             options=["기본 설정"] + company_list,
             key="selected_company"
         )
-        
+
         if selected_company != "기본 설정":
             # 회사별 언어 우선순위 설정 (간단한 드래그 앤 드롭 대신 순서 선택)
             st.write(f"**{selected_company}** 언어 우선순위:")
-            current_priority = st.session_state.company_language_priority["companies"].get(selected_company, ["ko", "en", "ja"])
-            
+            current_priority = st.session_state.company_language_priority["companies"].get(selected_company,
+                                                                                           ["ko", "en", "ja"])
+
             # 언어 순서를 multiselect로 설정 (첫 번째가 최우선)
             lang_order = st.multiselect(
                 "언어 우선순위 (위에서 아래로)",
@@ -3267,7 +3260,7 @@ with st.sidebar:
                 format_func=lambda x: {"ko": "한국어", "en": "English", "ja": "日本語"}[x],
                 key=f"lang_order_{selected_company}"
             )
-            
+
             if st.button("저장", key=f"save_priority_{selected_company}"):
                 if len(lang_order) == 3:
                     st.session_state.company_language_priority["companies"][selected_company] = lang_order
@@ -3277,20 +3270,21 @@ with st.sidebar:
                     st.warning("모든 언어를 선택해주세요.")
     else:
         selected_company = None
-    
+
     st.markdown("---")
-    
+
     # 언어 선택 (회사별 우선순위 반영)
     # ⭐ L 변수를 먼저 정의 (기본 언어로)
     if "language" not in st.session_state:
         st.session_state.language = "ko"
     L = LANG[st.session_state.language]
-    
-    if selected_company and selected_company != "기본 설정" and selected_company in st.session_state.company_language_priority["companies"]:
+
+    if selected_company and selected_company != "기본 설정" and selected_company in \
+            st.session_state.company_language_priority["companies"]:
         lang_priority = st.session_state.company_language_priority["companies"][selected_company]
     else:
         lang_priority = st.session_state.company_language_priority["default"]
-    
+
     selected_lang_key = st.selectbox(
         L["lang_select"],
         options=lang_priority,
@@ -3351,7 +3345,7 @@ with st.sidebar:
 
     # ⭐ API Key 설정 섹션 추가
     st.subheader("🔑 API Key 설정")
-    
+
     # LLM 선택
     llm_options = {
         "openai_gpt4": "OpenAI GPT-4",
@@ -3362,7 +3356,7 @@ with st.sidebar:
         "groq": "Groq",
         "nvidia": "NVIDIA NIM"
     }
-    
+
     current_llm = st.session_state.get("selected_llm", "openai_gpt4")
     selected_llm = st.selectbox(
         "LLM 모델 선택",
@@ -3374,7 +3368,7 @@ with st.sidebar:
     if selected_llm != current_llm:
         st.session_state.selected_llm = selected_llm
         st.rerun()
-    
+
     # API Key 매핑
     api_key_map = {
         "openai_gpt4": "openai",
@@ -3385,10 +3379,10 @@ with st.sidebar:
         "groq": "groq",
         "nvidia": "nvidia"
     }
-    
+
     api_name = api_key_map.get(selected_llm, "openai")
     api_config = SUPPORTED_APIS.get(api_name, {})
-    
+
     if api_config:
         # 현재 API Key 확인
         current_key = get_api_key(api_name)
@@ -3407,7 +3401,7 @@ with st.sidebar:
                 st.rerun()
         else:
             st.success(f"✅ {api_config.get('label', 'API Key')} 설정됨")
-    
+
     st.markdown("---")
 
     st.subheader("클라이언트 초기화 상태")
@@ -3432,17 +3426,17 @@ with st.sidebar:
     # ⭐ 핵심 기능 3개만 상단에 표시, 나머지는 더보기로
     core_features = [L["sim_tab_chat_email"], L["sim_tab_phone"], L["rag_tab"]]
     other_features = [L["content_tab"], L["lstm_tab"], L["voice_rec_header"]]
-    
+
     # 현재 선택된 기능의 인덱스 안전하게 계산
     current_selection = st.session_state.get("feature_selection", L["sim_tab_chat_email"])
-    
+
     # 핵심 기능 선택
     st.write("**핵심 기능**")
     try:
         core_index = core_features.index(current_selection) if current_selection in core_features else 0
     except (ValueError, AttributeError):
         core_index = 0
-    
+
     core_selection = st.radio(
         "핵심 기능 선택",
         core_features,
@@ -3450,14 +3444,14 @@ with st.sidebar:
         key="core_feature_radio",
         label_visibility="hidden"
     )
-    
+
     # 더보기 기능
     with st.expander("더보기 기능"):
         try:
             other_index = other_features.index(current_selection) if current_selection in other_features else 0
         except (ValueError, AttributeError):
             other_index = 0
-        
+
         other_selection = st.radio(
             "더보기 기능 선택",
             other_features,
@@ -3468,12 +3462,12 @@ with st.sidebar:
         if other_selection != current_selection:
             st.session_state.feature_selection = other_selection
             st.rerun()
-    
+
     # 선택된 기능 결정
     if core_selection != current_selection:
         st.session_state.feature_selection = core_selection
         st.rerun()
-    
+
     feature_selection = st.session_state.get("feature_selection", L["sim_tab_chat_email"])
 
 # 메인 타이틀
@@ -3612,7 +3606,8 @@ if feature_selection == L["voice_rec_header"]:
                             mime = info.get("mime_type", "audio/webm")
                             # Streamlit 문서: bytes 데이터를 직접 전달 가능
                             # MIME 타입 검증
-                            valid_formats = ["audio/wav", "audio/mp3", "audio/mpeg", "audio/webm", "audio/ogg", "audio/m4a"]
+                            valid_formats = ["audio/wav", "audio/mp3", "audio/mpeg", "audio/webm", "audio/ogg",
+                                             "audio/m4a"]
                             if mime not in valid_formats:
                                 mime = "audio/wav"  # 기본값
                             st.audio(b, format=mime, autoplay=False)
@@ -4827,8 +4822,6 @@ elif feature_selection == L["sim_tab_phone"]:
     current_lang = st.session_state.language
     L = LANG[current_lang]
 
-
-
     # ========================================
     # AHT 타이머 (IN_CALL 상태에서만 동작)
     # ========================================
@@ -4899,18 +4892,18 @@ elif feature_selection == L["sim_tab_phone"]:
                     type=["mp4", "webm", "ogg"],
                     key="customer_video_uploader"
                 )
-                
+
                 # 또는 로컬 파일 경로 입력
                 video_path_input = st.text_input(
                     "또는 로컬 파일 경로 입력",
                     placeholder="예: C:\\Users\\Admin\\Downloads\\video.mp4 또는 video.mp4",
                     key="video_path_input"
                 )
-                
+
                 # 비디오 재생
                 video_to_play = None
                 video_format = "video/mp4"
-                
+
                 if uploaded_video:
                     # 업로드된 파일 사용
                     video_to_play = uploaded_video.read()
@@ -4930,7 +4923,7 @@ elif feature_selection == L["sim_tab_phone"]:
                         else:
                             # 상대 경로는 작업 디렉토리 기준
                             video_path = os.path.join(os.getcwd(), video_path_input)
-                        
+
                         if os.path.exists(video_path):
                             with open(video_path, "rb") as f:
                                 video_to_play = f.read()
@@ -4945,7 +4938,7 @@ elif feature_selection == L["sim_tab_phone"]:
                             st.error(f"파일을 찾을 수 없습니다: {video_path}")
                     except Exception as e:
                         st.error(f"비디오 파일 로드 오류: {e}")
-                
+
                 # 비디오 재생
                 if video_to_play:
                     try:
@@ -4955,7 +4948,7 @@ elif feature_selection == L["sim_tab_phone"]:
                     except Exception as e:
                         st.error(f"비디오 재생 오류: {e}")
                         st.info("💡 비디오가 H.264 코덱으로 인코딩되었는지 확인하세요. MP4V 코덱은 브라우저에서 지원되지 않을 수 있습니다.")
-            
+
             # 상태 선택
             if st.session_state.is_on_hold:
                 avatar_state = "HOLD"
@@ -4970,7 +4963,7 @@ elif feature_selection == L["sim_tab_phone"]:
                 "ASKING": "🤔",
                 "HOLD": "⏸️"
             }.get(avatar_state, "😐")
-            
+
             st.markdown(f"### {avatar_emoji} 고객 아바타")
             st.info(f"상태: {avatar_state}")
 
@@ -5092,7 +5085,8 @@ elif feature_selection == L["sim_tab_phone"]:
                 horizontal=True
             )
 
-            if st.button(L["button_call_outbound"], key=f"outbound_call_start_btn_{st.session_state.sim_instance_id}", type="secondary"):
+            if st.button(L["button_call_outbound"], key=f"outbound_call_start_btn_{st.session_state.sim_instance_id}",
+                         type="secondary"):
                 # 입력 검증
                 if not st.session_state.call_initial_query.strip():
                     st.warning("전화 발신 목표 (고객 문의 내용)를 입력해 주세요。")
@@ -5159,7 +5153,7 @@ elif feature_selection == L["sim_tab_phone"]:
                         try:
                             st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
                             st.success("✅ 에이전트 인사말 자동 재생 완료. 고객 문의 재생을 준비합니다.")
-                        # ⭐ 수정: TTS 동기화 문제 방지를 위해 짧은 대기 후 rerun
+                            # ⭐ 수정: TTS 동기화 문제 방지를 위해 짧은 대기 후 rerun
                             time.sleep(1)
                         except Exception as e:
                             st.warning(f"자동 재생 실패 (브라우저 정책): {e}. 수동으로 재생해주세요.")
@@ -5193,7 +5187,8 @@ elif feature_selection == L["sim_tab_phone"]:
             if st.session_state.customer_initial_audio_bytes:
                 # Streamlit 문서: autoplay는 브라우저 정책상 제한될 수 있음
                 try:
-                    st.audio(st.session_state.customer_initial_audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                    st.audio(st.session_state.customer_initial_audio_bytes, format="audio/mp3", autoplay=True,
+                             loop=False)
                 except Exception as e:
                     st.warning(f"자동 재생 실패: {e}. 수동으로 재생해주세요.")
                     st.audio(st.session_state.customer_initial_audio_bytes, format="audio/mp3", autoplay=False)
@@ -5290,6 +5285,7 @@ elif feature_selection == L["sim_tab_phone"]:
             st.warning(L["hold_status"].format(duration=hold_str))
             time.sleep(1)
 
+
         # ------------------------------
         # (중략) - **이관, 힌트, 요약, CC, Whisper 전사, 고객 반응 생성**
         # ------------------------------
@@ -5373,7 +5369,8 @@ elif feature_selection == L["sim_tab_phone"]:
             button_label = L.get(button_label_key, f"Transfer to {target_lang.capitalize()} Team")
 
             # ⭐ [수정 FIX] 키 중복 오류 해결: 세션 ID와 대상 언어를 조합하여 고유 키 생성
-            if transfer_cols[i].button(button_label, key=f"btn_transfer_phone_{target_lang}_{st.session_state.sim_instance_id}"):
+            if transfer_cols[i].button(button_label,
+                                       key=f"btn_transfer_phone_{target_lang}_{st.session_state.sim_instance_id}"):
                 # transfer_session 호출 시, 현재 통화 메시지(simulator_messages)를 넘겨줍니다.
                 transfer_session(target_lang, st.session_state.simulator_messages)
 
@@ -5390,7 +5387,8 @@ elif feature_selection == L["sim_tab_phone"]:
 
         with col_sum_btn:
             # ⭐ [수정 FIX] 키 중복 오류 해결: 세션 ID를 키에 추가
-            if st.button(L["btn_request_phone_summary"], key=f"btn_request_phone_summary_{st.session_state.sim_instance_id}"):
+            if st.button(L["btn_request_phone_summary"],
+                         key=f"btn_request_phone_summary_{st.session_state.sim_instance_id}"):
                 # 요약 함수 호출
                 st.session_state.customer_history_summary = summarize_history_with_ai(st.session_state.language)
                 st.rerun()
@@ -5571,16 +5569,17 @@ elif feature_selection == L["sim_tab_phone"]:
                         # 3) CC에 반영 (전사 결과를 먼저 CC 영역에 표시)
                         st.session_state.current_agent_audio_text = agent_response_transcript.strip()
 
-                            # ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
-                            # 🎯 아바타 표정 업데이트 (최종 정리본)
+                        # ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
+                        # 🎯 아바타 표정 업데이트 (최종 정리본)
                         response_text = agent_response_transcript.lower()
-                            # ... (아바타 표정 업데이트 로직) ...
+                        # ... (아바타 표정 업데이트 로직) ...
                         if "refund" in response_text or "환불" in response_text:
                             st.session_state.customer_avatar["state"] = "HAPPY"
                         elif ("wait" in response_text or "기다려" in response_text or "잠시만" in response_text):
-                                st.session_state.customer_avatar["state"] = "ASKING"
-                        elif ("no" in response_text or "불가" in response_text or "안 됩니다" in response_text or "cannot" in response_text):
-                                st.session_state.customer_avatar["state"] = "ANGRY"
+                            st.session_state.customer_avatar["state"] = "ASKING"
+                        elif (
+                                "no" in response_text or "불가" in response_text or "안 됩니다" in response_text or "cannot" in response_text):
+                            st.session_state.customer_avatar["state"] = "ANGRY"
                         else:
                             st.session_state.customer_avatar["state"] = "NEUTRAL"
                             # ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
@@ -5655,7 +5654,7 @@ elif feature_selection == L["sim_tab_phone"]:
             st.session_state.customer_initial_audio_bytes = None
             st.session_state.customer_history_summary = ""
             st.session_state.sim_audio_bytes = None
-            st.rerun() # 새 시뮬레이션 시작 시 rerun
+            st.rerun()  # 새 시뮬레이션 시작 시 rerun
 
 
 # -------------------- RAG Tab --------------------
@@ -5666,17 +5665,17 @@ elif feature_selection == L["rag_tab"]:
 
     # ⭐ RAG 데이터 학습 기능 추가 - AI 고객 응대 시뮬레이터 데이터를 일일 파일로 학습
     st.subheader("📚 고객 가이드 자동 생성 (일일 학습)")
-    
+
     if st.button("오늘 날짜 고객 가이드 생성", key="generate_daily_guide"):
         # 오늘 날짜로 파일명 생성 (예: 251130_고객가이드.TXT)
         today_str = datetime.now().strftime("%y%m%d")
         guide_filename = f"{today_str}_고객가이드.TXT"
         guide_filepath = os.path.join(DATA_DIR, guide_filename)
-        
+
         # 최근 이력 로드
         all_histories = load_simulation_histories_local(st.session_state.language)
         recent_histories = all_histories[:50]  # 최근 50개 이력 사용
-        
+
         if recent_histories:
             # LLM을 사용하여 고객 가이드 생성
             guide_prompt = f"""
@@ -5695,11 +5694,11 @@ elif feature_selection == L["rag_tab"]:
 
 가이드라인을 한국어로 작성하세요.
 """
-            
+
             if st.session_state.is_llm_ready:
                 with st.spinner("고객 가이드 생성 중..."):
                     guide_content = run_llm(guide_prompt)
-                    
+
                     # 파일 저장
                     with open(guide_filepath, "w", encoding="utf-8") as f:
                         f.write(f"고객 응대 가이드라인\n")
@@ -5707,10 +5706,10 @@ elif feature_selection == L["rag_tab"]:
                         f.write(f"분석 이력 수: {len(recent_histories)}\n")
                         f.write("=" * 80 + "\n\n")
                         f.write(guide_content)
-                    
+
                     st.success(f"✅ 고객 가이드가 생성되었습니다: {guide_filename}")
                     st.info(f"파일 위치: {guide_filepath}")
-                    
+
                     # 생성된 파일을 자동으로 RAG에 추가할지 선택
                     if st.button("생성된 가이드를 RAG에 추가", key="add_guide_to_rag"):
                         # 파일을 업로드된 파일처럼 처리하여 RAG에 추가
@@ -5720,7 +5719,7 @@ elif feature_selection == L["rag_tab"]:
                 st.error("LLM이 준비되지 않았습니다. API Key를 설정해주세요.")
         else:
             st.warning("분석할 이력이 없습니다. 먼저 고객 응대 시뮬레이션을 실행하세요.")
-    
+
     st.markdown("---")
 
     # --- 파일 업로드 섹션 ---
@@ -5728,7 +5727,7 @@ elif feature_selection == L["rag_tab"]:
     uploaded_files = st.file_uploader(
         L["file_uploader"],
         type=["pdf", "txt", "html"],
-        key="rag_file_uploader", # RAG 전용 키
+        key="rag_file_uploader",  # RAG 전용 키
         accept_multiple_files=True
     )
 
@@ -6283,7 +6282,6 @@ elif feature_selection == L["content_tab"]:
 
                 # Streamlit의 toast 메시지는 네이티브 공유 성공 여부를 알 수 없으므로 URL 복사 완료를 알림
                 st.toast(L["toast_share"])
-
 
             # 4. 복사 버튼 (기능 활성화 - 콘텐츠 텍스트 복사)
             if col_copy.button("📋", key=f"content_copy_{current_content_id}"):
