@@ -57,7 +57,7 @@ except ImportError:
     )
 from langchain_core.prompts import PromptTemplate
 try:
-from langchain.memory import ConversationBufferMemory
+    from langchain.memory import ConversationBufferMemory
 except ImportError:
     raise ImportError(
         "❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.memory' 모듈을 찾을 수 없습니다.\n"
@@ -65,7 +65,7 @@ except ImportError:
         "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
     )
 try:
-from langchain.chains import ConversationChain
+    from langchain.chains import ConversationChain
 except ImportError:
     raise ImportError(
         "❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.chains' 모듈을 찾을 수 없습니다.\n"
