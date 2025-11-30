@@ -5924,7 +5924,7 @@ elif feature_selection == L["rag_tab"]:
             if st.button(L["button_start_analysis"]):
                 if not st.session_state.is_llm_ready:
                     st.error(L["simulation_no_key_warning"])
-                    st.stop()
+                    # st.stop()
 
                 with st.spinner(L["data_analysis_progress"]):
                     vectorstore, count = build_rag_index(uploaded_files)
