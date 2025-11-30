@@ -5734,9 +5734,9 @@ elif feature_selection == L["sim_tab_phone"]:
                         if "refund" in response_text or "환불" in response_text:
                             st.session_state.customer_avatar["state"] = "HAPPY"
                         elif ("wait" in response_text or "기다려" in response_text or "잠시만" in response_text):
-                            st.session_state.customer_avatar["state"] = "ASKING"
+                                st.session_state.customer_avatar["state"] = "ASKING"
                         elif ("no" in response_text or "불가" in response_text or "안 됩니다" in response_text or "cannot" in response_text):
-                            st.session_state.customer_avatar["state"] = "ANGRY"
+                                st.session_state.customer_avatar["state"] = "ANGRY"
                         else:
                             st.session_state.customer_avatar["state"] = "NEUTRAL"
                             # ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
@@ -5957,7 +5957,8 @@ elif feature_selection == L["content_tab"]:
 
     if not st.session_state.is_llm_ready:
         st.warning(L["simulation_no_key_warning"])
-        st.stop()
+        st.info("💡 API Key를 설정하면 콘텐츠 생성 기능을 사용할 수 있습니다.")
+        # st.stop() 제거: UI는 표시하되 기능만 비활성화
 
     # 다국어 맵핑 변수는 그대로 사용
     level_map = {
@@ -5993,20 +5994,23 @@ elif feature_selection == L["content_tab"]:
     if st.button(L["button_generate"]):
         if not topic.strip():
             st.warning(L["warning_topic"])
-            st.stop()
+            # st.stop() 제거: 경고만 표시하고 계속 진행
+        elif not st.session_state.is_llm_ready:
+            st.error("❌ LLM이 준비되지 않았습니다. API Key를 설정해주세요.")
+            # st.stop() 제거: 에러만 표시하고 계속 진행
+        else:
+            target_lang = {"ko": "Korean", "en": "English", "ja": "Japanese"}[st.session_state.language]
 
-        target_lang = {"ko": "Korean", "en": "English", "ja": "Japanese"}[st.session_state.language]
-
-        # 공통 프롬프트 설정 (퀴즈 형식을 포함하지 않는 기본 템플릿)
-        system_prompt = f"""
+            # 공통 프롬프트 설정 (퀴즈 형식을 포함하지 않는 기본 템플릿)
+            system_prompt = f"""
             You are a professional AI coach. Generate learning content in {target_lang} for the topic '{topic}' at the '{level}' difficulty.
             The content format requested is: {content_display}.
             Output ONLY the raw content.
-        """
+            """
 
-        if content_type == "quiz":
-            # 퀴즈 전용 프롬프트 및 JSON 구조 강제 (로직 유지)
-            quiz_prompt = f"""
+            if content_type == "quiz":
+                # 퀴즈 전용 프롬프트 및 JSON 구조 강제 (로직 유지)
+                quiz_prompt = f"""
                 You are an expert quiz generator. Based on the topic '{topic}' and difficulty '{level}', generate 10 multiple-choice questions.
                 Your output MUST be a **raw JSON object** containing a single key "quiz_questions" which holds an array of 10 questions.
                 Each object in the array must strictly follow the required keys: "question", "options" (array of 4 strings), and "answer" (an integer index starting from 1).
@@ -6087,23 +6091,23 @@ elif feature_selection == L["content_tab"]:
                     st.caption(f"Error Details: {type(e).__name__} - {e}")
                     st.subheader(L["quiz_original_response"])
                     st.code(generated_json_text, language="json")
-                    st.stop()
+                    # st.stop() 제거: 에러 표시 후 계속 진행
             else:
                 st.error(L["quiz_error_llm"])
                 if generated_json_text:
                     st.text_area(L["quiz_original_response"], generated_json_text, height=200)
-                st.stop()
+                # st.stop() 제거: 에러 표시 후 계속 진행
             # --- END: JSON Parsing and Error Handling Logic ---
 
-        else:  # 일반 텍스트 생성
-            st.session_state.is_quiz_active = False
-            with st.spinner(L["response_generating"]):
-                content = run_llm(system_prompt)
-            st.session_state.generated_content = content
+            else:  # 일반 텍스트 생성
+                st.session_state.is_quiz_active = False
+                with st.spinner(L["response_generating"]):
+                    content = run_llm(system_prompt)
+                st.session_state.generated_content = content
 
-            st.markdown("---")
-            st.markdown(f"### {content_display}")
-            st.markdown(st.session_state.generated_content)
+                st.markdown("---")
+                st.markdown(f"### {content_display}")
+                st.markdown(st.session_state.generated_content)
 
     # --- 퀴즈/일반 콘텐츠 출력 로직 ---
     if st.session_state.get("is_quiz_active", False) and st.session_state.get("quiz_data"):
@@ -6128,7 +6132,7 @@ elif feature_selection == L["content_tab"]:
                 st.session_state.quiz_answers = []
                 st.session_state.show_explanation = False
                 # st.rerun()  # 상태 초기화 후 즉시 재실행
-            st.stop()  # 퀴즈 완료 후 스크립트 실행을 완전히 중단
+            # st.stop() 제거: 퀴즈 완료 후에도 UI는 계속 표시
 
         # 퀴즈 진행 (현재 문항)
         question_data = quiz_data[idx]
