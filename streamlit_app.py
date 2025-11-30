@@ -50,11 +50,26 @@ from langchain_core.documents import Document
 try:
     from langchain_text_splitters import RecursiveCharacterTextSplitter
 except ImportError:
-    # 구버전 호환성
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    raise ImportError(
+        "❌ 'langchain-text-splitters' 패키지가 설치되지 않았습니다.\n"
+        "다음 명령어로 설치해주세요: pip install langchain-text-splitters\n"
+        "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
+    )
 from langchain_core.prompts import PromptTemplate
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationChain
+try:
+    from langchain.memory import ConversationBufferMemory
+    from langchain.chains import ConversationChain
+except ImportError:
+    # 최신 LangChain에서는 langchain-core로 이동했을 수 있음
+    try:
+        from langchain_core.memory import ConversationBufferMemory
+        from langchain_core.chains import ConversationChain
+    except ImportError:
+        raise ImportError(
+            "❌ 'langchain' 또는 'langchain-core' 패키지에서 memory/chains 모듈을 찾을 수 없습니다.\n"
+            "다음 명령어로 설치해주세요: pip install langchain langchain-core\n"
+            "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
+        )
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
