@@ -5,7 +5,7 @@ openai
 google-genai
 anthropic
 groq
-google.generativeai
+google-generativeai
 
 # LangChain (LLM 라우팅 및 RAG 프레임워크)
 langchain
