@@ -3668,7 +3668,7 @@ if feature_selection == L["voice_rec_header"]:
                 if audio_mime not in valid_formats:
                     # MIME 타입이 유효하지 않으면 파일 확장자로 추정
                     audio_mime = "audio/wav"  # 기본값
-                st.audio(audio_bytes, format=audio_mime)
+            st.audio(audio_bytes, format=audio_mime)
             except Exception as e:
                 st.error(f"오디오 재생 오류: {e}")
                 # 기본 포맷으로 재시도
@@ -4626,7 +4626,8 @@ elif feature_selection == L["sim_tab_chat_email"]:
                             if len(transcribed_text) > 50:
                                 snippet += "..."
                             st.success(L["whisper_success"] + f"\n\n**인식 내용:** *{snippet}*")
-                            st.rerun()  # UI 업데이트
+                            # ⭐ 주석 처리: 전사 결과가 이미 세션 상태에 반영되었으므로 자동으로 입력창에 표시됨
+                            # st.rerun()  # UI 업데이트
 
         col_text, col_button = st.columns([4, 1])
 
@@ -5313,9 +5314,9 @@ elif feature_selection == L["sim_tab_phone"]:
                         # Streamlit 문서: autoplay는 브라우저 정책상 제한될 수 있음
                         try:
                             st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
-                            st.success("✅ 에이전트 인사말 자동 재생 완료. 고객 문의 재생을 준비합니다.")
-                            # ⭐ 수정: TTS 동기화 문제 방지를 위해 짧은 대기 후 rerun
-                            time.sleep(1)
+                        st.success("✅ 에이전트 인사말 자동 재생 완료. 고객 문의 재생을 준비합니다.")
+                        # ⭐ 수정: TTS 동기화 문제 방지를 위해 짧은 대기 후 rerun
+                        time.sleep(1)
                         except Exception as e:
                             st.warning(f"자동 재생 실패 (브라우저 정책): {e}. 수동으로 재생해주세요.")
                             st.audio(audio_bytes, format="audio/mp3", autoplay=False)
@@ -5718,13 +5719,13 @@ elif feature_selection == L["sim_tab_phone"]:
 
                         # 2) 전사 실패 처리
                     if agent_response_transcript and agent_response_transcript.startswith("❌"):
-                            st.error(agent_response_transcript)
-                            st.session_state.current_agent_audio_text = f"[ERROR: {L['error']} Whisper failed]"
+                        st.error(agent_response_transcript)
+                        st.session_state.current_agent_audio_text = f"[ERROR: {L['error']} Whisper failed]"
                         # 전사 실패 시에도 CC에 반영되도록 재실행
                         st.rerun()
                     elif agent_response_transcript:
                         # 3) CC에 반영 (전사 결과를 먼저 CC 영역에 표시)
-                            st.session_state.current_agent_audio_text = agent_response_transcript.strip()
+                        st.session_state.current_agent_audio_text = agent_response_transcript.strip()
 
                             # ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
                             # 🎯 아바타 표정 업데이트 (최종 정리본)
@@ -5745,7 +5746,7 @@ elif feature_selection == L["sim_tab_phone"]:
                         # 다음 실행 주기에서 고객 반응을 생성하도록 플래그 설정
                         st.session_state.process_customer_reaction = True
                         st.session_state.pending_agent_transcript = agent_response_transcript.strip()
-                    st.rerun()
+                        st.rerun()
 
 
     # ========================================
