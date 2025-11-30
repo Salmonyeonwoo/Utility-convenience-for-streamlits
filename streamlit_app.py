@@ -5729,7 +5729,7 @@ elif feature_selection == L["sim_tab_phone"]:
 
                             # ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
                             # 🎯 아바타 표정 업데이트 (최종 정리본)
-                            response_text = agent_response_transcript.lower()
+                        response_text = agent_response_transcript.lower()
                             # ... (아바타 표정 업데이트 로직) ...
                             if "refund" in response_text or "환불" in response_text:
                                 st.session_state.customer_avatar["state"] = "HAPPY"
