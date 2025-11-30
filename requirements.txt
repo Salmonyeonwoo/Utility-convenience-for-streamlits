@@ -13,14 +13,14 @@ langchain-community
 langchain-openai
 langchain-google-genai
 langchain-nvidia-ai-endpoints
-
+langchain-text-splitters
 
 # 전사 및 오디오
 streamlit-mic-recorder
 numpy
 pandas
 
-# RAG (문서 처리 기능 유지 시)s
+# RAG (문서 처리 기능 유지 시)
 faiss-cpu
 pypdf
 sentence-transformers
