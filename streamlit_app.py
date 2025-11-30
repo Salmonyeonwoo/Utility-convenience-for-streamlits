@@ -3669,7 +3669,7 @@ if feature_selection == L["voice_rec_header"]:
                     # MIME 타입이 유효하지 않으면 파일 확장자로 추정
                     audio_mime = "audio/wav"  # 기본값
             st.audio(audio_bytes, format=audio_mime)
-            except Exception as e:
+        except Exception as e:
                 st.error(f"오디오 재생 오류: {e}")
                 # 기본 포맷으로 재시도
                 try:
