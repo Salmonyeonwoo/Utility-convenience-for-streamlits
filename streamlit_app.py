@@ -1825,9 +1825,9 @@ def render_tts_button(text, lang_key, role="customer", prefix="", index: int = -
                     # Streamlit 문서: autoplay는 브라우저 정책상 사용자 상호작용 없이는 작동하지 않을 수 있음
                     try:
                         st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
-                    st.success(msg)
-                    # ⭐ 수정: 재생이 시작될 충분한 시간을 확보하기 위해 대기 시간을 3초로 늘림
-                    time.sleep(3)
+                        st.success(msg)
+                        # ⭐ 수정: 재생이 시작될 충분한 시간을 확보하기 위해 대기 시간을 3초로 늘림
+                        time.sleep(3)
                     except Exception as e:
                         st.warning(f"오디오 재생 중 오류: {e}. 오디오 파일은 생성되었지만 자동 재생에 실패했습니다.")
                         st.audio(audio_bytes, format="audio/mp3", autoplay=False)
@@ -3668,7 +3668,7 @@ if feature_selection == L["voice_rec_header"]:
                 if audio_mime not in valid_formats:
                     # MIME 타입이 유효하지 않으면 파일 확장자로 추정
                     audio_mime = "audio/wav"  # 기본값
-            st.audio(audio_bytes, format=audio_mime)
+                st.audio(audio_bytes, format=audio_mime)
             except Exception as e:
                 st.error(f"오디오 재생 오류: {e}")
                 # 기본 포맷으로 재시도
