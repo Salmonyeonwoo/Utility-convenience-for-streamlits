@@ -6099,8 +6099,8 @@ elif feature_selection == L["content_tab"]:
                 # st.stop() 제거: 에러 표시 후 계속 진행
             # --- END: JSON Parsing and Error Handling Logic ---
 
-            else:  # 일반 텍스트 생성
-                st.session_state.is_quiz_active = False
+                else:  # 일반 텍스트 생성
+                     st.session_state.is_quiz_active = False
                 with st.spinner(L["response_generating"]):
                     content = run_llm(system_prompt)
                 st.session_state.generated_content = content
