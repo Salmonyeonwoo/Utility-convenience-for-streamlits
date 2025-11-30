@@ -5731,14 +5731,14 @@ elif feature_selection == L["sim_tab_phone"]:
                             # 🎯 아바타 표정 업데이트 (최종 정리본)
                         response_text = agent_response_transcript.lower()
                             # ... (아바타 표정 업데이트 로직) ...
-                            if "refund" in response_text or "환불" in response_text:
-                                st.session_state.customer_avatar["state"] = "HAPPY"
-                            elif ("wait" in response_text or "기다려" in response_text or "잠시만" in response_text):
-                                st.session_state.customer_avatar["state"] = "ASKING"
-                            elif ("no" in response_text or "불가" in response_text or "안 됩니다" in response_text or "cannot" in response_text):
-                                st.session_state.customer_avatar["state"] = "ANGRY"
-                            else:
-                                st.session_state.customer_avatar["state"] = "NEUTRAL"
+                        if "refund" in response_text or "환불" in response_text:
+                            st.session_state.customer_avatar["state"] = "HAPPY"
+                        elif ("wait" in response_text or "기다려" in response_text or "잠시만" in response_text):
+                            st.session_state.customer_avatar["state"] = "ASKING"
+                        elif ("no" in response_text or "불가" in response_text or "안 됩니다" in response_text or "cannot" in response_text):
+                            st.session_state.customer_avatar["state"] = "ANGRY"
+                        else:
+                            st.session_state.customer_avatar["state"] = "NEUTRAL"
                             # ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
 
                         # ⭐ 수정: 전사 결과가 CC에 반영되도록 먼저 재실행
