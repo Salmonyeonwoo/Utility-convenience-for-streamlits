@@ -23,8 +23,13 @@ import tempfile
 import hashlib
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Union
-from typing import List, Dict, Any
-import google.generativeai as genai
+# google.generativeai는 지연 로딩 (필요할 때만 import하여 충돌 방지)
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except ImportError:
+    GENAI_AVAILABLE = False
+    genai = None
 import numpy as np
 import streamlit as st
 from matplotlib import pyplot as plt
@@ -116,9 +121,14 @@ RAG_INDEX_DIR = os.path.join(DATA_DIR, "rag_index")
 VOICE_META_FILE = os.path.join(DATA_DIR, "voice_records.json")
 SIM_META_FILE = os.path.join(DATA_DIR, "simulation_histories.json")
 
-os.makedirs(DATA_DIR, exist_ok=True)
-os.makedirs(AUDIO_DIR, exist_ok=True)
-os.makedirs(RAG_INDEX_DIR, exist_ok=True)
+# 디렉토리 생성은 안전하게 처리 (권한 문제 방지)
+try:
+    os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(AUDIO_DIR, exist_ok=True)
+    os.makedirs(RAG_INDEX_DIR, exist_ok=True)
+except (OSError, PermissionError) as e:
+    # 디렉토리 생성 실패 시에도 앱은 계속 실행되도록 함
+    pass
 
 
 # ----------------------------------------
@@ -864,152 +874,161 @@ LANG: Dict[str, Dict[str, str]] = {
 }
 
 # ========================================
-# 1-1. Session State 초기화 (전화 발신 관련 상태 추가)
+# 1-1. Session State 초기화 함수 (지연 로딩으로 성능 최적화)
 # ========================================
-# ⭐ 사이드바 버튼은 사이드바 블록 안으로 이동해야 함
-# 여기서는 세션 상태만 초기화
-
-if "language" not in st.session_state:
-    st.session_state.language = DEFAULT_LANG
-if "is_llm_ready" not in st.session_state:
-    st.session_state.is_llm_ready = False
-if "llm_init_error_msg" not in st.session_state:
-    st.session_state.llm_init_error_msg = ""
-if "uploaded_files_state" not in st.session_state:
-    st.session_state.uploaded_files_state = None
-if "is_rag_ready" not in st.session_state:
-    st.session_state.is_rag_ready = False
-if "rag_vectorstore" not in st.session_state:
-    st.session_state.rag_vectorstore = None
-if "rag_messages" not in st.session_state:
-    st.session_state.rag_messages = []
-if "agent_input" not in st.session_state:
-    st.session_state.agent_input = ""
-if "last_audio" not in st.session_state:
-    st.session_state.last_audio = None
-if "simulator_messages" not in st.session_state:
-    st.session_state.simulator_messages = []
-if "simulator_memory" not in st.session_state:
-    st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history")
-if "simulator_chain" not in st.session_state:
-    st.session_state.simulator_chain = None
-if "initial_advice_provided" not in st.session_state:
-    st.session_state.initial_advice_provided = False
-if "is_chat_ended" not in st.session_state:
-    st.session_state.is_chat_ended = False
-if "show_delete_confirm" not in st.session_state:
-    st.session_state.show_delete_confirm = False
-if "customer_query_text_area" not in st.session_state:
-    st.session_state.customer_query_text_area = ""
-if "agent_response_area_text" not in st.session_state:
-    st.session_state.agent_response_area_text = ""
-if "last_transcript" not in st.session_state:
-    st.session_state.last_transcript = ""
-if "sim_audio_bytes" not in st.session_state:
-    st.session_state.sim_audio_bytes = None
-if "chat_state" not in st.session_state:
-    st.session_state.chat_state = "idle"
-    # idle → initial_customer → supervisor_advice → agent_turn → customer_turn → closing
-if "openai_client" not in st.session_state:
-    st.session_state.openai_client = None
-if "openai_init_msg" not in st.session_state:
-    st.session_state.openai_init_msg = ""
-if "sim_stage" not in st.session_state:
-    st.session_state.sim_stage = "WAIT_FIRST_QUERY"
-    # WAIT_FIRST_QUERY (초기 문의 입력)
-    # AGENT_TURN (에이전트 응답 입력)
-    # CUSTOMER_TURN (고객 반응 생성 요청)
-    # WAIT_CLOSING_CONFIRMATION_FROM_AGENT (고객이 감사, 에이전트가 종료 확인 메시지 보내기 대기)
-    # WAIT_CUSTOMER_CLOSING_RESPONSE (종료 확인 메시지 보냄, 고객의 마지막 응답 대기)
-    # FINAL_CLOSING_ACTION (최종 종료 버튼 대기)
-    # CLOSING (채팅 종료)
-    # ⭐ 추가: OUTBOUND_CALL_IN_PROGRESS (전화 발신 진행 중)
-if "start_time" not in st.session_state:  # AHT 타이머 시작 시간
-    st.session_state.start_time = None
-if "is_solution_provided" not in st.session_state:  # 솔루션 제공 여부 플래그
-    st.session_state.is_solution_provided = False
-if "transfer_summary_text" not in st.session_state:  # 이관 시 번역된 요약
-    st.session_state.transfer_summary_text = ""
-if "language_transfer_requested" not in st.session_state:  # 고객의 언어 이관 요청 여부
-    st.session_state.language_transfer_requested = False
-if "customer_attachment_file" not in st.session_state:  # 고객 첨부 파일 정보
-    st.session_state.customer_attachment_file = None
-if "language_at_transfer" not in st.session_state:  # 현재 언어와 비교를 위한 변수
-    st.session_state.language_at_transfer = st.session_state.language
-if "language_at_transfer_start" not in st.session_state:  # 번역 재시도를 위한 원본 언어
-    st.session_state.language_at_transfer_start = st.session_state.language
-if "transfer_retry_count" not in st.session_state:
-    st.session_state.transfer_retry_count = 0
-if "customer_type_sim_select" not in st.session_state:  # FIX: Attribute Error 해결
-    # LANG이 정의되기 전이므로 기본값을 직접 설정
-    default_customer_type = "까다로운 고객"  # 한국어 기본값
-    if st.session_state.language == "en":
-        default_customer_type = "Difficult Customer"
-    elif st.session_state.language == "ja":
-        default_customer_type = "難しい顧客"
-    st.session_state.customer_type_sim_select = default_customer_type
-if "customer_email" not in st.session_state:  # FIX: customer_email 초기화
-    st.session_state.customer_email = ""
-if "customer_phone" not in st.session_state:  # FIX: customer_phone 초기화
-    st.session_state.customer_phone = ""
-if "agent_response_input_box_widget" not in st.session_state:  # FIX: customer_phone 초기화
-    st.session_state.agent_response_input_box_widget = ""
-if "sim_instance_id" not in st.session_state:  # FIX: DuplicateWidgetID 방지용 인스턴스 ID 초기화
-    st.session_state.sim_instance_id = str(uuid.uuid4())
-if "sim_attachment_context_for_llm" not in st.session_state:
-    st.session_state.sim_attachment_context_for_llm = ""
-if "realtime_hint_text" not in st.session_state:
-    st.session_state.realtime_hint_text = ""
-# ⭐ 추가: 전화 발신 관련 상태
-if "sim_call_outbound_summary" not in st.session_state:
-    st.session_state.sim_call_outbound_summary = ""
-if "sim_call_outbound_target" not in st.session_state:
-    st.session_state.sim_call_outbound_target = None
-# ----------------------------------------------------------------------
-# ⭐ 전화 기능 관련 상태 추가
-if "call_sim_stage" not in st.session_state:
-    st.session_state.call_sim_stage = "WAITING_CALL"  # WAITING_CALL, RINGING, IN_CALL, CALL_ENDED
-if "call_sim_mode" not in st.session_state:
-    st.session_state.call_sim_mode = "INBOUND"  # INBOUND or OUTBOUND
-if "incoming_phone_number" not in st.session_state:
-    st.session_state.incoming_phone_number = "+82 10-1234-5678"
-if "is_on_hold" not in st.session_state:
-    st.session_state.is_on_hold = False
-if "hold_start_time" not in st.session_state:
-    st.session_state.hold_start_time = None
-if "total_hold_duration" not in st.session_state:
-    st.session_state.total_hold_duration = timedelta(0)
-if "current_customer_audio_text" not in st.session_state:
-    st.session_state.current_customer_audio_text = ""
-if "current_agent_audio_text" not in st.session_state:
-    st.session_state.current_agent_audio_text = ""
-if "agent_response_input_box_widget_call" not in st.session_state:  # 전화 탭 전용 입력창
-    st.session_state.agent_response_input_box_widget_call = ""
-if "call_initial_query" not in st.session_state:  # 전화 탭 전용 초기 문의
-    st.session_state.call_initial_query = ""
-# ⭐ 추가: 통화 요약 및 초기 고객 음성 저장소
-if "call_summary_text" not in st.session_state:
-    st.session_state.call_summary_text = ""
-if "customer_initial_audio_bytes" not in st.session_state:  # 고객의 첫 음성 (TTS 결과) 저장
-    st.session_state.customer_initial_audio_bytes = None
-if "supervisor_policy_context" not in st.session_state:
-    # Supervisor가 업로드한 예외 정책 텍스트를 저장합니다.
-    st.session_state.supervisor_policy_context = ""
-if "agent_policy_attachment_content" not in st.session_state:
-    # 에이전트가 업로드한 정책 파일 객체(또는 내용)를 저장합니다.
-    st.session_state.agent_policy_attachment_content = ""
-if "customer_attachment_b64" not in st.session_state:
-    st.session_state.customer_attachment_b64 = ""
-if "customer_history_summary" not in st.session_state:
-    st.session_state.customer_history_summary = ""
-if "customer_avatar" not in st.session_state:
-    st.session_state.customer_avatar = {
-        "gender": "male",  # 기본값
-        "state": "NEUTRAL",  # 기본 아바타 상태
-    }
+def init_session_state():
+    """Session State를 한 번에 초기화하는 함수 (앱 시작 시 한 번만 실행)"""
+    if "session_state_initialized" in st.session_state:
+        return  # 이미 초기화됨
+    
+    # 기본 언어 설정
+    if "language" not in st.session_state:
+        st.session_state.language = DEFAULT_LANG
+    if "is_llm_ready" not in st.session_state:
+        st.session_state.is_llm_ready = False
+    if "llm_init_error_msg" not in st.session_state:
+        st.session_state.llm_init_error_msg = ""
+    if "uploaded_files_state" not in st.session_state:
+        st.session_state.uploaded_files_state = None
+    if "is_rag_ready" not in st.session_state:
+        st.session_state.is_rag_ready = False
+    if "rag_vectorstore" not in st.session_state:
+        st.session_state.rag_vectorstore = None
+    if "rag_messages" not in st.session_state:
+        st.session_state.rag_messages = []
+    if "agent_input" not in st.session_state:
+        st.session_state.agent_input = ""
+    if "last_audio" not in st.session_state:
+        st.session_state.last_audio = None
+    if "simulator_messages" not in st.session_state:
+        st.session_state.simulator_messages = []
+    if "simulator_memory" not in st.session_state:
+        st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history")
+    if "simulator_chain" not in st.session_state:
+        st.session_state.simulator_chain = None
+    if "initial_advice_provided" not in st.session_state:
+        st.session_state.initial_advice_provided = False
+    if "is_chat_ended" not in st.session_state:
+        st.session_state.is_chat_ended = False
+    if "show_delete_confirm" not in st.session_state:
+        st.session_state.show_delete_confirm = False
+    if "customer_query_text_area" not in st.session_state:
+        st.session_state.customer_query_text_area = ""
+    if "agent_response_area_text" not in st.session_state:
+        st.session_state.agent_response_area_text = ""
+    if "last_transcript" not in st.session_state:
+        st.session_state.last_transcript = ""
+    if "sim_audio_bytes" not in st.session_state:
+        st.session_state.sim_audio_bytes = None
+    if "chat_state" not in st.session_state:
+        st.session_state.chat_state = "idle"
+        # idle → initial_customer → supervisor_advice → agent_turn → customer_turn → closing
+    if "openai_client" not in st.session_state:
+        st.session_state.openai_client = None
+    if "openai_init_msg" not in st.session_state:
+        st.session_state.openai_init_msg = ""
+    if "sim_stage" not in st.session_state:
+        st.session_state.sim_stage = "WAIT_FIRST_QUERY"
+        # WAIT_FIRST_QUERY (초기 문의 입력)
+        # AGENT_TURN (에이전트 응답 입력)
+        # CUSTOMER_TURN (고객 반응 생성 요청)
+        # WAIT_CLOSING_CONFIRMATION_FROM_AGENT (고객이 감사, 에이전트가 종료 확인 메시지 보내기 대기)
+        # WAIT_CUSTOMER_CLOSING_RESPONSE (종료 확인 메시지 보냄, 고객의 마지막 응답 대기)
+        # FINAL_CLOSING_ACTION (최종 종료 버튼 대기)
+        # CLOSING (채팅 종료)
+        # ⭐ 추가: OUTBOUND_CALL_IN_PROGRESS (전화 발신 진행 중)
+    if "start_time" not in st.session_state:  # AHT 타이머 시작 시간
+        st.session_state.start_time = None
+    if "is_solution_provided" not in st.session_state:  # 솔루션 제공 여부 플래그
+        st.session_state.is_solution_provided = False
+    if "transfer_summary_text" not in st.session_state:  # 이관 시 번역된 요약
+        st.session_state.transfer_summary_text = ""
+    if "language_transfer_requested" not in st.session_state:  # 고객의 언어 이관 요청 여부
+        st.session_state.language_transfer_requested = False
+    if "customer_attachment_file" not in st.session_state:  # 고객 첨부 파일 정보
+        st.session_state.customer_attachment_file = None
+    if "language_at_transfer" not in st.session_state:  # 현재 언어와 비교를 위한 변수
+        st.session_state.language_at_transfer = st.session_state.language
+    if "language_at_transfer_start" not in st.session_state:  # 번역 재시도를 위한 원본 언어
+        st.session_state.language_at_transfer_start = st.session_state.language
+    if "transfer_retry_count" not in st.session_state:
+        st.session_state.transfer_retry_count = 0
+    if "customer_type_sim_select" not in st.session_state:  # FIX: Attribute Error 해결
+        # LANG이 정의되기 전이므로 기본값을 직접 설정
+        default_customer_type = "까다로운 고객"  # 한국어 기본값
+        if st.session_state.language == "en":
+            default_customer_type = "Difficult Customer"
+        elif st.session_state.language == "ja":
+            default_customer_type = "難しい顧客"
+        st.session_state.customer_type_sim_select = default_customer_type
+    if "customer_email" not in st.session_state:  # FIX: customer_email 초기화
+        st.session_state.customer_email = ""
+    if "customer_phone" not in st.session_state:  # FIX: customer_phone 초기화
+        st.session_state.customer_phone = ""
+    if "agent_response_input_box_widget" not in st.session_state:  # FIX: customer_phone 초기화
+        st.session_state.agent_response_input_box_widget = ""
+    if "sim_instance_id" not in st.session_state:  # FIX: DuplicateWidgetID 방지용 인스턴스 ID 초기화
+        st.session_state.sim_instance_id = str(uuid.uuid4())
+    if "sim_attachment_context_for_llm" not in st.session_state:
+        st.session_state.sim_attachment_context_for_llm = ""
+    if "realtime_hint_text" not in st.session_state:
+        st.session_state.realtime_hint_text = ""
+    # ⭐ 추가: 전화 발신 관련 상태
+    if "sim_call_outbound_summary" not in st.session_state:
+        st.session_state.sim_call_outbound_summary = ""
+    if "sim_call_outbound_target" not in st.session_state:
+        st.session_state.sim_call_outbound_target = None
+    # ----------------------------------------------------------------------
+    # ⭐ 전화 기능 관련 상태 추가
+    if "call_sim_stage" not in st.session_state:
+        st.session_state.call_sim_stage = "WAITING_CALL"  # WAITING_CALL, RINGING, IN_CALL, CALL_ENDED
+    if "call_sim_mode" not in st.session_state:
+        st.session_state.call_sim_mode = "INBOUND"  # INBOUND or OUTBOUND
+    if "incoming_phone_number" not in st.session_state:
+        st.session_state.incoming_phone_number = "+82 10-1234-5678"
+    if "is_on_hold" not in st.session_state:
+        st.session_state.is_on_hold = False
+    if "hold_start_time" not in st.session_state:
+        st.session_state.hold_start_time = None
+    if "total_hold_duration" not in st.session_state:
+        st.session_state.total_hold_duration = timedelta(0)
+    if "current_customer_audio_text" not in st.session_state:
+        st.session_state.current_customer_audio_text = ""
+    if "current_agent_audio_text" not in st.session_state:
+        st.session_state.current_agent_audio_text = ""
+    if "agent_response_input_box_widget_call" not in st.session_state:  # 전화 탭 전용 입력창
+        st.session_state.agent_response_input_box_widget_call = ""
+    if "call_initial_query" not in st.session_state:  # 전화 탭 전용 초기 문의
+        st.session_state.call_initial_query = ""
+    # ⭐ 추가: 통화 요약 및 초기 고객 음성 저장소
+    if "call_summary_text" not in st.session_state:
+        st.session_state.call_summary_text = ""
+    if "customer_initial_audio_bytes" not in st.session_state:  # 고객의 첫 음성 (TTS 결과) 저장
+        st.session_state.customer_initial_audio_bytes = None
+    if "supervisor_policy_context" not in st.session_state:
+        # Supervisor가 업로드한 예외 정책 텍스트를 저장합니다.
+        st.session_state.supervisor_policy_context = ""
+    if "agent_policy_attachment_content" not in st.session_state:
+        # 에이전트가 업로드한 정책 파일 객체(또는 내용)를 저장합니다.
+        st.session_state.agent_policy_attachment_content = ""
+    if "customer_attachment_b64" not in st.session_state:
+        st.session_state.customer_attachment_b64 = ""
+    if "customer_history_summary" not in st.session_state:
+        st.session_state.customer_history_summary = ""
+    if "customer_avatar" not in st.session_state:
+        st.session_state.customer_avatar = {
+            "gender": "male",  # 기본값
+            "state": "NEUTRAL",  # 기본 아바타 상태
+        }
 # ⭐ 추가: 전사할 오디오 바이트 임시 저장소
-if "bytes_to_process" not in st.session_state:
-    st.session_state.bytes_to_process = None
+    if "bytes_to_process" not in st.session_state:
+        st.session_state.bytes_to_process = None
+    
+    # 초기화 완료 플래그 설정
+    st.session_state.session_state_initialized = True
+
+# Session State 초기화 함수 호출
+init_session_state()
 
 L = LANG[st.session_state.language]
 
@@ -1157,7 +1176,11 @@ def run_llm(prompt: str) -> str:
     client, info = get_llm_client()
 
     # Note: info는 사이드바에서 선택된 주력 모델의 정보를 담고 있습니다.
-    provider, model_name = info if info else (None, None)
+    # None 값 언팩 방지
+    if info and isinstance(info, tuple) and len(info) == 2:
+        provider, model_name = info
+    else:
+        provider, model_name = None, None
 
     # Fallback 순서를 정의합니다. (Gemini 우선)
     llm_attempts = []
@@ -1194,8 +1217,13 @@ def run_llm(prompt: str) -> str:
             llm_attempts.insert(0, primary_attempt)
 
     # LLM 순차 실행
+    # Fallback 루프 무한 대기 방지: llm_attempts가 비어있으면 즉시 반환
+    if not llm_attempts:
+        return "❌ 사용 가능한 LLM API 키가 없습니다. API 키를 설정해주세요."
+    
     for provider, key, model in llm_attempts:
-        if not key: continue
+        if not key: 
+            continue
 
         try:
             if provider == "gemini":
@@ -1253,62 +1281,58 @@ def init_openai_audio_client():
 
 
 # ⭐ 최적화: LLM 클라이언트 초기화 캐싱 (매번 재생성하지 않도록)
-# OpenAI 클라이언트 캐싱
-# ⭐ 수정: 초기화 시 블로킹 방지를 위해 try-except 추가
-if "openai_client" not in st.session_state or st.session_state.openai_client is None:
-    try:
-        st.session_state.openai_client = init_openai_audio_client()
-    except Exception as e:
-        st.session_state.openai_client = None
-        print(f"OpenAI 클라이언트 초기화 중 오류 (무시됨): {e}")
+# ========================================
+# LLM 초기화 함수 (지연 로딩 - 앱 렌더링 이후에만 호출)
+# ========================================
+def init_llm_clients_lazy():
+    """LLM 클라이언트를 지연 로딩으로 초기화 (앱 렌더링 이후에만 실행)"""
+    # OpenAI 클라이언트 캐싱
+    if "openai_client" not in st.session_state or st.session_state.openai_client is None:
+        try:
+            st.session_state.openai_client = init_openai_audio_client()
+        except Exception as e:
+            st.session_state.openai_client = None
+            # print는 앱 렌더링 전에 실행되면 문제가 될 수 있으므로 제거
 
-# LLM 준비 상태 캐싱 (API 키 변경 시에만 재확인)
-# ⭐ 수정: 초기화 시 블로킹 방지를 위해 try-except 추가
-if "is_llm_ready" not in st.session_state or "llm_ready_checked" not in st.session_state:
-    try:
-        probe_client, _ = get_llm_client()
-        st.session_state.is_llm_ready = probe_client is not None
-    except Exception as e:
-        # 초기화 실패 시에도 앱이 계속 실행되도록 False로 설정
-        st.session_state.is_llm_ready = False
-        print(f"LLM 초기화 중 오류 (무시됨): {e}")
-    st.session_state.llm_ready_checked = True
+    # LLM 준비 상태 캐싱 (API 키 변경 시에만 재확인)
+    if "is_llm_ready" not in st.session_state or "llm_ready_checked" not in st.session_state:
+        try:
+            probe_client, _ = get_llm_client()
+            st.session_state.is_llm_ready = probe_client is not None
+        except Exception as e:
+            st.session_state.is_llm_ready = False
+        st.session_state.llm_ready_checked = True
 
-# API 키 변경 감지를 위한 해시 체크
-current_api_keys_hash = hashlib.md5(
-    f"{get_api_key('openai')}{get_api_key('gemini')}{get_api_key('claude')}{get_api_key('groq')}".encode()
-).hexdigest()
+    # API 키 변경 감지를 위한 해시 체크
+    current_api_keys_hash = hashlib.md5(
+        f"{get_api_key('openai')}{get_api_key('gemini')}{get_api_key('claude')}{get_api_key('groq')}".encode()
+    ).hexdigest()
 
-if "api_keys_hash" not in st.session_state:
-    st.session_state.api_keys_hash = current_api_keys_hash
-elif st.session_state.api_keys_hash != current_api_keys_hash:
-    # API 키가 변경된 경우만 재확인
-    # ⭐ 수정: 초기화 시 블로킹 방지를 위해 try-except 추가
-    try:
-        probe_client, _ = get_llm_client()
-        st.session_state.is_llm_ready = probe_client is not None
-    except Exception as e:
-        st.session_state.is_llm_ready = False
-        print(f"LLM 재초기화 중 오류 (무시됨): {e}")
-    st.session_state.api_keys_hash = current_api_keys_hash
-    # OpenAI 클라이언트도 재초기화
-    try:
-        st.session_state.openai_client = init_openai_audio_client()
-    except Exception as e:
-        st.session_state.openai_client = None
-        print(f"OpenAI 클라이언트 재초기화 중 오류 (무시됨): {e}")
+    if "api_keys_hash" not in st.session_state:
+        st.session_state.api_keys_hash = current_api_keys_hash
+    elif st.session_state.api_keys_hash != current_api_keys_hash:
+        # API 키가 변경된 경우만 재확인
+        try:
+            probe_client, _ = get_llm_client()
+            st.session_state.is_llm_ready = probe_client is not None
+        except Exception as e:
+            st.session_state.is_llm_ready = False
+        st.session_state.api_keys_hash = current_api_keys_hash
+        # OpenAI 클라이언트도 재초기화
+        try:
+            st.session_state.openai_client = init_openai_audio_client()
+        except Exception as e:
+            st.session_state.openai_client = None
 
-if st.session_state.openai_client:
-    # 키를 찾았고 클라이언트 객체는 생성되었으나, 실제 인증은 API 호출 시 이루어짐 (401 오류는 여기서 발생)
-    st.session_state.openai_init_msg = "✅ OpenAI TTS/Whisper 클라이언트 준비 완료 (Key 확인됨)"
-else:
-    # 키를 찾지 못한 경우
-    st.session_state.openai_init_msg = L["openai_missing"]
+    if st.session_state.openai_client:
+        st.session_state.openai_init_msg = "✅ OpenAI TTS/Whisper 클라이언트 준비 완료 (Key 확인됨)"
+    else:
+        st.session_state.openai_init_msg = L.get("openai_missing", "⚠️ OpenAI API Key가 설정되지 않았습니다.")
 
-if not st.session_state.is_llm_ready:
-    st.session_state.llm_init_error_msg = L["simulation_no_key_warning"]
-else:
-    st.session_state.llm_init_error_msg = ""
+    if not st.session_state.is_llm_ready:
+        st.session_state.llm_init_error_msg = L.get("simulation_no_key_warning", "⚠️ LLM API Key가 설정되지 않았습니다.")
+    else:
+        st.session_state.llm_init_error_msg = ""
 
 
 # ----------------------------------------
@@ -3475,6 +3499,9 @@ with st.sidebar:
 if "language" not in st.session_state:
     st.session_state.language = "ko"
 L = LANG[st.session_state.language]
+
+# ⭐ LLM 초기화를 앱 렌더링 이후로 지연 (첫 화면이 표시된 후에만 실행)
+init_llm_clients_lazy()
 
 st.title(L["title"])
 
