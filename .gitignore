@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Python
 __pycache__/
 *.py[cod]
@@ -79,3 +80,18 @@ rag_index/
 # Streamlit cache
 .streamlit/cache/
 
+=======
+민감한 정보(API 키 등)가 포함된 설정 파일을 Git 추적에서 제외합니다.
+
+config.js
+
+기타 제외할 파일 및 폴더 (필요시 추가)
+
+node_modules
+
+.env
+
+./.streamlit/secrets.toml
+
+local_db/
+>>>>>>> eb56caa6a86d0decdfa8e6b11814a0b44ed7b26b
