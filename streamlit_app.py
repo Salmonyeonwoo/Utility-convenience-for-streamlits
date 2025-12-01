@@ -4896,109 +4896,109 @@ elif feature_selection == L["sim_tab_phone"]:
                     time.sleep(1)
                     # st.rerun()  # 매 초마다 재실행하여 AHT 갱신
 
-        # ========================================
-        # 화면 구분 (애니메이션 / CC)
-        # ========================================
-    col_video, col_cc = st.columns([1, 2])
+    #     # ========================================
+    #     # 화면 구분 (애니메이션 / CC)
+    #     # ========================================
+    # col_video, col_cc = st.columns([1, 2])
 
-    with col_video:
-        st.subheader("📺 고객 영상 시뮬레이션")
+    # with col_video:
+    #     st.subheader("📺 고객 영상 시뮬레이션")
 
-        if st.session_state.call_sim_stage == "WAITING_CALL":
-            st.info("통화 수신 대기 중...")
+    #     if st.session_state.call_sim_stage == "WAITING_CALL":
+    #         st.info("통화 수신 대기 중...")
 
-        elif st.session_state.call_sim_stage == "CALL_ENDED":
-            st.info("통화 종료")
+    #     elif st.session_state.call_sim_stage == "CALL_ENDED":
+    #         st.info("통화 종료")
 
-        else:
-            # ⭐ 비디오 파일 업로드 옵션 추가 (로컬 경로 지원)
-            with st.expander("비디오 파일 업로드/로드", expanded=False):
-                # 비디오 파일 업로드
-                uploaded_video = st.file_uploader(
-                    "비디오 파일 업로드 (MP4, WebM, OGG)",
-                    type=["mp4", "webm", "ogg"],
-                    key="customer_video_uploader"
-                )
+    #     else:
+    #         # ⭐ 비디오 파일 업로드 옵션 추가 (로컬 경로 지원)
+    #         with st.expander("비디오 파일 업로드/로드", expanded=False):
+    #             # 비디오 파일 업로드
+    #             uploaded_video = st.file_uploader(
+    #                 "비디오 파일 업로드 (MP4, WebM, OGG)",
+    #                 type=["mp4", "webm", "ogg"],
+    #                 key="customer_video_uploader"
+    #             )
 
-                # 또는 로컬 파일 경로 입력
-                video_path_input = st.text_input(
-                    "또는 로컬 파일 경로 입력",
-                    placeholder="예: C:\\Users\\Admin\\Downloads\\video.mp4 또는 video.mp4",
-                    key="video_path_input"
-                )
+    #             # 또는 로컬 파일 경로 입력
+    #             video_path_input = st.text_input(
+    #                 "또는 로컬 파일 경로 입력",
+    #                 placeholder="예: C:\\Users\\Admin\\Downloads\\video.mp4 또는 video.mp4",
+    #                 key="video_path_input"
+    #             )
 
-                # 비디오 재생
-                video_to_play = None
-                video_format = "video/mp4"
+    #             # 비디오 재생
+    #             video_to_play = None
+    #             video_format = "video/mp4"
 
-                if uploaded_video:
-                    # 업로드된 파일 사용
-                    video_to_play = uploaded_video.read()
-                    # 파일 확장자로 포맷 결정
-                    file_ext = uploaded_video.name.split('.')[-1].lower()
-                    video_format = {
-                        'mp4': 'video/mp4',
-                        'webm': 'video/webm',
-                        'ogg': 'video/ogg'
-                    }.get(file_ext, 'video/mp4')
-                elif video_path_input:
-                    # 로컬 파일 경로 사용
-                    try:
-                        # 절대 경로 또는 상대 경로 처리
-                        if os.path.isabs(video_path_input):
-                            video_path = video_path_input
-                        else:
-                            # 상대 경로는 작업 디렉토리 기준
-                            video_path = os.path.join(os.getcwd(), video_path_input)
+    #             if uploaded_video:
+    #                 # 업로드된 파일 사용
+    #                 video_to_play = uploaded_video.read()
+    #                 # 파일 확장자로 포맷 결정
+    #                 file_ext = uploaded_video.name.split('.')[-1].lower()
+    #                 video_format = {
+    #                     'mp4': 'video/mp4',
+    #                     'webm': 'video/webm',
+    #                     'ogg': 'video/ogg'
+    #                 }.get(file_ext, 'video/mp4')
+    #             elif video_path_input:
+    #                 # 로컬 파일 경로 사용
+    #                 try:
+    #                     # 절대 경로 또는 상대 경로 처리
+    #                     if os.path.isabs(video_path_input):
+    #                         video_path = video_path_input
+    #                     else:
+    #                         # 상대 경로는 작업 디렉토리 기준
+    #                         video_path = os.path.join(os.getcwd(), video_path_input)
 
-                        if os.path.exists(video_path):
-                            with open(video_path, "rb") as f:
-                                video_to_play = f.read()
-                            # 파일 확장자로 포맷 결정
-                            file_ext = os.path.splitext(video_path)[1].lower().lstrip('.')
-                            video_format = {
-                                'mp4': 'video/mp4',
-                                'webm': 'video/webm',
-                                'ogg': 'video/ogg'
-                            }.get(file_ext, 'video/mp4')
-                        else:
-                            st.error(f"파일을 찾을 수 없습니다: {video_path}")
-                    except Exception as e:
-                        st.error(f"비디오 파일 로드 오류: {e}")
+    #                     if os.path.exists(video_path):
+    #                         with open(video_path, "rb") as f:
+    #                             video_to_play = f.read()
+    #                         # 파일 확장자로 포맷 결정
+    #                         file_ext = os.path.splitext(video_path)[1].lower().lstrip('.')
+    #                         video_format = {
+    #                             'mp4': 'video/mp4',
+    #                             'webm': 'video/webm',
+    #                             'ogg': 'video/ogg'
+    #                         }.get(file_ext, 'video/mp4')
+    #                     else:
+    #                         st.error(f"파일을 찾을 수 없습니다: {video_path}")
+    #                 except Exception as e:
+    #                     st.error(f"비디오 파일 로드 오류: {e}")
 
-                # 비디오 재생
-                if video_to_play:
-                    try:
-                        # Streamlit 문서: bytes 데이터를 직접 전달 가능
-                        st.video(video_to_play, format=video_format, autoplay=False, loop=False, muted=False)
-                        st.success("✅ 비디오 로드 완료")
-                    except Exception as e:
-                        st.error(f"비디오 재생 오류: {e}")
-                        st.info("💡 비디오가 H.264 코덱으로 인코딩되었는지 확인하세요. MP4V 코덱은 브라우저에서 지원되지 않을 수 있습니다.")
+    #             # 비디오 재생
+    #             if video_to_play:
+    #                 try:
+    #                     # Streamlit 문서: bytes 데이터를 직접 전달 가능
+    #                     st.video(video_to_play, format=video_format, autoplay=False, loop=False, muted=False)
+    #                     st.success("✅ 비디오 로드 완료")
+    #                 except Exception as e:
+    #                     st.error(f"비디오 재생 오류: {e}")
+    #                     st.info("💡 비디오가 H.264 코덱으로 인코딩되었는지 확인하세요. MP4V 코덱은 브라우저에서 지원되지 않을 수 있습니다.")
 
-            # 상태 선택
-            if st.session_state.is_on_hold:
-                avatar_state = "HOLD"
-            else:
-                avatar_state = st.session_state.customer_avatar.get("state", "NEUTRAL")
+    #         # 상태 선택
+    #         if st.session_state.is_on_hold:
+    #             avatar_state = "HOLD"
+    #         else:
+    #             avatar_state = st.session_state.customer_avatar.get("state", "NEUTRAL")
 
-            # ⭐ Lottie 제거: 로딩 문제로 인해 완전히 제거하고 간단한 텍스트로 대체
-            avatar_emoji = {
-                "NEUTRAL": "😐",
-                "HAPPY": "😊",
-                "ANGRY": "😠",
-                "ASKING": "🤔",
-                "HOLD": "⏸️"
-            }.get(avatar_state, "😐")
+    #         # ⭐ Lottie 제거: 로딩 문제로 인해 완전히 제거하고 간단한 텍스트로 대체
+    #         avatar_emoji = {
+    #             "NEUTRAL": "😐",
+    #             "HAPPY": "😊",
+    #             "ANGRY": "😠",
+    #             "ASKING": "🤔",
+    #             "HOLD": "⏸️"
+    #         }.get(avatar_state, "😐")
 
-            st.markdown(f"### {avatar_emoji} 고객 아바타")
-            st.info(f"상태: {avatar_state}")
+    #         st.markdown(f"### {avatar_emoji} 고객 아바타")
+    #         st.info(f"상태: {avatar_state}")
 
-    with col_cc:
-        st.markdown(
-            f"## {L['call_status_ringing'].format(number=st.session_state.incoming_phone_number)}"
-        )
-        st.markdown("---")
+    # with col_cc:
+    #     st.markdown(
+    #         f"## {L['call_status_ringing'].format(number=st.session_state.incoming_phone_number)}"
+    #     )
+    #     st.markdown("---")
 
     # ========================================
     # WAITING / RINGING 상태
