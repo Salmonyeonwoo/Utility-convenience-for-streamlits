@@ -1,0 +1,81 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local Data
+local_db/
+*.db
+*.sqlite
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+
+# Test files (optional - remove if you want to keep them)
+test_*.py
+*_test.py
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# Audio files (if large)
+*.mp3
+*.wav
+*.ogg
+
+# Large data files
+*.csv
+*.xlsx
+*.parquet
+
+# RAG Index (can be regenerated)
+rag_index/
+*.faiss
+*.pkl
+
+# Streamlit cache
+.streamlit/cache/
+
