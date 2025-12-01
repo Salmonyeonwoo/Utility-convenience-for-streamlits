@@ -1,35 +1,34 @@
 streamlit==1.38.0
 
 # LLM Core
-openai>=1.0.0
-google-genai>=0.2.0
-google-generativeai>=0.3.0
-anthropic>=0.18.0
-groq>=0.4.0
+openai
+google-generativeai
+anthropic
+groq
 
 # LangChain (LLM 라우팅 및 RAG 프레임워크)
-langchain>=0.1.0
-langchain-core>=0.1.0
-langchain-community>=0.0.20
-langchain-openai>=0.0.5
-langchain-google-genai>=0.0.6
-langchain-nvidia-ai-endpoints>=0.0.1
-langchain-text-splitters>=0.0.1
+langchain
+langchain-core
+langchain-community
+langchain-openai
+langchain-google-genai
+langchain-nvidia-ai-endpoints
+langchain-text-splitters
 
 # 전사 및 오디오
-streamlit-mic-recorder>=0.0.8
-numpy>=1.24.0
-pandas>=2.0.0
+streamlit-mic-recorder
+numpy
+pandas
 
 # RAG (문서 처리 기능 유지 시)
-faiss-cpu>=1.7.4
-pypdf>=3.17.0
-sentence-transformers>=2.2.0
+faiss-cpu
+pypdf
+sentence-transformers
 
 # 시각화 (선택적)
-plotly>=5.17.0
-matplotlib>=3.7.0
+plotly
+matplotlib
 
 # 추가 필수 패키지
-requests>=2.31.0
-openpyxl>=3.1.0
+requests
+openpyxl
