@@ -3357,7 +3357,7 @@ with st.sidebar:
         # ⭐ 언어 변경 시 재실행 - 무한 루프 방지를 위해 플래그 사용
         if "language_changed" not in st.session_state or not st.session_state.language_changed:
             st.session_state.language_changed = True
-            st.rerun()
+            # st.rerun()
         else:
             # 이미 한 번 재실행했으면 플래그 초기화
             st.session_state.language_changed = False
