@@ -98,3 +98,6 @@ histories = load_simulation_histories_local("ko")
 2. 메인 streamlit_app.py에서 기존 코드를 import로 대체
 3. 테스트 및 디버깅
 4. pages/ 폴더로 UI 분리 (선택사항)
+
+
+

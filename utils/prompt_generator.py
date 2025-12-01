@@ -317,3 +317,6 @@ Respond ONLY with valid JSON in this format:
         return profile
     except Exception as e:
         return {"sentiment_score": 50, "urgency_score": 50, "customer_type": "general"}
+
+
+
