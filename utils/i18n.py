@@ -107,8 +107,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "survey_sent_confirm": "📨 설문조사 링크가 전송되었으며, 이 상담은 종료되었습니다。",
         "new_simulation_ready": "새 시뮬레이션을 시작할 수 있습니다。",
         "agent_response_header": "✍️ 에이전트 응답",
-        "agent_response_placeholder": "고객에게 응답하세요...",
+        "agent_response_placeholder": "에이전트로부터의 응답을 입력하세요...",
         "send_response_button": "응답 전송",
+        "customer_query_display_label": "📋 고객 문의 내역",
         "customer_turn_info": "에이전트 응답 전송 완료. 고객 반응을 자동으로 생성 중입니다。",
         "generating_customer_response": "고객 반응 생성 중...",
         "customer_escalation_start": "상급자와 이야기하고 싶습니다",
@@ -210,9 +211,15 @@ LANG: Dict[str, Dict[str, str]] = {
         "attachment_label": "고객 첨부 파일 업로드 (스크린샷 등)",
         "attachment_placeholder": "파일을 첨부하여 상황을 설명하세요 (선택 사항)",
         "attachment_info_llm": "[고객 첨부 파일: {filename}이(가) 확인되었습니다. 이 파일을 참고하여 응대하세요.]",
+        "attachment_status_llm": "고객이 **{filename}** 파일을 첨부했습니다. 이 파일을 스크린샷이라고 가정하고 응대 초안과 가이드라인에 반영해주세요. (파일 타입: {filetype})",
         "agent_attachment_label": "에이전트 첨부 파일 (스크린샷 등)",
         "agent_attachment_placeholder": "응답에 첨부할 파일을 선택하세요 (선택 사항)",
         "agent_attachment_status": "📎 에이전트가 **{filename}** 파일을 응답에 첨부했습니다. (파일 타입: {filetype})",
+        
+        # --- RAG 관련 키 추가 ---
+        "rag_question_button": "질문하기",
+        "rag_answer_header": "답변",
+        "rag_answer_error": "답변 생성에 실패했습니다. 다시 시도해주세요.",
 
         # --- RAG 오류 메시지 추가 ---
         "rag_embed_error_openai": "RAG 임베딩 실패: OpenAI API Key가 유효하지 않거나 설정되지 않았습니다。",
@@ -341,14 +348,21 @@ LANG: Dict[str, Dict[str, str]] = {
         "error_mandatory_contact": "Email and Phone number input are mandatory.",
         "customer_attachment_label": "📎 Customer Attachment Upload",
         "attachment_info_llm": "[Customer Attachment: {filename} is confirmed. Reference this file in your response.]",
+        "attachment_status_llm": "Customer has attached **{filename}** file. Assume this is a screenshot and reflect it in the response draft and guidelines. (File type: {filetype})",
         "button_retry_translation": "Retry Translation",
+        
+        # --- RAG 관련 키 추가 ---
+        "rag_question_button": "Ask Question",
+        "rag_answer_header": "Answer",
+        "rag_answer_error": "Failed to generate answer. Please try again.",
         "button_request_hint": "💡 Request Response Hint (AHT Monitored)",
         "hint_placeholder": "Hints for responses",
         "survey_sent_confirm": "📨 The survey link has been sent. This chat session is now closed。",
         "new_simulation_ready": "You can now start a new simulation.",
         "agent_response_header": "✍️ Agent Response",
-        "agent_response_placeholder": "Write a response...",
+        "agent_response_placeholder": "Enter response from agent...",
         "send_response_button": "Send Response",
+        "customer_query_display_label": "📋 Customer Inquiry History",
         "customer_turn_info": "Agent response sent. Generating customer reaction automatically。",
         "generating_customer_response": "Generating customer response...",
         "customer_escalation_start": "I want to speak to a supervisor",
@@ -450,9 +464,15 @@ LANG: Dict[str, Dict[str, str]] = {
         "attachment_label": "Customer Attachment Upload (Screenshot, etc。)",
         "attachment_placeholder": "Attach a file to explain the situation (optional)",
         "attachment_info_llm": "[Customer Attachment: {filename} is confirmed. Reference this file in your response。]",
+        "attachment_status_llm": "Customer has attached **{filename}** file. Assume this is a screenshot and reflect it in the response draft and guidelines. (File type: {filetype})",
         "agent_attachment_label": "Agent Attachment (Screenshot, etc。)",
         "agent_attachment_placeholder": "Select a file to attach to the response (optional)",
         "agent_attachment_status": "📎 Agent attached **{filename}** file to the response。 (File type: {filetype})",
+
+        # --- RAG 관련 키 추가 ---
+        "rag_question_button": "Ask Question",
+        "rag_answer_header": "Answer",
+        "rag_answer_error": "Failed to generate answer. Please try again.",
 
         # --- RAG 오류 메시지 추가 ---
         "rag_embed_error_openai": "RAG embedding failed: OpenAI API Key is invalid or not set。",
@@ -587,8 +607,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "new_simulation_ready": "新しいシミュレーションを開始できます。",
         "survey_sent_confirm": "📨 アンケートリンクを送信しました。このチャットは終了しました。",
         "agent_response_header": "✍️ エージェント応答",
-        "agent_response_placeholder": "顧客へ返信内容を入力…",
+        "agent_response_placeholder": "エージェントからの応答を入力してください…",
         "send_response_button": "返信送信",
+        "customer_query_display_label": "📋 顧客問い合わせ履歴",
         "customer_turn_info": "エージェント応答送信完了。顧客の反応を自動生成中です。",
         "generating_customer_response": "顧客の反応を生成中...",
         "customer_escalation_start": "上級の担当者と話したい",
@@ -689,10 +710,15 @@ LANG: Dict[str, Dict[str, str]] = {
         # --- 첨부 파일 기능 추가 ---
         "attachment_label": "顧客の添付ファイルアップロード (スクリーンショットなど)",
         "attachment_placeholder": "ファイルを添付して状況を説明してください（オプション）",
-        "attachment_status_llm": "顧客が **{filename}** 파일을 첨부했습니다. 이 파일을 스크린샷이라고 가정하고 응대 초안과 가이드라인에 반영해주세요. (ファイルタイプ: {filetype})",
+        "attachment_status_llm": "顧客が **{filename}** ファイルを添付しました。このファイルをスクリーンショットと仮定し、応対草案とガイドラインに反映してください。 (ファイルタイプ: {filetype})",
         "agent_attachment_label": "エージェント添付ファイル (スクリーンショットなど)",
         "agent_attachment_placeholder": "応答に添付するファイルを選択してください（オプション）",
         "agent_attachment_status": "📎 エージェントが **{filename}** ファイルを応答に添付しました。(ファイルタイプ: {filetype})",
+
+        # --- RAG 관련 키 추가 ---
+        "rag_question_button": "質問する",
+        "rag_answer_header": "回答",
+        "rag_answer_error": "回答の生成に失敗しました。もう一度お試しください。",
 
         # --- RAG 오류 메시지 추가 ---
         "rag_embed_error_openai": "RAG embedding failed: OpenAI API Key is invalid or not set。",
