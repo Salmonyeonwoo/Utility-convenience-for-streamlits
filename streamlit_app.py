@@ -21,6 +21,7 @@ import uuid
 import base64
 import tempfile
 import hashlib
+import random
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Union
 from typing import List, Dict, Any
@@ -247,6 +248,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "attachment_info_llm": "[고객 첨부 파일: {filename}이(가) 확인되었습니다. 이 파일을 참고하여 응대하세요.]",
         "button_retry_translation": "번역 다시 시도",
         "button_request_hint": "💡 응대 힌트 요청 (AHT 모니터링 중)",
+        "button_generate_draft": "🤖 AI 응답 초안 생성",
+        "draft_generating": "AI가 응답 초안을 생성 중입니다...",
+        "draft_success": "✅ AI 응답 초안이 생성되었습니다. 아래에서 확인하고 수정하세요.",
         "hint_placeholder": "문의 응대에 대한 힌트:",
         "survey_sent_confirm": "📨 설문조사 링크가 전송되었으며, 이 상담은 종료되었습니다。",
         "new_simulation_ready": "새 시뮬레이션을 시작할 수 있습니다。",
@@ -487,6 +491,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "attachment_info_llm": "[Customer Attachment: {filename} is confirmed. Reference this file in your response.]",
         "button_retry_translation": "Retry Translation",
         "button_request_hint": "💡 Request Response Hint (AHT Monitored)",
+        "button_generate_draft": "🤖 Generate AI Response Draft",
+        "draft_generating": "AI is generating a response draft...",
+        "draft_success": "✅ AI response draft has been generated. Please review and modify below.",
         "hint_placeholder": "Hints for responses",
         "survey_sent_confirm": "📨 The survey link has been sent. This chat session is now closed。",
         "new_simulation_ready": "You can now start a new simulation.",
@@ -727,6 +734,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "attachment_info_llm": "[顧客添付ファイル: {filename}が確認されました。このファイルを参照して対応してください。]",
         "button_retry_translation": "翻訳を再試行",
         "button_request_hint": "💡 応対ヒントを要請 (AHT モニタリング中)",
+        "button_generate_draft": "🤖 AI応答草案生成",
+        "draft_generating": "AIが応答草案を生成中です...",
+        "draft_success": "✅ AI応答草案が生成されました。以下で確認して修正してください。",
         "hint_placeholder": "お問合せの応対に対するヒント：",
         "new_simulation_ready": "新しいシミュレーションを開始できます。",
         "survey_sent_confirm": "📨 アンケートリンクを送信しました。このチャットは終了しました。",
@@ -1453,6 +1463,92 @@ def generate_agent_response_draft(current_lang_key: str) -> str:
     history_text = get_chat_history_for_prompt(include_attachment=True)
     lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
 
+    # 고객의 최신 문의 내용 추출 및 분석 (강화)
+    latest_customer_message = ""
+    initial_customer_query = st.session_state.get('customer_query_text_area', '')
+    customer_query_analysis = ""
+    
+    # 모든 고객 메시지 수집
+    all_customer_messages = []
+    if st.session_state.simulator_messages:
+        all_customer_messages = [msg["content"] for msg in st.session_state.simulator_messages 
+                                if msg.get("role") in ["customer", "customer_rebuttal", "initial_query"]]
+    
+    # 초기 문의도 포함
+    if initial_customer_query and initial_customer_query not in all_customer_messages:
+        all_customer_messages.insert(0, initial_customer_query)
+    
+    if all_customer_messages:
+        latest_customer_message = all_customer_messages[-1]
+        
+        # 문의 내용에서 핵심 정보 추출 (간단한 키워드 추출)
+        inquiry_keywords = []
+        inquiry_text = " ".join(all_customer_messages).lower()
+        
+        # 일반적인 문의 키워드 패턴
+        important_patterns = [
+            r'\b\d{4,}\b',  # 주문번호, 전화번호 등 숫자
+            r'\b(주문|order|注文)\b',
+            r'\b(환불|refund|返金)\b',
+            r'\b(취소|cancel|キャンセル)\b',
+            r'\b(배송|delivery|配送)\b',
+            r'\b(변경|change|変更)\b',
+            r'\b(문제|problem|issue|問題)\b',
+            r'\b(도움|help|助け)\b',
+        ]
+        
+        # 핵심 문의 내용 요약
+        inquiry_summary = f"""
+**CUSTOMER INQUIRY DETAILS:**
+
+Initial Query: "{initial_customer_query if initial_customer_query else 'Not provided'}"
+
+Latest Customer Message: "{latest_customer_message}"
+
+All Customer Messages Context:
+{chr(10).join([f"- {msg[:150]}..." if len(msg) > 150 else f"- {msg}" for msg in all_customer_messages[-3:]])}
+
+**YOUR RESPONSE MUST DIRECTLY ADDRESS:**
+
+1. **SPECIFIC ISSUE IDENTIFICATION**: 
+   - What EXACT problem or question did the customer mention?
+   - Extract and reference specific details: order numbers, dates, product names, locations, error messages, etc.
+   - If multiple issues were mentioned, address EACH one specifically
+
+2. **CONCRETE SOLUTION PROVIDED**:
+   - Provide STEP-BY-STEP instructions tailored to their EXACT situation
+   - Include specific actions they need to take (e.g., "Go to Settings > Account > Order History and click on order #12345")
+   - Reference the exact products/services they mentioned
+   - If they mentioned a location, reference it in your solution
+
+3. **PERSONALIZATION**:
+   - Use the customer's specific words/phrases when appropriate
+   - Reference their exact situation (e.g., "Since you mentioned your eSIM isn't activating in Paris...")
+   - Acknowledge their specific concern or frustration point
+
+4. **COMPLETENESS**:
+   - Answer ALL questions they asked
+   - Address ALL problems they mentioned
+   - If they asked "why", explain the specific reason for their situation
+   - If they asked "how", provide detailed steps for their exact case
+
+**CRITICAL REQUIREMENTS:**
+- DO NOT use generic templates like "Thank you for contacting us" without addressing their specific issue
+- DO NOT give vague answers like "Please check your settings" - be SPECIFIC about which settings and what to do
+- DO NOT ignore specific details they mentioned (order numbers, dates, locations, etc.)
+- Your response must read as if it was written SPECIFICALLY for this customer's exact inquiry
+- If the customer mentioned "eSIM activation in Paris", your response MUST specifically address eSIM activation and Paris
+- If the customer mentioned an order number, your response MUST reference that order number
+
+**EXAMPLE OF GOOD RESPONSE:**
+Bad: "Thank you for contacting us. We understand your concern and will help you resolve this issue."
+Good: "I understand you're having trouble activating your eSIM in Paris. Let me help you resolve this step by step. First, please check if your phone's APN settings are configured correctly for the Paris network..."
+
+**NOW GENERATE YOUR RESPONSE** following these requirements:
+"""
+        
+        customer_query_analysis = inquiry_summary
+
     # 첨부 파일 컨텍스트 추가
     attachment_context = st.session_state.sim_attachment_context_for_llm
     if attachment_context:
@@ -1469,6 +1565,17 @@ def generate_agent_response_draft(current_lang_key: str) -> str:
     customer_message_count = sum(
         1 for msg in st.session_state.simulator_messages if msg.get("role") in ["customer", "customer_rebuttal"])
     agent_message_count = sum(1 for msg in st.session_state.simulator_messages if msg.get("role") == "agent_response")
+
+    # 이전 에이전트 응답들 추출 (다양성 확보를 위해)
+    previous_agent_responses = [msg["content"] for msg in st.session_state.simulator_messages 
+                                if msg.get("role") == "agent_response"]
+    previous_responses_context = ""
+    if previous_agent_responses:
+        previous_responses_context = f"\n[이전 에이전트 응답들 (참고용, 동일하게 반복하지 말 것):\n"
+        for i, prev_resp in enumerate(previous_agent_responses[-3:], 1):  # 최근 3개만
+            prev_resp_preview = prev_resp[:200] + "..." if len(prev_resp) > 200 else prev_resp
+            previous_responses_context += f"{i}. {prev_resp_preview}\n"
+        previous_responses_context += "]\n"
 
     # 고객이 계속 따지거나 화내는 패턴 감지 (고객 메시지가 에이전트 메시지보다 많거나, 반복적인 불만 표현)
     is_repeating_complaints = False
@@ -1538,27 +1645,143 @@ The customer may be showing signs of continued frustration or dissatisfaction.
 Now generate the agent's response draft following this structure:
 """
 
+    # 다양성 확보를 위한 추가 지시사항 (더 강화)
+    diversity_instruction = ""
+    if previous_agent_responses:
+        # 이전 응답들의 주요 키워드/구문 추출 (반복 방지)
+        previous_keywords = []
+        for prev_resp in previous_agent_responses[-3:]:
+            # 간단한 키워드 추출 (2-3단어 구문)
+            words = prev_resp.split()[:20]  # 처음 20단어만
+            for i in range(len(words) - 1):
+                if len(words[i]) > 3 and len(words[i+1]) > 3:
+                    previous_keywords.append(f"{words[i]} {words[i+1]}")
+        
+        keywords_warning = ""
+        if previous_keywords:
+            unique_keywords = list(set(previous_keywords))[:10]  # 최대 10개만
+            keywords_warning = f"\n- AVOID using these exact phrases from previous responses: {', '.join(unique_keywords[:5])}"
+        
+        diversity_instruction = f"""
+**CRITICAL DIVERSITY REQUIREMENT - STRICTLY ENFORCED:**
+- You MUST generate a COMPLETELY DIFFERENT response from ALL previous agent responses shown above
+- Use COMPLETELY DIFFERENT wording, phrasing, sentence structures, and vocabulary
+- If similar solutions are needed, present them in a COMPLETELY DIFFERENT way or from a COMPLETELY DIFFERENT angle
+- Vary your opening sentences, transition phrases, and closing statements - NO REPETITION
+- DO NOT copy, paraphrase, or reuse ANY phrases from previous responses - be CREATIVE and UNIQUE while maintaining professionalism
+- Consider COMPLETELY different approaches: 
+  * If previous responses were formal, try a warmer, more personal tone (or vice versa)
+  * If previous responses focused on one aspect, emphasize a COMPLETELY different aspect this time
+  * Use different examples, analogies, or explanations
+  * Change the order of information presentation
+  * Use different sentence lengths and structures
+{keywords_warning}
+- IMPORTANT: Read ALL previous responses carefully and ensure your response is DISTINCTLY different in style, tone, structure, and content
+- If you find yourself writing something similar to a previous response, STOP and rewrite it completely differently
+"""
+
+    # 랜덤 요소 추가를 위한 변형 지시사항
+    variation_approaches = [
+        "Start with a different greeting or acknowledgment style",
+        "Use a different problem-solving approach or framework",
+        "Present information in a different order",
+        "Use different examples or analogies",
+        "Vary the level of formality or warmth",
+        "Focus on different aspects of the solution",
+        "Use different transition words and phrases",
+        "Change the length and complexity of sentences"
+    ]
+    selected_approaches = random.sample(variation_approaches, min(3, len(variation_approaches)))
+    variation_note = "\n".join([f"- {approach}" for approach in selected_approaches])
+
     draft_prompt = f"""
-You are an AI assistant helping a customer support agent write a professional response.
+You are an AI assistant helping a customer support agent write a professional, tailored response.
 
-Based on the conversation history below, generate a draft response that the agent can review and modify before sending.
+**PRIMARY OBJECTIVE:**
+Generate a response draft that is SPECIFICALLY tailored to the customer's EXACT inquiry, providing concrete, actionable solutions that directly address their specific situation. The response must read as if it was written personally for this customer's unique case.
 
-Requirements:
-1. The response MUST be in {lang_name}
-2. Be professional, empathetic, and solution-oriented
-3. Address the customer's latest inquiry or concern
-4. If the customer asked a question, provide a clear answer
-5. If the customer expressed dissatisfaction, show empathy and offer solutions
-6. Keep the tone appropriate for the customer type: {customer_type}
-7. Do NOT include any markdown formatting, just plain text
-8. {f'**FOLLOW THE COPING STRATEGY FORMAT BELOW**' if needs_coping_strategy else 'Use natural, conversational flow'}
+**CRITICAL REQUIREMENTS (IN ORDER OF PRIORITY):**
+1. **MOST CRITICAL**: Address the customer's SPECIFIC inquiry/question with DETAILED, ACTIONABLE solutions
+   - Extract and reference specific details from their message (order numbers, dates, product names, locations, error messages, etc.)
+   - Provide step-by-step instructions tailored to their EXACT situation
+   - Answer ALL questions they asked completely
+   - Address ALL problems they mentioned specifically
 
-Conversation History:
+2. The response MUST be in {lang_name}
+
+3. Be professional, empathetic, and solution-oriented
+
+4. If the customer asked a question, provide a COMPLETE and SPECIFIC answer - do NOT give vague or generic responses
+   - Bad: "Please check your settings"
+   - Good: "Please go to Settings > Mobile Network > APN Settings and ensure the APN is set to 'internet'"
+
+5. If the customer mentioned a problem, acknowledge it SPECIFICALLY and provide STEP-BY-STEP solutions
+   - Reference their exact problem description
+   - Provide solutions that directly address their specific issue
+
+6. Reference specific details from their inquiry (order numbers, dates, products, locations, etc.) if mentioned
+   - If they mentioned "order #12345", your response MUST include "order #12345"
+   - If they mentioned "Paris", your response should reference Paris specifically
+   - If they mentioned "eSIM", address eSIM specifically, not just "SIM card"
+
+7. Keep the tone appropriate for the customer type: {customer_type}
+
+8. Do NOT include any markdown formatting, just plain text
+
+9. {f'**FOLLOW THE COPING STRATEGY FORMAT BELOW**' if needs_coping_strategy else 'Use natural, conversational flow'}
+
+10. **CRITICAL**: Generate a COMPLETELY UNIQUE and VARIED response - avoid repeating ANY similar phrases, structures, or approaches from previous responses
+
+11. **CRITICAL**: Your response must be HIGHLY RELEVANT to the customer's specific inquiry - generic template responses are NOT acceptable
+    - DO NOT start with generic greetings without immediately addressing their specific issue
+    - DO NOT use placeholder text like "[specific solution]" - provide ACTUAL specific solutions
+    - Your response should make the customer feel like you read and understood THEIR specific message
+
+**VARIATION TECHNIQUES TO APPLY:**
+{variation_note}
+
+{customer_query_analysis}
+
+**FULL CONVERSATION HISTORY:**
 {history_text}
 {attachment_context}
+
+**PREVIOUS RESPONSES TO AVOID REPEATING:**
+{previous_responses_context if previous_responses_context else "No previous responses to compare against."}
+
+**DIVERSITY REQUIREMENTS:**
+{diversity_instruction if diversity_instruction else "This is the first response, so no previous responses to avoid."}
+
 {coping_guidance if needs_coping_strategy else ''}
 
-Generate the agent's response draft:
+**YOUR TASK:**
+Generate the agent's response draft NOW. The response must:
+
+1. **FIRST**: Read the customer inquiry analysis above CAREFULLY and identify:
+   - What is their EXACT problem or question?
+   - What specific details did they mention (order numbers, dates, locations, products)?
+   - What do they need help with specifically?
+
+2. **SECOND**: Write a response that:
+   - Addresses their EXACT problem/question (not a generic version)
+   - References the specific details they mentioned
+   - Provides concrete, actionable steps tailored to their situation
+   - Answers ALL their questions completely
+   - Makes them feel understood
+
+3. **THIRD**: Ensure the response is:
+   - COMPLETELY DIFFERENT and UNIQUE from any previous responses
+   - Professional, empathetic, and solution-oriented
+   - Written in {lang_name}
+   - Free of markdown formatting
+
+**BEFORE YOU WRITE**: Ask yourself:
+- "Does this response address the customer's SPECIFIC inquiry?"
+- "Would a generic template response work here?" (If yes, rewrite it to be more specific)
+- "Does this response reference specific details from the customer's message?"
+- "Would the customer feel like I read and understood THEIR specific message?"
+
+**NOW GENERATE THE RESPONSE:**
 """
 
     if not st.session_state.is_llm_ready:
@@ -1750,8 +1973,10 @@ def render_tts_button(text, lang_key, role="customer", prefix="", index: int = -
         # 이관 요약처럼 인덱스가 고정되지 않는 경우, 텍스트 해시와 세션 인스턴스 ID를 조합
         content_hash = hashlib.md5(text[:100].encode()).hexdigest()
         session_id_part = st.session_state.get('sim_instance_id', 'default_session')
-        # ⭐ 최종 수정: 키에 Session ID와 나노초를 조합하여 매번 고유성을 보장합니다.
-        safe_key = f"{prefix}_SUMMARY_{session_id_part}_{content_hash}_{time.time_ns()}"
+        # ⭐ 수정: 이관 요약의 경우 안정적인 키를 생성 (time.time_ns() 제거하여 매번 같은 키 생성)
+        # 언어 코드도 추가하여 이관 후 언어 변경 시에도 고유성 보장
+        lang_code = st.session_state.get('language', lang_key)
+        safe_key = f"{prefix}_SUMMARY_{session_id_part}_{lang_code}_{content_hash}"
     else:
         # 대화 로그처럼 인덱스가 존재하는 경우 (기존 로직 유지)
         content_hash = hashlib.md5(text[:100].encode()).hexdigest()
@@ -4250,9 +4475,8 @@ elif feature_selection == L["sim_tab_chat_email"]:
                     st.warning(
                         f"첨부된 PDF 파일 ({st.session_state.customer_attachment_file.name})은 현재 인라인 미리보기가 지원되지 않습니다.")
 
-        # 이관 요약 표시 (이관 후에만)
-        if st.session_state.transfer_summary_text or st.session_state.language != st.session_state.language_at_transfer_start:
-            if st.session_state.transfer_summary_text or st.session_state.language != st.session_state.language_at_transfer_start:
+    # 이관 요약 표시 (이관 후에만) - 루프 밖으로 이동하여 한 번만 표시
+    if st.session_state.transfer_summary_text or (st.session_state.language != st.session_state.language_at_transfer_start and st.session_state.language_at_transfer_start):
                 st.markdown("---")
                 st.markdown(f"**{L['transfer_summary_header']}**")
                 st.info(L["transfer_summary_intro"])
@@ -4293,7 +4517,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
                 else:
                     # [수정 2] 번역 성공 시 내용 표시 및 TTS 버튼 추가
                     st.markdown(st.session_state.transfer_summary_text)
-                    # ⭐ 수정: index=-1을 사용하여 고유 세션 ID 기반의 키를 생성하도록 변경
+            # ⭐ 수정: 이관 요약의 경우 안정적인 키를 생성하도록 수정 (세션 ID와 언어 코드 조합)
                     render_tts_button(
                         st.session_state.transfer_summary_text,
                         st.session_state.language,
@@ -4334,20 +4558,20 @@ elif feature_selection == L["sim_tab_chat_email"]:
                 f"📎 최초 문의 시 첨부된 파일 정보:\n\n{st.session_state.sim_attachment_context_for_llm.replace('[ATTACHMENT STATUS]', '').strip()}")
 
         # --- AI 응답 초안 생성 버튼 (요청 1 반영) ---
-        if st.button("🤖 AI 응답 초안 생성", key=f"btn_generate_ai_draft_{st.session_state.sim_instance_id}"):
+        if st.button(L["button_generate_draft"], key=f"btn_generate_ai_draft_{st.session_state.sim_instance_id}"):
             if not st.session_state.is_llm_ready:
                 st.warning(L["simulation_no_key_warning"])
             else:
-                with st.spinner("AI가 응답 초안을 생성 중입니다..."):
+                with st.spinner(L["draft_generating"]):
                     # 초안 생성 함수 호출
                     ai_draft = generate_agent_response_draft(current_lang)
                     if ai_draft and not ai_draft.startswith("❌"):
                         st.session_state.agent_response_area_text = ai_draft
-                        st.success("✅ AI 응답 초안이 생성되었습니다. 아래에서 확인하고 수정하세요.")
-                        # ⭐ 재실행
-                        # st.rerun()
+                        st.success(L["draft_success"])
+                        # ⭐ 재실행하여 텍스트 영역 업데이트
+                        st.rerun()
                     else:
-                        st.error(ai_draft if ai_draft else "응답 초안 생성에 실패했습니다.")
+                        st.error(ai_draft if ai_draft else L.get("draft_error", "응답 초안 생성에 실패했습니다."))
 
         # --- 전화 발신 버튼 추가 (요청 2 반영) ---
         st.markdown("---")
@@ -4491,10 +4715,11 @@ elif feature_selection == L["sim_tab_chat_email"]:
             # st.text_area의 값을 읽어 세션 상태를 직접 업데이트하는 on_change를 제거하고
             # st.text_area 위젯 자체의 키를 사용하여 send_clicked 시 최신 값을 읽도록 합니다.
             # (Streamlit 기본 동작: 버튼 클릭 시 위젯의 최종 값이 세션 상태에 반영됨)
+            # ⭐ 수정: key를 agent_response_area_text로 통일하여 세션 상태와 동기화
             agent_response_input = st.text_area(
                 L["agent_response_placeholder"],
                 value=st.session_state.agent_response_area_text,
-                key="agent_response_input_box_widget",  # 이 키를 통해 버튼 클릭 시 최신 값에 접근
+                key="agent_response_area_text",  # 세션 상태 키와 동일하게 설정하여 동기화 보장
                 height=150,
             )
 
@@ -4509,8 +4734,8 @@ elif feature_selection == L["sim_tab_chat_email"]:
             send_clicked = st.button(L["send_response_button"], key="send_agent_response_btn")
 
         if send_clicked:
-            # ⭐ 수정: st.session_state.agent_response_input_box_widget에서 최신 입력값을 가져옴
-            agent_response = st.session_state.agent_response_input_box_widget.strip()
+            # ⭐ 수정: st.session_state.agent_response_area_text에서 최신 입력값을 가져옴 (key와 동일)
+            agent_response = st.session_state.agent_response_area_text.strip()
 
             if not agent_response:
                 st.warning(L["empty_response_warning"])
@@ -5415,6 +5640,14 @@ elif feature_selection == L["sim_tab_phone"]:
         if st.session_state.transfer_summary_text:
             st.subheader(f"🔍 {L['transfer_summary_header']}")
             st.info(st.session_state.transfer_summary_text)
+            # ⭐ 이관 요약에 TTS 버튼 추가
+            render_tts_button(
+                st.session_state.transfer_summary_text,
+                st.session_state.language,
+                role="agent",
+                prefix="trans_summary_tts_call",
+                index=-1  # 고유 세션 ID 기반의 키를 생성하도록 지시
+            )
         elif st.session_state.customer_history_summary:
             st.subheader("💡 AI 요약")
             st.info(st.session_state.customer_history_summary)
