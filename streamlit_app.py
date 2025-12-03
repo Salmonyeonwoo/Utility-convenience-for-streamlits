@@ -267,6 +267,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "delete_history_button": "❌ 모든 이력 삭제",
         "delete_confirm_message": "정말로 모든 상담 이력을 삭제하시겠습니까?",
         "delete_confirm_yes": "예, 삭제합니다",
+        "download_history_json": "📥 이력 다운로드 (JSON)",
+        "download_history_text": "📥 이력 다운로드 (TXT)",
+        "download_history_excel": "📥 이력 다운로드 (Excel)",
+        "download_current_session": "📥 현재 세션 다운로드",
         "delete_confirm_no": "아니오, 유지합니다",
         "delete_success": "✅ 삭제 완료!",
         "deleting_history_progress": "이력 삭제 중...",
@@ -347,10 +351,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "save_history_fail": "상담 이력 저장 실패",
         "delete_fail": "삭제 실패",
         "rec_header": "음성 입력 및 전사",
-        "whisper_processing": "음성 전사 처리 중",
-        "empty_response_warning": "응답을 입력하세요。",
-        "customer_no_more_inquiries": "없습니다. 감사합니다。",
-        "customer_has_additional_inquiries": "추가 문의 사항도 있습니다。",
+        "whisper_processing": "음성 전사 처리 중..",
+        "empty_response_warning": "응답을 입력하세요.",
+        "customer_no_more_inquiries": "없습니다. 감사합니다.",
+        "customer_has_additional_inquiries": "추가 문의 사항도 있습니다.",
         "sim_end_chat_button": "설문 조사 링크 전송 및 응대 종료",
         "delete_mic_record": "❌ 녹음 삭제",
 
@@ -511,6 +515,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "delete_confirm_message": "Are you sure you want to delete all records?",
         "delete_confirm_yes": "Yes, Delete",
         "delete_confirm_no": "Cancel",
+        "download_history_json": "📥 Download History (JSON)",
+        "download_history_text": "📥 Download History (TXT)",
+        "download_history_excel": "📥 Download History (Excel)",
+        "download_current_session": "📥 Download Current Session",
         "delete_success": "Deleted successfully!",
         "deleting_history_progress": "Deleting history...",
         "search_history_label": "Search History",
@@ -753,6 +761,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "delete_history_button": "❌ 全履歴削除",
         "delete_confirm_message": "すべての履歴を削除しますか？",
         "delete_confirm_yes": "はい、削除します。",
+        "download_history_json": "📥 履歴ダウンロード (JSON)",
+        "download_history_text": "📥 履歴ダウンロード (TXT)",
+        "download_history_excel": "📥 履歴ダウンロード (Excel)",
+        "download_current_session": "📥 現在のセッションをダウンロード",
         "delete_confirm_no": "いいえ、維持します。",
         "delete_success": "削除完了！",
         "deleting_history_progress": "削除中...",
@@ -918,6 +930,8 @@ if "customer_query_text_area" not in st.session_state:
     st.session_state.customer_query_text_area = ""
 if "agent_response_area_text" not in st.session_state:
     st.session_state.agent_response_area_text = ""
+if "reset_agent_response_area" not in st.session_state:
+    st.session_state.reset_agent_response_area = False
 if "last_transcript" not in st.session_state:
     st.session_state.last_transcript = ""
 if "sim_audio_bytes" not in st.session_state:
@@ -3540,7 +3554,8 @@ with st.sidebar:
                 pass  # 초기화 실패해도 계속 진행
         st.session_state.initial_advice_provided = False
         st.session_state.is_chat_ended = False
-        st.session_state.agent_response_area_text = ""
+        # ⭐ 수정: 위젯이 생성된 후에는 session_state를 직접 수정할 수 없으므로 플래그 사용
+        st.session_state.reset_agent_response_area = True
         st.session_state.customer_query_text_area = ""
         st.session_state.last_transcript = ""
         st.session_state.sim_audio_bytes = None
@@ -4208,6 +4223,85 @@ elif feature_selection == L["sim_tab_chat_email"]:
     if st.session_state.sim_stage == "CLOSING":
         st.success(L["survey_sent_confirm"])
         st.info(L["new_simulation_ready"])
+        
+        # ⭐ 추가: 현재 세션 이력 다운로드 기능
+        st.markdown("---")
+        st.markdown("**📥 현재 세션 이력 다운로드**")
+        download_col1, download_col2, download_col3 = st.columns(3)
+        
+        # 현재 세션의 이력을 생성
+        current_session_history = None
+        if st.session_state.simulator_messages:
+            try:
+                customer_type_display = st.session_state.get("customer_type_sim_select", L["customer_type_options"][0])
+                current_session_summary = generate_chat_summary(
+                    st.session_state.simulator_messages,
+                    st.session_state.customer_query_text_area,
+                    customer_type_display,
+                    st.session_state.language
+                )
+                current_session_history = [{
+                    "id": f"session_{st.session_state.sim_instance_id}",
+                    "timestamp": datetime.now().isoformat(),
+                    "initial_query": st.session_state.customer_query_text_area,
+                    "customer_type": customer_type_display,
+                    "language_key": st.session_state.language,
+                    "messages": st.session_state.simulator_messages,
+                    "summary": current_session_summary,
+                    "is_chat_ended": True,
+                    "attachment_context": st.session_state.sim_attachment_context_for_llm
+                }]
+            except Exception as e:
+                st.warning(f"이력 생성 중 오류 발생: {e}")
+        
+        # 다운로드 버튼들을 직접 표시
+        if current_session_history:
+            with download_col1:
+                try:
+                    filepath_json = export_history_to_json(current_session_history)
+                    with open(filepath_json, "rb") as f:
+                        st.download_button(
+                            label=L["download_history_json"],
+                            data=f.read(),
+                            file_name=os.path.basename(filepath_json),
+                            mime="application/json",
+                            key="download_json_file"
+                        )
+                except Exception as e:
+                    st.error(f"JSON 다운로드 오류: {e}")
+            
+            with download_col2:
+                try:
+                    filepath_text = export_history_to_text(current_session_history)
+                    with open(filepath_text, "rb") as f:
+                        st.download_button(
+                            label=L["download_history_text"],
+                            data=f.read(),
+                            file_name=os.path.basename(filepath_text),
+                            mime="text/plain",
+                            key="download_text_file"
+                        )
+                except Exception as e:
+                    st.error(f"TXT 다운로드 오류: {e}")
+            
+            with download_col3:
+                try:
+                    filepath_excel = export_history_to_excel(current_session_history)
+                    with open(filepath_excel, "rb") as f:
+                        st.download_button(
+                            label=L["download_history_excel"],
+                            data=f.read(),
+                            file_name=os.path.basename(filepath_excel),
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            key="download_excel_file"
+                        )
+                except Exception as e:
+                    st.error(f"Excel 다운로드 오류: {e}")
+        else:
+            st.warning("다운로드할 이력이 없습니다.")
+        
+        st.markdown("---")
+        
         if st.button(L["new_simulation_button"], key="new_simulation_btn"):
             # 초기화 로직
             st.session_state.simulator_messages = []
@@ -4227,7 +4321,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             st.session_state.sim_call_outbound_summary = ""
             st.session_state.sim_call_outbound_target = None
             # ⭐ 재실행
-            # st.rerun()
+            st.rerun()
         # st.stop()
 
     # =========================
@@ -4673,9 +4767,10 @@ elif feature_selection == L["sim_tab_chat_email"]:
                     # 오디오 및 관련 상태 초기화
                     st.session_state.sim_audio_bytes = None
                     st.session_state.last_transcript = ""
-                    st.session_state.agent_response_area_text = ""
+                    # ⭐ 수정: 위젯이 생성된 후에는 session_state를 직접 수정할 수 없으므로 플래그 사용
+                    st.session_state.reset_agent_response_area = True
                     st.success("녹음이 삭제되었습니다. 다시 녹음해 주세요.")
-                    # st.rerun()
+                    st.rerun()
 
             # 3. 전사(Whisper) 버튼 (기존 로직 대체)
             col_tr, _ = st.columns([1, 2])
@@ -4712,6 +4807,11 @@ elif feature_selection == L["sim_tab_chat_email"]:
 
         # --- 입력 필드 및 버튼 ---
         with col_text:
+            # ⭐ 수정: 위젯 생성 전에 초기화 플래그를 확인하여 값을 초기화합니다.
+            if st.session_state.get("reset_agent_response_area", False):
+                st.session_state.agent_response_area_text = ""
+                st.session_state.reset_agent_response_area = False
+            
             # st.text_area의 값을 읽어 세션 상태를 직접 업데이트하는 on_change를 제거하고
             # st.text_area 위젯 자체의 키를 사용하여 send_clicked 시 최신 값을 읽도록 합니다.
             # (Streamlit 기본 동작: 버튼 클릭 시 위젯의 최종 값이 세션 상태에 반영됨)
@@ -4761,7 +4861,8 @@ elif feature_selection == L["sim_tab_chat_email"]:
             )
 
             # 입력창/오디오/첨부 파일 초기화
-            st.session_state.agent_response_area_text = ""
+            # ⭐ 수정: 위젯이 생성된 후에는 session_state를 직접 수정할 수 없으므로,
+            # rerun 후 위젯이 다시 생성될 때 초기값이 적용되도록 플래그를 사용합니다.
             st.session_state.sim_audio_bytes = None
             st.session_state.agent_attachment_file = []  # 첨부 파일 초기화
             st.session_state.language_transfer_requested = False
@@ -4770,6 +4871,11 @@ elif feature_selection == L["sim_tab_chat_email"]:
 
             # ⭐ 수정: 고객 반응 생성 로직을 다음 단계에서 처리하도록 sim_stage 변경
             st.session_state.sim_stage = "CUSTOMER_TURN"
+            
+            # ⭐ 수정: agent_response_area_text는 rerun 후 위젯이 다시 생성될 때 초기화되도록
+            # 플래그를 설정합니다. 위젯 생성 전에 이 플래그를 확인하여 값을 초기화합니다.
+            st.session_state.reset_agent_response_area = True
+            
             # ⭐ 재실행: 이 부분이 즉시 고객 반응을 생성하도록 유도합니다.
             st.rerun()
 
@@ -4890,16 +4996,44 @@ elif feature_selection == L["sim_tab_chat_email"]:
         positive_closing_phrases = [L["customer_positive_response"], L["customer_no_more_inquiries"]]
         is_positive_closing = any(phrase in customer_response for phrase in positive_closing_phrases)
 
-        # LLM 호출 실패로 강제 긍정 응답이 왔을 경우에도 단계 전환
-        if customer_response == L["customer_positive_response"]:
-            # LLM 실패로 긍정 응답 강제 시 WAIT_CLOSING 단계로 즉시 전환
-            st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
-        elif is_positive_closing:
-            # 긍정 종료 (FINAL_CLOSING_ACTION) 또는 확인 단계 (WAIT_CLOSING_CONFIRMATION_FROM_AGENT)로 분기
-            if L['customer_no_more_inquiries'] in customer_response:
-                st.session_state.sim_stage = "FINAL_CLOSING_ACTION"
-            else:
+        # ⭐ 수정: 고객이 "알겠습니다. 감사합니다"라고 답변했을 때, 솔루션이 제공된 경우에만 추가 문의 여부 확인 단계로 이동
+        # 정확한 문자열 비교가 아닌 포함 여부로 확인 (LLM 응답이 약간 다를 수 있음)
+        if L["customer_positive_response"] in customer_response:
+            # 솔루션이 제공된 경우에만 추가 문의 여부 확인 단계로 이동
+            if st.session_state.is_solution_provided:
                 st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
+            else:
+                # 솔루션이 제공되지 않은 경우 에이전트 턴으로 유지
+                st.session_state.sim_stage = "AGENT_TURN"
+        elif is_positive_closing:
+            # 긍정 종료 응답 처리
+            if L['customer_no_more_inquiries'] in customer_response:
+                # ⭐ 수정: "없습니다. 감사합니다" 답변 시 자동으로 설문 조사 링크 전송 및 응대 종료
+                # AHT 타이머 정지
+                st.session_state.start_time = None
+                
+                # 설문 조사 링크 전송 메시지 추가
+                end_msg = L["prompt_survey"]
+                st.session_state.simulator_messages.append(
+                    {"role": "system_end", "content": end_msg}
+                )
+                
+                # 채팅 종료 처리
+                st.session_state.is_chat_ended = True
+                st.session_state.sim_stage = "CLOSING"
+                
+                # 이력 저장 (종료 상태로 저장)
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area, customer_type_display,
+                    st.session_state.simulator_messages, is_chat_ended=True,
+                    attachment_context=st.session_state.sim_attachment_context_for_llm,
+                )
+            else:
+                # "알겠습니다. 감사합니다"와 유사한 긍정 응답인 경우, 솔루션 제공 여부 확인
+                if st.session_state.is_solution_provided:
+                    st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
+                else:
+                    st.session_state.sim_stage = "AGENT_TURN"
 
 
         # ⭐ 수정: 고객이 아직 솔루션에 만족하지 않거나 추가 질문을 한 경우 (일반적인 턴)
@@ -4914,15 +5048,17 @@ elif feature_selection == L["sim_tab_chat_email"]:
 
             st.session_state.is_solution_provided = False  # 종료 단계 진입 후 플래그 리셋
 
-            # 이력 저장
-        save_simulation_history_local(
-            st.session_state.customer_query_text_area, customer_type_display,
-            st.session_state.simulator_messages, is_chat_ended=False,
-            attachment_context=st.session_state.sim_attachment_context_for_llm,
-        )
+            # 이력 저장 (종료되지 않은 경우에만 저장)
+        # ⭐ 수정: "없습니다. 감사합니다" 답변 시에는 이미 이력 저장을 했으므로 중복 저장 방지
+        if st.session_state.sim_stage != "CLOSING":
+            save_simulation_history_local(
+                st.session_state.customer_query_text_area, customer_type_display,
+                st.session_state.simulator_messages, is_chat_ended=False,
+                attachment_context=st.session_state.sim_attachment_context_for_llm,
+            )
 
         st.session_state.realtime_hint_text = ""  # 힌트 초기화
-        # ⭐ 재실행: 고객 반응이 추가되었으므로 AGENT_TURN으로 전환하여 에이전트에게 응답 기회 제공
+        # ⭐ 재실행: 고객 반응이 추가되었으므로 상태 변경 반영
         st.rerun()
 
 
@@ -4950,7 +5086,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
                 # [추가] TTS 버튼 렌더링을 위해 sleep/rerun 강제
                 time.sleep(0.1)
                 st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
-            # st.rerun()
+                st.rerun()
 
         # [2] 이메일 - 상담 종료 버튼 (즉시 종료)
         with col_email_end:
@@ -4969,77 +5105,100 @@ elif feature_selection == L["sim_tab_chat_email"]:
                 time.sleep(0.1)
                 st.session_state.is_chat_ended = True
                 st.session_state.sim_stage = "CLOSING"  # 바로 CLOSING으로 전환
-            # st.rerun()
+                st.rerun()
 
     # =========================
     # 8. 고객 최종 응답 생성 및 처리 (WAIT_CUSTOMER_CLOSING_RESPONSE)
     # =========================
     elif st.session_state.sim_stage == "WAIT_CUSTOMER_CLOSING_RESPONSE":
         L = LANG[st.session_state.language]
-        st.info("에이전트가 추가 문의 여부를 확인했습니다. 고객의 최종 답변을 자동으로 생성합니다.")
+        customer_type_display = st.session_state.get("customer_type_sim_select", L["customer_type_options"][0])
+        
+        # ⭐ 수정: 이미 고객 응답이 생성되어 있는지 확인
+        last_customer_message = None
+        for msg in reversed(st.session_state.simulator_messages):
+            if msg.get("role") == "customer_rebuttal":
+                last_customer_message = msg.get("content", "")
+                break
+        
+        # 고객 응답이 아직 생성되지 않은 경우에만 생성
+        if last_customer_message is None:
+            st.info("에이전트가 추가 문의 여부를 확인했습니다. 고객의 최종 답변을 자동으로 생성합니다.")
 
-        # 고객 답변 자동 생성 (LLM Key 검증 포함)
-        if st.session_state.is_llm_ready:
+            # 고객 답변 자동 생성 (LLM Key 검증 포함)
+            if not st.session_state.is_llm_ready:
+                st.warning("LLM Key가 없어 고객 반응 자동 생성이 불가합니다. 수동으로 '고객 반응 생성' 버튼을 클릭하거나 AGENT_TURN으로 돌아가세요。")
+                if st.button(L["customer_generate_response_button"], key="btn_generate_final_response"):
+                    st.session_state.sim_stage = "AGENT_TURN"
+                    st.rerun()
+                st.stop()
+            
+            # LLM이 준비된 경우 고객 응답 생성
             with st.spinner(L["generating_customer_response"]):
-                # 고객의 최종 답변 생성 (채팅용)
                 final_customer_reaction = generate_customer_closing_response(st.session_state.language)
-
-                customer_type_display = st.session_state.get("customer_type_sim_select", L["customer_type_options"][0])
 
             # 로그 기록
             st.session_state.simulator_messages.append(
                 {"role": "customer_rebuttal", "content": final_customer_reaction}
             )
-
-            # (A) "없습니다. 감사합니다" 경로 -> FINAL_CLOSING_ACTION으로
+            last_customer_message = final_customer_reaction
+        
+        # 고객 응답에 따라 처리 (생성 직후 또는 이미 있는 경우 모두 처리)
+        if last_customer_message is None:
+            # 고객 응답이 없는 경우 (이미 생성했는데도 None인 경우는 에러)
+            st.warning("고객 응답을 생성할 수 없습니다. 다시 시도해주세요.")
+        else:
+            final_customer_reaction = last_customer_message
+            
+            # (A) "없습니다. 감사합니다" 경로 -> FINAL_CLOSING_ACTION 단계로 이동하여 버튼 표시
             if L['customer_no_more_inquiries'] in final_customer_reaction:
+                # FINAL_CLOSING_ACTION 단계로 이동
                 st.session_state.sim_stage = "FINAL_CLOSING_ACTION"
-                save_simulation_history_local(
-                    st.session_state.customer_query_text_area, customer_type_display,
-                    st.session_state.simulator_messages, is_chat_ended=False,
-                    attachment_context=st.session_state.sim_attachment_context_for_llm,
-                )
+                st.session_state.realtime_hint_text = ""
+                st.rerun()
             # (B) "추가 문의 사항도 있습니다" 경로 -> AGENT_TURN으로 복귀
             elif L['customer_has_additional_inquiries'] in final_customer_reaction:
-                st.session_state.sim_stage = "AGENT_TURN"  # 다시 에이전트 응답 단계로
+                st.session_state.sim_stage = "AGENT_TURN"
                 save_simulation_history_local(
                     st.session_state.customer_query_text_area, customer_type_display,
                     st.session_state.simulator_messages, is_chat_ended=False,
                     attachment_context=st.session_state.sim_attachment_context_for_llm,
                 )
-
-            st.session_state.realtime_hint_text = ""  # 힌트 초기화
-            # ⭐ 필수 수정: 상태 변경 후 UI 업데이트를 위해 st.rerun() 추가
-            st.rerun()
-
-        else:
-            st.warning("LLM Key가 없어 고객 반응 자동 생성이 불가합니다. 수동으로 '고객 반응 생성' 버튼을 클릭하거나 AGENT_TURN으로 돌아가세요。")
-            if st.button(L["customer_generate_response_button"], key="btn_generate_final_response"):
-                # 수동 처리 시 AGENT_TURN으로 넘어가도록 처리
-                st.session_state.sim_stage = "AGENT_TURN"
-                # st.rerun()
+                st.session_state.realtime_hint_text = ""
+                st.rerun()
 
     # =========================
     # 9. 최종 종료 행동 (FINAL_CLOSING_ACTION)
     # =========================
     elif st.session_state.sim_stage == "FINAL_CLOSING_ACTION":
+        L = LANG[st.session_state.language]
         st.success("고객이 더 이상 문의할 사항이 없다고 확인했습니다。")
 
+        # ⭐ 수정: "설문 조사 링크 전송 및 응대 종료" 버튼 표시
         if st.button(L["sim_end_chat_button"], key="btn_final_end_chat"):
             # AHT 타이머 정지
             st.session_state.start_time = None
 
-            # [수정 1] 다국어 레이블 사용
+            # 설문 조사 링크 전송 메시지 추가
             end_msg = L["prompt_survey"]
             st.session_state.simulator_messages.append(
                 {"role": "system_end", "content": end_msg}
             )
 
-            # [추가] TTS 버튼 렌더링을 위해 sleep/rerun 강제
-            time.sleep(0.1)
+            # 채팅 종료 처리
             st.session_state.is_chat_ended = True
             st.session_state.sim_stage = "CLOSING"
-            # st.rerun()
+            
+            # 이력 저장
+            customer_type_display = st.session_state.get("customer_type_sim_select", L["customer_type_options"][0])
+            save_simulation_history_local(
+                st.session_state.customer_query_text_area, customer_type_display,
+                st.session_state.simulator_messages, is_chat_ended=True,
+                attachment_context=st.session_state.sim_attachment_context_for_llm,
+            )
+            
+            st.session_state.realtime_hint_text = ""  # 힌트 초기화
+            st.rerun()
 
 # ========================================
 # 전화 시뮬레이터 로직
