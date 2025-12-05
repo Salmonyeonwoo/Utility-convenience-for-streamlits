@@ -188,6 +188,13 @@ LANG: Dict[str, Dict[str, str]] = {
         "sim_tab_chat_email": "AI 고객 응대 시뮬레이터 (채팅/이메일)",
         "sim_tab_phone": "AI 고객 응대 시뮬레이터 (전화)",
         "simulator_tab": "AI 고객 응대 시뮬레이터",
+        "sim_tab_chat_email_desc": "고객 응대 업무에서 채팅 및 이메일로 실제로 문의 응대가 될 수 있는 실전 대비 가상 시나리오입니다. AI가 응대 가이드라인과 초안을 생성하며, 고객 반응을 시뮬레이션하여 실전 대비 훈련이 가능합니다.",
+        "sim_tab_phone_desc": "고객 응대 업무에서 전화로 실제로 문의 응대가 될 수 있는 실전 대비 가상 시나리오입니다. 음성 녹음 및 실시간 CC 자막 기능을 제공하며, 전화 통화 시뮬레이션을 통해 실전 응대 능력을 향상시킬 수 있습니다.",
+        "rag_tab_desc": "업로드된 문서를 기반으로 질문에 답변하는 지식 챗봇입니다. PDF, TXT, HTML 파일을 업로드하여 RAG(Retrieval-Augmented Generation) 인덱스를 구축하고, 문서 내용을 기반으로 정확한 답변을 제공합니다.",
+        "content_tab_desc": "AI를 활용하여 개인 맞춤형 학습 콘텐츠를 생성하는 기능입니다. 학습 주제와 난이도에 맞춰 핵심 요약 노트, 객관식 퀴즈, 실습 예제 등을 생성할 수 있습니다.",
+        "lstm_tab_desc": "LSTM 모델을 활용하여 학습자의 성취도를 예측하고 대시보드로 시각화하는 기능입니다. 과거 퀴즈 점수 데이터를 분석하여 미래 성취도를 예측하고, 학습 성과를 시각적으로 확인할 수 있습니다.",
+        "voice_rec_header_desc": "음성 녹음 및 전사 결과를 관리하고 저장하는 기능입니다. 마이크로 녹음하거나 파일을 업로드하여 Whisper API를 통해 음성을 텍스트로 변환하고, 전사 결과를 저장 및 관리할 수 있습니다.",
+        "more_features_label": "더보기 기능",
         "rag_header": "RAG 지식 챗봇 (문서 기반 Q&A)",
         "rag_desc": "업로드된 문서 기반으로 질문에 답변합니다。",
         "rag_input_placeholder": "학습 자료에 대해 질문해 보세요",
@@ -285,6 +292,12 @@ LANG: Dict[str, Dict[str, str]] = {
         "send_response_button": "응답 전송",
         "customer_turn_info": "에이전트 응답 전송 완료. 고객 반응을 자동으로 생성 중입니다。",
         "generating_customer_response": "고객 반응 생성 중...",
+        "call_started_message": "통화가 시작되었습니다. 아래 마이크 버튼을 눌러 인사말을 녹음하세요.",
+        "call_on_hold_message": "통화가 Hold 중입니다. 통화 재개 후 녹음이 가능합니다.",
+        "recording_complete_transcribing": "🎙️ 녹음 완료. 전사 처리 중...",
+        "transcription_empty_warning": "⚠️ 전사 결과가 비어있습니다. 다시 녹음해주세요. (마이크 입력이 없거나 음소거된 경우)",
+        "transcription_error": "[ERROR: 전사 실패]",
+        "transcription_no_result": "❌ 전사 결과가 없습니다.",
         "customer_escalation_start": "상급자와 이야기하고 싶습니다",
         "request_rebuttal_button": "고객의 다음 반응 요청",
         "new_simulation_button": "새 시뮬레이션 시작",
@@ -322,6 +335,15 @@ LANG: Dict[str, Dict[str, str]] = {
         "solution_check_label": "✅ 이 응답에 솔루션/해결책이 포함되어 있습니다。",
         "sentiment_score_label": "고객 감정 점수",
         "urgency_score_label": "긴급도 점수",
+        "customer_gender_label": "고객 성별",
+        "customer_emotion_label": "고객 감정 상태",
+        "gender_male": "남성",
+        "gender_female": "여성",
+        "emotion_happy": "기분 좋은 고객",
+        "emotion_dissatisfied": "불만인 고객",
+        "emotion_angry": "화난 고객",
+        "emotion_sad": "슬픈/우울한 고객",
+        "emotion_neutral": "중립",
         "similarity_chart_title": "유사 케이스 유사도",
         "scores_comparison_title": "감정 및 만족도 점수 비교",
         "similarity_score_label": "유사도",
@@ -421,6 +443,15 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_audio_header": "고객 최초 문의 (음성)",
         "aht_not_recorded": "⚠️ 통화 시작 시간이 기록되지 않아 AHT를 계산할 수 없습니다。",
         "no_audio_record": "고객의 최초 음성 기록이 없습니다。",
+        "customer_query_playing": "🔊 고객 문의 재생 중입니다.",
+        "query_content_label": "📝 문의 내용:",
+        "auto_play_failed": "자동 재생 실패: {error}. 수동으로 재생해주세요.",
+        "generating_customized_response": "고객 맞춤형 반응 생성 중...",
+        "customer_responded": "🗣️ 고객이 응답했습니다: {reaction}",
+        "customer_voice_generation_error": "❌ 고객 음성 생성 오류: {error}",
+        "button_retry_translation": "번역 다시 시도",
+        "customer_waiting_hold": "[고객: 잠시 대기 중입니다...]",
+        "agent_hold_message": "[에이전트: Hold 중입니다. 통화 재개 버튼을 눌러주세요.]",
     },
 
     # --- ⭐ 영어 버전 (한국어 100% 매칭) ---
@@ -435,6 +466,13 @@ LANG: Dict[str, Dict[str, str]] = {
         "sim_tab_chat_email": "AI Customer Support Simulator (Chat / Email)",
         "sim_tab_phone": "AI Customer Support Simulator (Phone)",
         "simulator_tab": "AI Customer Support Simulator",
+        "sim_tab_chat_email_desc": "A virtual scenario for practical training in handling customer inquiries via chat and email in customer service work. AI generates response guidelines and drafts, and simulates customer reactions for real-world training.",
+        "sim_tab_phone_desc": "A virtual scenario for practical training in handling customer inquiries via phone in customer service work. Provides voice recording and real-time CC subtitle features, allowing you to improve your practical response skills through phone call simulations.",
+        "rag_tab_desc": "A knowledge chatbot that answers questions based on uploaded documents. Upload PDF, TXT, or HTML files to build a RAG (Retrieval-Augmented Generation) index and provide accurate answers based on document content.",
+        "content_tab_desc": "A feature that generates personalized learning content using AI. You can generate key summary notes, multiple-choice quizzes, and practical examples tailored to learning topics and difficulty levels.",
+        "lstm_tab_desc": "A feature that predicts learner achievement using LSTM models and visualizes it in a dashboard. Analyzes past quiz score data to predict future achievement and visually check learning performance.",
+        "voice_rec_header_desc": "A feature for managing and storing voice recordings and transcription results. Record with a microphone or upload files to convert speech to text via Whisper API, and save and manage transcription results.",
+        "more_features_label": "More Features",
         "rag_header": "RAG Knowledge Chatbot (Document Q&A)",
         "rag_desc": "Answer questions based on uploaded documents.",
         "rag_input_placeholder": "Ask a question about your study materials",
@@ -534,6 +572,12 @@ LANG: Dict[str, Dict[str, str]] = {
         "send_response_button": "Send Response",
         "customer_turn_info": "Agent response sent. Generating customer reaction automatically。",
         "generating_customer_response": "Generating customer response...",
+        "call_started_message": "Call started. Please click the microphone button below to record your greeting.",
+        "call_on_hold_message": "Call is on hold. Recording is available after resuming the call.",
+        "recording_complete_transcribing": "🎙️ Recording complete. Transcribing...",
+        "transcription_empty_warning": "⚠️ Transcription result is empty. Please record again. (No microphone input or muted)",
+        "transcription_error": "[ERROR: Transcription failed]",
+        "transcription_no_result": "❌ No transcription result.",
         "customer_escalation_start": "I want to speak to a supervisor",
         "request_rebuttal_button": "Request Customer Reaction",
         "new_simulation_button": "Start New Simulation",
@@ -571,6 +615,15 @@ LANG: Dict[str, Dict[str, str]] = {
         "solution_check_label": "✅ This response includes a solution/fix。",
         "sentiment_score_label": "Customer Sentiment Score",
         "urgency_score_label": "Urgency Score",
+        "customer_gender_label": "Customer Gender",
+        "customer_emotion_label": "Customer Emotional State",
+        "gender_male": "Male",
+        "gender_female": "Female",
+        "emotion_happy": "Happy Customer",
+        "emotion_dissatisfied": "Dissatisfied Customer",
+        "emotion_angry": "Angry Customer",
+        "emotion_sad": "Sad/Depressed Customer",
+        "emotion_neutral": "Neutral",
         "similarity_chart_title": "Case Similarity",
         "scores_comparison_title": "Sentiment & Satisfaction Scores",
         "similarity_score_label": "Similarity",
@@ -670,6 +723,15 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_audio_header": "Customer Initial Query (Voice)",
         "aht_not_recorded": "⚠️ Call start time not recorded。 Cannot calculate AHT。",
         "no_audio_record": "No initial customer voice record。",
+        "customer_query_playing": "🔊 Playing customer inquiry...",
+        "query_content_label": "📝 Inquiry content:",
+        "auto_play_failed": "Auto-play failed: {error}. Please play manually.",
+        "generating_customized_response": "Generating customized customer response...",
+        "customer_responded": "🗣️ Customer responded: {reaction}",
+        "customer_voice_generation_error": "❌ Customer voice generation error: {error}",
+        "button_retry_translation": "Retry Translation",
+        "customer_waiting_hold": "[Customer: Please wait...]",
+        "agent_hold_message": "[Agent: Call is on hold. Please click the resume button.]",
 
     },
 
@@ -685,6 +747,13 @@ LANG: Dict[str, Dict[str, str]] = {
         "sim_tab_chat_email": "AI顧客対応シミュレーター(チャット・メール)",
         "sim_tab_phone": "AI顧客対応シミュレーター(電話)",
         "simulator_tab": "AI顧客対応シミュレーター",
+        "sim_tab_chat_email_desc": "顧客対応業務において、チャットやメールで実際に問い合わせ対応ができる実戦向けの仮想シナリオです。AIが対応ガイドラインと草案を生成し、顧客の反応をシミュレートして実戦向けの訓練が可能です。",
+        "sim_tab_phone_desc": "顧客対応業務において、電話で実際に問い合わせ対応ができる実戦向けの仮想シナリオです。音声録音およびリアルタイムCC字幕機能を提供し、電話通話シミュレーションを通じて実戦対応能力を向上させることができます。",
+        "rag_tab_desc": "アップロードされた文書に基づいて質問に答える知識チャットボットです。PDF、TXT、HTMLファイルをアップロードしてRAG（Retrieval-Augmented Generation）インデックスを構築し、文書内容に基づいて正確な回答を提供します。",
+        "content_tab_desc": "AIを活用して個人向けの学習コンテンツを生成する機能です。学習テーマと難易度に合わせて要点サマリー、選択式クイズ、実践例などを生成できます。",
+        "lstm_tab_desc": "LSTMモデルを活用して学習者の達成度を予測し、ダッシュボードで可視化する機能です。過去のクイズスコアデータを分析して将来の達成度を予測し、学習成果を視覚的に確認できます。",
+        "voice_rec_header_desc": "音声録音および転写結果を管理・保存する機能です。マイクで録音するかファイルをアップロードしてWhisper APIを通じて音声をテキストに変換し、転写結果を保存・管理できます。",
+        "more_features_label": "その他の機能",
         "rag_header": "RAG知識チャットボット (ドキュメントQ&A)",
         "rag_desc": "アップロードされた資料に基づいて質問に回答します。",
         "rag_input_placeholder": "資料について質問してください",
@@ -780,6 +849,13 @@ LANG: Dict[str, Dict[str, str]] = {
         "survey_sent_confirm": "📨 アンケートリンクを送信しました。このチャットは終了しました。",
         "agent_response_header": "✍️ エージェント応答",
         "agent_response_placeholder": "顧客へ返信内容を入力…",
+        "generating_customer_response": "顧客の返信を生成中...",
+        "call_started_message": "通話が開始されました。下のマイクボタンをクリックして挨拶を録音してください。",
+        "call_on_hold_message": "通話が保留中です。通話を再開した後、録音が可能です。",
+        "recording_complete_transcribing": "🎙️ 録音完了。転写処理中...",
+        "transcription_empty_warning": "⚠️ 転写結果が空です。もう一度録音してください。（マイク入力がないか、ミュートされています）",
+        "transcription_error": "[ERROR: 転写失敗]",
+        "transcription_no_result": "❌ 転写結果がありません。",
         "send_response_button": "返信送信",
         "customer_turn_info": "エージェント応答送信完了。顧客の反応を自動生成中です。",
         "generating_customer_response": "顧客の反応を生成中...",
@@ -820,6 +896,15 @@ LANG: Dict[str, Dict[str, str]] = {
         "solution_check_label": "✅ この応答に解決策/対応策が含まれています。",
         "sentiment_score_label": "顧客の感情スコア",  # <--- 추가/수정
         "urgency_score_label": "緊急度スコア",
+        "customer_gender_label": "顧客性別",
+        "customer_emotion_label": "顧客感情状態",
+        "gender_male": "男性",
+        "gender_female": "女性",
+        "emotion_happy": "気分良い顧客",
+        "emotion_dissatisfied": "不満な顧客",
+        "emotion_angry": "怒った顧客",
+        "emotion_sad": "悲しい/憂鬱な顧客",
+        "emotion_neutral": "中立",
         "similarity_chart_title": "類似性ケースの比率",
         "scores_comparison_title": "感情及び満足度のスコア",
         "similarity_score_label": "類似性",
@@ -919,6 +1004,15 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_audio_header": "顧客の最初の問い合わせ (音声)",
         "aht_not_recorded": "⚠️ 通話開始時間が記録されていないため、AHTを計算できません。",
         "no_audio_record": "顧客の最初の音声記録はありません。",
+        "customer_query_playing": "🔊 顧客の問い合わせを再生中です。",
+        "query_content_label": "📝 問い合わせ内容:",
+        "auto_play_failed": "自動再生に失敗しました: {error}。手動で再生してください。",
+        "generating_customized_response": "顧客向けカスタマイズされた反応を生成中...",
+        "customer_responded": "🗣️ 顧客が応答しました: {reaction}",
+        "customer_voice_generation_error": "❌ 顧客の音声生成エラー: {error}",
+        "button_retry_translation": "翻訳を再試行",
+        "customer_waiting_hold": "[顧客: お待ちください...]",
+        "agent_hold_message": "[エージェント: 通話が保留中です。通話再開ボタンをクリックしてください。]",
     }
 }
 
@@ -2081,9 +2175,17 @@ def transcribe_audio(audio_bytes, filename="audio.wav"):
 
 # 역할별 TTS 음성 스타일 설정
 TTS_VOICES = {
+    "customer_male": {
+        "gender": "male",
+        "voice": "alloy"  # Male voice
+    },
+    "customer_female": {
+        "gender": "female",
+        "voice": "nova"  # Female voice
+    },
     "customer": {
         "gender": "male",
-        "voice": "alloy"  # Distinct Male, Generic/Customer
+        "voice": "alloy"  # Default male voice (fallback)
     },
     "agent": {
         "gender": "female",
@@ -2108,10 +2210,22 @@ def synthesize_tts(text: str, lang_key: str, role: str = "agent"):
     if client is None:
         return None, L.get("openai_missing", "OpenAI API Key가 필요합니다.")
 
-    if role not in TTS_VOICES:
-        role = "agent"
-
-    voice_name = TTS_VOICES[role]["voice"]
+    # ⭐ 수정: 고객 역할인 경우 성별에 따라 음성 선택
+    if role == "customer":
+        customer_gender = st.session_state.customer_avatar.get("gender", "male")
+        if customer_gender == "female":
+            voice_key = "customer_female"
+        else:
+            voice_key = "customer_male"
+        
+        if voice_key in TTS_VOICES:
+            voice_name = TTS_VOICES[voice_key]["voice"]
+        else:
+            voice_name = TTS_VOICES["customer"]["voice"]  # Fallback
+    elif role in TTS_VOICES:
+        voice_name = TTS_VOICES[role]["voice"]
+    else:
+        voice_name = TTS_VOICES["agent"]["voice"]  # Default fallback
 
     try:
         # ⭐ 수정: 텍스트 길이 제한을 제거하여 전체 문의가 재생되도록 함
@@ -3037,6 +3151,22 @@ def generate_customer_reaction_for_call(current_lang_key: str, last_agent_respon
     lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
     L_local = LANG[current_lang_key]
     
+    # ⭐ 추가: 고객 성별 및 감정 상태 가져오기
+    customer_gender = st.session_state.customer_avatar.get("gender", "male")
+    customer_emotion = st.session_state.customer_avatar.get("state", "NEUTRAL")
+    
+    # 감정 상태에 따른 톤 설정
+    emotion_tone_map = {
+        "HAPPY": "friendly, positive, and satisfied",
+        "ASKING": "slightly frustrated, questioning, and seeking clarification",
+        "ANGRY": "angry, frustrated, and demanding",
+        "SAD": "sad, depressed, and disappointed",
+        "NEUTRAL": "neutral, calm, and polite"
+    }
+    emotion_tone = emotion_tone_map.get(customer_emotion, "neutral, calm, and polite")
+    
+    gender_pronoun = "she" if customer_gender == "female" else "he"
+    
     # ⭐ 수정: 초기 문의를 완전히 제거하고 마지막 에이전트 응답에만 집중
     # 최근 대화 이력만 추출 (최대 3-4개 교환만)
     recent_exchanges = []
@@ -3077,10 +3207,14 @@ IMPORTANT:
 - DO NOT repeat your initial query
 - DO NOT refer to old conversation unless agent asks
 - Keep your response short and conversational
+- Your emotional state: {customer_emotion} - respond with {emotion_tone} tone
 ═══════════════════════════════════════════════════════════════════"""
 
     call_prompt = f"""
-You are a CUSTOMER in a phone call. Respond naturally in {lang_name}.
+You are a CUSTOMER in a phone call. You are a {customer_gender} customer. Respond naturally in {lang_name}.
+
+Your current emotional state: {customer_emotion}
+Your response tone should be: {emotion_tone}
 
 {history_text}
 
@@ -3088,12 +3222,13 @@ RULES:
 1. Respond ONLY to what the agent JUST SAID: "{last_agent_text}"
 2. If agent asked a question → Answer it
 3. If agent requested information → Provide it
-4. If agent gave a solution → Acknowledge positively (e.g., "{L_local['customer_positive_response']}")
-5. Keep it short (1-2 sentences max)
+4. If agent gave a solution → Acknowledge based on your emotional state ({customer_emotion})
+5. Keep your response short (1-2 sentences max)
 6. DO NOT repeat your initial query
 7. DO NOT mention old conversation
+8. IMPORTANT: Match your tone to your emotional state ({customer_emotion}) - be {emotion_tone}
 
-Your response (respond ONLY to the agent's message above):
+Your response (respond ONLY to the agent's message above, with {emotion_tone} tone):
 """
     try:
         # ⭐ 디버깅: 실제 전달되는 데이터 확인 (필요시 주석 해제)
@@ -3103,6 +3238,72 @@ Your response (respond ONLY to the agent's message above):
         # print(f"[DEBUG] Full prompt:\n{call_prompt}")
         # print(f"{'='*60}\n")
         
+        reaction = run_llm(call_prompt)
+        return reaction.strip()
+    except Exception as e:
+        return f"❌ 고객 반응 생성 오류: {e}"
+
+
+def generate_customer_reaction_for_first_greeting(current_lang_key: str, agent_greeting: str, initial_query: str) -> str:
+    """전화 시뮬레이터 전용: 첫 인사말에 대한 고객의 맞춤형 반응 생성 (초기 문의 고려)"""
+    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+    L_local = LANG[current_lang_key]
+    
+    # ⭐ 추가: 고객 성별 및 감정 상태 가져오기
+    customer_gender = st.session_state.customer_avatar.get("gender", "male")
+    customer_emotion = st.session_state.customer_avatar.get("state", "NEUTRAL")
+    
+    # 감정 상태에 따른 톤 설정
+    emotion_tone_map = {
+        "HAPPY": "friendly, positive, and satisfied",
+        "ASKING": "slightly frustrated, questioning, and seeking clarification",
+        "ANGRY": "angry, frustrated, and demanding",
+        "SAD": "sad, depressed, and disappointed",
+        "NEUTRAL": "neutral, calm, and polite"
+    }
+    emotion_tone = emotion_tone_map.get(customer_emotion, "neutral, calm, and polite")
+    
+    website_url = st.session_state.get("call_website_url", "").strip()
+    website_context = f"\nWebsite URL: {website_url}" if website_url else ""
+    
+    agent_greeting_text = agent_greeting.strip() if agent_greeting else "None"
+    initial_query_text = initial_query.strip() if initial_query else "None"
+    
+    call_prompt = f"""
+You are a CUSTOMER in a phone call. You are a {customer_gender} customer. Respond naturally in {lang_name}.
+
+Your current emotional state: {customer_emotion}
+Your response tone should be: {emotion_tone}
+
+═══════════════════════════════════════════════════════════════════
+🎯 YOUR SITUATION:
+═══════════════════════════════════════════════════════════════════
+
+You called because: "{initial_query_text}"
+
+The agent just greeted you and said: "{agent_greeting_text}"
+{website_context}
+
+═══════════════════════════════════════════════════════════════════
+YOUR TASK: Respond to the agent's greeting in a way that:
+═══════════════════════════════════════════════════════════════════
+
+1. Acknowledge the agent's greeting naturally
+2. Briefly mention your inquiry/concern: "{initial_query_text}"
+3. Show that you're ready to discuss your issue
+4. Keep it conversational and natural (1-2 sentences max)
+5. DO NOT be overly formal - this is a phone call, be natural
+6. IMPORTANT: Match your tone to your emotional state ({customer_emotion}) - be {emotion_tone}
+
+Example good responses (adjust tone based on your emotional state):
+- If {customer_emotion}: [Respond with {emotion_tone} tone]
+- "Hello, thank you. I'm calling because [brief mention of issue]..."
+- "Hi, yes. I need help with [your issue]..."
+- "Thank you. I have a question about [your issue]..."
+
+Your response (respond naturally to the greeting and briefly mention your inquiry, with {emotion_tone} tone):
+"""
+    try:
         reaction = run_llm(call_prompt)
         return reaction.strip()
     except Exception as e:
@@ -4131,17 +4332,41 @@ with st.sidebar:
     st.write("**핵심 기능**")
     for i, feature in enumerate(core_features):
         if i == current_index and current_selection in core_features:
-            st.write(f"✓ {feature}")
+            # 선택된 기능: 기능 이름과 설명을 함께 표시
+            if feature == L["sim_tab_chat_email"]:
+                st.markdown(f"✓ **{L['sim_tab_chat_email']}** : {L['sim_tab_chat_email_desc']}")
+            elif feature == L["sim_tab_phone"]:
+                st.markdown(f"✓ **{L['sim_tab_phone']}** : {L['sim_tab_phone_desc']}")
         else:
-            st.write(f"○ {feature}")
+            # 선택되지 않은 기능: 기능 이름과 설명을 함께 표시
+            if feature == L["sim_tab_chat_email"]:
+                st.markdown(f"○ **{L['sim_tab_chat_email']}** : {L['sim_tab_chat_email_desc']}")
+            elif feature == L["sim_tab_phone"]:
+                st.markdown(f"○ **{L['sim_tab_phone']}** : {L['sim_tab_phone_desc']}")
     
     # 더보기 기능
-    with st.expander("더보기 기능", expanded=(current_selection in other_features)):
+    with st.expander(L["more_features_label"], expanded=(current_selection in other_features)):
         for i, feature in enumerate(other_features, start=len(core_features)):
             if i == current_index and current_selection in other_features:
-                st.write(f"✓ {feature}")
+                # 선택된 기능: 기능 이름과 설명을 함께 표시
+                if feature == L["rag_tab"]:
+                    st.markdown(f"✓ **{L['rag_tab']}** : {L['rag_tab_desc']}")
+                elif feature == L["content_tab"]:
+                    st.markdown(f"✓ **{L['content_tab']}** : {L['content_tab_desc']}")
+                elif feature == L["lstm_tab"]:
+                    st.markdown(f"✓ **{L['lstm_tab']}** : {L['lstm_tab_desc']}")
+                elif feature == L["voice_rec_header"]:
+                    st.markdown(f"✓ **{L['voice_rec_header']}** : {L['voice_rec_header_desc']}")
             else:
-                st.write(f"○ {feature}")
+                # 선택되지 않은 기능: 기능 이름과 설명을 함께 표시
+                if feature == L["rag_tab"]:
+                    st.markdown(f"○ **{L['rag_tab']}** : {L['rag_tab_desc']}")
+                elif feature == L["content_tab"]:
+                    st.markdown(f"○ **{L['content_tab']}** : {L['content_tab_desc']}")
+                elif feature == L["lstm_tab"]:
+                    st.markdown(f"○ **{L['lstm_tab']}** : {L['lstm_tab_desc']}")
+                elif feature == L["voice_rec_header"]:
+                    st.markdown(f"○ **{L['voice_rec_header']}** : {L['voice_rec_header_desc']}")
     
     # ⭐ 하나의 통합된 선택 로직 (하나만 선택 가능)
     selected_feature = st.radio(
@@ -5888,9 +6113,16 @@ elif feature_selection == L["sim_tab_phone"]:
             st.info(f"상태: {avatar_state}")
 
     with col_cc:
-        st.markdown(
-            f"## {L['call_status_ringing'].format(number=st.session_state.incoming_phone_number)}"
-        )
+        # ⭐ 수정: "전화 수신 중" 메시지는 통화 중일 때만 표시
+        if st.session_state.call_sim_stage == "IN_CALL":
+            if st.session_state.call_sim_mode == "INBOUND":
+                st.markdown(
+                    f"## {L['call_status_ringing'].format(number=st.session_state.incoming_phone_number)}"
+                )
+            else:
+                st.markdown(
+                    f"## {L['button_call_outbound']} ({st.session_state.incoming_phone_number})"
+                )
         st.markdown("---")
 
     # ========================================
@@ -5941,6 +6173,64 @@ elif feature_selection == L["sim_tab_phone"]:
             index=default_idx,
             key="call_customer_type_sim_select_widget",
         )
+
+        # ⭐ 추가: 고객 성별 및 감정 상태 설정
+        col_gender, col_emotion = st.columns(2)
+        
+        with col_gender:
+            # 고객 성별 선택
+            if "customer_gender" not in st.session_state:
+                st.session_state.customer_gender = "male"
+            
+            # ⭐ 수정: 번역 키 사용
+            gender_options = [L["gender_male"], L["gender_female"]]
+            current_gender = st.session_state.customer_avatar.get("gender", "male")
+            default_gender_idx = 0 if current_gender == "male" else 1
+            
+            selected_gender_display = st.radio(
+                L["customer_gender_label"],
+                gender_options,
+                index=default_gender_idx,
+                key="call_customer_gender_radio",
+                horizontal=True
+            )
+            # 세션 상태에 저장 (영어로)
+            st.session_state.customer_avatar["gender"] = "male" if selected_gender_display == L["gender_male"] else "female"
+            st.session_state.customer_gender = st.session_state.customer_avatar["gender"]
+        
+        with col_emotion:
+            # 고객 감정 상태 선택
+            # ⭐ 수정: 번역 키 사용
+            emotion_options = [
+                L["emotion_happy"],
+                L["emotion_dissatisfied"],
+                L["emotion_angry"],
+                L["emotion_sad"],
+                L["emotion_neutral"]
+            ]
+            emotion_mapping = {
+                L["emotion_happy"]: "HAPPY",
+                L["emotion_dissatisfied"]: "ASKING",
+                L["emotion_angry"]: "ANGRY",
+                L["emotion_sad"]: "SAD",
+                L["emotion_neutral"]: "NEUTRAL"
+            }
+            
+            current_emotion_state = st.session_state.customer_avatar.get("state", "NEUTRAL")
+            default_emotion_idx = 4  # 기본값: 중립
+            for i, (emotion_display, emotion_state) in enumerate(emotion_mapping.items()):
+                if emotion_state == current_emotion_state:
+                    default_emotion_idx = i
+                    break
+            
+            selected_emotion = st.selectbox(
+                L["customer_emotion_label"],
+                emotion_options,
+                index=default_emotion_idx,
+                key="call_customer_emotion_select",
+            )
+            # 세션 상태에 저장
+            st.session_state.customer_avatar["state"] = emotion_mapping.get(selected_emotion, "NEUTRAL")
 
         st.markdown("---")
 
@@ -6011,7 +6301,7 @@ elif feature_selection == L["sim_tab_phone"]:
 
                 # ✅ 상태 변경 후 재실행하여 IN_CALL 상태로 전환
                 # 에이전트가 인사말을 녹음할 수 있도록 안내 메시지 표시
-                st.info("📞 통화가 시작되었습니다. 아래 마이크 버튼을 눌러 인사말을 녹음하세요.")
+                st.info(L["call_started_message"])
                 st.rerun()
 
         # 전화 발신 (새로운 세션 시작)
@@ -6081,15 +6371,11 @@ elif feature_selection == L["sim_tab_phone"]:
         # ⭐ 수정: 자동 인사말 생성 로직 제거 - 에이전트가 직접 녹음하도록 변경
         
         # ------------------------------
-        # 전화 통화 제목
+        # 전화 통화 제목 (통화 중일 때만 표시)
         # ------------------------------
-        if st.session_state.call_sim_mode == "INBOUND":
-            title = L['call_status_ringing'].format(number=st.session_state.incoming_phone_number)
-        else:
-            title = L['button_call_outbound'] + f" ({st.session_state.incoming_phone_number})"
-
-        st.markdown(f"## {title}")
-        st.markdown("---")
+        # ⭐ 수정: 제목은 이미 위에서 표시되므로 여기서는 제거
+        # st.markdown(f"## {title}")
+        # st.markdown("---")
 
         # ------------------------------
         # Hangup / Hold 버튼
@@ -6319,14 +6605,18 @@ elif feature_selection == L["sim_tab_phone"]:
         st.subheader(L["cc_live_transcript"])
 
         if st.session_state.is_on_hold:
-            st.text_area("Customer", value="[고객: 잠시 대기 중입니다...]", height=50, disabled=True, key="customer_live_cc_area")
-            st.text_area("Agent", value="[에이전트: Hold 중입니다. 통화 재개 버튼을 눌러주세요.]", height=50, disabled=True,
+            st.text_area("Customer", value=L["customer_waiting_hold"], height=50, disabled=True, key="customer_live_cc_area")
+            st.text_area("Agent", value=L["agent_hold_message"], height=50, disabled=True,
                          key="agent_live_cc_area")
         else:
-            # 고객 CC (LLM 생성 텍스트)
+            # 고객 CC (LLM 생성 텍스트 또는 초기 문의)
+            # ⭐ 수정: 고객 문의가 비어있지 않으면 초기 문의를 표시
+            customer_cc_text = st.session_state.current_customer_audio_text
+            if not customer_cc_text and st.session_state.call_initial_query:
+                customer_cc_text = st.session_state.call_initial_query
             st.text_area(
                 "Customer",
-                value=st.session_state.current_customer_audio_text,
+                value=customer_cc_text,
                 height=50,
                 disabled=True,
                 key="customer_live_cc_area",
@@ -6348,7 +6638,7 @@ elif feature_selection == L["sim_tab_phone"]:
 
         # 음성 입력: 짧은 청크로 끊어서 전사해야 실시간 CC 모방 가능
         if st.session_state.is_on_hold:
-            st.info("통화가 Hold 중입니다. 통화 재개 후 녹음이 가능합니다.")
+            st.info(L["call_on_hold_message"])
             mic_audio = None
         else:
             # ✅ 마이크 위젯을 항상 렌더링하여 활성화 상태를 유지
@@ -6367,7 +6657,7 @@ elif feature_selection == L["sim_tab_phone"]:
                 # ⭐ 수정: 이미 처리 중인 경우 중복 처리 방지
                 if "bytes_to_process" not in st.session_state or st.session_state.bytes_to_process is None:
                     st.session_state.bytes_to_process = mic_audio["bytes"]
-                    st.session_state.current_agent_audio_text = "🎙️ 녹음 완료. 전사 처리 중..."  # 처리 중 메시지
+                    st.session_state.current_agent_audio_text = L["recording_complete_transcribing"]
                     # ✅ 재실행하여 다음 실행 주기에서 전사 로직을 처리
                     st.rerun()
 
@@ -6408,13 +6698,13 @@ elif feature_selection == L["sim_tab_phone"]:
 
                 # 2) 전사 실패 처리 (채팅/이메일과 동일한 패턴)
                 if not agent_response_transcript or agent_response_transcript.startswith("❌"):
-                    error_msg = agent_response_transcript if agent_response_transcript else "❌ 전사 결과가 없습니다."
+                    error_msg = agent_response_transcript if agent_response_transcript else L["transcription_no_result"]
                     st.error(error_msg)
-                    st.session_state.current_agent_audio_text = f"[ERROR: 전사 실패]"
+                    st.session_state.current_agent_audio_text = L["transcription_error"]
                     # ⭐ 최적화: 전사 실패 시에도 CC에 반영되지만 불필요한 rerun 제거 (Streamlit이 자동으로 재실행)
                     # st.rerun()
                 elif not agent_response_transcript.strip(): # ⭐ 수정: 전사 결과가 비어 있거나 (공백만 있는 경우) 다음 단계로 진행하지 못하는 문제 해결
-                    st.warning("⚠️ 전사 결과가 비어있습니다. 다시 녹음해주세요. (마이크 입력이 없거나 음소거된 경우)")
+                    st.warning(L["transcription_empty_warning"])
                     st.session_state.current_agent_audio_text = ""
                     # ⭐ 최적화: 불필요한 rerun 제거
                     # st.rerun()
@@ -6442,6 +6732,9 @@ elif feature_selection == L["sim_tab_phone"]:
                         )
                         # 아바타 표정 초기화
                         st.session_state.customer_avatar["state"] = "NEUTRAL"
+                        # ⭐ 수정: 고객 문의를 CC 자막에 미리 반영 (재생 전에 반영)
+                        if st.session_state.call_initial_query:
+                            st.session_state.current_customer_audio_text = st.session_state.call_initial_query
                         # ⭐ 수정: 고객 문의 재생을 바로 실행 (같은 실행 주기에서 처리)
                         # 고객 문의 재생 로직이 아래에 있으므로 플래그만 설정
                         st.session_state.customer_turn_start = True
@@ -6474,38 +6767,76 @@ elif feature_selection == L["sim_tab_phone"]:
         # ⭐ 수정: 첫 인사말 후 고객 문의 재생 처리
         # customer_turn_start 플래그가 True일 때 고객 문의를 재생
         if st.session_state.get("customer_turn_start", False) and st.session_state.customer_initial_audio_bytes:
+            # ⭐ 수정: 고객 문의 텍스트를 즉시 CC 영역에 반영 (재생 시작 전, 확실히 반영)
+            st.session_state.current_customer_audio_text = st.session_state.call_initial_query
+            
             # 고객 문의 재생
             try:
                 st.audio(st.session_state.customer_initial_audio_bytes, format="audio/mp3", autoplay=True, loop=False)
-                st.success(f"🗣️ 고객 문의 재생 중: {st.session_state.call_initial_query[:50]}...")
+                st.success(L["customer_query_playing"])
+                st.info(f"{L['query_content_label']} {st.session_state.call_initial_query}")
                 
-                # ⭐ 수정: 오디오 재생 시간 확보 (텍스트 길이 기반으로 대략적인 재생 시간 계산)
-                # 한국어: 약 3자/초, 영어: 약 5자/초, 일본어: 약 4자/초
-                text_length = len(st.session_state.call_initial_query)
-                if st.session_state.language == "ko":
-                    estimated_duration = max(3.0, text_length / 3.0)  # 최소 3초
-                elif st.session_state.language == "ja":
-                    estimated_duration = max(3.0, text_length / 4.0)  # 최소 3초
-                else:  # 영어
-                    estimated_duration = max(3.0, text_length / 5.0)  # 최소 3초
-                
-                # 오디오 재생 시간 + 여유 시간 확보 (최소 5초, 최대 15초)
-                wait_time = min(max(5.0, estimated_duration + 2.0), 15.0)
-                time.sleep(wait_time)
+                # ⭐ 수정: 재생 완료 대기 로직 완전 제거
+                # 브라우저에서 자동으로 재생되므로 서버에서 기다릴 필요 없음
+                # 재생은 백그라운드에서 계속 진행되며, CC 자막은 이미 반영됨
                 
             except Exception as e:
-                st.warning(f"자동 재생 실패: {e}. 수동으로 재생해주세요.")
+                st.warning(L["auto_play_failed"].format(error=str(e)))
                 st.audio(st.session_state.customer_initial_audio_bytes, format="audio/mp3", autoplay=False)
-                st.success(f"🗣️ 고객 문의 재생: {st.session_state.call_initial_query[:50]}...")
-            
-            # 고객 문의 텍스트를 CC 영역에 반영
-            st.session_state.current_customer_audio_text = st.session_state.call_initial_query
+                st.info(f"{L['query_content_label']} {st.session_state.call_initial_query}")
             
             # 플래그 초기화
             st.session_state.customer_turn_start = False
             
-            # ⭐ 수정: 고객 문의 재생 완료 후 재실행하여 다음 단계로 진행
-            st.rerun()
+            # ⭐ 수정: 맞춤형 반응 생성을 같은 실행 주기에서 처리하되, 재생은 계속 진행되도록 함
+            # 에이전트의 첫 인사말 가져오기
+            agent_greeting = ""
+            for msg in reversed(st.session_state.simulator_messages):
+                if msg.get("role") == "agent":
+                    agent_greeting = msg.get("content", "")
+                    break
+            
+            if agent_greeting:
+                # 맞춤형 고객 반응 생성 (재생과 동시에 진행)
+                with st.spinner(L["generating_customized_response"]):
+                    customer_reaction = generate_customer_reaction_for_first_greeting(
+                        st.session_state.language,
+                        agent_greeting,
+                        st.session_state.call_initial_query
+                    )
+                    
+                    # 고객 반응을 TTS로 재생 및 CC에 반영
+                    if not customer_reaction.startswith("❌"):
+                        audio_bytes, msg = synthesize_tts(customer_reaction, st.session_state.language, role="customer")
+                        if audio_bytes:
+                            try:
+                                st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                                st.success(L["customer_responded"].format(reaction=customer_reaction.strip()[:50] + "..."))
+                            except Exception as e:
+                                st.warning(L["auto_play_failed"].format(error=str(e)))
+                                st.audio(audio_bytes, format="audio/mp3", autoplay=False)
+                                st.success(L["customer_responded"].format(reaction=customer_reaction.strip()[:50] + "..."))
+                        else:
+                            st.error(L["customer_voice_generation_error"].format(error=msg))
+                        
+                        # ⭐ 수정: 고객 반응을 CC 영역에 추가 (고객 문의는 유지)
+                        # 고객 문의와 반응을 모두 표시
+                        if st.session_state.current_customer_audio_text == st.session_state.call_initial_query:
+                            # 고객 문의만 있는 경우 반응 추가
+                            st.session_state.current_customer_audio_text = f"{st.session_state.call_initial_query}\n\n→ {customer_reaction.strip()}"
+                        else:
+                            # 이미 반응이 있는 경우 업데이트
+                            st.session_state.current_customer_audio_text = customer_reaction.strip()
+                        
+                        # 이력 저장
+                        log_entry = f"Agent: {agent_greeting} | Customer: {customer_reaction.strip()}"
+                        st.session_state.simulator_messages.append(
+                            {"role": "phone_exchange", "content": log_entry})
+                    else:
+                        st.error(customer_reaction)
+            
+            # ⭐ 수정: rerun 완전 제거 - 재생은 브라우저에서 자동으로 진행되므로 서버에서 기다릴 필요 없음
+            # st.rerun()
 
         # ⭐ 수정: 전사 후 고객 반응 생성 처리 (마이크 위젯 렌더링 이후에 위치)
         # 전사 결과가 CC에 먼저 표시된 후 고객 반응을 생성하도록 분리
@@ -6516,7 +6847,7 @@ elif feature_selection == L["sim_tab_phone"]:
             del st.session_state.pending_agent_transcript
 
             # 고객 반응 생성
-            with st.spinner("고객 반응 생성 중..."):
+            with st.spinner(L["generating_customer_response"]):
                 customer_reaction = generate_customer_reaction_for_call(
                     st.session_state.language,
                     pending_transcript
@@ -6529,15 +6860,15 @@ elif feature_selection == L["sim_tab_phone"]:
                         # Streamlit 문서: autoplay는 브라우저 정책상 제한될 수 있음
                         try:
                             st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
-                            st.success(f"🗣️ 고객이 응답했습니다: {customer_reaction.strip()[:50]}...")
+                            st.success(L["customer_responded"].format(reaction=customer_reaction.strip()[:50] + "..."))
                             # ⭐ 수정: 고객 반응 재생 시간 확보를 위해 짧은 대기
                             time.sleep(0.5)
                         except Exception as e:
-                            st.warning(f"자동 재생 실패: {e}. 수동으로 재생해주세요.")
+                            st.warning(L["auto_play_failed"].format(error=str(e)))
                             st.audio(audio_bytes, format="audio/mp3", autoplay=False)
-                            st.success(f"🗣️ 고객이 응답했습니다: {customer_reaction.strip()[:50]}...")
+                            st.success(L["customer_responded"].format(reaction=customer_reaction.strip()[:50] + "..."))
                     else:
-                        st.error(f"❌ 고객 음성 생성 오류: {msg}")
+                        st.error(L["customer_voice_generation_error"].format(error=msg))
 
                     # 고객 반응 텍스트를 CC 영역에 반영
                     st.session_state.current_customer_audio_text = customer_reaction.strip()
@@ -6554,8 +6885,9 @@ elif feature_selection == L["sim_tab_phone"]:
                     if "bytes_to_process" in st.session_state:
                         st.session_state.bytes_to_process = None
 
-                    # ⭐ 최적화: 고객 반응 후 재실행 (다음 녹음을 위해 필요)
-                    st.rerun()
+                    # ⭐ 수정: rerun 제거 - 재생은 브라우저에서 자동으로 진행되므로 서버에서 기다릴 필요 없음
+                    # 첫 문의와 동일하게 rerun을 제거하여 재생이 끝까지 진행되도록 함
+                    # st.rerun()
 
 
     # ========================================
