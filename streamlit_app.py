@@ -142,10 +142,15 @@ RAG_INDEX_DIR = os.path.join(DATA_DIR, "rag_index")
 
 VOICE_META_FILE = os.path.join(DATA_DIR, "voice_records.json")
 SIM_META_FILE = os.path.join(DATA_DIR, "simulation_histories.json")
+VIDEO_MAPPING_DB_FILE = os.path.join(DATA_DIR, "video_mapping_database.json")  # ⭐ Gemini 제안: 비디오 매핑 데이터베이스
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(AUDIO_DIR, exist_ok=True)
 os.makedirs(RAG_INDEX_DIR, exist_ok=True)
+
+# 비디오 디렉토리도 초기화 시 생성
+VIDEO_DIR = os.path.join(DATA_DIR, "videos")
+os.makedirs(VIDEO_DIR, exist_ok=True)
 
 
 
@@ -1166,6 +1171,33 @@ if "customer_avatar" not in st.session_state:
         "gender": "male",  # 기본값
         "state": "NEUTRAL",  # 기본 아바타 상태
     }
+# ⭐ 추가: 비디오 동기화 관련 세션 상태
+if "current_customer_video" not in st.session_state:
+    st.session_state.current_customer_video = None  # 현재 재생 중인 고객 비디오 경로
+if "current_customer_video_bytes" not in st.session_state:
+    st.session_state.current_customer_video_bytes = None  # 현재 재생 중인 고객 비디오 바이트
+if "is_video_sync_enabled" not in st.session_state:
+    st.session_state.is_video_sync_enabled = True  # 비디오 동기화 활성화 여부
+if "video_male_neutral" not in st.session_state:
+    st.session_state.video_male_neutral = None  # 남자 중립 비디오 경로
+if "video_male_happy" not in st.session_state:
+    st.session_state.video_male_happy = None
+if "video_male_angry" not in st.session_state:
+    st.session_state.video_male_angry = None
+if "video_male_asking" not in st.session_state:
+    st.session_state.video_male_asking = None
+if "video_male_sad" not in st.session_state:
+    st.session_state.video_male_sad = None
+if "video_female_neutral" not in st.session_state:
+    st.session_state.video_female_neutral = None  # 여자 중립 비디오 경로
+if "video_female_happy" not in st.session_state:
+    st.session_state.video_female_happy = None
+if "video_female_angry" not in st.session_state:
+    st.session_state.video_female_angry = None
+if "video_female_asking" not in st.session_state:
+    st.session_state.video_female_asking = None
+if "video_female_sad" not in st.session_state:
+    st.session_state.video_female_sad = None
 # ⭐ 추가: 전사할 오디오 바이트 임시 저장소
 if "bytes_to_process" not in st.session_state:
     st.session_state.bytes_to_process = None
@@ -1198,6 +1230,12 @@ SUPPORTED_APIS = {
         "session_key": "user_gemini_key",
         "placeholder": "AIza***********************************",
     },
+    "hyperclova": {
+        "label": "Hyperclova API Key",
+        "secret_key": "HYPERCLOVA_API_KEY",
+        "session_key": "user_hyperclova_key",
+        "placeholder": "hyperclova-**************************",
+    },
     "nvidia": {
         "label": "NVIDIA NIM API Key",
         "secret_key": "NVIDIA_API_KEY",
@@ -1215,6 +1253,12 @@ SUPPORTED_APIS = {
         "secret_key": "GROQ_API_KEY",
         "session_key": "user_groq_key",
         "placeholder": "gsk_**************************",
+    },
+    "hyperclova": {
+        "label": "Hyperclova API Key",
+        "secret_key": "HYPERCLOVA_API_KEY",
+        "session_key": "user_hyperclova_key",
+        "placeholder": "hyperclova-**************************",
     },
 }
 
@@ -2173,6 +2217,647 @@ def transcribe_audio(audio_bytes, filename="audio.wav"):
     return "❌ STT not available"
 
 
+# ========================================
+# 비디오 동기화 관련 함수
+# ========================================
+
+def analyze_text_for_video_selection(text: str, current_lang_key: str, 
+                                     agent_last_response: str = None,
+                                     conversation_context: List[Dict] = None) -> Dict[str, Any]:
+    """
+    LLM을 사용하여 텍스트를 분석하고 적절한 감정 상태와 제스처를 판단합니다.
+    OpenAI/Gemini API를 활용한 영상 RAG의 핵심 기능입니다.
+    
+    ⭐ Gemini 제안 적용: 긴급도, 만족도 변화, 에이전트 답변 기반 예측 추가
+    
+    Args:
+        text: 분석할 텍스트 (고객의 질문/응답)
+        current_lang_key: 현재 언어 키
+        agent_last_response: 에이전트의 마지막 답변 (선택적, 예측 정확도 향상)
+        conversation_context: 대화 컨텍스트 (선택적, 만족도 변화 분석용)
+    
+    Returns:
+        {
+            "emotion": "NEUTRAL" | "HAPPY" | "ANGRY" | "ASKING" | "SAD",
+            "gesture": "NONE" | "HAND_WAVE" | "NOD" | "SHAKE_HEAD" | "POINT",
+            "urgency": "LOW" | "MEDIUM" | "HIGH",  # ⭐ 추가: 긴급도
+            "satisfaction_delta": -1.0 to 1.0,  # ⭐ 추가: 만족도 변화 (-1: 감소, 0: 유지, 1: 증가)
+            "confidence": 0.0-1.0
+        }
+    """
+    if not text or not text.strip():
+        return {
+            "emotion": "NEUTRAL", 
+            "gesture": "NONE", 
+            "urgency": "LOW",
+            "satisfaction_delta": 0.0,
+            "confidence": 0.5
+        }
+    
+    L = LANG.get(current_lang_key, LANG["ko"])
+    
+    # ⭐ Gemini 제안: 에이전트 답변 기반 예측 컨텍스트 구성
+    context_info = ""
+    if agent_last_response:
+        context_info = f"""
+에이전트의 마지막 답변: "{agent_last_response}"
+
+에이전트의 답변을 고려했을 때, 고객이 지금 말하는 내용은 어떤 감정을 수반할 것인지 예측하세요.
+예를 들어:
+- 에이전트가 솔루션을 제시했다면 → 고객은 HAPPY 또는 ASKING (추가 질문)
+- 에이전트가 거절했다면 → 고객은 ANGRY 또는 SAD
+- 에이전트가 질문을 했다면 → 고객은 ASKING (답변) 또는 NEUTRAL
+"""
+    
+    # ⭐ Gemini 제안: 만족도 변화 분석 컨텍스트
+    satisfaction_context = ""
+    if conversation_context and len(conversation_context) > 1:
+        # 최근 대화의 감정 변화 추적
+        recent_emotions = []
+        for msg in conversation_context[-3:]:  # 최근 3개 메시지
+            if msg.get("role") == "customer_rebuttal" or msg.get("role") == "customer":
+                recent_emotions.append(msg.get("content", ""))
+        
+        if len(recent_emotions) >= 2:
+            satisfaction_context = f"""
+최근 대화 흐름:
+- 이전 고객 메시지: "{recent_emotions[-2] if len(recent_emotions) >= 2 else ''}"
+- 현재 고객 메시지: "{recent_emotions[-1]}"
+
+만족도 변화를 분석하세요:
+- 이전보다 더 긍정적이면 satisfaction_delta > 0
+- 이전보다 더 부정적이면 satisfaction_delta < 0
+- 비슷하면 satisfaction_delta ≈ 0
+"""
+    
+    # ⭐ Gemini 제안: 개선된 LLM 프롬프트 구성
+    prompt = f"""다음 고객의 텍스트를 분석하여 적절한 감정 상태, 제스처, 긴급도, 만족도 변화를 판단하세요.
+
+고객 텍스트: "{text}"
+{context_info}
+{satisfaction_context}
+
+다음 JSON 형식으로만 응답하세요 (다른 설명 없이):
+{{
+    "emotion": "NEUTRAL" | "HAPPY" | "ANGRY" | "ASKING" | "SAD",
+    "gesture": "NONE" | "HAND_WAVE" | "NOD" | "SHAKE_HEAD" | "POINT",
+    "urgency": "LOW" | "MEDIUM" | "HIGH",
+    "satisfaction_delta": -1.0 to 1.0,
+    "confidence": 0.0-1.0
+}}
+
+감정 판단 기준 (세분화):
+- HAPPY: 긍정적 표현, 감사, 만족, 해결됨 ("감사합니다", "좋아요", "완벽해요", "이제 이해했어요")
+- ANGRY: 불만, 화남, 거부, 강한 부정 ("화가 나요", "불가능해요", "거절합니다", "말도 안 돼요")
+- ASKING: 질문, 궁금함, 확인 요청, 정보 요구 ("어떻게", "왜", "알려주세요", "주문번호가 뭐예요?")
+- SAD: 슬픔, 실망, 좌절 ("슬프네요", "실망했어요", "아쉽습니다", "그렇다면 어쩔 수 없네요")
+- NEUTRAL: 중립적 표현, 단순 정보 전달 (기본값)
+
+제스처 판단 기준:
+- HAND_WAVE: 인사, 환영 ("안녕하세요", "반갑습니다")
+- NOD: 동의, 긍정, 이해 ("네", "맞아요", "그렇습니다", "알겠습니다")
+- SHAKE_HEAD: 부정, 거부, 불만족 ("아니요", "안 됩니다", "그건 아니에요")
+- POINT: 설명, 지시, 특정 항목 언급 ("여기", "이것", "저것", "주문번호는")
+- NONE: 특별한 제스처 없음 (기본값)
+
+긴급도 판단 기준:
+- HIGH: 즉시 해결 필요, 긴급한 문제 ("지금 당장", "바로", "긴급", "중요해요")
+- MEDIUM: 빠른 해결 선호, 중요하지만 긴급하지 않음
+- LOW: 일반적인 문의, 긴급하지 않음 (기본값)
+
+만족도 변화 (satisfaction_delta):
+- 1.0: 매우 만족, 문제 해결됨, 감사 표현
+- 0.5: 만족, 긍정적 반응
+- 0.0: 중립, 변화 없음
+- -0.5: 불만족, 부정적 반응
+- -1.0: 매우 불만족, 화남, 거부
+
+JSON만 응답하세요:"""
+
+    try:
+        # LLM 호출
+        if st.session_state.is_llm_ready:
+            response_text = run_llm(prompt)
+            
+            # JSON 파싱 시도
+            try:
+                # JSON 부분만 추출 (코드 블록 제거)
+                import re
+                json_match = re.search(r'\{[^{}]*\}', response_text, re.DOTALL)
+                if json_match:
+                    result = json.loads(json_match.group())
+                    # 유효성 검사
+                    valid_emotions = ["NEUTRAL", "HAPPY", "ANGRY", "ASKING", "SAD"]
+                    valid_gestures = ["NONE", "HAND_WAVE", "NOD", "SHAKE_HEAD", "POINT"]
+                    valid_urgencies = ["LOW", "MEDIUM", "HIGH"]
+                    
+                    emotion = result.get("emotion", "NEUTRAL")
+                    gesture = result.get("gesture", "NONE")
+                    urgency = result.get("urgency", "LOW")
+                    satisfaction_delta = float(result.get("satisfaction_delta", 0.0))
+                    confidence = float(result.get("confidence", 0.7))
+                    
+                    if emotion not in valid_emotions:
+                        emotion = "NEUTRAL"
+                    if gesture not in valid_gestures:
+                        gesture = "NONE"
+                    if urgency not in valid_urgencies:
+                        urgency = "LOW"
+                    
+                    # ⭐ Gemini 제안: 상황별 키워드 추출
+                    context_keywords = []
+                    text_lower_for_context = text.lower()
+                    
+                    # 주요 상황별 키워드 매핑
+                    if any(word in text_lower_for_context for word in ["주문번호", "order number", "주문 번호"]):
+                        context_keywords.append("order_number")
+                    if any(word in text_lower_for_context for word in ["해결", "완료", "감사", "solution", "resolved"]):
+                        if satisfaction_delta > 0.3:
+                            context_keywords.append("solution_accepted")
+                    if any(word in text_lower_for_context for word in ["거절", "불가", "안 됩니다", "denied", "cannot"]):
+                        if emotion == "ANGRY":
+                            context_keywords.append("policy_denial")
+                    
+                    return {
+                        "emotion": emotion,
+                        "gesture": gesture,
+                        "urgency": urgency,
+                        "satisfaction_delta": max(-1.0, min(1.0, satisfaction_delta)),
+                        "context_keywords": context_keywords,  # ⭐ 추가
+                        "confidence": max(0.0, min(1.0, confidence))
+                    }
+            except json.JSONDecodeError:
+                pass
+        
+        # LLM 호출 실패 시 키워드 기반 간단한 분석
+        text_lower = text.lower()
+        emotion = "NEUTRAL"
+        gesture = "NONE"
+        urgency = "LOW"
+        satisfaction_delta = 0.0
+        
+        # 감정 키워드 분석
+        if any(word in text_lower for word in ["감사", "좋아", "완벽", "만족", "고마워", "해결"]):
+            emotion = "HAPPY"
+            satisfaction_delta = 0.5
+        elif any(word in text_lower for word in ["화", "불만", "거절", "불가능", "안 됩니다", "말도 안 돼"]):
+            emotion = "ANGRY"
+            satisfaction_delta = -0.5
+        elif any(word in text_lower for word in ["어떻게", "왜", "알려", "질문", "궁금", "주문번호"]):
+            emotion = "ASKING"
+        elif any(word in text_lower for word in ["슬프", "실망", "아쉽", "그렇다면"]):
+            emotion = "SAD"
+            satisfaction_delta = -0.3
+        
+        # 긴급도 키워드 분석
+        if any(word in text_lower for word in ["지금 당장", "바로", "긴급", "중요해요", "즉시"]):
+            urgency = "HIGH"
+        elif any(word in text_lower for word in ["빨리", "가능한 한", "최대한"]):
+            urgency = "MEDIUM"
+        
+        # 제스처 키워드 분석
+        if any(word in text_lower for word in ["안녕", "반갑", "인사"]):
+            gesture = "HAND_WAVE"
+        elif any(word in text_lower for word in ["네", "맞아", "그래", "동의", "알겠습니다"]):
+            gesture = "NOD"
+            if emotion == "HAPPY":
+                satisfaction_delta = 0.3
+        elif any(word in text_lower for word in ["아니", "안 됩니다", "거절"]):
+            gesture = "SHAKE_HEAD"
+            satisfaction_delta = -0.2
+        elif any(word in text_lower for word in ["여기", "이것", "저것", "이거", "주문번호"]):
+            gesture = "POINT"
+        
+        # ⭐ Gemini 제안: 상황별 키워드 추출 (키워드 기반 분석)
+        context_keywords = []
+        if any(word in text_lower for word in ["주문번호", "order number", "주문 번호"]):
+            context_keywords.append("order_number")
+        if any(word in text_lower for word in ["해결", "완료", "감사", "solution"]):
+            if satisfaction_delta > 0.3:
+                context_keywords.append("solution_accepted")
+        if any(word in text_lower for word in ["거절", "불가", "안 됩니다"]):
+            if emotion == "ANGRY":
+                context_keywords.append("policy_denial")
+        
+        return {
+            "emotion": emotion,
+            "gesture": gesture,
+            "urgency": urgency,
+            "satisfaction_delta": satisfaction_delta,
+            "context_keywords": context_keywords,  # ⭐ 추가
+            "confidence": 0.6  # 키워드 기반 분석은 낮은 신뢰도
+        }
+    
+    except Exception as e:
+        print(f"텍스트 분석 오류: {e}")
+        return {
+            "emotion": "NEUTRAL", 
+            "gesture": "NONE", 
+            "urgency": "LOW",
+            "satisfaction_delta": 0.0,
+            "context_keywords": [],  # ⭐ 추가
+            "confidence": 0.5
+        }
+
+
+def get_video_path_by_avatar(gender: str, emotion: str, is_speaking: bool = False, 
+                             gesture: str = "NONE", context_keywords: List[str] = None) -> str:
+    """
+    고객 아바타 정보(성별, 감정 상태, 제스처, 상황)에 따라 적절한 비디오 경로를 반환합니다.
+    OpenAI/Gemini 기반 영상 RAG: LLM이 분석한 감정/제스처에 따라 비디오 클립을 선택합니다.
+    
+    ⭐ Gemini 제안: 상황별 비디오 클립 패턴 확장 (예: male_asking_order_number.mp4)
+    
+    Args:
+        gender: "male" 또는 "female"
+        emotion: "NEUTRAL", "HAPPY", "ANGRY", "ASKING", "SAD", "HOLD"
+        is_speaking: 말하는 중인지 여부
+        gesture: "NONE", "HAND_WAVE", "NOD", "SHAKE_HEAD", "POINT"
+        context_keywords: 상황별 키워드 리스트 (예: ["order_number", "solution_accepted", "policy_denial"])
+    
+    Returns:
+        비디오 파일 경로 (없으면 None)
+    """
+    # 비디오 디렉토리 경로 (사용자가 설정한 비디오 파일들이 저장된 위치)
+    video_base_dir = os.path.join(DATA_DIR, "videos")
+    os.makedirs(video_base_dir, exist_ok=True)
+    
+    # ⭐ Gemini 제안: 우선순위 -1 - 데이터베이스 기반 추천 비디오 (가장 우선)
+    if context_keywords:
+        db_recommended = get_recommended_video_from_database(emotion, gesture, context_keywords)
+        if db_recommended:
+            return db_recommended
+    else:
+        db_recommended = get_recommended_video_from_database(emotion, gesture, [])
+        if db_recommended:
+            return db_recommended
+    
+    # ⭐ Gemini 제안: 우선순위 0 - 상황별 비디오 클립 (가장 구체적)
+    if context_keywords:
+        for keyword in context_keywords:
+            # 상황별 파일명 패턴 시도 (예: male_asking_order_number.mp4)
+            context_filename = f"{gender}_{emotion.lower()}_{keyword}"
+            if is_speaking:
+                context_filename += "_speaking"
+            context_filename += ".mp4"
+            context_path = os.path.join(video_base_dir, context_filename)
+            if os.path.exists(context_path):
+                return context_path
+            
+            # 세션 상태에서도 확인
+            context_video_key = f"video_{gender}_{emotion.lower()}_{keyword}"
+            if context_video_key in st.session_state and st.session_state[context_video_key]:
+                video_path = st.session_state[context_video_key]
+                if os.path.exists(video_path):
+                    return video_path
+    
+    # 우선순위 1: 제스처가 있는 경우 제스처별 비디오 시도
+    if gesture != "NONE" and gesture:
+        gesture_video_key = f"video_{gender}_{emotion.lower()}_{gesture.lower()}"
+        if gesture_video_key in st.session_state and st.session_state[gesture_video_key]:
+            video_path = st.session_state[gesture_video_key]
+            if os.path.exists(video_path):
+                return video_path
+        
+        # 제스처별 파일명 패턴 시도
+        gesture_filename = f"{gender}_{emotion.lower()}_{gesture.lower()}"
+        if is_speaking:
+            gesture_filename += "_speaking"
+        gesture_filename += ".mp4"
+        gesture_path = os.path.join(video_base_dir, gesture_filename)
+        if os.path.exists(gesture_path):
+            return gesture_path
+    
+    # 우선순위 2: 감정 상태별 비디오 (제스처 없이)
+    video_key = f"video_{gender}_{emotion.lower()}"
+    if is_speaking:
+        video_key += "_speaking"
+    
+    # 세션 상태에 저장된 비디오 경로가 있으면 사용
+    if video_key in st.session_state and st.session_state[video_key]:
+        video_path = st.session_state[video_key]
+        if os.path.exists(video_path):
+            return video_path
+    
+    # 기본 비디오 파일명 패턴 시도
+    video_filename = f"{gender}_{emotion.lower()}"
+    if is_speaking:
+        video_filename += "_speaking"
+    video_filename += ".mp4"
+    
+    video_path = os.path.join(video_base_dir, video_filename)
+    if os.path.exists(video_path):
+        return video_path
+    
+    # 우선순위 3: 기본 비디오 파일 시도 (중립 상태)
+    default_video = os.path.join(video_base_dir, f"{gender}_neutral.mp4")
+    if os.path.exists(default_video):
+        return default_video
+    
+    # 우선순위 4: 세션 상태에서 업로드된 비디오 확인
+    if "current_customer_video" in st.session_state and st.session_state.current_customer_video:
+        return st.session_state.current_customer_video
+    
+    return None
+
+
+# ⭐ Gemini 제안: 비디오 매핑 데이터베이스 관리 함수
+def load_video_mapping_database() -> Dict[str, Any]:
+    """비디오 매핑 데이터베이스를 로드합니다."""
+    if os.path.exists(VIDEO_MAPPING_DB_FILE):
+        try:
+            with open(VIDEO_MAPPING_DB_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"비디오 매핑 데이터베이스 로드 오류: {e}")
+            return {"mappings": [], "feedback_history": []}
+    return {"mappings": [], "feedback_history": []}
+
+
+def save_video_mapping_database(db_data: Dict[str, Any]):
+    """비디오 매핑 데이터베이스를 저장합니다."""
+    try:
+        with open(VIDEO_MAPPING_DB_FILE, 'w', encoding='utf-8') as f:
+            json.dump(db_data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"비디오 매핑 데이터베이스 저장 오류: {e}")
+
+
+def add_video_mapping_feedback(
+    customer_text: str,
+    selected_video_path: str,
+    emotion: str,
+    gesture: str,
+    context_keywords: List[str],
+    user_rating: int,  # 1-5 점수
+    user_comment: str = ""
+) -> None:
+    """
+    ⭐ Gemini 제안: 사용자 피드백을 비디오 매핑 데이터베이스에 추가합니다.
+    
+    Args:
+        customer_text: 고객의 텍스트
+        selected_video_path: 선택된 비디오 경로
+        emotion: 분석된 감정
+        gesture: 분석된 제스처
+        context_keywords: 상황별 키워드
+        user_rating: 사용자 평가 (1-5)
+        user_comment: 사용자 코멘트 (선택적)
+    """
+    db_data = load_video_mapping_database()
+    
+    feedback_entry = {
+        "timestamp": datetime.now().isoformat(),
+        "customer_text": customer_text[:200],  # 최대 200자
+        "selected_video": os.path.basename(selected_video_path) if selected_video_path else None,
+        "video_path": selected_video_path,
+        "emotion": emotion,
+        "gesture": gesture,
+        "context_keywords": context_keywords,
+        "user_rating": user_rating,
+        "user_comment": user_comment[:500] if user_comment else "",  # 최대 500자
+        "is_natural_match": user_rating >= 4  # 4점 이상이면 자연스러운 매칭으로 간주
+    }
+    
+    db_data["feedback_history"].append(feedback_entry)
+    
+    # 매핑 규칙 업데이트 (평가가 높은 경우)
+    if user_rating >= 4:
+        mapping_key = f"{emotion}_{gesture}_{'_'.join(context_keywords) if context_keywords else 'none'}"
+        
+        # 기존 매핑 찾기
+        existing_mapping = None
+        for mapping in db_data["mappings"]:
+            if mapping.get("key") == mapping_key:
+                existing_mapping = mapping
+                break
+        
+        if existing_mapping:
+            # 기존 매핑 업데이트 (평균 점수 계산)
+            total_rating = existing_mapping.get("total_rating", 0) + user_rating
+            count = existing_mapping.get("count", 0) + 1
+            existing_mapping["total_rating"] = total_rating
+            existing_mapping["count"] = count
+            existing_mapping["avg_rating"] = total_rating / count
+            existing_mapping["last_updated"] = datetime.now().isoformat()
+        else:
+            # 새 매핑 추가
+            db_data["mappings"].append({
+                "key": mapping_key,
+                "emotion": emotion,
+                "gesture": gesture,
+                "context_keywords": context_keywords,
+                "recommended_video": os.path.basename(selected_video_path) if selected_video_path else None,
+                "video_path": selected_video_path,
+                "total_rating": user_rating,
+                "count": 1,
+                "avg_rating": float(user_rating),
+                "created_at": datetime.now().isoformat(),
+                "last_updated": datetime.now().isoformat()
+            })
+    
+    save_video_mapping_database(db_data)
+
+
+def get_recommended_video_from_database(
+    emotion: str,
+    gesture: str,
+    context_keywords: List[str]
+) -> str:
+    """
+    ⭐ Gemini 제안: 데이터베이스에서 추천 비디오 경로를 가져옵니다.
+    
+    Args:
+        emotion: 감정 상태
+        gesture: 제스처
+        context_keywords: 상황별 키워드
+    
+    Returns:
+        추천 비디오 경로 (없으면 None)
+    """
+    db_data = load_video_mapping_database()
+    
+    mapping_key = f"{emotion}_{gesture}_{'_'.join(context_keywords) if context_keywords else 'none'}"
+    
+    # 정확한 매칭 찾기
+    for mapping in db_data["mappings"]:
+        if mapping.get("key") == mapping_key and mapping.get("avg_rating", 0) >= 4.0:
+            video_path = mapping.get("video_path")
+            if video_path and os.path.exists(video_path):
+                return video_path
+    
+    # 부분 매칭 시도 (감정과 제스처만)
+    partial_key = f"{emotion}_{gesture}_none"
+    for mapping in db_data["mappings"]:
+        if mapping.get("key") == partial_key and mapping.get("avg_rating", 0) >= 4.0:
+            video_path = mapping.get("video_path")
+            if video_path and os.path.exists(video_path):
+                return video_path
+    
+    return None
+
+
+def render_synchronized_video(text: str, audio_bytes: bytes, gender: str, emotion: str, 
+                               role: str = "customer", autoplay: bool = True,
+                               gesture: str = "NONE", context_keywords: List[str] = None):
+    """
+    TTS 오디오와 동기화된 비디오를 렌더링합니다.
+    
+    ⭐ Gemini 제안: 피드백 평가 기능 추가
+    
+    Args:
+        text: 말하는 텍스트 내용
+        audio_bytes: TTS로 생성된 오디오 바이트
+        gender: 고객 성별 ("male" 또는 "female")
+        emotion: 감정 상태 ("NEUTRAL", "HAPPY", "ANGRY", "ASKING", "SAD", "HOLD")
+        role: 역할 ("customer" 또는 "agent")
+        autoplay: 자동 재생 여부
+        gesture: 제스처 (선택적)
+        context_keywords: 상황별 키워드 (선택적)
+    """
+    if role == "customer":
+        is_speaking = True
+        if context_keywords is None:
+            context_keywords = []
+        
+        # ⭐ Gemini 제안: 데이터베이스 기반 추천 비디오 우선 사용
+        video_path = get_video_path_by_avatar(gender, emotion, is_speaking, gesture, context_keywords)
+        
+        if video_path and os.path.exists(video_path):
+            try:
+                with open(video_path, "rb") as f:
+                    video_bytes = f.read()
+                
+                # 비디오와 오디오를 함께 재생
+                # Streamlit의 st.video는 오디오 트랙이 있는 비디오를 지원합니다
+                # 여기서는 비디오만 표시하고, 오디오는 별도로 재생합니다
+                st.video(video_bytes, format="video/mp4", autoplay=autoplay, loop=False, muted=False)
+                
+                # 오디오도 함께 재생 (동기화)
+                if audio_bytes:
+                    st.audio(audio_bytes, format="audio/mp3", autoplay=autoplay, loop=False)
+                
+                # ⭐ Gemini 제안: 사용자 피드백 평가 UI 추가 (채팅/이메일 탭용)
+                if not autoplay:  # 자동 재생이 아닌 경우에만 피드백 UI 표시
+                    st.markdown("---")
+                    st.markdown("**💬 비디오 매칭 평가**")
+                    st.caption("이 비디오가 고객의 텍스트와 감정에 자연스럽게 매칭되었습니까?")
+                    
+                    feedback_key = f"video_feedback_chat_{st.session_state.get('sim_instance_id', 'default')}_{hash(text) % 10000}"
+                    
+                    col_rating, col_comment = st.columns([2, 3])
+                    with col_rating:
+                        rating = st.slider(
+                            "평가 점수 (1-5점)",
+                            min_value=1,
+                            max_value=5,
+                            value=3,
+                            key=f"{feedback_key}_rating",
+                            help="1점: 매우 부자연스러움, 5점: 매우 자연스러움"
+                        )
+                    
+                    with col_comment:
+                        comment = st.text_input(
+                            "의견 (선택사항)",
+                            key=f"{feedback_key}_comment",
+                            placeholder="예: 비디오가 텍스트와 잘 맞았습니다"
+                        )
+                    
+                    if st.button("피드백 제출", key=f"{feedback_key}_submit"):
+                        # 피드백을 데이터베이스에 저장
+                        add_video_mapping_feedback(
+                            customer_text=text[:200],
+                            selected_video_path=video_path,
+                            emotion=emotion,
+                            gesture=gesture,
+                            context_keywords=context_keywords,
+                            user_rating=rating,
+                            user_comment=comment
+                        )
+                        st.success(f"✅ 피드백이 저장되었습니다! (점수: {rating}/5)")
+                        st.info("💡 이 피드백은 향후 비디오 선택 정확도를 개선하는 데 사용됩니다.")
+                
+                return True
+            except Exception as e:
+                st.warning(f"비디오 재생 오류: {e}")
+                # 비디오 재생 실패 시 오디오만 재생
+                if audio_bytes:
+                    st.audio(audio_bytes, format="audio/mp3", autoplay=autoplay, loop=False)
+                return False
+        else:
+            # 비디오가 없으면 오디오만 재생
+            if audio_bytes:
+                st.audio(audio_bytes, format="audio/mp3", autoplay=autoplay, loop=False)
+            return False
+    else:
+        # 에이전트는 비디오 없이 오디오만 재생
+        if audio_bytes:
+            st.audio(audio_bytes, format="audio/mp3", autoplay=autoplay, loop=False)
+        return False
+
+
+def generate_virtual_human_video(text: str, audio_bytes: bytes, gender: str, emotion: str, 
+                                 provider: str = "hyperclova") -> bytes:
+    """
+    가상 휴먼 기술을 사용하여 텍스트와 오디오에 맞는 비디오를 생성합니다.
+    
+    ⚠️ 주의: OpenAI/Gemini API만으로는 입모양 동기화 비디오 생성이 불가능합니다.
+    가상 휴먼 비디오 생성은 별도의 가상 휴먼 API (예: Hyperclova)가 필요합니다.
+    
+    현재는 미리 준비된 비디오 파일을 사용하는 방식을 권장합니다.
+    
+    Args:
+        text: 말하는 텍스트 내용
+        audio_bytes: TTS로 생성된 오디오 바이트
+        gender: 고객 성별 ("male" 또는 "female")
+        emotion: 감정 상태 ("NEUTRAL", "HAPPY", "ANGRY", "ASKING", "SAD", "HOLD")
+        provider: 가상 휴먼 제공자 ("hyperclova", "other")
+    
+    Returns:
+        생성된 비디오 바이트 (없으면 None)
+    """
+    # 가상 휴먼 API 키 확인
+    if provider == "hyperclova":
+        api_key = get_api_key("hyperclova")
+        if not api_key:
+            return None
+        
+        # TODO: Hyperclova API 연동 구현 (별도 API 필요)
+        # OpenAI/Gemini API만으로는 불가능하므로, 실제 가상 휴먼 API가 필요합니다.
+        # 예시 구조:
+        # response = requests.post(
+        #     "https://api.hyperclova.com/virtual-human/generate",
+        #     headers={"Authorization": f"Bearer {api_key}"},
+        #     json={
+        #         "text": text,
+        #         "audio": base64.b64encode(audio_bytes).decode(),
+        #         "gender": gender,
+        #         "emotion": emotion
+        #     }
+        # )
+        # return response.content
+    
+    # 다른 제공자도 여기에 추가 가능
+    # elif provider == "other":
+    #     ...
+    
+    return None
+
+
+def get_virtual_human_config() -> Dict[str, Any]:
+    """
+    가상 휴먼 설정을 반환합니다.
+    
+    Returns:
+        가상 휴먼 설정 딕셔너리
+    """
+    return {
+        "enabled": st.session_state.get("virtual_human_enabled", False),
+        "provider": st.session_state.get("virtual_human_provider", "hyperclova"),
+        "api_key": get_api_key("hyperclova") if st.session_state.get("virtual_human_provider", "hyperclova") == "hyperclova" else None
+    }
+
+
 # 역할별 TTS 음성 스타일 설정
 TTS_VOICES = {
     "customer_male": {
@@ -2723,7 +3408,7 @@ def export_history_to_pptx(histories: List[Dict[str, Any]], filename: str = None
 
 
 def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None) -> str:
-    """이력을 PDF 파일로 저장"""
+    """이력을 PDF 파일로 저장 (한글 인코딩 지원)"""
     if not IS_REPORTLAB_AVAILABLE:
         raise ImportError("PDF 저장을 위해 reportlab이 필요합니다: pip install reportlab")
     
@@ -2731,71 +3416,171 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None)
         filename = f"customer_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     filepath = os.path.join(DATA_DIR, filename)
     
+    # ⭐ 수정: 한글 폰트 지원을 위한 폰트 설정
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    
+    # 한글 폰트 등록 시도 (시스템 폰트 사용)
+    korean_font_registered = False
+    try:
+        # Windows 기본 한글 폰트 경로 시도 (TTF 파일 우선, TTC는 지원하지 않음)
+        font_paths = [
+            "C:/Windows/Fonts/malgun.ttf",  # 맑은 고딕
+            "C:/Windows/Fonts/NanumGothic.ttf",  # 나눔고딕
+            "C:/Windows/Fonts/NanumBarunGothic.ttf",  # 나눔바른고딕
+            "C:/Windows/Fonts/batang.ttc",  # 바탕 (TTC는 TTFont로 직접 지원 안 됨)
+        ]
+        
+        for font_path in font_paths:
+            if os.path.exists(font_path):
+                try:
+                    # TTC 파일은 TTFont로 직접 지원하지 않으므로 TTF만 사용
+                    if font_path.endswith('.ttf'):
+                        pdfmetrics.registerFont(TTFont('KoreanFont', font_path))
+                        korean_font_registered = True
+                        print(f"✅ 한글 폰트 등록 성공: {font_path}")
+                        break
+                    elif font_path.endswith('.ttc'):
+                        # TTC 파일은 첫 번째 폰트만 사용 시도
+                        try:
+                            pdfmetrics.registerFont(TTFont('KoreanFont', font_path, subfontIndex=0))
+                            korean_font_registered = True
+                            print(f"✅ 한글 폰트 등록 성공 (TTC): {font_path}")
+                            break
+                        except:
+                            continue
+                except Exception as font_error:
+                    print(f"⚠️ 폰트 등록 실패 ({font_path}): {font_error}")
+                    continue
+        
+        if not korean_font_registered:
+            # 폰트를 찾지 못한 경우 기본 폰트 사용 (한글이 깨질 수 있음)
+            print("⚠️ 한글 폰트를 찾을 수 없습니다. 기본 폰트를 사용합니다.")
+    except Exception as e:
+        print(f"⚠️ 폰트 등록 실패: {e}")
+        korean_font_registered = False
+    
     doc = SimpleDocTemplate(filepath, pagesize=A4)
     story = []
     styles = getSampleStyleSheet()
     
-    # 제목 스타일
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
+    # ⭐ 수정: 한글/영어/일본어 폰트를 사용하는 스타일 생성
+    def get_korean_style(base_style_name, **kwargs):
+        base_style = styles[base_style_name]
+        style_kwargs = {
+            'parent': base_style,
+            **kwargs
+        }
+        # 한글 폰트가 등록된 경우 사용 (한글 폰트는 영어와 일본어도 지원)
+        if korean_font_registered:
+            style_kwargs['fontName'] = 'KoreanFont'
+        # 폰트가 없으면 기본 폰트 사용 (영어는 문제없지만 한글/일본어는 깨질 수 있음)
+        return ParagraphStyle(f'Korean{base_style_name}', **style_kwargs)
+    
+    # 제목 스타일 (한글 폰트 사용)
+    title_style = get_korean_style(
+        'Heading1',
         fontSize=24,
         textColor=black,
         spaceAfter=30,
         alignment=1  # 중앙 정렬
     )
     
+    # 일반 텍스트 스타일 (한글 폰트 사용)
+    normal_style = get_korean_style('Normal')
+    heading1_style = get_korean_style('Heading1')
+    heading2_style = get_korean_style('Heading2')
+    
+    # ⭐ 수정: 텍스트를 안전하게 처리하는 헬퍼 함수 (UTF-8 인코딩 명시적 처리)
+    def safe_text(text):
+        """텍스트를 안전하게 처리하여 PDF에 표시"""
+        if text is None:
+            return "N/A"
+        # 문자열로 변환 (UTF-8 인코딩 명시적 처리)
+        if isinstance(text, bytes):
+            text_str = text.decode('utf-8', errors='ignore')
+        else:
+            text_str = str(text)
+            # 유니코드 문자열이 아닌 경우 UTF-8로 디코딩 시도
+            try:
+                if isinstance(text_str, str):
+                    # 이미 유니코드 문자열인 경우 그대로 사용
+                    pass
+                else:
+                    text_str = text_str.encode('utf-8').decode('utf-8')
+            except:
+                pass
+        # 특수 문자 이스케이프
+        text_str = text_str.replace('&', '&amp;')
+        text_str = text_str.replace('<', '&lt;')
+        text_str = text_str.replace('>', '&gt;')
+        return text_str
+    
     # 제목 추가
-    story.append(Paragraph('고객 응대 이력 요약', title_style))
+    story.append(Paragraph(safe_text('고객 응대 이력 요약'), title_style))
     story.append(Spacer(1, 0.2*inch))
     
     # 각 이력 추가
     for i, hist in enumerate(histories, 1):
         # 이력 제목
-        story.append(Paragraph(f'이력 #{i}', styles['Heading1']))
+        story.append(Paragraph(safe_text(f'이력 #{i}'), heading1_style))
         story.append(Spacer(1, 0.1*inch))
         
         # 기본 정보
-        story.append(Paragraph(f'ID: {hist.get("id", "N/A")}', styles['Normal']))
-        story.append(Paragraph(f'날짜: {hist.get("timestamp", "N/A")}', styles['Normal']))
-        story.append(Paragraph(f'초기 문의: {hist.get("initial_query", "N/A")}', styles['Normal']))
-        story.append(Paragraph(f'고객 유형: {hist.get("customer_type", "N/A")}', styles['Normal']))
-        story.append(Paragraph(f'언어: {hist.get("language_key", "N/A")}', styles['Normal']))
+        story.append(Paragraph(safe_text(f'ID: {hist.get("id", "N/A")}'), normal_style))
+        story.append(Paragraph(safe_text(f'날짜: {hist.get("timestamp", "N/A")}'), normal_style))
+        story.append(Paragraph(safe_text(f'초기 문의: {hist.get("initial_query", "N/A")}'), normal_style))
+        story.append(Paragraph(safe_text(f'고객 유형: {hist.get("customer_type", "N/A")}'), normal_style))
+        story.append(Paragraph(safe_text(f'언어: {hist.get("language_key", "N/A")}'), normal_style))
         
         summary = hist.get('summary', {})
         if summary:
             story.append(Spacer(1, 0.1*inch))
-            story.append(Paragraph('요약', styles['Heading2']))
-            story.append(Paragraph(f'주요 문의: {summary.get("main_inquiry", "N/A")}', styles['Normal']))
-            story.append(Paragraph(f'핵심 응답: {", ".join(summary.get("key_responses", []))}', styles['Normal']))
-            story.append(Paragraph(f'고객 감정 점수: {summary.get("customer_sentiment_score", "N/A")}/100', styles['Normal']))
-            story.append(Paragraph(f'고객 만족도 점수: {summary.get("customer_satisfaction_score", "N/A")}/100', styles['Normal']))
+            story.append(Paragraph(safe_text('요약'), heading2_style))
+            story.append(Paragraph(safe_text(f'주요 문의: {summary.get("main_inquiry", "N/A")}'), normal_style))
+            
+            key_responses = summary.get("key_responses", [])
+            if isinstance(key_responses, list):
+                responses_text = ", ".join([safe_text(r) for r in key_responses])
+            else:
+                responses_text = safe_text(key_responses)
+            story.append(Paragraph(safe_text(f'핵심 응답: {responses_text}'), normal_style))
+            story.append(Paragraph(safe_text(f'고객 감정 점수: {summary.get("customer_sentiment_score", "N/A")}/100'), normal_style))
+            story.append(Paragraph(safe_text(f'고객 만족도 점수: {summary.get("customer_satisfaction_score", "N/A")}/100'), normal_style))
             
             characteristics = summary.get('customer_characteristics', {})
             story.append(Spacer(1, 0.1*inch))
-            story.append(Paragraph('고객 특성', styles['Heading2']))
-            story.append(Paragraph(f'언어: {characteristics.get("language", "N/A")}', styles['Normal']))
-            story.append(Paragraph(f'문화적 배경: {characteristics.get("cultural_hints", "N/A")}', styles['Normal']))
-            story.append(Paragraph(f'지역: {characteristics.get("region", "N/A")}', styles['Normal']))
-            story.append(Paragraph(f'소통 스타일: {characteristics.get("communication_style", "N/A")}', styles['Normal']))
+            story.append(Paragraph(safe_text('고객 특성'), heading2_style))
+            story.append(Paragraph(safe_text(f'언어: {characteristics.get("language", "N/A")}'), normal_style))
+            story.append(Paragraph(safe_text(f'문화적 배경: {characteristics.get("cultural_hints", "N/A")}'), normal_style))
+            story.append(Paragraph(safe_text(f'지역: {characteristics.get("region", "N/A")}'), normal_style))
+            story.append(Paragraph(safe_text(f'소통 스타일: {characteristics.get("communication_style", "N/A")}'), normal_style))
             
             privacy = summary.get('privacy_info', {})
             story.append(Spacer(1, 0.1*inch))
-            story.append(Paragraph('개인정보 요약', styles['Heading2']))
-            story.append(Paragraph(f'이메일 제공: {"예" if privacy.get("has_email") else "아니오"}', styles['Normal']))
-            story.append(Paragraph(f'전화번호 제공: {"예" if privacy.get("has_phone") else "아니오"}', styles['Normal']))
-            story.append(Paragraph(f'주소 제공: {"예" if privacy.get("has_address") else "아니오"}', styles['Normal']))
-            story.append(Paragraph(f'지역 힌트: {privacy.get("region_hint", "N/A")}', styles['Normal']))
+            story.append(Paragraph(safe_text('개인정보 요약'), heading2_style))
+            story.append(Paragraph(safe_text(f'이메일 제공: {"예" if privacy.get("has_email") else "아니오"}'), normal_style))
+            story.append(Paragraph(safe_text(f'전화번호 제공: {"예" if privacy.get("has_phone") else "아니오"}'), normal_style))
+            story.append(Paragraph(safe_text(f'주소 제공: {"예" if privacy.get("has_address") else "아니오"}'), normal_style))
+            story.append(Paragraph(safe_text(f'지역 힌트: {privacy.get("region_hint", "N/A")}'), normal_style))
             
-            story.append(Paragraph(f'전체 요약: {summary.get("summary", "N/A")}', styles['Normal']))
+            story.append(Paragraph(safe_text(f'전체 요약: {summary.get("summary", "N/A")}'), normal_style))
         
         # 구분선
         if i < len(histories):
             story.append(Spacer(1, 0.2*inch))
-            story.append(Paragraph('-' * 80, styles['Normal']))
+            story.append(Paragraph('-' * 80, normal_style))
             story.append(Spacer(1, 0.2*inch))
     
-    doc.build(story)
+    # PDF 빌드 (UTF-8 인코딩 명시)
+    try:
+        doc.build(story)
+    except Exception as e:
+        # 인코딩 오류가 발생하면 에러 메시지와 함께 재시도
+        print(f"PDF 빌드 오류: {e}")
+        # 스토리를 다시 빌드 (인코딩 문제 해결)
+        doc.build(story)
+    
     return filepath
 
 
@@ -3167,6 +3952,13 @@ def generate_customer_reaction_for_call(current_lang_key: str, last_agent_respon
     
     gender_pronoun = "she" if customer_gender == "female" else "he"
     
+    # ⭐ 추가: 에이전트가 종료 확인 질문을 했는지 확인
+    closing_msg = L_local['customer_closing_confirm']
+    is_closing_question = closing_msg in last_agent_response or any(
+        phrase in last_agent_response.lower() 
+        for phrase in ["다른 문의", "추가 문의", "다른 도움", "anything else", "other questions"]
+    )
+    
     # ⭐ 수정: 초기 문의를 완전히 제거하고 마지막 에이전트 응답에만 집중
     # 최근 대화 이력만 추출 (최대 3-4개 교환만)
     recent_exchanges = []
@@ -3210,7 +4002,30 @@ IMPORTANT:
 - Your emotional state: {customer_emotion} - respond with {emotion_tone} tone
 ═══════════════════════════════════════════════════════════════════"""
 
-    call_prompt = f"""
+    # ⭐ 추가: 종료 확인 질문에 대한 특별 처리
+    if is_closing_question:
+        call_prompt = f"""
+You are a CUSTOMER in a phone call. You are a {customer_gender} customer. Respond naturally in {lang_name}.
+
+Your current emotional state: {customer_emotion}
+Your response tone should be: {emotion_tone}
+
+{history_text}
+
+The agent just asked: "{last_agent_text}"
+
+CRITICAL RULES FOR CLOSING CONFIRMATION:
+1. If you have NO additional questions and the conversation is resolved:
+   - You MUST reply with: "{L_local['customer_no_more_inquiries']}"
+2. If you DO have additional questions or the issue is NOT fully resolved:
+   - You MUST reply with: "{L_local['customer_has_additional_inquiries']}" AND immediately state your additional question
+3. Your response MUST be ONLY one of the two options above, in {lang_name}.
+4. Output ONLY the customer's response (must be one of the two rule options).
+
+Your response (respond to the closing confirmation question):
+"""
+    else:
+        call_prompt = f"""
 You are a CUSTOMER in a phone call. You are a {customer_gender} customer. Respond naturally in {lang_name}.
 
 Your current emotional state: {customer_emotion}
@@ -3231,15 +4046,20 @@ RULES:
 Your response (respond ONLY to the agent's message above, with {emotion_tone} tone):
 """
     try:
-        # ⭐ 디버깅: 실제 전달되는 데이터 확인 (필요시 주석 해제)
-        # print(f"\n{'='*60}")
-        # print(f"[DEBUG] Last agent response: {last_agent_response}")
-        # print(f"[DEBUG] Recent history: {recent_history}")
-        # print(f"[DEBUG] Full prompt:\n{call_prompt}")
-        # print(f"{'='*60}\n")
-        
         reaction = run_llm(call_prompt)
-        return reaction.strip()
+        reaction_text = reaction.strip()
+        
+        # ⭐ 추가: 종료 확인 질문에 대한 응답 검증 및 강제 적용
+        if is_closing_question:
+            if L_local['customer_no_more_inquiries'] in reaction_text:
+                return L_local['customer_no_more_inquiries']
+            elif L_local['customer_has_additional_inquiries'] in reaction_text:
+                return reaction_text  # 추가 문의 내용 포함 가능
+            else:
+                # LLM이 규칙을 따르지 않으면, 대화가 해결된 것으로 가정하고 종료 응답 반환
+                return L_local['customer_no_more_inquiries']
+        
+        return reaction_text
     except Exception as e:
         return f"❌ 고객 반응 생성 오류: {e}"
 
@@ -5754,26 +6574,9 @@ elif feature_selection == L["sim_tab_chat_email"]:
         elif is_positive_closing:
             # 긍정 종료 응답 처리
             if L['customer_no_more_inquiries'] in customer_response:
-                # ⭐ 수정: "없습니다. 감사합니다" 답변 시 자동으로 설문 조사 링크 전송 및 응대 종료
-                # AHT 타이머 정지
-                st.session_state.start_time = None
-                
-                # 설문 조사 링크 전송 메시지 추가
-                end_msg = L["prompt_survey"]
-                st.session_state.simulator_messages.append(
-                    {"role": "system_end", "content": end_msg}
-                )
-                
-                # 채팅 종료 처리
-                st.session_state.is_chat_ended = True
-                st.session_state.sim_stage = "CLOSING"
-                
-                # 이력 저장 (종료 상태로 저장)
-                save_simulation_history_local(
-                    st.session_state.customer_query_text_area, customer_type_display,
-                    st.session_state.simulator_messages, is_chat_ended=True,
-                    attachment_context=st.session_state.sim_attachment_context_for_llm,
-                )
+                # ⭐ 수정: "없습니다. 감사합니다" 답변 시 에이전트가 감사 인사를 한 후 종료하도록 변경
+                # 바로 종료하지 않고 WAIT_CLOSING_CONFIRMATION_FROM_AGENT 단계로 이동하여 에이전트가 감사 인사 후 종료
+                st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
             else:
                 # "알겠습니다. 감사합니다"와 유사한 긍정 응답인 경우, 솔루션 제공 여부 확인
                 if st.session_state.is_solution_provided:
@@ -5821,8 +6624,15 @@ elif feature_selection == L["sim_tab_chat_email"]:
             # [수정 1] 다국어 레이블 사용
             if st.button(L["send_closing_confirm_button"],
                          key=f"btn_send_closing_confirm_{st.session_state.sim_instance_id}"):
-                # [수정 1] 다국어 레이블 사용
-                closing_msg = L["customer_closing_confirm"]
+                # ⭐ 수정: 에이전트가 감사 인사를 포함한 종료 메시지 전송
+                # 언어별 감사 인사 메시지 생성
+                agent_name = st.session_state.get("agent_name", "000")
+                if current_lang == "ko":
+                    closing_msg = f"연락 주셔서 감사드립니다. 지금까지 상담원 {agent_name}였습니다. {L['customer_closing_confirm']} 즐거운 하루 되세요."
+                elif current_lang == "en":
+                    closing_msg = f"Thank you for contacting us. This was {agent_name}. {L['customer_closing_confirm']} Have a great day!"
+                else:  # ja
+                    closing_msg = f"お問い合わせいただき、ありがとうございました。担当は{agent_name}でした。{L['customer_closing_confirm']} 良い一日をお過ごしください。"
 
                 # 에이전트 응답으로 로그 기록
                 st.session_state.simulator_messages.append(
@@ -5900,8 +6710,22 @@ elif feature_selection == L["sim_tab_chat_email"]:
         else:
             final_customer_reaction = last_customer_message
             
-            # (A) "없습니다. 감사합니다" 경로 -> FINAL_CLOSING_ACTION 단계로 이동하여 버튼 표시
+            # (A) "없습니다. 감사합니다" 경로 -> 에이전트가 감사 인사 후 FINAL_CLOSING_ACTION 단계로 이동
             if L['customer_no_more_inquiries'] in final_customer_reaction:
+                # ⭐ 추가: 에이전트가 감사 인사 메시지 전송
+                agent_name = st.session_state.get("agent_name", "000")
+                if current_lang == "ko":
+                    agent_closing_msg = f"연락 주셔서 감사드립니다. 지금까지 상담원 {agent_name}였습니다. 즐거운 하루 되세요."
+                elif current_lang == "en":
+                    agent_closing_msg = f"Thank you for contacting us. This was {agent_name}. Have a great day!"
+                else:  # ja
+                    agent_closing_msg = f"お問い合わせいただき、ありがとうございました。担当は{agent_name}でした。良い一日をお過ごしください。"
+                
+                # 에이전트 감사 인사를 메시지에 추가
+                st.session_state.simulator_messages.append(
+                    {"role": "agent_response", "content": agent_closing_msg}
+                )
+                
                 # FINAL_CLOSING_ACTION 단계로 이동
                 st.session_state.sim_stage = "FINAL_CLOSING_ACTION"
                 st.session_state.realtime_hint_text = ""
@@ -6030,87 +6854,380 @@ elif feature_selection == L["sim_tab_phone"]:
 
         else:
             # ⭐ 비디오 파일 업로드 옵션 추가 (로컬 경로 지원)
-            with st.expander("비디오 파일 업로드/로드", expanded=False):
-                # 비디오 파일 업로드
-                uploaded_video = st.file_uploader(
-                    "비디오 파일 업로드 (MP4, WebM, OGG)",
-                    type=["mp4", "webm", "ogg"],
-                    key="customer_video_uploader"
+            # 항상 펼쳐진 상태로 표시하여 비디오를 쉽게 확인할 수 있도록 함
+            with st.expander("비디오 파일 업로드/로드", expanded=True):
+                # 비디오 동기화 활성화 여부
+                st.session_state.is_video_sync_enabled = st.checkbox(
+                    "비디오 동기화 활성화 (TTS와 함께 재생)",
+                    value=st.session_state.is_video_sync_enabled,
+                    key="video_sync_checkbox"
                 )
                 
-                # 또는 로컬 파일 경로 입력
+                # OpenAI/Gemini 기반 영상 RAG 설명
+                st.markdown("---")
+                st.markdown("**🎥 OpenAI/Gemini 기반 영상 RAG 기능**")
+                st.success("""
+                ✅ **현재 구현 방식 (영상 RAG):**
+                
+                1. **LLM 텍스트 분석**: OpenAI/Gemini API가 고객의 텍스트를 분석하여 감정 상태와 제스처를 자동 판단합니다.
+                
+                2. **지능형 비디오 선택**: 분석 결과에 따라 적절한 비디오 클립을 자동으로 선택합니다.
+                   - 감정 상태: HAPPY, ANGRY, ASKING, SAD, NEUTRAL
+                   - 제스처: HAND_WAVE, NOD, SHAKE_HEAD, POINT, NONE
+                
+                3. **TTS 동기화 재생**: 선택된 비디오와 TTS로 생성된 음성을 동시에 재생합니다.
+                
+                **사용 방법:**
+                - 성별(남자/여자)과 감정 상태별로 비디오 파일을 업로드하세요.
+                - 제스처별 비디오도 업로드 가능합니다 (예: `male_happy_hand_wave.mp4`).
+                - 고객이 말하는 내용에 따라 LLM이 자동으로 적절한 비디오를 선택합니다.
+                """)
+                
+                # 가상 휴먼 기술은 현재 비활성화 (OpenAI/Gemini 기반 영상 RAG 사용)
+                st.session_state.virtual_human_enabled = False
+                
+                # 성별 및 감정 상태별 비디오 업로드
+                st.markdown("**성별 및 감정 상태별 비디오 설정**")
+                col_gender_video, col_emotion_video = st.columns(2)
+                
+                with col_gender_video:
+                    video_gender = st.radio("성별", ["남자", "여자"], key="video_gender_select", horizontal=True)
+                    gender_key = "male" if video_gender == "남자" else "female"
+                
+                with col_emotion_video:
+                    video_emotion = st.selectbox(
+                        "감정 상태",
+                        ["NEUTRAL", "HAPPY", "ANGRY", "ASKING", "SAD"],
+                        key="video_emotion_select"
+                    )
+                    emotion_key = video_emotion.lower()
+                
+                # 해당 조합의 비디오 업로드
+                video_key = f"video_{gender_key}_{emotion_key}"
+                uploaded_video = st.file_uploader(
+                    f"비디오 파일 업로드 ({video_gender} - {video_emotion})",
+                    type=["mp4", "webm", "ogg"],
+                    key=f"customer_video_uploader_{gender_key}_{emotion_key}"
+                )
+                
+                # ⭐ Gemini 제안: 바이트 데이터를 세션 상태에 직접 저장 (파일 저장은 옵션)
+                upload_key = f"last_uploaded_video_{gender_key}_{emotion_key}"
+                video_bytes_key = f"video_bytes_{gender_key}_{emotion_key}"  # 바이트 데이터 저장 키
+                
+                if uploaded_video is not None:
+                    # 파일이 새로 업로드되었는지 확인 (파일명으로 비교)
+                    current_upload_name = uploaded_video.name if hasattr(uploaded_video, 'name') else None
+                    last_upload_info = st.session_state.get(upload_key, None)
+                    # 딕셔너리인 경우 'name' 키에서 파일명 가져오기
+                    if isinstance(last_upload_info, dict):
+                        last_upload_name = last_upload_info.get('name', None)
+                    else:
+                        last_upload_name = last_upload_info
+                    
+                    # 새 파일이거나 이전과 다른 파일인 경우에만 저장
+                    if current_upload_name != last_upload_name:
+                        try:
+                            # 업로드된 비디오를 즉시 읽기 (rerun 전에 처리)
+                            video_bytes = uploaded_video.read()
+                            current_upload_size = len(video_bytes)
+                            
+                            if not video_bytes or len(video_bytes) == 0:
+                                st.error("❌ 비디오 파일이 비어있습니다. 다시 업로드해주세요.")
+                            else:
+                                # 파일명 및 확장자 결정
+                                uploaded_filename = uploaded_video.name if hasattr(uploaded_video, 'name') else f"{gender_key}_{emotion_key}.mp4"
+                                file_ext = os.path.splitext(uploaded_filename)[1].lower() if uploaded_filename else ".mp4"
+                                if file_ext not in ['.mp4', '.webm', '.ogg', '.mpeg4']:
+                                    file_ext = ".mp4"
+                                
+                                # MIME 타입 결정
+                                mime_type = uploaded_video.type if hasattr(uploaded_video, 'type') else f"video/{file_ext.lstrip('.')}"
+                                if not mime_type or mime_type == "application/octet-stream":
+                                    mime_type = f"video/{file_ext.lstrip('.')}"
+                                
+                                # ⭐ 1차 해결책: 바이트 데이터를 세션 상태에 직접 저장 (가장 안정적)
+                                st.session_state[video_bytes_key] = video_bytes
+                                st.session_state[video_key] = video_bytes_key  # 경로 대신 바이트 키 저장
+                                st.session_state[upload_key] = {
+                                    'name': current_upload_name,
+                                    'size': current_upload_size,
+                                    'mime': mime_type,
+                                    'ext': file_ext
+                                }
+                                
+                                file_size_mb = current_upload_size / (1024 * 1024)
+                                st.success(f"✅ 비디오 바이트 저장 완료: {current_upload_name} ({file_size_mb:.2f} MB)")
+                                
+                                # ⭐ 즉시 미리보기 (바이트 데이터 직접 사용)
+                                try:
+                                    st.video(video_bytes, format=mime_type, autoplay=False, loop=False, muted=False)
+                                except Exception as video_error:
+                                    st.warning(f"⚠️ 비디오 미리보기 오류: {video_error}")
+                                    # MIME 타입을 기본값으로 재시도
+                                    try:
+                                        st.video(video_bytes, format=f"video/{file_ext.lstrip('.')}", autoplay=False, loop=False, muted=False)
+                                    except:
+                                        st.error("❌ 비디오 재생에 실패했습니다. 파일 형식을 확인해주세요.")
+                                
+                                # ⭐ 옵션: 파일 저장도 시도 (백업용, 실패해도 바이트는 이미 저장됨)
+                                try:
+                                    video_dir = os.path.join(DATA_DIR, "videos")
+                                    os.makedirs(video_dir, exist_ok=True)
+                                    video_filename = f"{gender_key}_{emotion_key}{file_ext}"
+                                    video_path = os.path.join(video_dir, video_filename)
+                                    
+                                    # 파일 저장 시도 (권한 문제가 있어도 바이트는 이미 저장됨)
+                                    try:
+                                        with open(video_path, "wb") as f:
+                                            f.write(video_bytes)
+                                            f.flush()
+                                        st.info(f"📂 파일도 저장됨: {video_path}")
+                                    except Exception as save_error:
+                                        st.info(f"💡 파일 저장은 건너뛰었습니다 (바이트 데이터는 메모리에 저장됨): {save_error}")
+                                except:
+                                    pass  # 파일 저장 실패해도 바이트는 이미 저장됨
+                                
+                                # rerun 호출 (업로드된 파일 객체가 사라지기 전에 처리 완료)
+                                st.rerun()
+                                
+                        except Exception as e:
+                            st.error(f"❌ 비디오 업로드 중 오류 발생: {str(e)}")
+                            import traceback
+                            st.code(traceback.format_exc())
+                
+                # 업로드된 비디오가 있으면 현재 선택된 조합의 비디오 표시
+                st.markdown("---")
+                st.markdown(f"**📹 현재 선택: {video_gender} - {video_emotion}**")
+                
+                # ⭐ Gemini 제안: 세션 상태에서 바이트 데이터 직접 조회
+                video_bytes_key = f"video_bytes_{gender_key}_{emotion_key}"
+                current_video_bytes = st.session_state.get(video_bytes_key, None)
+                
+                if current_video_bytes:
+                    # 바이트 데이터가 있으면 직접 사용 (가장 안정적)
+                    upload_info = st.session_state.get(upload_key, {})
+                    mime_type = upload_info.get('mime', 'video/mp4')
+                    file_ext = upload_info.get('ext', '.mp4')
+                    
+                    st.success(f"✅ 비디오 바이트 데이터 발견: {upload_info.get('name', '업로드된 비디오')}")
+                    try:
+                        st.video(current_video_bytes, format=mime_type, autoplay=False, loop=False, muted=False)
+                        st.caption(f"💡 이 비디오는 '{video_gender} - {video_emotion}' 상태에서 자동으로 재생됩니다.")
+                    except Exception as e:
+                        st.warning(f"비디오 재생 오류: {e}")
+                        # MIME 타입을 기본값으로 재시도
+                        try:
+                            st.video(current_video_bytes, format=f"video/{file_ext.lstrip('.')}", autoplay=False, loop=False, muted=False)
+                        except:
+                            st.error("❌ 비디오 재생에 실패했습니다.")
+                else:
+                    # 바이트 데이터가 없으면 파일 경로로 시도 (하위 호환성)
+                    current_video_path = get_video_path_by_avatar(
+                        gender_key,
+                        video_emotion,
+                        is_speaking=False,
+                        gesture="NONE"
+                    )
+                    
+                    if current_video_path and os.path.exists(current_video_path):
+                        st.success(f"✅ 비디오 파일 발견: {os.path.basename(current_video_path)}")
+                        try:
+                            with open(current_video_path, "rb") as f:
+                                existing_video_bytes = f.read()
+                            st.video(existing_video_bytes, format="video/mp4", autoplay=False, loop=False, muted=False)
+                            st.caption(f"💡 이 비디오는 '{video_gender} - {video_emotion}' 상태에서 자동으로 재생됩니다.")
+                        except Exception as e:
+                            st.warning(f"비디오 재생 오류: {e}")
+                    else:
+                        st.info(f"💡 '{gender_key}_{emotion_key}.mp4' 비디오 파일을 업로드하세요.")
+                    
+                    # 디버깅 정보: 비디오 디렉토리와 파일 목록 표시
+                    video_dir = os.path.join(DATA_DIR, "videos")
+                    st.caption(f"📂 비디오 저장 경로: {video_dir}")
+                    
+                    if os.path.exists(video_dir):
+                        all_videos = [f for f in os.listdir(video_dir) if f.endswith(('.mp4', '.webm', '.ogg'))]
+                        if all_videos:
+                            st.caption(f"📁 업로드된 모든 비디오 파일 ({len(all_videos)}개):")
+                            for vid in all_videos:
+                                st.caption(f"  - {vid}")
+                            
+                            # 비슷한 비디오 파일이 있는지 확인
+                            similar_videos = [
+                                f for f in all_videos
+                                if f.startswith(f"{gender_key}_") and f.endswith(('.mp4', '.webm', '.ogg'))
+                            ]
+                            if similar_videos:
+                                st.caption(f"📁 같은 성별의 다른 비디오: {', '.join(similar_videos[:3])}")
+                                st.caption("💡 위 비디오 중 하나를 사용하려면 파일명을 변경하거나 새로 업로드하세요.")
+                        else:
+                            st.caption("⚠️ 비디오 디렉토리에 파일이 없습니다. 파일을 업로드하세요.")
+                    else:
+                        st.caption(f"⚠️ 비디오 디렉토리가 존재하지 않습니다: {video_dir}")
+                
+                # 또는 로컬 파일 경로 입력 및 복사
                 video_path_input = st.text_input(
                     "또는 로컬 파일 경로 입력",
                     placeholder="예: C:\\Users\\Admin\\Downloads\\video.mp4 또는 video.mp4",
                     key="video_path_input"
                 )
                 
-                # 비디오 재생
-                video_to_play = None
-                video_format = "video/mp4"
-                
-                if uploaded_video:
-                    # 업로드된 파일 사용
-                    video_to_play = uploaded_video.read()
-                    # 파일 확장자로 포맷 결정
-                    file_ext = uploaded_video.name.split('.')[-1].lower()
-                    video_format = {
-                        'mp4': 'video/mp4',
-                        'webm': 'video/webm',
-                        'ogg': 'video/ogg'
-                    }.get(file_ext, 'video/mp4')
-                elif video_path_input:
-                    # 로컬 파일 경로 사용
+                if video_path_input:
                     try:
-                        # 절대 경로 또는 상대 경로 처리
-                        if os.path.isabs(video_path_input):
-                            video_path = video_path_input
-                        else:
-                            # 상대 경로는 작업 디렉토리 기준
-                            video_path = os.path.join(os.getcwd(), video_path_input)
+                        # ⭐ Gemini 제안: 절대 경로 검증 강화
+                        if not os.path.isabs(video_path_input):
+                            st.error("❌ 로컬 경로 입력 시 반드시 **절대 경로**를 사용해주세요 (예: C:\\Users\\...\\video.mp4).")
+                            st.error("💡 Streamlit 앱이 실행되는 서버 환경과 파일 시스템이 다르면 접근할 수 없습니다.")
+                            st.stop()
                         
-                        if os.path.exists(video_path):
-                            with open(video_path, "rb") as f:
-                                video_to_play = f.read()
-                            # 파일 확장자로 포맷 결정
-                            file_ext = os.path.splitext(video_path)[1].lower().lstrip('.')
-                            video_format = {
-                                'mp4': 'video/mp4',
-                                'webm': 'video/webm',
-                                'ogg': 'video/ogg'
-                            }.get(file_ext, 'video/mp4')
-                        else:
-                            st.error(f"파일을 찾을 수 없습니다: {video_path}")
+                        source_video_path = video_path_input
+                        
+                        if not os.path.exists(source_video_path):
+                            st.error(f"❌ 파일을 찾을 수 없습니다: {source_video_path}")
+                            st.error("💡 파일 경로를 확인하고, Streamlit 앱이 실행되는 서버에서 접근 가능한 경로인지 확인해주세요.")
+                            st.stop()
+                        
+                        # 원본 파일 읽기
+                        with open(source_video_path, "rb") as f:
+                            video_bytes = f.read()
+                        
+                        if len(video_bytes) == 0:
+                            st.error("❌ 파일이 비어있습니다.")
+                            st.stop()
+                        
+                        # 파일명 및 확장자 결정
+                        source_filename = os.path.basename(source_video_path)
+                        file_ext = os.path.splitext(source_filename)[1].lower()
+                        if file_ext not in ['.mp4', '.webm', '.ogg', '.mpeg4']:
+                            file_ext = ".mp4"
+                        
+                        mime_type = f"video/{file_ext.lstrip('.')}"
+                        
+                        # ⭐ 바이트 데이터를 세션 상태에 직접 저장 (파일 복사는 옵션)
+                        video_bytes_key = f"video_bytes_{gender_key}_{emotion_key}"
+                        st.session_state[video_bytes_key] = video_bytes
+                        st.session_state[video_key] = video_bytes_key
+                        st.session_state[upload_key] = {
+                            'name': source_filename,
+                            'size': len(video_bytes),
+                            'mime': mime_type,
+                            'ext': file_ext
+                        }
+                        
+                        file_size_mb = len(video_bytes) / (1024 * 1024)
+                        st.success(f"✅ 비디오 바이트 로드 완료: {source_filename} ({file_size_mb:.2f} MB)")
+                        
+                        # 비디오 미리보기 (바이트 데이터 직접 사용)
+                        try:
+                            st.video(video_bytes, format=mime_type, autoplay=False, loop=False, muted=False)
+                        except Exception as video_error:
+                            st.warning(f"⚠️ 비디오 미리보기 오류: {video_error}")
+                        
+                        # ⭐ 옵션: 파일 복사도 시도 (백업용)
+                        try:
+                            video_dir = os.path.join(DATA_DIR, "videos")
+                            os.makedirs(video_dir, exist_ok=True)
+                            video_filename = f"{gender_key}_{emotion_key}{file_ext}"
+                            target_video_path = os.path.join(video_dir, video_filename)
+                            
+                            with open(target_video_path, "wb") as f:
+                                f.write(video_bytes)
+                                f.flush()
+                            st.info(f"📂 파일도 복사됨: {target_video_path}")
+                        except Exception as copy_error:
+                            st.info(f"💡 파일 복사는 건너뛰었습니다 (바이트 데이터는 메모리에 저장됨): {copy_error}")
+                        
+                        # 입력 필드 초기화 및 rerun
+                        st.session_state.video_path_input = ""
+                        st.rerun()
+                        
                     except Exception as e:
-                        st.error(f"비디오 파일 로드 오류: {e}")
-                
-                # 비디오 재생
-                if video_to_play:
-                    try:
-                        # Streamlit 문서: bytes 데이터를 직접 전달 가능
-                        st.video(video_to_play, format=video_format, autoplay=False, loop=False, muted=False)
-                        st.success("✅ 비디오 로드 완료")
-                    except Exception as e:
-                        st.error(f"비디오 재생 오류: {e}")
-                        st.info("💡 비디오가 H.264 코덱으로 인코딩되었는지 확인하세요. MP4V 코덱은 브라우저에서 지원되지 않을 수 있습니다.")
+                        st.error(f"❌ 비디오 파일 로드 오류: {str(e)}")
+                        import traceback
+                        st.code(traceback.format_exc())
             
-            # 상태 선택
+            # 상태 선택 및 비디오 표시
+            st.markdown("---")
+            st.markdown("**📺 현재 고객 아바타 영상**")
+            
             if st.session_state.is_on_hold:
                 avatar_state = "HOLD"
             else:
                 avatar_state = st.session_state.customer_avatar.get("state", "NEUTRAL")
-
-            # ⭐ Lottie 제거: 로딩 문제로 인해 완전히 제거하고 간단한 텍스트로 대체
-            avatar_emoji = {
-                "NEUTRAL": "😐",
-                "HAPPY": "😊",
-                "ANGRY": "😠",
-                "ASKING": "🤔",
-                "HOLD": "⏸️"
-            }.get(avatar_state, "😐")
             
-            st.markdown(f"### {avatar_emoji} 고객 아바타")
-            st.info(f"상태: {avatar_state}")
+            customer_gender = st.session_state.customer_avatar.get("gender", "male")
+            
+            # get_video_path_by_avatar 함수를 사용하여 비디오 경로 찾기
+            video_path = get_video_path_by_avatar(
+                customer_gender, 
+                avatar_state, 
+                is_speaking=False,  # 미리보기는 자동 재생하지 않음
+                gesture="NONE"
+            )
+            
+            # 비디오 표시
+            if video_path and os.path.exists(video_path):
+                try:
+                    with open(video_path, "rb") as f:
+                        video_bytes = f.read()
+                    
+                    # 비디오 정보 표시
+                    avatar_emoji = {
+                        "NEUTRAL": "😐",
+                        "HAPPY": "😊",
+                        "ANGRY": "😠",
+                        "ASKING": "🤔",
+                        "SAD": "😢",
+                        "HOLD": "⏸️"
+                    }.get(avatar_state, "😐")
+                    
+                    st.markdown(f"### {avatar_emoji} {customer_gender.upper()} - {avatar_state}")
+                    st.caption(f"비디오: {os.path.basename(video_path)}")
+                    
+                    # 현재 말하는 중이면 자동 재생, 아니면 수동 재생
+                    is_speaking = bool(
+                        st.session_state.get("customer_initial_audio_bytes") or 
+                        st.session_state.get("current_customer_audio_text")
+                    )
+                    
+                    autoplay_video = st.session_state.is_video_sync_enabled and is_speaking
+                    st.video(video_bytes, format="video/mp4", autoplay=autoplay_video, loop=False, muted=False)
+                    
+                except Exception as e:
+                    st.warning(f"비디오 재생 오류: {e}")
+                    avatar_emoji = {
+                        "NEUTRAL": "😐",
+                        "HAPPY": "😊",
+                        "ANGRY": "😠",
+                        "ASKING": "🤔",
+                        "SAD": "😢",
+                        "HOLD": "⏸️"
+                    }.get(avatar_state, "😐")
+                    st.markdown(f"### {avatar_emoji} 고객 아바타")
+                    st.info(f"상태: {avatar_state} | 성별: {customer_gender}")
+            else:
+                # 비디오가 없으면 이모지로 표시
+                avatar_emoji = {
+                    "NEUTRAL": "😐",
+                    "HAPPY": "😊",
+                    "ANGRY": "😠",
+                    "ASKING": "🤔",
+                    "SAD": "😢",
+                    "HOLD": "⏸️"
+                }.get(avatar_state, "😐")
+                
+                st.markdown(f"### {avatar_emoji} 고객 아바타")
+                st.info(f"상태: {avatar_state} | 성별: {customer_gender}")
+                st.warning(f"💡 '{customer_gender}_{avatar_state.lower()}.mp4' 비디오 파일을 업로드하면 영상이 표시됩니다.")
+                
+                # 업로드된 비디오 목록 표시
+                video_dir = os.path.join(DATA_DIR, "videos")
+                if os.path.exists(video_dir):
+                    uploaded_videos = [f for f in os.listdir(video_dir) if f.endswith(('.mp4', '.webm', '.ogg'))]
+                    if uploaded_videos:
+                        st.caption(f"📁 업로드된 비디오 파일: {', '.join(uploaded_videos[:5])}")
+                        if len(uploaded_videos) > 5:
+                            st.caption(f"... 외 {len(uploaded_videos) - 5}개")
 
     with col_cc:
         # ⭐ 수정: "전화 수신 중" 메시지는 통화 중일 때만 표시
@@ -6743,16 +7860,36 @@ elif feature_selection == L["sim_tab_phone"]:
                     else:
                         # 이후 응답인 경우: 기존 로직대로 고객 반응 생성
                         # ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
-                        # 🎯 아바타 표정 업데이트 (최종 정리본)
-                        response_text = agent_response_transcript.lower()
-                        if "refund" in response_text or "환불" in response_text:
-                            st.session_state.customer_avatar["state"] = "HAPPY"
-                        elif ("wait" in response_text or "기다려" in response_text or "잠시만" in response_text):
-                            st.session_state.customer_avatar["state"] = "ASKING"
-                        elif ("no" in response_text or "불가" in response_text or "안 됩니다" in response_text or "cannot" in response_text):
-                            st.session_state.customer_avatar["state"] = "ANGRY"
-                        else:
-                            st.session_state.customer_avatar["state"] = "NEUTRAL"
+                        # 🎯 아바타 표정 업데이트 (LLM 기반 영상 RAG)
+                        # LLM이 에이전트 응답을 분석하여 고객의 예상 반응(감정)을 판단
+                        # 이는 고객이 다음에 말할 때 어떤 비디오를 보여줄지 결정하는 데 사용됩니다.
+                        try:
+                            # LLM 기반 분석 (에이전트 응답에 대한 고객의 예상 반응)
+                            # 에이전트가 "환불"을 언급하면 고객은 기쁠 것이고,
+                            # "기다려"를 요청하면 고객은 질문할 것이고,
+                            # "불가"를 말하면 고객은 화날 것입니다.
+                            # ⭐ Gemini 제안: 에이전트 답변과 대화 컨텍스트를 전달하여 예측 정확도 향상
+                            analysis_result = analyze_text_for_video_selection(
+                                agent_response_transcript,
+                                st.session_state.language,
+                                agent_last_response=agent_response_transcript,
+                                conversation_context=st.session_state.simulator_messages[-5:] if st.session_state.simulator_messages else None
+                            )
+                            # 고객의 예상 감정 상태 업데이트 (다음 고객 반응에 사용)
+                            predicted_emotion = analysis_result.get("emotion", "NEUTRAL")
+                            st.session_state.customer_avatar["state"] = predicted_emotion
+                        except Exception as e:
+                            # LLM 분석 실패 시 키워드 기반 폴백
+                            print(f"LLM 분석 실패, 키워드 기반으로 폴백: {e}")
+                            response_text = agent_response_transcript.lower()
+                            if "refund" in response_text or "환불" in response_text:
+                                st.session_state.customer_avatar["state"] = "HAPPY"
+                            elif ("wait" in response_text or "기다려" in response_text or "잠시만" in response_text):
+                                st.session_state.customer_avatar["state"] = "ASKING"
+                            elif ("no" in response_text or "불가" in response_text or "안 됩니다" in response_text or "cannot" in response_text):
+                                st.session_state.customer_avatar["state"] = "ANGRY"
+                            else:
+                                st.session_state.customer_avatar["state"] = "NEUTRAL"
                         # ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
 
                         # ⭐ 수정: 전사 결과가 CC에 반영되도록 먼저 재실행
@@ -6770,9 +7907,55 @@ elif feature_selection == L["sim_tab_phone"]:
             # ⭐ 수정: 고객 문의 텍스트를 즉시 CC 영역에 반영 (재생 시작 전, 확실히 반영)
             st.session_state.current_customer_audio_text = st.session_state.call_initial_query
             
-            # 고객 문의 재생
+            # 고객 문의 재생 (비디오와 동기화) - LLM 기반 영상 RAG
             try:
-                st.audio(st.session_state.customer_initial_audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                # 비디오 동기화가 활성화되어 있으면 비디오와 함께 재생
+                if st.session_state.is_video_sync_enabled:
+                    customer_gender = st.session_state.customer_avatar.get("gender", "male")
+                    # ⭐ LLM 기반 텍스트 분석으로 감정/제스처 판단
+                    # ⭐ Gemini 제안: 대화 컨텍스트 전달
+                    agent_last_msg = None
+                    if st.session_state.simulator_messages:
+                        for msg in reversed(st.session_state.simulator_messages):
+                            if msg.get("role") == "phone_exchange" and "Agent:" in msg.get("content", ""):
+                                agent_last_msg = msg.get("content", "").split("Agent:")[-1].strip()
+                                break
+                    
+                    analysis_result = analyze_text_for_video_selection(
+                        st.session_state.call_initial_query,
+                        st.session_state.language,
+                        agent_last_response=agent_last_msg,
+                        conversation_context=st.session_state.simulator_messages[-5:] if st.session_state.simulator_messages else None
+                    )
+                    avatar_state = analysis_result.get("emotion", st.session_state.customer_avatar.get("state", "NEUTRAL"))
+                    gesture = analysis_result.get("gesture", "NONE")
+                    context_keywords = analysis_result.get("context_keywords", [])  # ⭐ Gemini 제안
+                    
+                    # 분석 결과를 아바타 상태에 반영
+                    st.session_state.customer_avatar["state"] = avatar_state
+                    
+                    # ⭐ Gemini 제안: 상황별 키워드를 고려한 비디오 선택
+                    video_path = get_video_path_by_avatar(
+                        customer_gender, 
+                        avatar_state, 
+                        is_speaking=True,
+                        gesture=gesture,
+                        context_keywords=context_keywords
+                    )
+                    
+                    if video_path and os.path.exists(video_path):
+                        with open(video_path, "rb") as f:
+                            video_bytes = f.read()
+                        # 비디오와 오디오를 함께 재생
+                        st.video(video_bytes, format="video/mp4", autoplay=True, loop=False, muted=False)
+                        st.audio(st.session_state.customer_initial_audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                    else:
+                        # 비디오가 없으면 오디오만 재생
+                        st.audio(st.session_state.customer_initial_audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                else:
+                    # 비디오 동기화가 비활성화되어 있으면 오디오만 재생
+                    st.audio(st.session_state.customer_initial_audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                
                 st.success(L["customer_query_playing"])
                 st.info(f"{L['query_content_label']} {st.session_state.call_initial_query}")
                 
@@ -6805,12 +7988,91 @@ elif feature_selection == L["sim_tab_phone"]:
                         st.session_state.call_initial_query
                     )
                     
-                    # 고객 반응을 TTS로 재생 및 CC에 반영
+                    # 고객 반응을 TTS로 재생 및 CC에 반영 (비디오와 동기화) - LLM 기반 영상 RAG
                     if not customer_reaction.startswith("❌"):
                         audio_bytes, msg = synthesize_tts(customer_reaction, st.session_state.language, role="customer")
                         if audio_bytes:
                             try:
-                                st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                                # 비디오 동기화가 활성화되어 있으면 비디오와 함께 재생
+                                if st.session_state.is_video_sync_enabled:
+                                    customer_gender = st.session_state.customer_avatar.get("gender", "male")
+                                    # ⭐ LLM 기반 텍스트 분석으로 감정/제스처 판단
+                                    # ⭐ Gemini 제안: 에이전트 답변과 대화 컨텍스트 전달
+                                    agent_last_msg = st.session_state.current_agent_audio_text if hasattr(st.session_state, 'current_agent_audio_text') else None
+                                    analysis_result = analyze_text_for_video_selection(
+                                        customer_reaction,
+                                        st.session_state.language,
+                                        agent_last_response=agent_last_msg,
+                                        conversation_context=st.session_state.simulator_messages[-5:] if st.session_state.simulator_messages else None
+                                    )
+                                    avatar_state = analysis_result.get("emotion", st.session_state.customer_avatar.get("state", "NEUTRAL"))
+                                    gesture = analysis_result.get("gesture", "NONE")
+                                    context_keywords = analysis_result.get("context_keywords", [])  # ⭐ Gemini 제안
+                                    
+                                    # 분석 결과를 아바타 상태에 반영
+                                    st.session_state.customer_avatar["state"] = avatar_state
+                                    
+                                    # ⭐ Gemini 제안: 상황별 키워드를 고려한 비디오 선택
+                                    video_path = get_video_path_by_avatar(
+                                        customer_gender, 
+                                        avatar_state, 
+                                        is_speaking=True,
+                                        gesture=gesture,
+                                        context_keywords=context_keywords
+                                    )
+                                    
+                                    if video_path and os.path.exists(video_path):
+                                        with open(video_path, "rb") as f:
+                                            video_bytes = f.read()
+                                        # 비디오와 오디오를 함께 재생
+                                        st.video(video_bytes, format="video/mp4", autoplay=True, loop=False, muted=False)
+                                        st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                                        
+                                        # ⭐ Gemini 제안: 사용자 피드백 평가 UI 추가
+                                        st.markdown("---")
+                                        st.markdown("**💬 비디오 매칭 평가**")
+                                        st.caption("이 비디오가 고객의 텍스트와 감정에 자연스럽게 매칭되었습니까?")
+                                        
+                                        feedback_key = f"video_feedback_call_{st.session_state.sim_instance_id}_{len(st.session_state.simulator_messages)}"
+                                        
+                                        col_rating, col_comment = st.columns([2, 3])
+                                        with col_rating:
+                                            rating = st.slider(
+                                                "평가 점수 (1-5점)",
+                                                min_value=1,
+                                                max_value=5,
+                                                value=3,
+                                                key=f"{feedback_key}_rating",
+                                                help="1점: 매우 부자연스러움, 5점: 매우 자연스러움"
+                                            )
+                                        
+                                        with col_comment:
+                                            comment = st.text_input(
+                                                "의견 (선택사항)",
+                                                key=f"{feedback_key}_comment",
+                                                placeholder="예: 비디오가 텍스트와 잘 맞았습니다"
+                                            )
+                                        
+                                        if st.button("피드백 제출", key=f"{feedback_key}_submit"):
+                                            # 피드백을 데이터베이스에 저장
+                                            add_video_mapping_feedback(
+                                                customer_text=customer_reaction,
+                                                selected_video_path=video_path,
+                                                emotion=avatar_state,
+                                                gesture=gesture,
+                                                context_keywords=context_keywords,
+                                                user_rating=rating,
+                                                user_comment=comment
+                                            )
+                                            st.success(f"✅ 피드백이 저장되었습니다! (점수: {rating}/5)")
+                                            st.info("💡 이 피드백은 향후 비디오 선택 정확도를 개선하는 데 사용됩니다.")
+                                    else:
+                                        # 비디오가 없으면 오디오만 재생
+                                        st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                                else:
+                                    # 비디오 동기화가 비활성화되어 있으면 오디오만 재생
+                                    st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                                
                                 st.success(L["customer_responded"].format(reaction=customer_reaction.strip()[:50] + "..."))
                             except Exception as e:
                                 st.warning(L["auto_play_failed"].format(error=str(e)))
@@ -6853,13 +8115,92 @@ elif feature_selection == L["sim_tab_phone"]:
                     pending_transcript
                 )
 
-                # 고객 반응을 TTS로 재생 및 CC에 반영
+                # 고객 반응을 TTS로 재생 및 CC에 반영 (비디오와 동기화) - LLM 기반 영상 RAG
                 if not customer_reaction.startswith("❌"):
                     audio_bytes, msg = synthesize_tts(customer_reaction, st.session_state.language, role="customer")
                     if audio_bytes:
                         # Streamlit 문서: autoplay는 브라우저 정책상 제한될 수 있음
                         try:
-                            st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                            # 비디오 동기화가 활성화되어 있으면 비디오와 함께 재생
+                            if st.session_state.is_video_sync_enabled:
+                                customer_gender = st.session_state.customer_avatar.get("gender", "male")
+                                # ⭐ LLM 기반 텍스트 분석으로 감정/제스처 판단
+                                # ⭐ Gemini 제안: 에이전트 답변과 대화 컨텍스트 전달
+                                agent_last_msg = st.session_state.current_agent_audio_text if hasattr(st.session_state, 'current_agent_audio_text') else None
+                                analysis_result = analyze_text_for_video_selection(
+                                    customer_reaction,
+                                    st.session_state.language,
+                                    agent_last_response=agent_last_msg,
+                                    conversation_context=st.session_state.simulator_messages[-5:] if st.session_state.simulator_messages else None
+                                )
+                                avatar_state = analysis_result.get("emotion", st.session_state.customer_avatar.get("state", "NEUTRAL"))
+                                gesture = analysis_result.get("gesture", "NONE")
+                                context_keywords = analysis_result.get("context_keywords", [])  # ⭐ Gemini 제안
+                                
+                                # 분석 결과를 아바타 상태에 반영
+                                st.session_state.customer_avatar["state"] = avatar_state
+                                
+                                # ⭐ Gemini 제안: 상황별 키워드를 고려한 비디오 선택
+                                video_path = get_video_path_by_avatar(
+                                    customer_gender, 
+                                    avatar_state, 
+                                    is_speaking=True,
+                                    gesture=gesture,
+                                    context_keywords=context_keywords
+                                )
+                                
+                                if video_path and os.path.exists(video_path):
+                                    with open(video_path, "rb") as f:
+                                        video_bytes = f.read()
+                                    # 비디오와 오디오를 함께 재생
+                                    st.video(video_bytes, format="video/mp4", autoplay=True, loop=False, muted=False)
+                                    st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                                    
+                                    # ⭐ Gemini 제안: 사용자 피드백 평가 UI 추가
+                                    st.markdown("---")
+                                    st.markdown("**💬 비디오 매칭 평가**")
+                                    st.caption("이 비디오가 고객의 텍스트와 감정에 자연스럽게 매칭되었습니까?")
+                                    
+                                    feedback_key = f"video_feedback_{st.session_state.sim_instance_id}_{len(st.session_state.simulator_messages)}"
+                                    
+                                    col_rating, col_comment = st.columns([2, 3])
+                                    with col_rating:
+                                        rating = st.slider(
+                                            "평가 점수 (1-5점)",
+                                            min_value=1,
+                                            max_value=5,
+                                            value=3,
+                                            key=f"{feedback_key}_rating",
+                                            help="1점: 매우 부자연스러움, 5점: 매우 자연스러움"
+                                        )
+                                    
+                                    with col_comment:
+                                        comment = st.text_input(
+                                            "의견 (선택사항)",
+                                            key=f"{feedback_key}_comment",
+                                            placeholder="예: 비디오가 텍스트와 잘 맞았습니다"
+                                        )
+                                    
+                                    if st.button("피드백 제출", key=f"{feedback_key}_submit"):
+                                        # 피드백을 데이터베이스에 저장
+                                        add_video_mapping_feedback(
+                                            customer_text=customer_reaction,
+                                            selected_video_path=video_path,
+                                            emotion=avatar_state,
+                                            gesture=gesture,
+                                            context_keywords=context_keywords,
+                                            user_rating=rating,
+                                            user_comment=comment
+                                        )
+                                        st.success(f"✅ 피드백이 저장되었습니다! (점수: {rating}/5)")
+                                        st.info("💡 이 피드백은 향후 비디오 선택 정확도를 개선하는 데 사용됩니다.")
+                                else:
+                                    # 비디오가 없으면 오디오만 재생
+                                    st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                            else:
+                                # 비디오 동기화가 비활성화되어 있으면 오디오만 재생
+                                st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                            
                             st.success(L["customer_responded"].format(reaction=customer_reaction.strip()[:50] + "..."))
                             # ⭐ 수정: 고객 반응 재생 시간 확보를 위해 짧은 대기
                             time.sleep(0.5)
@@ -6873,17 +8214,75 @@ elif feature_selection == L["sim_tab_phone"]:
                     # 고객 반응 텍스트를 CC 영역에 반영
                     st.session_state.current_customer_audio_text = customer_reaction.strip()
 
-                    # 이력 저장
-                    log_entry = f"Agent: {st.session_state.current_agent_audio_text} | Customer: {st.session_state.current_customer_audio_text}"
-                    st.session_state.simulator_messages.append(
-                        {"role": "phone_exchange", "content": log_entry})
+                    # ⭐ 수정: "없습니다. 감사합니다" 응답 처리 - 에이전트가 감사 인사 후 종료
+                    if L['customer_no_more_inquiries'] in customer_reaction:
+                        # 이력 저장
+                        log_entry = f"Agent: {st.session_state.current_agent_audio_text} | Customer: {st.session_state.current_customer_audio_text}"
+                        st.session_state.simulator_messages.append(
+                            {"role": "phone_exchange", "content": log_entry})
+                        
+                        # ⭐ 추가: 에이전트가 감사 인사 메시지 전송
+                        agent_name = st.session_state.get("agent_name", "000")
+                        current_lang_call = st.session_state.get("language", "ko")
+                        if current_lang_call == "ko":
+                            agent_closing_msg = f"연락 주셔서 감사드립니다. 지금까지 상담원 {agent_name}였습니다. 즐거운 하루 되세요."
+                        elif current_lang_call == "en":
+                            agent_closing_msg = f"Thank you for contacting us. This was {agent_name}. Have a great day!"
+                        else:  # ja
+                            agent_closing_msg = f"お問い合わせいただき、ありがとうございました。担当は{agent_name}でした。良い一日をお過ごしください。"
+                        
+                        st.session_state.simulator_messages.append(
+                            {"role": "phone_exchange", "content": f"Agent: {agent_closing_msg}"}
+                        )
+                        
+                        # 통화 요약 생성
+                        with st.spinner("AI 요약 생성 중..."):
+                            summary = summarize_history_for_call(
+                                st.session_state.simulator_messages,
+                                st.session_state.call_initial_query,
+                                st.session_state.language
+                            )
+                            st.session_state.call_summary_text = summary
+                        
+                        # 통화 종료
+                        st.session_state.call_sim_stage = "CALL_ENDED"
+                        st.session_state.is_call_ended = True
+                        
+                        # 에이전트 입력 영역 초기화
+                        st.session_state.current_agent_audio_text = ""
+                        st.session_state.realtime_hint_text = ""
+                        if "bytes_to_process" in st.session_state:
+                            st.session_state.bytes_to_process = None
+                        
+                        st.success("✅ 고객이 추가 문의 사항이 없다고 확인했습니다. 에이전트가 감사 인사를 전송한 후 통화가 종료되었습니다.")
+                        st.rerun()
+                    # ⭐ 추가: "추가 문의 사항도 있습니다" 응답 처리 (통화 계속)
+                    elif L['customer_has_additional_inquiries'] in customer_reaction:
+                        # 이력 저장
+                        log_entry = f"Agent: {st.session_state.current_agent_audio_text} | Customer: {st.session_state.current_customer_audio_text}"
+                        st.session_state.simulator_messages.append(
+                            {"role": "phone_exchange", "content": log_entry})
+                        
+                        # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
+                        st.session_state.current_agent_audio_text = ""
+                        st.session_state.realtime_hint_text = ""
+                        if "bytes_to_process" in st.session_state:
+                            st.session_state.bytes_to_process = None
+                        
+                        st.info("💡 고객이 추가 문의 사항이 있다고 했습니다. 다음 응답을 녹음하세요.")
+                    else:
+                        # 일반 고객 반응 처리
+                        # 이력 저장
+                        log_entry = f"Agent: {st.session_state.current_agent_audio_text} | Customer: {st.session_state.current_customer_audio_text}"
+                        st.session_state.simulator_messages.append(
+                            {"role": "phone_exchange", "content": log_entry})
 
-                    # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
-                    st.session_state.current_agent_audio_text = ""
-                    st.session_state.realtime_hint_text = ""
-                    # ⭐ 최적화: bytes_to_process도 초기화하여 다음 녹음을 준비
-                    if "bytes_to_process" in st.session_state:
-                        st.session_state.bytes_to_process = None
+                        # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
+                        st.session_state.current_agent_audio_text = ""
+                        st.session_state.realtime_hint_text = ""
+                        # ⭐ 최적화: bytes_to_process도 초기화하여 다음 녹음을 준비
+                        if "bytes_to_process" in st.session_state:
+                            st.session_state.bytes_to_process = None
 
                     # ⭐ 수정: rerun 제거 - 재생은 브라우저에서 자동으로 진행되므로 서버에서 기다릴 필요 없음
                     # 첫 문의와 동일하게 rerun을 제거하여 재생이 끝까지 진행되도록 함
