@@ -1,3 +1,17 @@
+# Copyright (c) Streamlit Inc. (2018-2022) Snowflake Inc. (2022-2025)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # ========================================
 # streamlit_app.py (전체 수정된 코드)
 #
@@ -143,6 +157,7 @@ RAG_INDEX_DIR = os.path.join(DATA_DIR, "rag_index")
 VOICE_META_FILE = os.path.join(DATA_DIR, "voice_records.json")
 SIM_META_FILE = os.path.join(DATA_DIR, "simulation_histories.json")
 VIDEO_MAPPING_DB_FILE = os.path.join(DATA_DIR, "video_mapping_database.json")  # ⭐ Gemini 제안: 비디오 매핑 데이터베이스
+FAQ_DB_FILE = os.path.join(DATA_DIR, "faq_database.json")  # FAQ 데이터베이스 파일
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(AUDIO_DIR, exist_ok=True)
@@ -173,6 +188,557 @@ def _save_json(path: str, data: Any):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+# FAQ 데이터베이스 관리 함수
+def load_faq_database() -> Dict[str, Any]:
+    """FAQ 데이터베이스 로드"""
+    return _load_json(FAQ_DB_FILE, {"companies": {}})
+
+
+def save_faq_database(faq_data: Dict[str, Any]):
+    """FAQ 데이터베이스 저장"""
+    _save_json(FAQ_DB_FILE, faq_data)
+
+
+def get_company_info_faq(company: str, lang: str = "ko") -> Dict[str, Any]:
+    """회사 소개 및 FAQ 가져오기"""
+    faq_data = load_faq_database()
+    if company in faq_data.get("companies", {}):
+        company_data = faq_data["companies"][company]
+        return {
+            "info": company_data.get(f"info_{lang}", company_data.get("info_ko", "")),
+            "popular_products": company_data.get("popular_products", []),
+            "trending_topics": company_data.get("trending_topics", []),
+            "faqs": company_data.get("faqs", [])
+        }
+    return {"info": "", "popular_products": [], "trending_topics": [], "faqs": []}
+
+
+def visualize_company_data(company_data: Dict[str, Any], lang: str = "ko") -> Dict[str, Any]:
+    """회사 데이터 시각화 (Plotly 사용)"""
+    charts = {}
+    
+    if not IS_PLOTLY_AVAILABLE:
+        return charts
+    
+    try:
+        import plotly.graph_objects as go
+        import plotly.express as px
+        
+        # 언어별 레이블
+        lang_labels = {
+            "ko": {
+                "popular_products": "인기 상품",
+                "product_name": "상품명",
+                "popularity": "인기도",
+                "trending_topics": "화제의 소식",
+                "topic": "소식",
+                "trend_score": "화제도"
+            },
+            "en": {
+                "popular_products": "Popular Products",
+                "product_name": "Product Name",
+                "popularity": "Popularity",
+                "trending_topics": "Trending News",
+                "topic": "News",
+                "trend_score": "Trend Score"
+            },
+            "ja": {
+                "popular_products": "人気商品",
+                "product_name": "商品名",
+                "popularity": "人気度",
+                "trending_topics": "話題のニュース",
+                "topic": "ニュース",
+                "trend_score": "話題度"
+            }
+        }
+        labels = lang_labels.get(lang, lang_labels["ko"])
+        
+        # 인기 상품 시각화
+        popular_products = company_data.get("popular_products", [])
+        if popular_products:
+            product_names = []
+            product_scores = []
+            for product in popular_products:
+                name = product.get(f"text_{lang}", product.get("text_ko", ""))
+                score = product.get("score", 0)
+                if name:
+                    product_names.append(name[:20])  # 이름이 너무 길면 자름
+                    product_scores.append(score if score > 0 else 50)  # 기본값 50
+            
+            if product_names:
+                # 막대 그래프
+                fig_products_bar = go.Figure(data=[
+                    go.Bar(
+                        x=product_names,
+                        y=product_scores,
+                        marker_color='lightblue',
+                        text=product_scores,
+                        textposition='auto',
+                    )
+                ])
+                fig_products_bar.update_layout(
+                    title=f"{labels['popular_products']} (막대 그래프)",
+                    xaxis_title=labels["product_name"],
+                    yaxis_title=labels["popularity"],
+                    height=300,
+                    showlegend=False
+                )
+                charts["products_bar"] = fig_products_bar
+                
+                # 선형 그래프 (LSTM 스타일)
+                fig_products_line = go.Figure(data=[
+                    go.Scatter(
+                        x=product_names,
+                        y=product_scores,
+                        mode='lines+markers',
+                        marker=dict(size=10, color='lightblue'),
+                        line=dict(width=3, color='lightblue'),
+                        text=product_scores,
+                        textposition='top center',
+                    )
+                ])
+                fig_products_line.update_layout(
+                    title=f"{labels['popular_products']} (선형 그래프)",
+                    xaxis_title=labels["product_name"],
+                    yaxis_title=labels["popularity"],
+                    height=300,
+                    showlegend=False
+                )
+                charts["products_line"] = fig_products_line
+        
+        # 화제의 소식 시각화
+        trending_topics = company_data.get("trending_topics", [])
+        if trending_topics:
+            topic_names = []
+            topic_scores = []
+            for topic in trending_topics:
+                name = topic.get(f"text_{lang}", topic.get("text_ko", ""))
+                score = topic.get("score", 0)
+                if name:
+                    topic_names.append(name[:20])
+                    topic_scores.append(score if score > 0 else 50)
+            
+            if topic_names:
+                # 막대 그래프
+                fig_topics_bar = go.Figure(data=[
+                    go.Bar(
+                        x=topic_names,
+                        y=topic_scores,
+                        marker_color='lightcoral',
+                        text=topic_scores,
+                        textposition='auto',
+                    )
+                ])
+                fig_topics_bar.update_layout(
+                    title=f"{labels['trending_topics']} (막대 그래프)",
+                    xaxis_title=labels["topic"],
+                    yaxis_title=labels["trend_score"],
+                    height=300,
+                    showlegend=False
+                )
+                charts["topics_bar"] = fig_topics_bar
+                
+                # 선형 그래프
+                fig_topics_line = go.Figure(data=[
+                    go.Scatter(
+                        x=topic_names,
+                        y=topic_scores,
+                        mode='lines+markers',
+                        marker=dict(size=10, color='lightcoral'),
+                        line=dict(width=3, color='lightcoral'),
+                        text=topic_scores,
+                        textposition='top center',
+                    )
+                ])
+                fig_topics_line.update_layout(
+                    title=f"{labels['trending_topics']} (선형 그래프)",
+                    xaxis_title=labels["topic"],
+                    yaxis_title=labels["trend_score"],
+                    height=300,
+                    showlegend=False
+                )
+                charts["topics_line"] = fig_topics_line
+        
+    except Exception as e:
+        pass  # 시각화 실패해도 계속 진행
+    
+    return charts
+
+
+def get_product_image_url(product_name: str) -> str:
+    """상품명을 기반으로 이미지 URL 생성 - 실제 상품 이미지 사용"""
+    try:
+        product_lower = product_name.lower()
+        
+        # 디즈니랜드 관련 상품 - 미키마우스 이미지 (한국어, 영어, 일본어 모두 체크)
+        if ("디즈니" in product_name or "disney" in product_lower or "disneyland" in product_lower or 
+            "tokyo disneyland" in product_lower or "hong kong disneyland" in product_lower or
+            "ディズニー" in product_name or "ディズニーランド" in product_name):
+            return "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=400&h=300&fit=crop"
+        
+        # 유니버셜 스튜디오 관련 상품 - 유니버셜 로고/지구본 이미지 (한국어, 영어, 일본어 모두 체크)
+        if ("유니버셜" in product_name or "universal" in product_lower or "universal studio" in product_lower or
+            "universal studios" in product_lower or "ユニバーサル" in product_name or "ユニバーサルスタジオ" in product_name):
+            return "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=400&h=300&fit=crop"
+        
+        # 도쿄 스카이트리 관련 상품 - 스카이트리 건물 이미지 (한국어, 영어, 일본어 모두 체크)
+        if ("스카이트리" in product_name or "skytree" in product_lower or "도쿄 타워" in product_name or 
+            "tokyo tower" in product_lower or "tokyo skytree" in product_lower or
+            "スカイツリー" in product_name or "東京タワー" in product_name or "東京スカイツリー" in product_name):
+            return "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop"
+        
+        # 홍콩 관련 상품 (디즈니랜드 외)
+        if ("홍콩" in product_name or "hong kong" in product_lower or "香港" in product_name):
+            if "disney" not in product_lower and "디즈니" not in product_name:
+                # 홍콩 공항 익스프레스 등
+                return "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=400&h=300&fit=crop"
+        
+        # 방콕 관련 상품 (한국어, 영어, 일본어 모두 체크)
+        if ("방콕" in product_name or "bangkok" in product_lower or "バンコク" in product_name):
+            return "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=400&h=300&fit=crop"
+        
+        # 기본값: 상품명 기반으로 일관된 이미지 생성
+        import hashlib
+        hash_obj = hashlib.md5(product_name.encode())
+        hash_int = int(hash_obj.hexdigest(), 16)
+        image_id = (hash_int % 1000) + 1
+        return f"https://picsum.photos/seed/{product_name}/400/300"
+    except Exception:
+        return ""
+
+
+def search_faq(faq_data: Dict[str, Any], company: str, query: str, lang: str = "ko") -> List[Dict[str, str]]:
+    """FAQ 검색"""
+    if not query or not query.strip():
+        return []
+    
+    results = []
+    query_lower = query.lower().strip()
+    
+    # 회사별 FAQ 검색
+    if company and company in faq_data.get("companies", {}):
+        company_faqs = faq_data["companies"][company].get("faqs", [])
+        for faq in company_faqs:
+            question = faq.get(f"question_{lang}", faq.get("question_ko", ""))
+            answer = faq.get(f"answer_{lang}", faq.get("answer_ko", ""))
+            
+            if query_lower in question.lower() or query_lower in answer.lower():
+                results.append({
+                    "question": question,
+                    "answer": answer,
+                    "company": company
+                })
+    
+    # 기본 FAQ 검색 (회사가 없거나 기본 설정인 경우)
+    default_settings_texts = ["기본 설정", "Default Settings", "デフォルト設定"]
+    if not company or company in default_settings_texts:
+        default_faqs = faq_data.get("default", {}).get("faqs", [])
+        for faq in default_faqs:
+            question = faq.get(f"question_{lang}", faq.get("question_ko", ""))
+            answer = faq.get(f"answer_{lang}", faq.get("answer_ko", ""))
+            
+            if query_lower in question.lower() or query_lower in answer.lower():
+                results.append({
+                    "question": question,
+                    "answer": answer,
+                    "company": "기본"
+                })
+    
+    return results
+
+
+def get_common_product_faqs(company_name: str, lang: str = "ko") -> List[Dict[str, str]]:
+    """공동 대표 제품 FAQ 반환"""
+    company_lower = company_name.lower()
+    common_faqs = []
+    
+    # Klook 공동 제품 FAQ
+    if "klook" in company_lower or "클룩" in company_name:
+        if lang == "ko":
+            common_faqs = [
+                {
+                    "question_ko": "eSIM은 어떤 국가에서 사용할 수 있나요?",
+                    "answer_ko": "eSIM은 전 세계 대부분의 국가에서 사용 가능합니다. 주요 여행지인 유럽, 아시아, 아메리카, 오세아니아 등 전 세계 190개 이상의 국가와 지역에서 사용할 수 있습니다. 각 국가별 데이터 요금제와 사용 가능 여부는 상품 페이지에서 확인하실 수 있습니다.",
+                    "question_en": "Which countries can I use eSIM in?",
+                    "answer_en": "eSIM can be used in most countries around the world. It is available in over 190 countries and regions including major travel destinations in Europe, Asia, Americas, and Oceania. Data plans and availability for each country can be checked on the product page.",
+                    "question_ja": "eSIMはどの国で使用できますか？",
+                    "answer_ja": "eSIMは世界中のほとんどの国で使用できます。主要な旅行先であるヨーロッパ、アジア、アメリカ、オセアニアなど、世界190以上の国と地域で使用可能です。各国のデータプランと利用可否は商品ページでご確認いただけます。"
+                },
+                {
+                    "question_ko": "eSIM 활성화는 어떻게 하나요?",
+                    "answer_ko": "eSIM 활성화는 매우 간단합니다. 1) 구매 후 이메일로 받은 QR 코드를 확인하세요. 2) 여행지에 도착한 후 스마트폰 설정에서 eSIM을 추가하세요. 3) QR 코드를 스캔하거나 수동으로 입력하세요. 4) 데이터 요금제를 활성화하세요. 대부분의 경우 자동으로 활성화되며, 수동 활성화가 필요한 경우 상품 페이지의 안내를 따르시면 됩니다.",
+                    "question_en": "How do I activate eSIM?",
+                    "answer_en": "Activating eSIM is very simple. 1) Check the QR code received via email after purchase. 2) After arriving at your destination, add eSIM in your smartphone settings. 3) Scan the QR code or enter manually. 4) Activate your data plan. In most cases, it activates automatically, and if manual activation is required, please follow the instructions on the product page.",
+                    "question_ja": "eSIMの有効化はどうすればいいですか？",
+                    "answer_ja": "eSIMの有効化は非常に簡単です。1) 購入後メールで受け取ったQRコードを確認してください。2) 旅行先に到着したら、スマートフォンの設定でeSIMを追加してください。3) QRコードをスキャンするか、手動で入力してください。4) データプランを有効化してください。ほとんどの場合、自動的に有効化されますが、手動有効化が必要な場合は、商品ページの案内に従ってください。"
+                },
+                {
+                    "question_ko": "eSIM을 여러 국가에서 사용할 수 있나요?",
+                    "answer_ko": "네, 일부 eSIM 요금제는 여러 국가에서 사용할 수 있는 글로벌 플랜을 제공합니다. 지역별 플랜(예: 유럽 여러 국가, 아시아 여러 국가)도 있습니다. 구매 전 상품 설명에서 지원 국가 목록을 확인하시기 바랍니다. 단일 국가 전용 플랜도 있으므로 여행 계획에 맞는 플랜을 선택하시면 됩니다.",
+                    "question_en": "Can I use eSIM in multiple countries?",
+                    "answer_en": "Yes, some eSIM plans offer global plans that can be used in multiple countries. There are also regional plans (e.g., multiple European countries, multiple Asian countries). Please check the list of supported countries in the product description before purchase. There are also single-country exclusive plans, so please choose a plan that suits your travel plans.",
+                    "question_ja": "eSIMを複数の国で使用できますか？",
+                    "answer_ja": "はい、一部のeSIMプランは複数の国で使用できるグローバルプランを提供しています。地域別プラン（例：ヨーロッパ複数国、アジア複数国）もあります。購入前に商品説明でサポート国リストをご確認ください。単一国専用プランもあるため、旅行計画に合ったプランを選択してください。"
+                },
+                {
+                    "question_ko": "eSIM은 어떤 기기에서 사용할 수 있나요?",
+                    "answer_ko": "eSIM은 eSIM 기능을 지원하는 스마트폰, 태블릿, 스마트워치 등에서 사용할 수 있습니다. 주요 호환 기종은 다음과 같습니다:\n\n**iPhone:**\n- iPhone XS, XS Max, XR 이후 모델 (iPhone 14 시리즈 이상 권장)\n- iPhone SE (2020년 이후 모델)\n\n**Android:**\n- Google Pixel 3 이후 모델\n- Samsung Galaxy S20 시리즈 이후 (S21, S22, S23, S24, S25 등)\n- Samsung Galaxy Note 20 시리즈 이후\n- Samsung Galaxy Z Fold, Z Flip 시리즈\n- Samsung Galaxy Tab 시리즈 (일부 모델)\n- OnePlus 6 이후 모델\n- Xiaomi, Huawei, Oppo 등 주요 브랜드의 최신 모델\n\n**기타:**\n- iPad Pro (2018년 이후), iPad Air (2020년 이후), iPad mini (2019년 이후)\n- Apple Watch Series 3 이후 (셀룰러 모델)\n\n기기 호환성은 제조사와 모델에 따라 다를 수 있으므로, 구매 전 상품 페이지에서 사용하시는 기기 모델의 호환 여부를 확인하시기 바랍니다. 또한 일부 기기는 특정 국가나 통신사에서만 eSIM을 지원할 수 있습니다.",
+                    "question_en": "Which devices support eSIM?",
+                    "answer_en": "eSIM can be used on smartphones, tablets, smartwatches, and other devices that support eSIM functionality. Main compatible devices include:\n\n**iPhone:**\n- iPhone XS, XS Max, XR and later models (iPhone 14 series and above recommended)\n- iPhone SE (2020 and later models)\n\n**Android:**\n- Google Pixel 3 and later models\n- Samsung Galaxy S20 series and later (S21, S22, S23, S24, S25, etc.)\n- Samsung Galaxy Note 20 series and later\n- Samsung Galaxy Z Fold, Z Flip series\n- Samsung Galaxy Tab series (some models)\n- OnePlus 6 and later models\n- Latest models from Xiaomi, Huawei, Oppo, and other major brands\n\n**Others:**\n- iPad Pro (2018 and later), iPad Air (2020 and later), iPad mini (2019 and later)\n- Apple Watch Series 3 and later (cellular models)\n\nDevice compatibility may vary by manufacturer and model, so please check the product page before purchase to confirm compatibility with your device model. Some devices may only support eSIM in specific countries or with specific carriers.",
+                    "question_ja": "eSIMはどのデバイスで使用できますか？",
+                    "answer_ja": "eSIMは、eSIM機能をサポートするスマートフォン、タブレット、スマートウォッチなどで使用できます。主な互換デバイスは以下の通りです：\n\n**iPhone:**\n- iPhone XS、XS Max、XR以降のモデル（iPhone 14シリーズ以降推奨）\n- iPhone SE（2020年以降のモデル）\n\n**Android:**\n- Google Pixel 3以降のモデル\n- Samsung Galaxy S20シリーズ以降（S21、S22、S23、S24、S25など）\n- Samsung Galaxy Note 20シリーズ以降\n- Samsung Galaxy Z Fold、Z Flipシリーズ\n- Samsung Galaxy Tabシリーズ（一部モデル）\n- OnePlus 6以降のモデル\n- Xiaomi、Huawei、Oppoなどの主要ブランドの最新モデル\n\n**その他:**\n- iPad Pro（2018年以降）、iPad Air（2020年以降）、iPad mini（2019年以降）\n- Apple Watch Series 3以降（セルラーモデル）\n\nデバイスの互換性はメーカーやモデルによって異なる場合があるため、購入前に商品ページで使用するデバイスモデルの互換性をご確認ください。また、一部のデバイスは特定の国や通信事業者でのみeSIMをサポートする場合があります。"
+                }
+            ]
+        elif lang == "en":
+            common_faqs = [
+                {
+                    "question_en": "Which countries can I use eSIM in?",
+                    "answer_en": "eSIM can be used in most countries around the world. It is available in over 190 countries and regions including major travel destinations in Europe, Asia, Americas, and Oceania. Data plans and availability for each country can be checked on the product page.",
+                    "question_ko": "eSIM은 어떤 국가에서 사용할 수 있나요?",
+                    "answer_ko": "eSIM은 전 세계 대부분의 국가에서 사용 가능합니다.",
+                    "question_ja": "eSIMはどの国で使用できますか？",
+                    "answer_ja": "eSIMは世界中のほとんどの国で使用できます。"
+                },
+                {
+                    "question_en": "How do I activate eSIM?",
+                    "answer_en": "Activating eSIM is very simple. 1) Check the QR code received via email after purchase. 2) After arriving at your destination, add eSIM in your smartphone settings. 3) Scan the QR code or enter manually. 4) Activate your data plan.",
+                    "question_ko": "eSIM 활성화는 어떻게 하나요?",
+                    "answer_ko": "eSIM 활성화는 매우 간단합니다.",
+                    "question_ja": "eSIMの有効化はどうすればいいですか？",
+                    "answer_ja": "eSIMの有効化は非常に簡単です。"
+                },
+                {
+                    "question_en": "Which devices support eSIM?",
+                    "answer_en": "eSIM can be used on smartphones, tablets, smartwatches, and other devices that support eSIM functionality. Main compatible devices include:\n\n**iPhone:**\n- iPhone XS, XS Max, XR and later models (iPhone 14 series and above recommended)\n- iPhone SE (2020 and later models)\n\n**Android:**\n- Google Pixel 3 and later models\n- Samsung Galaxy S20 series and later (S21, S22, S23, S24, S25, etc.)\n- Samsung Galaxy Note 20 series and later\n- Samsung Galaxy Z Fold, Z Flip series\n- Samsung Galaxy Tab series (some models)\n- OnePlus 6 and later models\n- Latest models from Xiaomi, Huawei, Oppo, and other major brands\n\n**Others:**\n- iPad Pro (2018 and later), iPad Air (2020 and later), iPad mini (2019 and later)\n- Apple Watch Series 3 and later (cellular models)\n\nDevice compatibility may vary by manufacturer and model, so please check the product page before purchase to confirm compatibility with your device model. Some devices may only support eSIM in specific countries or with specific carriers.",
+                    "question_ko": "eSIM은 어떤 기기에서 사용할 수 있나요?",
+                    "answer_ko": "eSIM은 eSIM 기능을 지원하는 스마트폰, 태블릿, 스마트워치 등에서 사용할 수 있습니다.",
+                    "question_ja": "eSIMはどのデバイスで使用できますか？",
+                    "answer_ja": "eSIMは、eSIM機能をサポートするスマートフォン、タブレット、スマートウォッチなどで使用できます。"
+                }
+            ]
+        else:  # ja
+            common_faqs = [
+                {
+                    "question_ja": "eSIMはどの国で使用できますか？",
+                    "answer_ja": "eSIMは世界中のほとんどの国で使用できます。主要な旅行先であるヨーロッパ、アジア、アメリカ、オセアニアなど、世界190以上の国と地域で使用可能です。",
+                    "question_ko": "eSIM은 어떤 국가에서 사용할 수 있나요?",
+                    "answer_ko": "eSIM은 전 세계 대부분의 국가에서 사용 가능합니다.",
+                    "question_en": "Which countries can I use eSIM in?",
+                    "answer_en": "eSIM can be used in most countries around the world."
+                },
+                {
+                    "question_ja": "eSIMはどのデバイスで使用できますか？",
+                    "answer_ja": "eSIMは、eSIM機能をサポートするスマートフォン、タブレット、スマートウォッチなどで使用できます。主な互換デバイスは以下の通りです：\n\n**iPhone:**\n- iPhone XS、XS Max、XR以降のモデル（iPhone 14シリーズ以降推奨）\n- iPhone SE（2020年以降のモデル）\n\n**Android:**\n- Google Pixel 3以降のモデル\n- Samsung Galaxy S20シリーズ以降（S21、S22、S23、S24、S25など）\n- Samsung Galaxy Note 20シリーズ以降\n- Samsung Galaxy Z Fold、Z Flipシリーズ\n- Samsung Galaxy Tabシリーズ（一部モデル）\n- OnePlus 6以降のモデル\n- Xiaomi、Huawei、Oppoなどの主要ブランドの最新モデル\n\n**その他:**\n- iPad Pro（2018年以降）、iPad Air（2020年以降）、iPad mini（2019年以降）\n- Apple Watch Series 3以降（セルラーモデル）\n\nデバイスの互換性はメーカーやモデルによって異なる場合があるため、購入前に商品ページで使用するデバイスモデルの互換性をご確認ください。また、一部のデバイスは特定の国や通信事業者でのみeSIMをサポートする場合があります。",
+                    "question_ko": "eSIM은 어떤 기기에서 사용할 수 있나요?",
+                    "answer_ko": "eSIM은 eSIM 기능을 지원하는 스마트폰, 태블릿, 스마트워치 등에서 사용할 수 있습니다.",
+                    "question_en": "Which devices support eSIM?",
+                    "answer_en": "eSIM can be used on smartphones, tablets, smartwatches, and other devices that support eSIM functionality."
+                }
+            ]
+    
+    # 삼성 공동 제품 FAQ
+    elif "samsung" in company_lower or "삼성" in company_name:
+        if lang == "ko":
+            common_faqs = [
+                {
+                    "question_ko": "Galaxy S25 Ultra의 주요 특징은 무엇인가요?",
+                    "answer_ko": "Galaxy S25 Ultra는 삼성의 최신 플래그십 스마트폰으로, 고성능 프로세서, 고해상도 카메라 시스템, 긴 배터리 수명, 빠른 충전 기능을 제공합니다. 특히 AI 기능이 강화되어 사진 촬영, 생산성 향상, 일상 작업 자동화에 도움이 됩니다.",
+                    "question_en": "What are the main features of Galaxy S25 Ultra?",
+                    "answer_en": "Galaxy S25 Ultra is Samsung's latest flagship smartphone, offering high-performance processor, high-resolution camera system, long battery life, and fast charging. AI features are particularly enhanced to help with photography, productivity, and daily task automation.",
+                    "question_ja": "Galaxy S25 Ultraの主な特徴は何ですか？",
+                    "answer_ja": "Galaxy S25 Ultraはサムスンの最新フラグシップスマートフォンで、高性能プロセッサー、高解像度カメラシステム、長いバッテリー寿命、高速充電機能を提供します。特にAI機能が強化され、写真撮影、生産性向上、日常作業の自動化に役立ちます。"
+                },
+                {
+                    "question_ko": "신규 출시 예정 제품은 언제 출시되나요?",
+                    "answer_ko": "삼성은 정기적으로 신제품을 출시합니다. 정확한 출시 일정은 공식 발표를 통해 확인하실 수 있으며, 일반적으로 갤럭시 시리즈는 연 1-2회 주요 업데이트가 있습니다. 신제품 출시 소식은 삼성 공식 웹사이트나 공식 채널을 통해 확인하시기 바랍니다.",
+                    "question_en": "When will the new products be released?",
+                    "answer_en": "Samsung regularly releases new products. Exact release schedules can be confirmed through official announcements, and generally, the Galaxy series has 1-2 major updates per year. Please check Samsung's official website or official channels for new product release news.",
+                    "question_ja": "新製品はいつ発売されますか？",
+                    "answer_ja": "サムスンは定期的に新製品を発売しています。正確な発売スケジュールは公式発表で確認でき、一般的にギャラクシーシリーズは年間1-2回の主要アップデートがあります。新製品発売のニュースはサムスン公式ウェブサイトまたは公式チャンネルでご確認ください。"
+                }
+            ]
+        elif lang == "en":
+            common_faqs = [
+                {
+                    "question_en": "What are the main features of Galaxy S25 Ultra?",
+                    "answer_en": "Galaxy S25 Ultra is Samsung's latest flagship smartphone, offering high-performance processor, high-resolution camera system, long battery life, and fast charging.",
+                    "question_ko": "Galaxy S25 Ultra의 주요 특징은 무엇인가요?",
+                    "answer_ko": "Galaxy S25 Ultra는 삼성의 최신 플래그십 스마트폰입니다.",
+                    "question_ja": "Galaxy S25 Ultraの主な特徴は何ですか？",
+                    "answer_ja": "Galaxy S25 Ultraはサムスンの最新フラグシップスマートフォンです。"
+                }
+            ]
+        else:  # ja
+            common_faqs = [
+                {
+                    "question_ja": "Galaxy S25 Ultraの主な特徴は何ですか？",
+                    "answer_ja": "Galaxy S25 Ultraはサムスンの最新フラグシップスマートフォンで、高性能プロセッサー、高解像度カメラシステムを提供します。",
+                    "question_ko": "Galaxy S25 Ultra의 주요 특징은 무엇인가요?",
+                    "answer_ko": "Galaxy S25 Ultra는 삼성의 최신 플래그십 스마트폰입니다.",
+                    "question_en": "What are the main features of Galaxy S25 Ultra?",
+                    "answer_en": "Galaxy S25 Ultra is Samsung's latest flagship smartphone."
+                }
+            ]
+    
+    return common_faqs
+
+
+def generate_company_info_with_llm(company_name: str, lang: str = "ko") -> Dict[str, Any]:
+    """LLM을 사용하여 회사 정보 생성"""
+    lang_prompts = {
+        "ko": f"""다음 회사에 대한 상세 정보를 제공해주세요: {company_name}
+
+다음 형식으로 JSON으로 응답해주세요:
+{{
+    "company_info": "회사 소개 (500자 이상)",
+    "popular_products": [
+        {{"text_ko": "상품명1", "score": 85, "image_url": ""}},
+        {{"text_ko": "상품명2", "score": 80, "image_url": ""}},
+        {{"text_ko": "상품명3", "score": 75, "image_url": ""}}
+    ],
+    "trending_topics": [
+        {{"text_ko": "화제 소식1", "score": 90, "detail_ko": "화제 소식1에 대한 상세 내용입니다. 구체적인 설명과 배경 정보를 포함합니다."}},
+        {{"text_ko": "화제 소식2", "score": 85, "detail_ko": "화제 소식2에 대한 상세 내용입니다. 구체적인 설명과 배경 정보를 포함합니다."}},
+        {{"text_ko": "화제 소식3", "score": 80, "detail_ko": "화제 소식3에 대한 상세 내용입니다. 구체적인 설명과 배경 정보를 포함합니다."}}
+    ],
+    "faqs": [
+        {{"question_ko": "질문1", "answer_ko": "답변1"}},
+        {{"question_ko": "질문2", "answer_ko": "답변2"}},
+        {{"question_ko": "질문3", "answer_ko": "답변3"}},
+        {{"question_ko": "질문4", "answer_ko": "답변4"}},
+        {{"question_ko": "질문5", "answer_ko": "답변5"}},
+        {{"question_ko": "질문6", "answer_ko": "답변6"}},
+        {{"question_ko": "질문7", "answer_ko": "답변7"}},
+        {{"question_ko": "질문8", "answer_ko": "답변8"}},
+        {{"question_ko": "질문9", "answer_ko": "답변9"}},
+        {{"question_ko": "질문10", "answer_ko": "답변10"}}
+    ]
+}}
+
+FAQ는 10개를 생성해주세요. 실제로 자주 묻는 질문과 답변을 포함해주세요.""",
+        "en": f"""Please provide detailed information about the following company: {company_name}
+
+Respond in JSON format as follows:
+{{
+    "company_info": "Company introduction (500+ characters)",
+    "popular_products": [
+        {{"text_en": "Product1", "score": 85, "image_url": ""}},
+        {{"text_en": "Product2", "score": 80, "image_url": ""}},
+        {{"text_en": "Product3", "score": 75, "image_url": ""}}
+    ],
+    "trending_topics": [
+        {{"text_en": "Trending news1", "score": 90, "detail_en": "Detailed content about trending news1, including specific explanations and background information."}},
+        {{"text_en": "Trending news2", "score": 85, "detail_en": "Detailed content about trending news2, including specific explanations and background information."}},
+        {{"text_en": "Trending news3", "score": 80, "detail_en": "Detailed content about trending news3, including specific explanations and background information."}}
+    ],
+    "faqs": [
+        {{"question_en": "Question1", "answer_en": "Answer1"}},
+        {{"question_en": "Question2", "answer_en": "Answer2"}},
+        {{"question_en": "Question3", "answer_en": "Answer3"}},
+        {{"question_en": "Question4", "answer_en": "Answer4"}},
+        {{"question_en": "Question5", "answer_en": "Answer5"}},
+        {{"question_en": "Question6", "answer_en": "Answer6"}},
+        {{"question_en": "Question7", "answer_en": "Answer7"}},
+        {{"question_en": "Question8", "answer_en": "Answer8"}},
+        {{"question_en": "Question9", "answer_en": "Answer9"}},
+        {{"question_en": "Question10", "answer_en": "Answer10"}}
+    ]
+}}
+
+Generate 10 FAQs with real frequently asked questions and answers.""",
+        "ja": f"""次の会社に関する詳細情報を提供してください: {company_name}
+
+次の形式でJSONで応答してください:
+{{
+    "company_info": "会社紹介 (500文字以上)",
+    "popular_products": [
+        {{"text_ja": "商品名1", "score": 85, "image_url": ""}},
+        {{"text_ja": "商品名2", "score": 80, "image_url": ""}},
+        {{"text_ja": "商品名3", "score": 75, "image_url": ""}}
+    ],
+    "trending_topics": [
+        {{"text_ja": "話題のニュース1", "score": 90, "detail_ja": "話題のニュース1に関する詳細内容です。具体的な説明と背景情報を含みます。"}},
+        {{"text_ja": "話題のニュース2", "score": 85, "detail_ja": "話題のニュース2に関する詳細内容です。具体的な説明と背景情報を含みます。"}},
+        {{"text_ja": "話題のニュース3", "score": 80, "detail_ja": "話題のニュース3に関する詳細内容です。具体的な説明と背景情報を含みます。"}}
+    ],
+    "faqs": [
+        {{"question_ja": "質問1", "answer_ja": "回答1"}},
+        {{"question_ja": "質問2", "answer_ja": "回答2"}},
+        {{"question_ja": "質問3", "answer_ja": "回答3"}},
+        {{"question_ja": "質問4", "answer_ja": "回答4"}},
+        {{"question_ja": "質問5", "answer_ja": "回答5"}},
+        {{"question_ja": "質問6", "answer_ja": "回答6"}},
+        {{"question_ja": "質問7", "answer_ja": "回答7"}},
+        {{"question_ja": "質問8", "answer_ja": "回答8"}},
+        {{"question_ja": "質問9", "answer_ja": "回答9"}},
+        {{"question_ja": "質問10", "answer_ja": "回答10"}}
+    ]
+}}
+
+FAQは10個生成してください。実際によくある質問と回答を含めてください。"""
+    }
+    
+    prompt = lang_prompts.get(lang, lang_prompts["ko"])
+    
+    try:
+        response = run_llm(prompt)
+        
+        # JSON 파싱 시도
+        import re
+        json_match = re.search(r'\{[\s\S]*\}', response)
+        if json_match:
+            json_str = json_match.group()
+            try:
+                company_data = json.loads(json_str)
+                
+                # 공동 대표 제품 FAQ 추가
+                common_faqs = get_common_product_faqs(company_name, lang)
+                if common_faqs:
+                    existing_faqs = company_data.get("faqs", [])
+                    # 공동 FAQ를 기존 FAQ 앞에 추가
+                    company_data["faqs"] = common_faqs + existing_faqs
+                
+                # FAQ가 10개 미만이면 기본 FAQ 추가
+                if len(company_data.get("faqs", [])) < 10:
+                    default_faqs = [
+                        {"question_ko": "회사 설립일은 언제인가요?", "answer_ko": "회사 설립일에 대한 정보를 확인 중입니다."},
+                        {"question_ko": "주요 사업 분야는 무엇인가요?", "answer_ko": "주요 사업 분야에 대한 정보를 확인 중입니다."},
+                        {"question_ko": "본사 위치는 어디인가요?", "answer_ko": "본사 위치에 대한 정보를 확인 중입니다."},
+                        {"question_ko": "직원 수는 얼마나 되나요?", "answer_ko": "직원 수에 대한 정보를 확인 중입니다."},
+                        {"question_ko": "주요 제품/서비스는 무엇인가요?", "answer_ko": "주요 제품/서비스에 대한 정보를 확인 중입니다."},
+                    ]
+                    existing_faqs = company_data.get("faqs", [])
+                    # 부족한 만큼 기본 FAQ 추가
+                    while len(existing_faqs) < 10:
+                        idx = len(existing_faqs) % len(default_faqs)
+                        existing_faqs.append(default_faqs[idx])
+                    company_data["faqs"] = existing_faqs[:10]
+                return company_data
+            except json.JSONDecodeError:
+                # JSON 파싱 실패 시 기본 구조 반환
+                return {
+                    "company_info": response[:1000] if len(response) > 1000 else response,
+                    "popular_products": [],
+                    "trending_topics": [],
+                    "faqs": []
+                }
+        else:
+            # JSON이 아닌 경우 기본 구조 반환
+            return {
+                "company_info": response[:1000] if len(response) > 1000 else response,
+                "popular_products": [],
+                "trending_topics": [],
+                "faqs": []
+            }
+    except Exception as e:
+        return {
+            "company_info": f"회사 정보 생성 중 오류가 발생했습니다: {str(e)}",
+            "popular_products": [],
+            "trending_topics": [],
+            "faqs": []
+        }
+
+
 
 
 
@@ -193,11 +759,14 @@ LANG: Dict[str, Dict[str, str]] = {
         "sim_tab_chat_email": "AI 고객 응대 시뮬레이터 (채팅/이메일)",
         "sim_tab_phone": "AI 고객 응대 시뮬레이터 (전화)",
         "simulator_tab": "AI 고객 응대 시뮬레이터",
+        "company_info_tab": "회사 정보 및 FAQ",
+        "company_info_tab_desc": "회사별 상세 정보, 인기 상품, 화제의 소식, FAQ를 검색하고 관리할 수 있는 기능입니다.",
         "sim_tab_chat_email_desc": "고객 응대 업무에서 채팅 및 이메일로 실제로 문의 응대가 될 수 있는 실전 대비 가상 시나리오입니다. AI가 응대 가이드라인과 초안을 생성하며, 고객 반응을 시뮬레이션하여 실전 대비 훈련이 가능합니다.",
         "sim_tab_phone_desc": "고객 응대 업무에서 전화로 실제로 문의 응대가 될 수 있는 실전 대비 가상 시나리오입니다. 음성 녹음 및 실시간 CC 자막 기능을 제공하며, 전화 통화 시뮬레이션을 통해 실전 응대 능력을 향상시킬 수 있습니다.",
         "rag_tab_desc": "업로드된 문서를 기반으로 질문에 답변하는 지식 챗봇입니다. PDF, TXT, HTML 파일을 업로드하여 RAG(Retrieval-Augmented Generation) 인덱스를 구축하고, 문서 내용을 기반으로 정확한 답변을 제공합니다.",
         "content_tab_desc": "AI를 활용하여 개인 맞춤형 학습 콘텐츠를 생성하는 기능입니다. 학습 주제와 난이도에 맞춰 핵심 요약 노트, 객관식 퀴즈, 실습 예제 등을 생성할 수 있습니다.",
         "lstm_tab_desc": "LSTM 모델을 활용하여 학습자의 성취도를 예측하고 대시보드로 시각화하는 기능입니다. 과거 퀴즈 점수 데이터를 분석하여 미래 성취도를 예측하고, 학습 성과를 시각적으로 확인할 수 있습니다.",
+        "company_info_tab_desc": "회사별 상세 정보, 인기 상품, 화제의 소식, FAQ를 검색하고 관리할 수 있는 기능입니다. 회사 소개, 인기 상품, 화제의 소식을 시각화하여 한눈에 확인할 수 있습니다.",
         "voice_rec_header_desc": "음성 녹음 및 전사 결과를 관리하고 저장하는 기능입니다. 마이크로 녹음하거나 파일을 업로드하여 Whisper API를 통해 음성을 텍스트로 변환하고, 전사 결과를 저장 및 관리할 수 있습니다.",
         "more_features_label": "더보기 기능",
         "rag_header": "RAG 지식 챗봇 (문서 기반 Q&A)",
@@ -217,6 +786,72 @@ LANG: Dict[str, Dict[str, str]] = {
         "lstm_header": "LSTM 기반 학습 성취도 예측 대시보드",
         "lstm_desc": "가상의 과거 퀴즈 점수 데이터를 바탕으로 LSTM 모델을 훈련하고 미래 성취도를 예측하여 보여줍니다。",
         "lang_select": "언어 선택",
+        "company_info_faq_settings": "회사별 상세 정보 및 FAQ",
+        "search_company": "회사명 검색",
+        "company_info": "회사 소개",
+        "company_faq": "자주 나오는 질문",
+        "faq_question": "질문",
+        "faq_answer": "답변",
+        "popular_products": "인기 상품",
+        "trending_topics": "화제의 소식",
+        "company_details": "회사 상세 정보",
+        "no_company_found": "에 해당하는 회사를 찾을 수 없습니다.",
+        "no_company_selected": "회사명을 검색하거나 선택해주세요.",
+        "product_popularity": "상품 인기도",
+        "topic_trends": "화제 트렌드",
+        "select_company": "회사 선택",
+        "faq_search": "FAQ 검색",
+        "faq_search_placeholder": "FAQ 검색어를 입력하세요",
+        "faq_search_placeholder_extended": "FAQ 검색어를 입력하세요 (상품명, 서비스명 등도 검색 가능)",
+        "button_search_faq": "검색",
+        "company_search_placeholder": "예: 삼성, 네이버, 구글, 애플 등",
+        "company_search_button": "검색",
+        "generating_company_info": "회사 정보를 생성하는 중...",
+        "button_copy_answer": "답안 복사",
+        "button_copy_hint": "힌트 복사",
+        "button_reset": "새로 시작",
+        "answer_displayed": "답안이 표시되었습니다. 위의 텍스트를 복사하세요.",
+        "hint_displayed": "힌트가 표시되었습니다. 위의 텍스트를 복사하세요.",
+        "ai_answer_generated": "AI 답안이 생성되었습니다.",
+        "hint_generated": "응대 힌트가 생성되었습니다.",
+        "warning_enter_inquiry": "고객 문의 내용을 입력해주세요.",
+        "customer_inquiry_review_desc": "에이전트가 상사들에게 고객 문의 내용을 재확인하고, AI 답안 및 힌트를 생성할 수 있는 기능입니다.",
+        "all_companies": "전체",
+        "optional": "선택사항",
+        "no_faq_for_company": "{company}의 FAQ가 없습니다.",
+        "related_products": "관련 상품",
+        "related_trending_news": "관련 화제 소식",
+        "related_company_info": "관련 회사 소개 내용",
+        "related_faq": "관련 FAQ",
+        "items": "개",
+        "popularity": "인기도",
+        "no_faq_for_product": "해당 상품과 관련된 FAQ를 찾을 수 없습니다. 상품 정보만 표시됩니다.",
+        "generating_detail": "상세 내용을 생성하는 중입니다...",
+        "checking_additional_info": "상세 내용: {topic}에 대한 추가 정보를 확인 중입니다.",
+        "button_generate_faq": "FAQ 생성",
+        "button_add_company": "고객 문의 재확인",
+        "customer_inquiry_review": "고객 문의 재확인",
+        "inquiry_question_label": "고객 문의 내용",
+        "inquiry_question_placeholder": "고객이 문의한 내용을 입력하세요",
+        "button_generate_ai_answer": "AI 답안 생성",
+        "button_generate_hint": "응대 힌트 생성",
+        "ai_answer_header": "AI 추천 답안",
+        "hint_header": "응대 힌트",
+        "generating_ai_answer": "AI 답안을 생성하는 중...",
+        "generating_hint": "응대 힌트를 생성하는 중...",
+        "button_edit_company": "회사 정보 수정",
+        "button_show_company_info": "회사 소개 보기",
+        "no_faq_results": "검색 결과가 없습니다.",
+        "faq_search_results": "FAQ 검색 결과",
+        "add_company_name": "회사명",
+        "add_company_info": "회사 소개",
+        "generate_faq_question": "질문",
+        "generate_faq_answer": "답변",
+        "button_save_faq": "FAQ 저장",
+        "button_cancel": "취소",
+        "faq_saved_success": "FAQ가 저장되었습니다.",
+        "company_added_success": "회사가 추가되었습니다.",
+        "company_updated_success": "회사 정보가 업데이트되었습니다.",
         "embed_success": "총 {count}개 청크로 학습 DB 구축 완료!",
         "embed_fail": "임베딩 실패: 무료 티어 한도 초과 또는 네트워크 문제。",
         "warning_no_files": "먼저 학습 자료를 업로드하세요。",
@@ -367,10 +1002,13 @@ LANG: Dict[str, Dict[str, str]] = {
 
         # --- 추가된 전화 발신 기능 관련 ---
         "button_call_outbound": "전화 발신",
+        "button_call_outbound_to_customer": "고객에게 전화 발신",
+        "button_call_outbound_to_provider": "현지 업체에게 전화 발신",
         "call_outbound_system_msg": "📌 시스템 메시지: 에이전트가 {target}에게 전화 발신을 시도했습니다。",
         "call_outbound_simulation_header": "📞 전화 발신 시뮬레이션 결과",
         "call_outbound_summary_header": "📞 현지 업체/고객과의 통화 요약",
         "call_outbound_loading": "전화 연결 및 통화 결과 정리 중... (LLM 호출)",
+        "call_target_select_label": "발신 대상 선택",
         "call_target_customer": "고객에게 발신",
         "call_target_partner": "현지 업체 발신",
 
@@ -471,11 +1109,13 @@ LANG: Dict[str, Dict[str, str]] = {
         "sim_tab_chat_email": "AI Customer Support Simulator (Chat / Email)",
         "sim_tab_phone": "AI Customer Support Simulator (Phone)",
         "simulator_tab": "AI Customer Support Simulator",
+        "company_info_tab": "Company Information & FAQ",
         "sim_tab_chat_email_desc": "A virtual scenario for practical training in handling customer inquiries via chat and email in customer service work. AI generates response guidelines and drafts, and simulates customer reactions for real-world training.",
         "sim_tab_phone_desc": "A virtual scenario for practical training in handling customer inquiries via phone in customer service work. Provides voice recording and real-time CC subtitle features, allowing you to improve your practical response skills through phone call simulations.",
         "rag_tab_desc": "A knowledge chatbot that answers questions based on uploaded documents. Upload PDF, TXT, or HTML files to build a RAG (Retrieval-Augmented Generation) index and provide accurate answers based on document content.",
         "content_tab_desc": "A feature that generates personalized learning content using AI. You can generate key summary notes, multiple-choice quizzes, and practical examples tailored to learning topics and difficulty levels.",
         "lstm_tab_desc": "A feature that predicts learner achievement using LSTM models and visualizes it in a dashboard. Analyzes past quiz score data to predict future achievement and visually check learning performance.",
+        "company_info_tab_desc": "Search and manage company-specific detailed information, popular products, trending news, and FAQs. Visualize company introductions, popular products, and trending news at a glance.",
         "voice_rec_header_desc": "A feature for managing and storing voice recordings and transcription results. Record with a microphone or upload files to convert speech to text via Whisper API, and save and manage transcription results.",
         "more_features_label": "More Features",
         "rag_header": "RAG Knowledge Chatbot (Document Q&A)",
@@ -495,6 +1135,72 @@ LANG: Dict[str, Dict[str, str]] = {
         "lstm_header": "LSTM Achievement Prediction Dashboard",
         "lstm_desc": "Train an LSTM model on hypothetical quiz scores and predict performance.",
         "lang_select": "Select Language",
+        "company_info_faq_settings": "Company Details & FAQ",
+        "search_company": "Search Company",
+        "company_info": "Company Information",
+        "company_faq": "Frequently Asked Questions",
+        "faq_question": "Question",
+        "faq_answer": "Answer",
+        "popular_products": "Popular Products",
+        "trending_topics": "Trending News",
+        "company_details": "Company Details",
+        "no_company_found": "No matching company found.",
+        "no_company_selected": "Please search or select a company name.",
+        "product_popularity": "Product Popularity",
+        "topic_trends": "Topic Trends",
+        "select_company": "Select Company",
+        "faq_search": "FAQ Search",
+        "faq_search_placeholder": "Enter FAQ search term",
+        "faq_search_placeholder_extended": "Enter FAQ search term (product names, service names, etc. can also be searched)",
+        "button_search_faq": "Search",
+        "company_search_placeholder": "e.g., Samsung, Naver, Google, Apple",
+        "company_search_button": "Search",
+        "generating_company_info": "Generating company information...",
+        "button_copy_answer": "Copy Answer",
+        "button_copy_hint": "Copy Hint",
+        "button_reset": "Reset",
+        "answer_displayed": "Answer displayed. Please copy the text above.",
+        "hint_displayed": "Hint displayed. Please copy the text above.",
+        "ai_answer_generated": "AI answer has been generated.",
+        "hint_generated": "Response hint has been generated.",
+        "warning_enter_inquiry": "Please enter the customer inquiry.",
+        "customer_inquiry_review_desc": "A feature that allows agents to reconfirm customer inquiries with supervisors and generate AI answers and hints.",
+        "all_companies": "All",
+        "optional": "Optional",
+        "no_faq_for_company": "No FAQs available for {company}.",
+        "related_products": "Related Products",
+        "related_trending_news": "Related Trending News",
+        "related_company_info": "Related Company Information",
+        "related_faq": "Related FAQ",
+        "items": "",
+        "popularity": "Popularity",
+        "no_faq_for_product": "No FAQs related to this product were found. Only product information is displayed.",
+        "generating_detail": "Generating detailed content...",
+        "checking_additional_info": "Checking additional information for: {topic}",
+        "button_generate_faq": "Generate FAQ",
+        "button_add_company": "Customer Inquiry Review",
+        "customer_inquiry_review": "Customer Inquiry Review",
+        "inquiry_question_label": "Customer Inquiry",
+        "inquiry_question_placeholder": "Enter the customer's inquiry",
+        "button_generate_ai_answer": "Generate AI Answer",
+        "button_generate_hint": "Generate Response Hint",
+        "ai_answer_header": "AI Recommended Answer",
+        "hint_header": "Response Hint",
+        "generating_ai_answer": "Generating AI answer...",
+        "generating_hint": "Generating response hint...",
+        "button_edit_company": "Edit Company Info",
+        "button_show_company_info": "Show Company Info",
+        "no_faq_results": "No search results found.",
+        "faq_search_results": "FAQ Search Results",
+        "add_company_name": "Company Name",
+        "add_company_info": "Company Information",
+        "generate_faq_question": "Question",
+        "generate_faq_answer": "Answer",
+        "button_save_faq": "Save FAQ",
+        "button_cancel": "Cancel",
+        "faq_saved_success": "FAQ saved successfully.",
+        "company_added_success": "Company added successfully.",
+        "company_updated_success": "Company information updated successfully.",
         "embed_success": "Learning DB built with {count} chunks!",
         "embed_fail": "Embedding failed: quota exceeded or network issue.",
         "warning_no_files": "Please upload study materials first.",
@@ -647,10 +1353,13 @@ LANG: Dict[str, Dict[str, str]] = {
 
         # --- 추가된 전화 발신 기능 관련 ---
         "button_call_outbound": "Call Outbound",
+        "button_call_outbound_to_customer": "Call Outbound to Customer",
+        "button_call_outbound_to_provider": "Call Outbound to Provider",
         "call_outbound_system_msg": "📌 System Message: Agent attempted an outbound call to {target}。",
         "call_outbound_simulation_header": "📞 Outbound Call Simulation Result",
         "call_outbound_summary_header": "📞 Summary of Call with Local Partner/Customer",
         "call_outbound_loading": "Connecting call and summarizing outcome... (LLM Call)",
+        "call_target_select_label": "Select Call Target",
         "call_target_customer": "Call Customer",
         "call_target_partner": "Call Local Partner",
 
@@ -752,11 +1461,13 @@ LANG: Dict[str, Dict[str, str]] = {
         "sim_tab_chat_email": "AI顧客対応シミュレーター(チャット・メール)",
         "sim_tab_phone": "AI顧客対応シミュレーター(電話)",
         "simulator_tab": "AI顧客対応シミュレーター",
+        "company_info_tab": "会社情報およびFAQ",
         "sim_tab_chat_email_desc": "顧客対応業務において、チャットやメールで実際に問い合わせ対応ができる実戦向けの仮想シナリオです。AIが対応ガイドラインと草案を生成し、顧客の反応をシミュレートして実戦向けの訓練が可能です。",
         "sim_tab_phone_desc": "顧客対応業務において、電話で実際に問い合わせ対応ができる実戦向けの仮想シナリオです。音声録音およびリアルタイムCC字幕機能を提供し、電話通話シミュレーションを通じて実戦対応能力を向上させることができます。",
         "rag_tab_desc": "アップロードされた文書に基づいて質問に答える知識チャットボットです。PDF、TXT、HTMLファイルをアップロードしてRAG（Retrieval-Augmented Generation）インデックスを構築し、文書内容に基づいて正確な回答を提供します。",
         "content_tab_desc": "AIを活用して個人向けの学習コンテンツを生成する機能です。学習テーマと難易度に合わせて要点サマリー、選択式クイズ、実践例などを生成できます。",
         "lstm_tab_desc": "LSTMモデルを活用して学習者の達成度を予測し、ダッシュボードで可視化する機能です。過去のクイズスコアデータを分析して将来の達成度を予測し、学習成果を視覚的に確認できます。",
+        "company_info_tab_desc": "会社別の詳細情報、人気商品、話題のニュース、FAQを検索・管理できる機能です。会社紹介、人気商品、話題のニュースを視覚化して一目で確認できます。",
         "voice_rec_header_desc": "音声録音および転写結果を管理・保存する機能です。マイクで録音するかファイルをアップロードしてWhisper APIを通じて音声をテキストに変換し、転写結果を保存・管理できます。",
         "more_features_label": "その他の機能",
         "rag_header": "RAG知識チャットボット (ドキュメントQ&A)",
@@ -776,6 +1487,72 @@ LANG: Dict[str, Dict[str, str]] = {
         "lstm_header": "LSTM達成度予測ダッシュボード",
         "lstm_desc": "仮想クイズスコアを使用して達成度を予測します。",
         "lang_select": "言語選択",
+        "company_info_faq_settings": "会社別詳細情報とFAQ",
+        "search_company": "会社名検索",
+        "company_info": "会社情報",
+        "company_faq": "よくある質問",
+        "faq_question": "質問",
+        "faq_answer": "回答",
+        "popular_products": "人気商品",
+        "trending_topics": "話題のニュース",
+        "company_details": "会社詳細情報",
+        "no_company_found": "に該当する会社が見つかりません。",
+        "no_company_selected": "会社名を検索または選択してください。",
+        "product_popularity": "商品人気度",
+        "topic_trends": "話題トレンド",
+        "select_company": "会社選択",
+        "faq_search": "FAQ検索",
+        "faq_search_placeholder": "FAQ検索語を入力してください",
+        "faq_search_placeholder_extended": "FAQ検索語を入力してください（商品名、サービス名なども検索可能）",
+        "button_search_faq": "検索",
+        "company_search_placeholder": "例: サムスン、ネイバー、グーグル、アップルなど",
+        "company_search_button": "検索",
+        "generating_company_info": "会社情報を生成中...",
+        "button_copy_answer": "回答コピー",
+        "button_copy_hint": "ヒントコピー",
+        "button_reset": "リセット",
+        "answer_displayed": "回答が表示されました。上のテキストをコピーしてください。",
+        "hint_displayed": "ヒントが表示されました。上のテキストをコピーしてください。",
+        "ai_answer_generated": "AI回答が生成されました。",
+        "hint_generated": "対応ヒントが生成されました。",
+        "warning_enter_inquiry": "顧客問い合わせ内容を入力してください。",
+        "customer_inquiry_review_desc": "エージェントが上司に顧客問い合わせ内容を再確認し、AI回答とヒントを生成できる機能です。",
+        "all_companies": "すべて",
+        "optional": "任意",
+        "no_faq_for_company": "{company}のFAQがありません。",
+        "related_products": "関連商品",
+        "related_trending_news": "関連話題のニュース",
+        "related_company_info": "関連会社紹介内容",
+        "related_faq": "関連FAQ",
+        "items": "件",
+        "popularity": "人気度",
+        "no_faq_for_product": "該当商品に関連するFAQが見つかりません。商品情報のみ表示されます。",
+        "generating_detail": "詳細内容を生成中...",
+        "checking_additional_info": "詳細内容: {topic}に関する追加情報を確認中です。",
+        "button_generate_faq": "FAQ生成",
+        "button_add_company": "顧客問い合わせ再確認",
+        "customer_inquiry_review": "顧客問い合わせ再確認",
+        "inquiry_question_label": "顧客問い合わせ内容",
+        "inquiry_question_placeholder": "顧客が問い合わせた内容を入力してください",
+        "button_generate_ai_answer": "AI回答生成",
+        "button_generate_hint": "対応ヒント生成",
+        "ai_answer_header": "AI推奨回答",
+        "hint_header": "対応ヒント",
+        "generating_ai_answer": "AI回答を生成中...",
+        "generating_hint": "対応ヒントを生成中...",
+        "button_edit_company": "会社情報編集",
+        "button_show_company_info": "会社紹介を見る",
+        "no_faq_results": "検索結果がありません。",
+        "faq_search_results": "FAQ検索結果",
+        "add_company_name": "会社名",
+        "add_company_info": "会社情報",
+        "generate_faq_question": "質問",
+        "generate_faq_answer": "回答",
+        "button_save_faq": "FAQ保存",
+        "button_cancel": "キャンセル",
+        "faq_saved_success": "FAQが保存されました。",
+        "company_added_success": "会社が追加されました。",
+        "company_updated_success": "会社情報が更新されました。",
         "embed_success": "{count}個のチャンクでDB構築完了!",
         "embed_fail": "埋め込み失敗：クォータ超過またはネットワーク問題。",
         "warning_no_files": "資料をアップロードしてください。",
@@ -928,10 +1705,13 @@ LANG: Dict[str, Dict[str, str]] = {
 
         # --- 추가된 전화 발신 기능 관련 ---
         "button_call_outbound": "電話発信",
+        "button_call_outbound_to_customer": "顧客へ電話発信",
+        "button_call_outbound_to_provider": "現地業者へ電話発信",
         "call_outbound_system_msg": "📌 システムメッセージ: エージェントが{target}へ電話発信を試みました。",
         "call_outbound_simulation_header": "📞 電話発信シミュレーション結果",
         "call_outbound_summary_header": "📞 現地業者/顧客との通話要約",
         "call_outbound_loading": "電話接続と通話結果の整理中... (LLMコール)",
+        "call_target_select_label": "発信先選択",
         "call_target_customer": "顧客へ電話発信",
         "call_target_partner": "現地業者へ電話発信",
 
@@ -4921,73 +5701,32 @@ Customer Inquiry:
 # ========================================
 
 with st.sidebar:
-    # ⭐ 회사별 언어 우선순위 설정
-    st.subheader("🌍 회사별 언어 설정")
+    # 언어 키 안전하게 가져오기
+    if "language" not in st.session_state:
+        st.session_state.language = "ko"
+    current_lang = st.session_state.get("language", "ko")
+    if current_lang not in ["ko", "en", "ja"]:
+        current_lang = "ko"
+    L = LANG.get(current_lang, LANG["ko"])
     
+    # 회사 목록 초기화 (회사 정보 탭에서 사용)
     if "company_language_priority" not in st.session_state:
         st.session_state.company_language_priority = {
             "default": ["ko", "en", "ja"],
             "companies": {}
         }
     
-    # 회사명 입력 및 추가
-    with st.expander("회사 추가/관리"):
-        new_company = st.text_input("회사명", key="new_company_input", placeholder="예: Company A")
-        if st.button("회사 추가", key="add_company_btn") and new_company:
-            if new_company not in st.session_state.company_language_priority["companies"]:
-                st.session_state.company_language_priority["companies"][new_company] = ["ko", "en", "ja"]
-                st.success(f"{new_company} 추가됨")
-                # st.rerun()
-    
-    # 현재 회사 선택
-    company_list = list(st.session_state.company_language_priority["companies"].keys())
-    if company_list:
-        selected_company = st.selectbox(
-            "회사 선택",
-            options=["기본 설정"] + company_list,
-            key="selected_company"
-        )
-        
-        if selected_company != "기본 설정":
-            # 회사별 언어 우선순위 설정 (간단한 드래그 앤 드롭 대신 순서 선택)
-            st.write(f"**{selected_company}** 언어 우선순위:")
-            current_priority = st.session_state.company_language_priority["companies"].get(selected_company, ["ko", "en", "ja"])
-            
-            # 언어 순서를 multiselect로 설정 (첫 번째가 최우선)
-            lang_order = st.multiselect(
-                "언어 우선순위 (위에서 아래로)",
-                options=["ko", "en", "ja"],
-                default=current_priority,
-                format_func=lambda x: {"ko": "한국어", "en": "English", "ja": "日本語"}[x],
-                key=f"lang_order_{selected_company}"
-            )
-            
-            if st.button("저장", key=f"save_priority_{selected_company}"):
-                if len(lang_order) == 3:
-                    st.session_state.company_language_priority["companies"][selected_company] = lang_order
-                    st.success("언어 우선순위가 저장되었습니다.")
-                    # st.rerun()
-                else:
-                    st.warning("모든 언어를 선택해주세요.")
-    else:
-        selected_company = None
-    
     st.markdown("---")
     
-    # 언어 선택 (회사별 우선순위 반영)
-    # ⭐ L 변수를 먼저 정의 (기본 언어로)
+    # 언어 선택
     if "language" not in st.session_state:
         st.session_state.language = "ko"
-    # 언어 키 안전하게 가져오기
     current_lang = st.session_state.get("language", "ko")
     if current_lang not in ["ko", "en", "ja"]:
         current_lang = "ko"
     L = LANG.get(current_lang, LANG["ko"])
     
-    if selected_company and selected_company != "기본 설정" and selected_company in st.session_state.company_language_priority["companies"]:
-        lang_priority = st.session_state.company_language_priority["companies"][selected_company]
-    else:
-        lang_priority = st.session_state.company_language_priority["default"]
+    lang_priority = st.session_state.company_language_priority["default"]
     
     selected_lang_key = st.selectbox(
         L["lang_select"],
@@ -5038,7 +5777,6 @@ with st.sidebar:
         # ⭐ 언어 변경 시 재실행 - 무한 루프 방지를 위해 플래그 사용
         if "language_changed" not in st.session_state or not st.session_state.language_changed:
             st.session_state.language_changed = True
-            # st.rerun()
         else:
             # 이미 한 번 재실행했으면 플래그 초기화
             st.session_state.language_changed = False
@@ -5076,7 +5814,6 @@ with st.sidebar:
     )
     if selected_llm != current_llm:
         st.session_state.selected_llm = selected_llm
-        # st.rerun()
     
     # API Key 매핑
     api_key_map = {
@@ -5107,33 +5844,17 @@ with st.sidebar:
             )
             if manual_key and manual_key != st.session_state.get(session_key, ""):
                 st.session_state[session_key] = manual_key
-                # st.rerun()
         else:
             st.success(f"✅ {api_config.get('label', 'API Key')} 설정됨")
     
-    st.markdown("---")
-
-    st.subheader("클라이언트 초기화 상태")
-    if st.session_state.llm_init_error_msg:
-        st.error(st.session_state.llm_init_error_msg)
-    elif st.session_state.is_llm_ready:
-        st.success("✅ LLM 클라이언트 준비 완료")
-    else:
-        st.info("💡 API Key는 환경변수 또는 Streamlit Secrets에서 자동으로 로드됩니다.")
-
-    if st.session_state.openai_client:
-        st.success("✅ OpenAI TTS/Whisper 클라이언트 준비 완료")
-    else:
-        st.warning(L["openai_missing"])
-
     st.markdown("---")
 
     # ⭐ 기능 선택 - 기본값을 AI 챗 시뮬레이터로 설정
     if "feature_selection" not in st.session_state:
         st.session_state.feature_selection = L["sim_tab_chat_email"]
 
-    # ⭐ 핵심 기능과 더보기 기능 분리 (RAG는 더보기로 이동)
-    core_features = [L["sim_tab_chat_email"], L["sim_tab_phone"]]
+    # ⭐ 핵심 기능과 더보기 기능 분리 (회사 정보 및 FAQ 추가)
+    core_features = [L["sim_tab_chat_email"], L["sim_tab_phone"], L["company_info_tab"]]
     other_features = [L["rag_tab"], L["content_tab"], L["lstm_tab"], L["voice_rec_header"]]
     
     # 모든 기능을 하나의 리스트로 통합 (하나만 선택 가능하도록)
@@ -5148,47 +5869,7 @@ with st.sidebar:
     except (ValueError, AttributeError):
         current_index = 0
     
-    # 핵심 기능 표시 (시각적 구분)
-    st.write("**핵심 기능**")
-    for i, feature in enumerate(core_features):
-        if i == current_index and current_selection in core_features:
-            # 선택된 기능: 기능 이름과 설명을 함께 표시
-            if feature == L["sim_tab_chat_email"]:
-                st.markdown(f"✓ **{L['sim_tab_chat_email']}** : {L['sim_tab_chat_email_desc']}")
-            elif feature == L["sim_tab_phone"]:
-                st.markdown(f"✓ **{L['sim_tab_phone']}** : {L['sim_tab_phone_desc']}")
-        else:
-            # 선택되지 않은 기능: 기능 이름과 설명을 함께 표시
-            if feature == L["sim_tab_chat_email"]:
-                st.markdown(f"○ **{L['sim_tab_chat_email']}** : {L['sim_tab_chat_email_desc']}")
-            elif feature == L["sim_tab_phone"]:
-                st.markdown(f"○ **{L['sim_tab_phone']}** : {L['sim_tab_phone_desc']}")
-    
-    # 더보기 기능
-    with st.expander(L["more_features_label"], expanded=(current_selection in other_features)):
-        for i, feature in enumerate(other_features, start=len(core_features)):
-            if i == current_index and current_selection in other_features:
-                # 선택된 기능: 기능 이름과 설명을 함께 표시
-                if feature == L["rag_tab"]:
-                    st.markdown(f"✓ **{L['rag_tab']}** : {L['rag_tab_desc']}")
-                elif feature == L["content_tab"]:
-                    st.markdown(f"✓ **{L['content_tab']}** : {L['content_tab_desc']}")
-                elif feature == L["lstm_tab"]:
-                    st.markdown(f"✓ **{L['lstm_tab']}** : {L['lstm_tab_desc']}")
-                elif feature == L["voice_rec_header"]:
-                    st.markdown(f"✓ **{L['voice_rec_header']}** : {L['voice_rec_header_desc']}")
-            else:
-                # 선택되지 않은 기능: 기능 이름과 설명을 함께 표시
-                if feature == L["rag_tab"]:
-                    st.markdown(f"○ **{L['rag_tab']}** : {L['rag_tab_desc']}")
-                elif feature == L["content_tab"]:
-                    st.markdown(f"○ **{L['content_tab']}** : {L['content_tab_desc']}")
-                elif feature == L["lstm_tab"]:
-                    st.markdown(f"○ **{L['lstm_tab']}** : {L['lstm_tab_desc']}")
-                elif feature == L["voice_rec_header"]:
-                    st.markdown(f"○ **{L['voice_rec_header']}** : {L['voice_rec_header_desc']}")
-    
-    # ⭐ 하나의 통합된 선택 로직 (하나만 선택 가능)
+    # ⭐ 하나의 통합된 선택 로직 (하나만 선택 가능) - 설명 제거
     selected_feature = st.radio(
         "기능 선택",
         all_features,
@@ -5213,14 +5894,735 @@ if current_lang not in ["ko", "en", "ja"]:
     current_lang = "ko"
 L = LANG.get(current_lang, LANG["ko"])
 
-st.title(L["title"])
-
-# ⭐ 프로젝트 목표 한줄 정리
-st.info("🎯 **프로젝트 목표**: CS 센터 직원 교육용 AI 고객 응대 시뮬레이터 - 궁극적으로 CS 업무 시스템 대체재")
+# ⭐ 타이틀과 설명을 한 줄로 간결하게 표시
+feature_selection = st.session_state.get("feature_selection", L["sim_tab_chat_email"])
+if feature_selection == L["sim_tab_chat_email"]:
+    st.markdown(f"### 📧 {L['sim_tab_chat_email']}")
+    st.caption(L['sim_tab_chat_email_desc'])
+elif feature_selection == L["sim_tab_phone"]:
+    st.markdown(f"### 📞 {L['sim_tab_phone']}")
+    st.caption(L['sim_tab_phone_desc'])
+elif feature_selection == L["rag_tab"]:
+    st.markdown(f"### 📚 {L['rag_tab']}")
+    st.caption(L['rag_tab_desc'])
+elif feature_selection == L["content_tab"]:
+    st.markdown(f"### 📝 {L['content_tab']}")
+    st.caption(L['content_tab_desc'])
+elif feature_selection == L["lstm_tab"]:
+    st.markdown(f"### 📊 {L['lstm_tab']}")
+    st.caption(L['lstm_tab_desc'])
+elif feature_selection == L["voice_rec_header"]:
+    st.markdown(f"### 🎤 {L['voice_rec_header']}")
+    st.caption(L['voice_rec_header_desc'])
+elif feature_selection == L["company_info_tab"]:
+    # 공백 축소: 제목과 설명을 한 줄로 간결하게 표시
+    st.markdown(f"#### 📋 {L['company_info_tab']}")
+    st.caption(L['company_info_tab_desc'])
 
 # ========================================
 # 10. 기능별 페이지
 # ========================================
+
+# -------------------- Company Info & FAQ Tab --------------------
+if feature_selection == L["company_info_tab"]:
+    current_lang = st.session_state.get("language", "ko")
+    if current_lang not in ["ko", "en", "ja"]:
+        current_lang = "ko"
+    L = LANG.get(current_lang, LANG["ko"])
+    
+    # FAQ 데이터베이스 로드
+    faq_data = load_faq_database()
+    companies = list(faq_data.get("companies", {}).keys())
+    
+    # 회사명 검색 입력 (상단에 배치) - 입력란 길이 축소 (회사명은 보통 짧음)
+    col_search_header, col_search_input, col_search_btn = st.columns([0.5, 1.2, 0.8])
+    with col_search_header:
+        st.write(f"**{L['search_company']}**")
+    with col_search_input:
+        company_search_input = st.text_input(
+            "",
+            placeholder=L["company_search_placeholder"],
+            key="company_search_input",
+            value=st.session_state.get("searched_company", ""),
+            label_visibility="collapsed"
+        )
+    with col_search_btn:
+        search_button = st.button(L["company_search_button"], key="company_search_btn", type="primary", use_container_width=True)
+    
+    # 검색된 회사 정보 저장
+    searched_company = st.session_state.get("searched_company", "")
+    searched_company_data = st.session_state.get("searched_company_data", None)
+    
+    # 검색 버튼 클릭 시 LLM으로 회사 정보 생성
+    if search_button and company_search_input:
+        with st.spinner(f"{company_search_input} {L['generating_company_info']}"):
+            generated_data = generate_company_info_with_llm(company_search_input, current_lang)
+            st.session_state.searched_company = company_search_input
+            st.session_state.searched_company_data = generated_data
+            searched_company = company_search_input
+            searched_company_data = generated_data
+            
+            # 생성된 데이터를 데이터베이스에 저장
+            if company_search_input not in faq_data.get("companies", {}):
+                faq_data.setdefault("companies", {})[company_search_input] = {
+                    f"info_{current_lang}": generated_data.get("company_info", ""),
+                    "info_ko": generated_data.get("company_info", ""),
+                    "info_en": "",
+                    "info_ja": "",
+                    "popular_products": generated_data.get("popular_products", []),
+                    "trending_topics": generated_data.get("trending_topics", []),
+                    "faqs": generated_data.get("faqs", [])
+                }
+                save_faq_database(faq_data)
+    
+    # 검색된 회사가 있으면 해당 데이터 사용, 없으면 기존 회사 선택
+    if searched_company and searched_company_data:
+        display_company = searched_company
+        display_data = searched_company_data
+        # 데이터베이스에도 저장되어 있으면 업데이트
+        if display_company in faq_data.get("companies", {}):
+            faq_data["companies"][display_company].update({
+                f"info_{current_lang}": display_data.get("company_info", ""),
+                "popular_products": display_data.get("popular_products", []),
+                "trending_topics": display_data.get("trending_topics", []),
+                "faqs": display_data.get("faqs", [])
+            })
+            save_faq_database(faq_data)
+    elif companies:
+        display_company = st.selectbox(
+            L["select_company"],
+            options=companies,
+            key="company_select_display"
+        )
+        company_db_data = faq_data["companies"][display_company]
+        display_data = {
+            "company_info": company_db_data.get(f"info_{current_lang}", company_db_data.get("info_ko", "")),
+            "popular_products": company_db_data.get("popular_products", []),
+            "trending_topics": company_db_data.get("trending_topics", []),
+            "faqs": company_db_data.get("faqs", [])
+        }
+    else:
+        display_company = None
+        display_data = None
+    
+    # 탭 생성 (FAQ 검색 탭 제거, FAQ 탭에 통합) - 공백 축소
+    tab1, tab2, tab3 = st.tabs([
+        L["company_info"], 
+        L["company_faq"], 
+        L["button_add_company"]
+    ])
+    
+    # 탭 1: 회사 소개 및 시각화
+    with tab1:
+        if display_company and display_data:
+            # 제목을 더 간결하게 표시
+            st.markdown(f"#### {display_company} - {L['company_info']}")
+            
+            # 회사 소개 표시
+            if display_data.get("company_info"):
+                st.markdown(display_data["company_info"])
+            
+            # 시각화 차트 표시
+            if display_data.get("popular_products") or display_data.get("trending_topics"):
+                charts = visualize_company_data(
+                    {
+                        "popular_products": display_data.get("popular_products", []),
+                        "trending_topics": display_data.get("trending_topics", [])
+                    },
+                    current_lang
+                )
+                
+                if charts:
+                    # 막대 그래프 표시 - 공백 축소
+                    st.markdown("#### 📊 시각화 차트")
+                    col1_bar, col2_bar = st.columns(2)
+                    
+                    if "products_bar" in charts:
+                        with col1_bar:
+                            st.plotly_chart(charts["products_bar"], use_container_width=True)
+                    
+                    if "topics_bar" in charts:
+                        with col2_bar:
+                            st.plotly_chart(charts["topics_bar"], use_container_width=True)
+                    
+                    # 선형 그래프 표시
+                    col1_line, col2_line = st.columns(2)
+                    
+                    if "products_line" in charts:
+                        with col1_line:
+                            st.plotly_chart(charts["products_line"], use_container_width=True)
+                    
+                    if "topics_line" in charts:
+                        with col2_line:
+                            st.plotly_chart(charts["topics_line"], use_container_width=True)
+            
+            # 인기 상품 목록 (이미지 포함) - 공백 축소
+            if display_data.get("popular_products"):
+                st.markdown(f"#### {L['popular_products']}")
+                # 상품을 그리드 형태로 표시
+                product_cols = st.columns(min(3, len(display_data["popular_products"])))
+                for idx, product in enumerate(display_data["popular_products"]):
+                    product_text = product.get(f"text_{current_lang}", product.get("text_ko", ""))
+                    product_score = product.get("score", 0)
+                    product_image_url = product.get("image_url", "")
+                    
+                    with product_cols[idx % len(product_cols)]:
+                        # 이미지 표시 - 상품명 기반으로 동적 이미지 검색
+                        if not product_image_url:
+                            # 모든 언어 버전의 상품명을 확인하여 이미지 URL 생성
+                            # 우선순위: 현재 언어 > 한국어 > 영어 > 일본어
+                            image_found = False
+                            for lang_key in [current_lang, "ko", "en", "ja"]:
+                                check_text = product.get(f"text_{lang_key}", "")
+                                if check_text:
+                                    check_url = get_product_image_url(check_text)
+                                    if check_url and not check_url.startswith("https://picsum"):
+                                        product_image_url = check_url
+                                        image_found = True
+                                        break
+                            
+                            # 모든 언어에서 이미지를 찾지 못한 경우 기본 이미지 사용
+                            if not image_found:
+                                product_image_url = get_product_image_url(product_text)
+                        
+                        # 이미지 표시 시도
+                        image_displayed = False
+                        if product_image_url:
+                            try:
+                                # 이미지 URL이 유효한지 확인하고 표시
+                                st.image(product_image_url, caption=product_text[:30], use_container_width=True)
+                                image_displayed = True
+                            except Exception:
+                                image_displayed = False
+                        
+                        # 이미지 표시 실패 시 이모지 카드 표시
+                        if not image_displayed:
+                            product_emoji = "🎫" if "티켓" in product_text or "ticket" in product_text.lower() else \
+                                          "🎢" if "테마파크" in product_text or "theme" in product_text.lower() or "디즈니" in product_text or "유니버셜" in product_text or "스튜디오" in product_text else \
+                                          "✈️" if "항공" in product_text or "flight" in product_text.lower() else \
+                                          "🏨" if "호텔" in product_text or "hotel" in product_text.lower() else \
+                                          "🍔" if "음식" in product_text or "food" in product_text.lower() else \
+                                          "🌏" if "여행" in product_text or "travel" in product_text.lower() or "사파리" in product_text else \
+                                          "📦"
+                            st.markdown(
+                                f"""
+                                <div style='text-align: center; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                border-radius: 10px; color: white; min-height: 200px; display: flex; flex-direction: column; justify-content: center;'>
+                                    <h1 style='font-size: 64px; margin: 0;'>{product_emoji}</h1>
+                                    <p style='font-size: 16px; margin-top: 15px; font-weight: bold;'>{product_text[:25]}</p>
+                                </div>
+                                """, 
+                                unsafe_allow_html=True
+                            )
+                        
+                        st.write(f"**{product_text}**")
+                        st.caption(f"{L.get('popularity', '인기도')}: {product_score}")
+                        st.markdown("---")
+            
+            # 화제의 소식 목록 (상세 내용 포함) - 공백 축소
+            if display_data.get("trending_topics"):
+                st.markdown(f"#### {L['trending_topics']}")
+                for idx, topic in enumerate(display_data["trending_topics"], 1):
+                    topic_text = topic.get(f"text_{current_lang}", topic.get("text_ko", ""))
+                    topic_score = topic.get("score", 0)
+                    topic_detail = topic.get(f"detail_{current_lang}", topic.get("detail_ko", ""))
+                    
+                    with st.expander(f"{idx}. **{topic_text}** ({L.get('trend_score', '화제도')}: {topic_score})"):
+                        if topic_detail:
+                            st.write(topic_detail)
+                        else:
+                            # 상세 내용이 없으면 LLM으로 생성
+                            if display_company:
+                                try:
+                                    # 언어별 프롬프트
+                                    detail_prompts = {
+                                        "ko": f"{display_company}의 '{topic_text}'에 대한 상세 내용을 200자 이상 작성해주세요.",
+                                        "en": f"Please write detailed content of at least 200 characters about '{topic_text}' from {display_company}.",
+                                        "ja": f"{display_company}の「{topic_text}」に関する詳細内容を200文字以上で作成してください。"
+                                    }
+                                    detail_prompt = detail_prompts.get(current_lang, detail_prompts["ko"])
+                                    generated_detail = run_llm(detail_prompt)
+                                    if generated_detail and not generated_detail.startswith("❌"):
+                                        st.write(generated_detail)
+                                        # 생성된 상세 내용을 데이터베이스에 저장
+                                        if display_company in faq_data.get("companies", {}):
+                                            topic_idx = idx - 1
+                                            if topic_idx < len(faq_data["companies"][display_company].get("trending_topics", [])):
+                                                faq_data["companies"][display_company]["trending_topics"][topic_idx][f"detail_{current_lang}"] = generated_detail
+                                                save_faq_database(faq_data)
+                                    else:
+                                        st.write(L.get("generating_detail", "상세 내용을 생성하는 중입니다..."))
+                                except Exception as e:
+                                    st.write(L.get("checking_additional_info", "상세 내용: {topic}에 대한 추가 정보를 확인 중입니다.").format(topic=topic_text))
+                            else:
+                                st.write(L.get("checking_additional_info", "상세 내용: {topic}에 대한 추가 정보를 확인 중입니다.").format(topic=topic_text))
+        else:
+            st.info("회사명을 검색하거나 선택해주세요.")
+    
+    # 탭 2: 자주 묻는 질문 (FAQ) - 검색 기능 포함
+    with tab2:
+        if display_company and display_data:
+            # 제목을 더 간결하게 표시
+            st.markdown(f"#### {display_company} - {L['company_faq']}")
+            
+            # FAQ 검색 기능 (탭 내부에 통합) - 검색 범위 확대, 공백 축소
+            col_search_faq, col_btn_faq = st.columns([3.5, 1])
+            with col_search_faq:
+                faq_search_query = st.text_input(
+                    L["faq_search_placeholder"],
+                    key="faq_search_in_tab",
+                    placeholder=L.get("faq_search_placeholder_extended", L["faq_search_placeholder"])
+                )
+            with col_btn_faq:
+                faq_search_btn = st.button(L["button_search_faq"], key="faq_search_btn_in_tab")
+            
+            faqs = display_data.get("faqs", [])
+            popular_products = display_data.get("popular_products", [])
+            trending_topics = display_data.get("trending_topics", [])
+            company_info = display_data.get("company_info", "")
+            
+            # 검색 관련 변수 초기화
+            matched_products = []
+            matched_topics = []
+            matched_info = False
+            
+            # 검색어가 있으면 확장된 검색 (FAQ, 상품, 화제 소식, 회사 소개 모두 검색)
+            if faq_search_query and faq_search_btn:
+                query_lower = faq_search_query.lower()
+                filtered_faqs = []
+                
+                # 1. FAQ 검색 (기본 FAQ + 상품명 관련 FAQ)
+                for faq in faqs:
+                    question = faq.get(f"question_{current_lang}", faq.get("question_ko", ""))
+                    answer = faq.get(f"answer_{current_lang}", faq.get("answer_ko", ""))
+                    if query_lower in question.lower() or query_lower in answer.lower():
+                        filtered_faqs.append(faq)
+                
+                # 2. 상품명으로 FAQ 검색 (상품명이 검색어와 일치하거나 포함되는 경우)
+                # 검색어가 상품명에 포함되면 해당 상품과 관련된 FAQ를 찾아서 표시
+                for product in popular_products:
+                    product_text = product.get(f"text_{current_lang}", product.get("text_ko", ""))
+                    product_text_lower = product_text.lower()
+                    
+                    # 검색어가 상품명에 포함되는 경우
+                    if query_lower in product_text_lower:
+                        # 해당 상품명이 FAQ 질문/답변에 포함된 경우 찾기
+                        product_related_faqs = []
+                        for faq in faqs:
+                            question = faq.get(f"question_{current_lang}", faq.get("question_ko", ""))
+                            answer = faq.get(f"answer_{current_lang}", faq.get("answer_ko", ""))
+                            # 상품명이 FAQ에 언급되어 있으면 추가
+                            if product_text_lower in question.lower() or product_text_lower in answer.lower():
+                                if faq not in filtered_faqs:
+                                    filtered_faqs.append(faq)
+                                    product_related_faqs.append(faq)
+                        
+                        # 상품명이 매칭되었지만 관련 FAQ가 없는 경우, 상품 정보만 표시
+                        if not product_related_faqs:
+                            matched_products.append(product)
+                
+                # 2. 인기 상품 검색
+                for product in popular_products:
+                    product_text = product.get(f"text_{current_lang}", product.get("text_ko", ""))
+                    if query_lower in product_text.lower():
+                        matched_products.append(product)
+                
+                # 3. 화제의 소식 검색
+                for topic in trending_topics:
+                    topic_text = topic.get(f"text_{current_lang}", topic.get("text_ko", ""))
+                    if query_lower in topic_text.lower():
+                        matched_topics.append(topic)
+                
+                # 4. 회사 소개 검색
+                if query_lower in company_info.lower():
+                    matched_info = True
+                
+                # 검색 결과가 있으면 표시
+                if filtered_faqs or matched_products or matched_topics or matched_info:
+                    # 매칭된 상품 표시 (FAQ가 없는 경우에만)
+                    if matched_products and not filtered_faqs:
+                        st.subheader(f"🔍 {L.get('related_products', '관련 상품')} ({len(matched_products)}{L.get('items', '개')})")
+                        st.info(L.get("no_faq_for_product", "해당 상품과 관련된 FAQ를 찾을 수 없습니다. 상품 정보만 표시됩니다."))
+                        for idx, product in enumerate(matched_products, 1):
+                            product_text = product.get(f"text_{current_lang}", product.get("text_ko", ""))
+                            product_score = product.get("score", 0)
+                            st.write(f"• **{product_text}** ({L.get('popularity', '인기도')}: {product_score})")
+                        st.markdown("---")
+                    
+                    # 매칭된 화제 소식 표시
+                    if matched_topics:
+                        st.subheader(f"🔍 {L.get('related_trending_news', '관련 화제 소식')} ({len(matched_topics)}{L.get('items', '개')})")
+                        for idx, topic in enumerate(matched_topics, 1):
+                            topic_text = topic.get(f"text_{current_lang}", topic.get("text_ko", ""))
+                            topic_score = topic.get("score", 0)
+                            st.write(f"• **{topic_text}** ({L.get('trend_score', '화제도')}: {topic_score})")
+                        st.markdown("---")
+                    
+                    # 매칭된 회사 소개 표시
+                    if matched_info:
+                        st.subheader(f"🔍 {L.get('related_company_info', '관련 회사 소개 내용')}")
+                        # 검색어가 포함된 부분 강조하여 표시
+                        info_lower = company_info.lower()
+                        query_pos = info_lower.find(query_lower)
+                        if query_pos != -1:
+                            start = max(0, query_pos - 100)
+                            end = min(len(company_info), query_pos + len(query_lower) + 100)
+                            snippet = company_info[start:end]
+                            if start > 0:
+                                snippet = "..." + snippet
+                            if end < len(company_info):
+                                snippet = snippet + "..."
+                            # 검색어 강조
+                            highlighted = snippet.replace(
+                                query_lower, 
+                                f"**{query_lower}**"
+                            )
+                            st.write(highlighted)
+                        st.markdown("---")
+                    
+                    # FAQ 결과
+                    faqs = filtered_faqs
+                else:
+                    faqs = []
+            
+            # FAQ 목록 표시
+            if faqs:
+                if faq_search_query and faq_search_btn:
+                    st.subheader(f"🔍 {L.get('related_faq', '관련 FAQ')} ({len(faqs)}{L.get('items', '개')})")
+                else:
+                    st.subheader(f"{L['company_faq']} ({len(faqs)}{L.get('items', '개')})")
+                for idx, faq in enumerate(faqs, 1):
+                    question = faq.get(f"question_{current_lang}", faq.get("question_ko", ""))
+                    answer = faq.get(f"answer_{current_lang}", faq.get("answer_ko", ""))
+                    with st.expander(f"Q{idx}. {question}"):
+                        st.write(f"**{L['faq_answer']}:** {answer}")
+            else:
+                if faq_search_query and faq_search_btn:
+                    # 검색 결과가 없을 때만 메시지 표시 (위에서 이미 관련 상품/소식 등이 표시되었을 수 있음)
+                    if not (matched_products or matched_topics or matched_info):
+                        st.info(L["no_faq_results"])
+                else:
+                    st.info(L.get("no_faq_for_company", f"{display_company}의 FAQ가 없습니다.").format(company=display_company))
+        else:
+            st.info(L.get("no_company_selected", "회사명을 검색하거나 선택해주세요."))
+    
+    # 탭 3: 고객 문의 재확인 (에이전트용)
+    with tab3:
+        # 제목과 설명을 한 줄로 간결하게 표시
+        st.markdown(f"#### {L['customer_inquiry_review']}")
+        st.caption(L.get("customer_inquiry_review_desc", "에이전트가 상사들에게 고객 문의 내용을 재확인하고, AI 답안 및 힌트를 생성할 수 있는 기능입니다."))
+        
+        # 세션 상태 초기화
+        if "generated_ai_answer" not in st.session_state:
+            st.session_state.generated_ai_answer = None
+        if "generated_hint" not in st.session_state:
+            st.session_state.generated_hint = None
+        
+        # 회사 선택 (선택사항)
+        selected_company_for_inquiry = None
+        if companies:
+            all_option = L.get("all_companies", "전체")
+            selected_company_for_inquiry = st.selectbox(
+                f"{L['select_company']} ({L.get('optional', '선택사항')})",
+                options=[all_option] + companies,
+                key="inquiry_company_select"
+            )
+            if selected_company_for_inquiry == all_option:
+                selected_company_for_inquiry = None
+        
+        # 고객 문의 내용 입력
+        customer_inquiry = st.text_area(
+            L["inquiry_question_label"],
+            placeholder=L["inquiry_question_placeholder"],
+            key="customer_inquiry_input",
+            height=150
+        )
+        
+        col_ai_answer, col_hint = st.columns(2)
+        
+        # AI 답안 생성
+        with col_ai_answer:
+            if st.button(L["button_generate_ai_answer"], key="generate_ai_answer_btn", type="primary"):
+                if customer_inquiry:
+                    with st.spinner(L["generating_ai_answer"]):
+                        # 회사 정보가 있으면 포함하여 답안 생성
+                        company_context = ""
+                        if selected_company_for_inquiry and selected_company_for_inquiry in faq_data.get("companies", {}):
+                            company_data = get_company_info_faq(selected_company_for_inquiry, current_lang)
+                            company_info_label = L.get("company_info", "회사 정보")
+                            company_context = f"\n\n{company_info_label}: {company_data.get('info', '')}"
+                            # 관련 FAQ도 포함
+                            related_faqs = company_data.get("faqs", [])[:5]  # 상위 5개만
+                            if related_faqs:
+                                faq_label = L.get("company_faq", "자주 나오는 질문")
+                                faq_context = f"\n\n{faq_label}:\n"
+                                for faq in related_faqs:
+                                    q = faq.get(f"question_{current_lang}", faq.get("question_ko", ""))
+                                    a = faq.get(f"answer_{current_lang}", faq.get("answer_ko", ""))
+                                    faq_context += f"Q: {q}\nA: {a}\n"
+                                company_context += faq_context
+                        
+                        # 언어별 프롬프트
+                        lang_prompts_inquiry = {
+                            "ko": f"""다음 고객 문의에 대한 전문적이고 친절한 답안을 작성해주세요.
+
+고객 문의: {customer_inquiry}
+{company_context}
+
+답안은 다음을 포함해야 합니다:
+1. 고객의 문의에 대한 명확한 답변
+2. 필요한 경우 추가 정보나 안내
+3. 친절하고 전문적인 톤
+
+답안:""",
+                            "en": f"""Please write a professional and friendly answer to the following customer inquiry.
+
+Customer Inquiry: {customer_inquiry}
+{company_context}
+
+The answer should include:
+1. Clear answer to the customer's inquiry
+2. Additional information or guidance if needed
+3. Friendly and professional tone
+
+Answer:""",
+                            "ja": f"""次の顧客問い合わせに対する専門的で親切な回答を作成してください。
+
+顧客問い合わせ: {customer_inquiry}
+{company_context}
+
+回答には以下を含める必要があります:
+1. 顧客の問い合わせに対する明確な回答
+2. 必要に応じて追加情報や案内
+3. 親切で専門的なトーン
+
+回答:"""
+                        }
+                        prompt = lang_prompts_inquiry.get(current_lang, lang_prompts_inquiry["ko"])
+                        
+                        ai_answer = run_llm(prompt)
+                        st.session_state.generated_ai_answer = ai_answer
+                        st.success(f"✅ {L.get('ai_answer_generated', 'AI 답안이 생성되었습니다.')}")
+                else:
+                    st.warning(L.get("warning_enter_inquiry", "고객 문의 내용을 입력해주세요."))
+        
+        # 응대 힌트 생성
+        with col_hint:
+            if st.button(L["button_generate_hint"], key="generate_hint_btn", type="primary"):
+                if customer_inquiry:
+                    with st.spinner(L["generating_hint"]):
+                        # 회사 정보가 있으면 포함하여 힌트 생성
+                        company_context = ""
+                        if selected_company_for_inquiry and selected_company_for_inquiry in faq_data.get("companies", {}):
+                            company_data = get_company_info_faq(selected_company_for_inquiry, current_lang)
+                            company_info_label = L.get("company_info", "회사 정보")
+                            company_context = f"\n\n{company_info_label}: {company_data.get('info', '')}"
+                        
+                        # 언어별 프롬프트
+                        lang_prompts_hint = {
+                            "ko": f"""다음 고객 문의에 대한 응대 힌트를 작성해주세요.
+
+고객 문의: {customer_inquiry}
+{company_context}
+
+응대 힌트는 다음을 포함해야 합니다:
+1. 고객 문의의 핵심 포인트
+2. 응대 시 주의사항
+3. 권장 응대 방식
+4. 추가 확인이 필요한 사항 (있는 경우)
+
+응대 힌트:""",
+                            "en": f"""Please write response hints for the following customer inquiry.
+
+Customer Inquiry: {customer_inquiry}
+{company_context}
+
+Response hints should include:
+1. Key points of the customer inquiry
+2. Precautions when responding
+3. Recommended response method
+4. Items that need additional confirmation (if any)
+
+Response Hints:""",
+                            "ja": f"""次の顧客問い合わせに対する対応ヒントを作成してください。
+
+顧客問い合わせ: {customer_inquiry}
+{company_context}
+
+対応ヒントには以下を含める必要があります:
+1. 顧客問い合わせの核心ポイント
+2. 対応時の注意事項
+3. 推奨対応方法
+4. 追加確認が必要な事項（ある場合）
+
+対応ヒント:"""
+                        }
+                        prompt = lang_prompts_hint.get(current_lang, lang_prompts_hint["ko"])
+                        
+                        hint = run_llm(prompt)
+                        st.session_state.generated_hint = hint
+                        st.success(f"✅ {L.get('hint_generated', '응대 힌트가 생성되었습니다.')}")
+                else:
+                    st.warning(L.get("warning_enter_inquiry", "고객 문의 내용을 입력해주세요."))
+        
+        # 생성된 결과 표시
+        if st.session_state.get("generated_ai_answer"):
+            st.markdown("---")
+            st.subheader(L["ai_answer_header"])
+            st.write(st.session_state.generated_ai_answer)
+            
+            # 답안 복사 버튼 (실제 클립보드 복사 기능)
+            import json
+            answer_text = st.session_state.generated_ai_answer
+            answer_for_js = json.dumps(answer_text).replace("'", "\\'")
+            
+            # 복사 가능한 텍스트 영역 생성
+            copy_container = st.container()
+            with copy_container:
+                st.markdown(f'<textarea id="copy_answer_text_{st.session_state.get("copy_answer_id", 0)}" style="position: absolute; left: -9999px;">{answer_text}</textarea>', unsafe_allow_html=True)
+            
+            if st.button(f"📋 {L.get('button_copy_answer', '답안 복사')}", key="copy_answer_btn"):
+                # JavaScript를 사용하여 클립보드에 복사 (Streamlit iframe 환경 고려)
+                js_copy_script = f"""
+                <script>
+                (function() {{
+                    try {{
+                        const text = {answer_for_js};
+                        const copyToClipboard = function(text) {{
+                            // 방법 1: execCommand (가장 호환성 좋음)
+                            const textarea = document.createElement('textarea');
+                            textarea.value = text;
+                            textarea.style.position = 'fixed';
+                            textarea.style.opacity = '0';
+                            textarea.style.left = '-9999px';
+                            textarea.style.top = '0';
+                            document.body.appendChild(textarea);
+                            textarea.focus();
+                            textarea.select();
+                            
+                            try {{
+                                const successful = document.execCommand('copy');
+                                document.body.removeChild(textarea);
+                                if (successful) {{
+                                    return true;
+                                }}
+                            }} catch (e) {{
+                                document.body.removeChild(textarea);
+                            }}
+                            
+                            // 방법 2: navigator.clipboard (최신 브라우저)
+                            if (navigator.clipboard && navigator.clipboard.writeText) {{
+                                navigator.clipboard.writeText(text).then(function() {{
+                                    return true;
+                                }}, function(err) {{
+                                    console.error('Clipboard API 실패:', err);
+                                    return false;
+                                }});
+                                return true;
+                            }}
+                            
+                            return false;
+                        }};
+                        
+                        const success = copyToClipboard(text);
+                        if (success) {{
+                            console.log('복사 성공');
+                        }} else {{
+                            console.warn('복사 실패 - 사용자가 직접 복사해야 합니다');
+                        }}
+                    }} catch (err) {{
+                        console.error('복사 오류:', err);
+                    }}
+                }})();
+                </script>
+                """
+                
+                st.components.v1.html(js_copy_script, height=0)
+                st.success(L.get("toast_copy", "✅ 콘텐츠가 클립보드에 복사되었습니다!"))
+                st.session_state["copy_answer_id"] = st.session_state.get("copy_answer_id", 0) + 1
+        
+        if st.session_state.get("generated_hint"):
+            st.markdown("---")
+            st.subheader(L["hint_header"])
+            st.write(st.session_state.generated_hint)
+            
+            # 힌트 복사 버튼 (실제 클립보드 복사 기능)
+            hint_text = st.session_state.generated_hint
+            hint_for_js = json.dumps(hint_text).replace("'", "\\'")
+            
+            # 복사 가능한 텍스트 영역 생성
+            hint_copy_container = st.container()
+            with hint_copy_container:
+                st.markdown(f'<textarea id="copy_hint_text_{st.session_state.get("copy_hint_id", 0)}" style="position: absolute; left: -9999px;">{hint_text}</textarea>', unsafe_allow_html=True)
+            
+            if st.button(f"📋 {L.get('button_copy_hint', '힌트 복사')}", key="copy_hint_btn"):
+                # JavaScript를 사용하여 클립보드에 복사 (Streamlit iframe 환경 고려)
+                js_copy_script = f"""
+                <script>
+                (function() {{
+                    try {{
+                        const text = {hint_for_js};
+                        const copyToClipboard = function(text) {{
+                            // 방법 1: execCommand (가장 호환성 좋음)
+                            const textarea = document.createElement('textarea');
+                            textarea.value = text;
+                            textarea.style.position = 'fixed';
+                            textarea.style.opacity = '0';
+                            textarea.style.left = '-9999px';
+                            textarea.style.top = '0';
+                            document.body.appendChild(textarea);
+                            textarea.focus();
+                            textarea.select();
+                            
+                            try {{
+                                const successful = document.execCommand('copy');
+                                document.body.removeChild(textarea);
+                                if (successful) {{
+                                    return true;
+                                }}
+                            }} catch (e) {{
+                                document.body.removeChild(textarea);
+                            }}
+                            
+                            // 방법 2: navigator.clipboard (최신 브라우저)
+                            if (navigator.clipboard && navigator.clipboard.writeText) {{
+                                navigator.clipboard.writeText(text).then(function() {{
+                                    return true;
+                                }}, function(err) {{
+                                    console.error('Clipboard API 실패:', err);
+                                    return false;
+                                }});
+                                return true;
+                            }}
+                            
+                            return false;
+                        }};
+                        
+                        const success = copyToClipboard(text);
+                        if (success) {{
+                            console.log('복사 성공');
+                        }} else {{
+                            console.warn('복사 실패 - 사용자가 직접 복사해야 합니다');
+                        }}
+                    }} catch (err) {{
+                        console.error('복사 오류:', err);
+                    }}
+                }})();
+                </script>
+                """
+                
+                st.components.v1.html(js_copy_script, height=0)
+                st.success(L.get("toast_copy", "✅ 콘텐츠가 클립보드에 복사되었습니다!"))
+                st.session_state["copy_hint_id"] = st.session_state.get("copy_hint_id", 0) + 1
+        
+        # 초기화 버튼
+        if st.session_state.get("generated_ai_answer") or st.session_state.get("generated_hint"):
+            if st.button(f"🔄 {L.get('button_reset', '새로 시작')}", key="reset_inquiry_btn"):
+                st.session_state.generated_ai_answer = None
+                st.session_state.generated_hint = None
+                st.rerun()
+
+# -------------------- Voice Record Tab --------------------
 
 # -------------------- Voice Record Tab --------------------
 if feature_selection == L["voice_rec_header"]:
@@ -5658,8 +7060,6 @@ elif feature_selection == L["sim_tab_chat_email"]:
                         st.session_state.sim_stage = "AGENT_TURN"
 
                 st.session_state.simulator_memory.clear()  # 메모리 초기화
-                # ⭐ 로드 후 UI 업데이트를 위해 재실행
-                # st.rerun()
         else:
             st.info(L["no_history_found"])
 
@@ -5703,7 +7103,6 @@ elif feature_selection == L["sim_tab_chat_email"]:
             # ⭐ 수정: 3초마다 재실행하여 AHT 실시간성 확보
             if seconds % 3 == 0 and total_seconds < 1000:
                 time.sleep(1)
-                # st.rerun()
 
         st.markdown("---")
 
@@ -5863,7 +7262,6 @@ elif feature_selection == L["sim_tab_chat_email"]:
             )
 
         st.success(f"✅ {L['call_outbound_simulation_header']}가 완료되었습니다. 요약을 확인하고 고객에게 회신하세요.")
-        # st.rerun()
 
     # ========================================
     # 3. 초기 문의 입력 (WAIT_FIRST_QUERY)
@@ -6060,8 +7458,6 @@ elif feature_selection == L["sim_tab_chat_email"]:
                 is_chat_ended=False,
             )
             st.session_state.sim_stage = "AGENT_TURN"
-            # ⭐ 재실행
-            # st.rerun()
 
     # =========================
     # 4. 대화 로그 표시 (공통)
@@ -6157,9 +7553,6 @@ elif feature_selection == L["sim_tab_chat_email"]:
                             st.session_state.translation_success = is_success
                             st.session_state.transfer_retry_count += 1
 
-                            # ⭐ 재실행
-                            # st.rerun()
-
 
                 else:
                     # [수정 2] 번역 성공 시 내용 표시 및 TTS 버튼 추가
@@ -6192,8 +7585,6 @@ elif feature_selection == L["sim_tab_chat_email"]:
                     # 채팅/이메일 탭이므로 is_call=False
                     hint = generate_realtime_hint(current_lang, is_call=False)
                     st.session_state.realtime_hint_text = hint
-                    # ⭐ 재실행
-                    # st.rerun()
 
         # --- 언어 이관 요청 강조 표시 ---
         if st.session_state.language_transfer_requested:
@@ -6223,21 +7614,21 @@ elif feature_selection == L["sim_tab_chat_email"]:
         # --- 전화 발신 버튼 추가 (요청 2 반영) ---
         st.markdown("---")
         st.subheader(L["button_call_outbound"])
-        call_cols = st.columns(3)
+        call_cols = st.columns(2)
 
         with call_cols[0]:
-            if st.button(L["button_call_outbound"].replace("전화 발신", "현지 업체 전화 발신"), key="btn_call_outbound_partner"):
+            if st.button(L["button_call_outbound_to_provider"], key="btn_call_outbound_partner", use_container_width=True):
                 # 전화 발신 시뮬레이션: 현지 업체
                 st.session_state.sim_call_outbound_target = "현지 업체/파트너"
                 st.session_state.sim_stage = "OUTBOUND_CALL_IN_PROGRESS"
-                # st.rerun()
+                st.rerun()
 
         with call_cols[1]:
-            if st.button(L["button_call_outbound"].replace("전화 발신", "고객 전화 발신"), key="btn_call_outbound_customer"):
+            if st.button(L["button_call_outbound_to_customer"], key="btn_call_outbound_customer", use_container_width=True):
                 # 전화 발신 시뮬레이션: 고객
                 st.session_state.sim_call_outbound_target = "고객"
                 st.session_state.sim_stage = "OUTBOUND_CALL_IN_PROGRESS"
-                # st.rerun()
+                st.rerun()
 
         st.markdown("---")
         # --- 전화 발신 버튼 추가 끝 ---
@@ -6593,7 +7984,6 @@ elif feature_selection == L["sim_tab_chat_email"]:
             st.session_state.sim_stage = "AGENT_TURN"
 
             # 4. 재실행
-            # st.rerun()
 
             st.session_state.is_solution_provided = False  # 종료 단계 진입 후 플래그 리셋
 
@@ -6710,26 +8100,73 @@ elif feature_selection == L["sim_tab_chat_email"]:
         else:
             final_customer_reaction = last_customer_message
             
-            # (A) "없습니다. 감사합니다" 경로 -> 에이전트가 감사 인사 후 FINAL_CLOSING_ACTION 단계로 이동
+            # (A) "없습니다. 감사합니다" 경로 -> 에이전트가 감사 인사 후 버튼 표시
             if L['customer_no_more_inquiries'] in final_customer_reaction:
-                # ⭐ 추가: 에이전트가 감사 인사 메시지 전송
-                agent_name = st.session_state.get("agent_name", "000")
-                if current_lang == "ko":
-                    agent_closing_msg = f"연락 주셔서 감사드립니다. 지금까지 상담원 {agent_name}였습니다. 즐거운 하루 되세요."
-                elif current_lang == "en":
-                    agent_closing_msg = f"Thank you for contacting us. This was {agent_name}. Have a great day!"
-                else:  # ja
-                    agent_closing_msg = f"お問い合わせいただき、ありがとうございました。担当は{agent_name}でした。良い一日をお過ごしください。"
+                # ⭐ 수정: 에이전트 감사 인사가 아직 추가되지 않은 경우에만 추가
+                agent_closing_added = False
+                for msg in reversed(st.session_state.simulator_messages):
+                    if msg.get("role") == "agent_response":
+                        # 이미 에이전트 감사 인사가 있는지 확인
+                        agent_msg_content = msg.get("content", "")
+                        if "감사" in agent_msg_content or "Thank you" in agent_msg_content or "ありがとう" in agent_msg_content:
+                            agent_closing_added = True
+                        break
                 
-                # 에이전트 감사 인사를 메시지에 추가
-                st.session_state.simulator_messages.append(
-                    {"role": "agent_response", "content": agent_closing_msg}
-                )
+                if not agent_closing_added:
+                    # ⭐ 추가: 에이전트가 감사 인사 메시지 전송
+                    agent_name = st.session_state.get("agent_name", "000")
+                    if current_lang == "ko":
+                        agent_closing_msg = f"연락 주셔서 감사드립니다. 지금까지 상담원 {agent_name}였습니다. 즐거운 하루 되세요."
+                    elif current_lang == "en":
+                        agent_closing_msg = f"Thank you for contacting us. This was {agent_name}. Have a great day!"
+                    else:  # ja
+                        agent_closing_msg = f"お問い合わせいただき、ありがとうございました。担当は{agent_name}でした。良い一日をお過ごしください。"
+                    
+                    # 에이전트 감사 인사를 메시지에 추가
+                    st.session_state.simulator_messages.append(
+                        {"role": "agent_response", "content": agent_closing_msg}
+                    )
                 
-                # FINAL_CLOSING_ACTION 단계로 이동
-                st.session_state.sim_stage = "FINAL_CLOSING_ACTION"
-                st.session_state.realtime_hint_text = ""
-                st.rerun()
+                # ⭐ 수정: 현재 단계에서 바로 버튼 표시 (FINAL_CLOSING_ACTION으로 이동하지 않음)
+                st.markdown("---")
+                st.success("✅ 고객이 더 이상 문의할 사항이 없다고 확인했습니다。")
+                st.markdown("### 📋 상담 종료")
+                st.info("아래 **설문 조사 링크 전송 및 응대 종료** 버튼을 클릭하여 상담을 종료하세요.")
+                st.markdown("---")
+                
+                # 버튼을 중앙에 크게 표시
+                col1, col2, col3 = st.columns([1, 3, 1])
+                with col2:
+                    end_chat_button = st.button(
+                        L["sim_end_chat_button"], 
+                        key="btn_final_end_chat_in_wait", 
+                        use_container_width=True, 
+                        type="primary"
+                    )
+                
+                if end_chat_button:
+                    # AHT 타이머 정지
+                    st.session_state.start_time = None
+
+                    # 설문 조사 링크 전송 메시지 추가
+                    end_msg = L["prompt_survey"]
+                    st.session_state.simulator_messages.append(
+                        {"role": "system_end", "content": end_msg}
+                    )
+
+                    # 채팅 종료 처리
+                    st.session_state.is_chat_ended = True
+                    st.session_state.sim_stage = "CLOSING"
+                    
+                    # 이력 저장
+                    save_simulation_history_local(
+                        st.session_state.customer_query_text_area, customer_type_display,
+                        st.session_state.simulator_messages, is_chat_ended=True,
+                        attachment_context=st.session_state.sim_attachment_context_for_llm,
+                    )
+                    
+                    st.session_state.realtime_hint_text = ""  # 힌트 초기화
+                    st.rerun()
             # (B) "추가 문의 사항도 있습니다" 경로 -> AGENT_TURN으로 복귀
             elif L['customer_has_additional_inquiries'] in final_customer_reaction:
                 st.session_state.sim_stage = "AGENT_TURN"
@@ -6750,10 +8187,25 @@ elif feature_selection == L["sim_tab_chat_email"]:
         if current_lang not in ["ko", "en", "ja"]:
             current_lang = "ko"
         L = LANG.get(current_lang, LANG["ko"])
-        st.success("고객이 더 이상 문의할 사항이 없다고 확인했습니다。")
-
-        # ⭐ 수정: "설문 조사 링크 전송 및 응대 종료" 버튼 표시
-        if st.button(L["sim_end_chat_button"], key="btn_final_end_chat"):
+        
+        # ⭐ 수정: 명확한 안내 메시지와 함께 버튼 표시
+        st.markdown("---")
+        st.success("✅ 고객이 더 이상 문의할 사항이 없다고 확인했습니다。")
+        st.markdown("### 📋 상담 종료")
+        st.info("아래 **설문 조사 링크 전송 및 응대 종료** 버튼을 클릭하여 상담을 종료하세요.")
+        st.markdown("---")
+        
+        # 버튼을 중앙에 크게 표시
+        col1, col2, col3 = st.columns([1, 3, 1])
+        with col2:
+            end_chat_button = st.button(
+                L["sim_end_chat_button"], 
+                key="btn_final_end_chat", 
+                use_container_width=True, 
+                type="primary"
+            )
+        
+        if end_chat_button:
             # AHT 타이머 정지
             st.session_state.start_time = None
 
@@ -6836,7 +8288,6 @@ elif feature_selection == L["sim_tab_phone"]:
                 # 통화 중이고, Hold 상태가 아닐 때만 1초마다 업데이트하여 실시간성을 확보
                 if not st.session_state.is_on_hold and total_seconds < 1000:
                     time.sleep(1)
-                    # st.rerun()  # 매 초마다 재실행하여 AHT 갱신
 
         # ========================================
         # 화면 구분 (애니메이션 / CC)
@@ -7430,13 +8881,19 @@ elif feature_selection == L["sim_tab_phone"]:
             ]
 
             call_target_selection = st.radio(
-                "발신 대상 선택",
+                L.get("call_target_select_label", "발신 대상 선택"),
                 call_targets,
                 key="outbound_call_target_radio",
                 horizontal=True
             )
 
-            if st.button(L["button_call_outbound"], key=f"outbound_call_start_btn_{st.session_state.sim_instance_id}", type="secondary"):
+            # 선택된 대상에 따라 버튼 텍스트 변경
+            if call_target_selection == L["call_target_customer"]:
+                button_text = L["button_call_outbound_to_customer"]
+            else:
+                button_text = L["button_call_outbound_to_provider"]
+
+            if st.button(button_text, key=f"outbound_call_start_btn_{st.session_state.sim_instance_id}", type="secondary", use_container_width=True):
                 # 입력 검증
                 if not st.session_state.call_initial_query.strip():
                     st.warning("전화 발신 목표 (고객 문의 내용)를 입력해 주세요。")
@@ -7789,7 +9246,6 @@ elif feature_selection == L["sim_tab_phone"]:
                 st.error(L["openai_missing"] + " 또는 Gemini API Key가 필요합니다.")
                 st.session_state.bytes_to_process = None
                 # ⭐ 최적화: 에러 메시지 표시 후 불필요한 rerun 제거 (사용자가 API 키를 설정하면 자동으로 재실행됨)
-                # st.rerun()
             else:
                 # ⭐ 전사 결과를 저장할 변수 초기화
                 agent_response_transcript = None
@@ -7819,12 +9275,10 @@ elif feature_selection == L["sim_tab_phone"]:
                     st.error(error_msg)
                     st.session_state.current_agent_audio_text = L["transcription_error"]
                     # ⭐ 최적화: 전사 실패 시에도 CC에 반영되지만 불필요한 rerun 제거 (Streamlit이 자동으로 재실행)
-                    # st.rerun()
                 elif not agent_response_transcript.strip(): # ⭐ 수정: 전사 결과가 비어 있거나 (공백만 있는 경우) 다음 단계로 진행하지 못하는 문제 해결
                     st.warning(L["transcription_empty_warning"])
                     st.session_state.current_agent_audio_text = ""
                     # ⭐ 최적화: 불필요한 rerun 제거
-                    # st.rerun()
                 elif agent_response_transcript.strip():
                     # 3) 전사 성공 - CC에 반영 (전사 결과를 먼저 CC 영역에 표시)
                     agent_response_transcript = agent_response_transcript.strip()
@@ -8098,7 +9552,6 @@ elif feature_selection == L["sim_tab_phone"]:
                         st.error(customer_reaction)
             
             # ⭐ 수정: rerun 완전 제거 - 재생은 브라우저에서 자동으로 진행되므로 서버에서 기다릴 필요 없음
-            # st.rerun()
 
         # ⭐ 수정: 전사 후 고객 반응 생성 처리 (마이크 위젯 렌더링 이후에 위치)
         # 전사 결과가 CC에 먼저 표시된 후 고객 반응을 생성하도록 분리
@@ -8286,7 +9739,6 @@ elif feature_selection == L["sim_tab_phone"]:
 
                     # ⭐ 수정: rerun 제거 - 재생은 브라우저에서 자동으로 진행되므로 서버에서 기다릴 필요 없음
                     # 첫 문의와 동일하게 rerun을 제거하여 재생이 끝까지 진행되도록 함
-                    # st.rerun()
 
 
     # ========================================
@@ -8717,7 +10169,6 @@ elif feature_selection == L["content_tab"]:
                     st.session_state.quiz_type_key = str(uuid.uuid4())
 
                     st.success(f"**{topic}** - {content_display} 생성 완료")
-                    # st.rerun()  # 퀴즈 UI로 전환
 
                 except (json.JSONDecodeError, ValueError) as e:
                     # 4. 파싱 실패 또는 데이터 구조 문제 시 에러 메시지 출력
@@ -8765,7 +10216,6 @@ elif feature_selection == L["content_tab"]:
                 st.session_state.quiz_score = 0
                 st.session_state.quiz_answers = []
                 st.session_state.show_explanation = False
-                # st.rerun()  # 상태 초기화 후 즉시 재실행
             # st.stop() 제거: 퀴즈 완료 후에도 UI는 계속 표시
 
         # 퀴즈 진행 (현재 문항)
@@ -8811,7 +10261,6 @@ elif feature_selection == L["content_tab"]:
                         st.error(L["incorrect_answer"])
 
                 st.session_state.show_explanation = True
-                # st.rerun()
 
         # 정답 및 해설 표시
         if st.session_state.show_explanation:
@@ -8828,7 +10277,6 @@ elif feature_selection == L["content_tab"]:
             if next_col.button(L["next_question"], key=f"next_question_btn_{idx}"):
                 st.session_state.current_question_index += 1
                 st.session_state.show_explanation = False
-                # st.rerun()
 
         else:
             # 사용자가 이미 정답을 체크했고 (다시 로드된 경우), 다음 버튼을 바로 표시
@@ -8837,7 +10285,6 @@ elif feature_selection == L["content_tab"]:
                 if next_col.button(L["next_question"], key=f"next_question_btn_after_check_{idx}"):
                     st.session_state.current_question_index += 1
                     st.session_state.show_explanation = False
-                    # st.rerun()
 
     else:
         # 일반 콘텐츠 (핵심 요약 노트, 실습 예제 아이디어) 출력
