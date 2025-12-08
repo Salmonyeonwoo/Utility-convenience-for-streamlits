@@ -10,6 +10,12 @@ Custom Content Generation: Generates summaries, quizzes, and practical example i
 
 LSTM Achievement Prediction: Provides motivation by predicting future learning achievement based on hypothetical historical study data.
 
+AI Customer Support Simulator: Virtual scenarios for handling customer inquiries via chat, email, and phone with AI-generated response guidelines and hints.
+
+Company Information & FAQ Management: Search and manage company-specific detailed information, popular products, trending news, and FAQs with multi-language support (Korean, English, Japanese).
+
+Customer Inquiry Review: Allows agents to reconfirm customer inquiries with supervisors and generate AI answers and hints. Supports file attachments (images, PDFs) with automatic OCR and translation features.
+
 Technical Stack
 
 Frontend/App Framework: Streamlit
@@ -50,6 +56,53 @@ Asking children's case via Korean
 Movies for RAG and LSTM via my streamlit app
 
 https://www.youtube.com/watch?v=MOQ2qD7Ws-E
+
+## 🆕 Recent Updates (2025-12-08)
+
+### Multi-language Support Improvements
+- ✅ Fixed company information section to properly support Korean, English, and Japanese languages
+- ✅ Added language-specific default FAQs and error messages
+- ✅ Improved font handling for PDF downloads (Korean character support)
+
+### File Upload & Translation Features
+- ✅ Added file uploader for customer attachments (images, PDFs, screenshots)
+- ✅ Automatic OCR for image files using Gemini Vision API
+- ✅ Automatic translation for Korean files uploaded in Japanese/English versions
+- ✅ Support for non-refundable travel product cancellation cases with evidence attachments
+
+### UI/UX Improvements
+- ✅ Improved copy functionality with larger font size (18px) for better readability
+- ✅ Enhanced text display using HTML/CSS for better text selection and copying
+- ✅ Added download buttons as alternative to copy functionality
+
+### PDF Export Enhancements
+- ✅ Fixed Korean character encoding issues in PDF downloads
+- ✅ Improved font registration and application logic
+- ✅ Enhanced font detection and fallback mechanisms
+- ✅ Better error handling and debugging information
+
+## 📋 Usage Guide
+
+### Company Information & FAQ
+1. Navigate to "Company Information & FAQ" tab
+2. Search for a company name or select from the dropdown
+3. View company information, popular products, trending news, and FAQs
+4. Use the search function to find specific information
+
+### Customer Inquiry Review
+1. Navigate to "Customer Inquiry Review" tab
+2. Select a company (optional)
+3. Enter customer inquiry content
+4. Upload attachments (images, PDFs, screenshots) if needed
+   - For non-refundable travel products, attach evidence documents (flight delays, passport issues, etc.)
+5. Generate AI answer or response hints
+6. Copy or download the generated content
+
+### File Upload & Translation
+- Supported file types: PNG, JPG, JPEG, PDF, TXT
+- Korean files uploaded in Japanese/English versions are automatically translated
+- Image files are processed with OCR to extract text content
+- Extracted text is included in AI answer and hint generation prompts
 
 
 
