@@ -1280,6 +1280,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "empty_response_warning": "응답을 입력하세요.",
         "customer_no_more_inquiries": "없습니다. 감사합니다.",
         "customer_has_additional_inquiries": "추가 문의 사항도 있습니다.",
+        "agent_confirmed_inquiry": "에이전트가 추가 문의 여부를 확인했습니다. 고객의 최종 답변을 자동으로 생성합니다.",
+        "customer_no_more_inquiries_confirmed": "고객이 더 이상 문의할 사항이 없다고 확인했습니다。",
+        "consultation_end": "상담 종료",
+        "consultation_end_instruction": "아래 **설문 조사 링크 전송 및 응대 종료** 버튼을 클릭하여 상담을 종료하세요.",
         "sim_end_chat_button": "설문 조사 링크 전송 및 응대 종료",
         "delete_mic_record": "❌ 녹음 삭제",
 
@@ -1688,6 +1692,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "empty_response_warning": "Please enter a response。",
         "customer_no_more_inquiries": "No, that will be all, thank you。",
         "customer_has_additional_inquiries": "Yes, I have an additional question。",
+        "agent_confirmed_inquiry": "The agent has confirmed if there are additional inquiries. Automatically generating the customer's final response.",
+        "customer_no_more_inquiries_confirmed": "Confirmed that the customer has no further inquiries.",
+        "consultation_end": "End of Consultation",
+        "consultation_end_instruction": "Click the **Send Survey Link and End Response** button below to end the consultation.",
         "sim_end_chat_button": "Send Survey Link and End Consultations",
         "delete_mic_record": "❌ Delete recordings",
 
@@ -2097,6 +2105,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "empty_response_warning": "応答を入力してください。",
         "customer_no_more_inquiries": "いいえ、結構です。大丈夫です。有難う御座いました。",
         "customer_has_additional_inquiries": "はい、追加の問い合わせがあります。",
+        "agent_confirmed_inquiry": "エージェントが追加の問い合わせの有無を確認しました。お客様の最終回答を自動生成します。",
+        "customer_no_more_inquiries_confirmed": "お客様がこれ以上問い合わせがないことを確認しました。",
+        "consultation_end": "相談終了",
+        "consultation_end_instruction": "以下の**アンケートリンク送信および応対終了**ボタンをクリックして相談を終了してください。",
         "sim_end_chat_button": "アンケートリンクを送信して応対終了",
         "delete_mic_record": "録音を削除する",
 
@@ -8782,7 +8794,7 @@ Key Points Summary:
         
         # 고객 응답이 아직 생성되지 않은 경우에만 생성
         if last_customer_message is None:
-            st.info("에이전트가 추가 문의 여부를 확인했습니다. 고객의 최종 답변을 자동으로 생성합니다.")
+            st.info(L["agent_confirmed_inquiry"])
 
             # 고객 답변 자동 생성 (LLM Key 검증 포함)
             if not st.session_state.is_llm_ready:
@@ -8838,9 +8850,9 @@ Key Points Summary:
                 
                 # ⭐ 수정: 현재 단계에서 바로 버튼 표시 (FINAL_CLOSING_ACTION으로 이동하지 않음)
                 st.markdown("---")
-                st.success("✅ 고객이 더 이상 문의할 사항이 없다고 확인했습니다。")
-                st.markdown("### 📋 상담 종료")
-                st.info("아래 **설문 조사 링크 전송 및 응대 종료** 버튼을 클릭하여 상담을 종료하세요.")
+                st.success(f"✅ {L['customer_no_more_inquiries_confirmed']}")
+                st.markdown(f"### 📋 {L['consultation_end']}")
+                st.info(L["consultation_end_instruction"])
                 st.markdown("---")
                 
                 # 버튼을 중앙에 크게 표시
@@ -8899,9 +8911,9 @@ Key Points Summary:
         
         # ⭐ 수정: 명확한 안내 메시지와 함께 버튼 표시
         st.markdown("---")
-        st.success("✅ 고객이 더 이상 문의할 사항이 없다고 확인했습니다。")
-        st.markdown("### 📋 상담 종료")
-        st.info("아래 **설문 조사 링크 전송 및 응대 종료** 버튼을 클릭하여 상담을 종료하세요.")
+        st.success(f"✅ {L['customer_no_more_inquiries_confirmed']}")
+        st.markdown(f"### 📋 {L['consultation_end']}")
+        st.info(L["consultation_end_instruction"])
         st.markdown("---")
         
         # 버튼을 중앙에 크게 표시
