@@ -4566,6 +4566,7 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None)
     # 한글 폰트 등록 시도 (시스템 폰트 사용)
     korean_font_registered = False
     japanese_font_registered = False
+    selected_font_name = None
     
     try:
         # Windows 기본 한글 폰트 경로 시도 (더 많은 경로 추가)
@@ -4593,89 +4594,109 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None)
             if os.path.exists(font_path):
                 try:
                     if font_path.endswith('.ttf'):
-                        pdfmetrics.registerFont(TTFont('KoreanFont', font_path))
-                        korean_font_registered = True
-                        print(f"✅ 한글 폰트 등록 성공: {font_path}")
-                        break
+                        # TTF 파일 등록
+                        font = TTFont('KoreanFont', font_path)
+                        pdfmetrics.registerFont(font)
+                        # 등록 확인
+                        if 'KoreanFont' in pdfmetrics.getRegisteredFontNames():
+                            korean_font_registered = True
+                            selected_font_name = 'KoreanFont'
+                            print(f"✅ 한글 폰트 등록 성공: {font_path}")
+                            break
                     elif font_path.endswith('.ttc'):
                         # TTC 파일 처리 (여러 방법 시도)
-                        try:
-                            # 방법 1: subfontIndex 사용
-                            pdfmetrics.registerFont(TTFont('KoreanFont', font_path, subfontIndex=0))
-                            korean_font_registered = True
-                            print(f"✅ 한글 폰트 등록 성공 (TTC, subfontIndex=0): {font_path}")
-                            break
-                        except:
+                        for subfont_idx in range(4):  # 최대 4개 서브폰트 시도
                             try:
-                                # 방법 2: subfontIndex 없이 시도
-                                pdfmetrics.registerFont(TTFont('KoreanFont', font_path))
-                                korean_font_registered = True
-                                print(f"✅ 한글 폰트 등록 성공 (TTC): {font_path}")
-                                break
-                            except Exception as ttc_error:
-                                print(f"⚠️ TTC 폰트 등록 실패 ({font_path}): {ttc_error}")
-                            continue
+                                font = TTFont('KoreanFont', font_path, subfontIndex=subfont_idx)
+                                pdfmetrics.registerFont(font)
+                                # 등록 확인
+                                if 'KoreanFont' in pdfmetrics.getRegisteredFontNames():
+                                    korean_font_registered = True
+                                    selected_font_name = 'KoreanFont'
+                                    print(f"✅ 한글 폰트 등록 성공 (TTC, subfontIndex={subfont_idx}): {font_path}")
+                                    break
+                            except Exception as subfont_error:
+                                if subfont_idx == 3:  # 마지막 시도
+                                    print(f"⚠️ TTC 폰트 등록 실패 (subfontIndex={subfont_idx}): {subfont_error}")
+                                continue
+                        if korean_font_registered:
+                            break
                 except Exception as font_error:
                     print(f"⚠️ 폰트 등록 실패 ({font_path}): {font_error}")
                     continue
         
-        # 일본어 폰트 등록 (한자 지원 강화)
-        for font_path in japanese_font_paths:
-            if os.path.exists(font_path):
-                try:
-                    if font_path.endswith('.ttf'):
-                        pdfmetrics.registerFont(TTFont('JapaneseFont', font_path))
-                        japanese_font_registered = True
-                        print(f"✅ 일본어 폰트 등록 성공: {font_path}")
-                        break
-                    elif font_path.endswith('.ttc'):
-                        try:
-                            pdfmetrics.registerFont(TTFont('JapaneseFont', font_path, subfontIndex=0))
-                            japanese_font_registered = True
-                            print(f"✅ 일본어 폰트 등록 성공 (TTC, subfontIndex=0): {font_path}")
-                            break
-                        except:
-                            try:
-                                pdfmetrics.registerFont(TTFont('JapaneseFont', font_path))
+        # 일본어 폰트 등록 (한자 지원 강화) - 한글 폰트가 없을 때만 시도
+        if not korean_font_registered:
+            for font_path in japanese_font_paths:
+                if os.path.exists(font_path):
+                    try:
+                        if font_path.endswith('.ttf'):
+                            font = TTFont('JapaneseFont', font_path)
+                            pdfmetrics.registerFont(font)
+                            # 등록 확인
+                            if 'JapaneseFont' in pdfmetrics.getRegisteredFontNames():
                                 japanese_font_registered = True
-                                print(f"✅ 일본어 폰트 등록 성공 (TTC): {font_path}")
+                                selected_font_name = 'JapaneseFont'
+                                print(f"✅ 일본어 폰트 등록 성공: {font_path}")
                                 break
-                            except Exception as ttc_error:
-                                print(f"⚠️ 일본어 TTC 폰트 등록 실패 ({font_path}): {ttc_error}")
-                                continue
-                except Exception as font_error:
-                    print(f"⚠️ 일본어 폰트 등록 실패 ({font_path}): {font_error}")
-                    continue
+                        elif font_path.endswith('.ttc'):
+                            # TTC 파일 처리 (여러 서브폰트 시도)
+                            for subfont_idx in range(4):  # 최대 4개 서브폰트 시도
+                                try:
+                                    font = TTFont('JapaneseFont', font_path, subfontIndex=subfont_idx)
+                                    pdfmetrics.registerFont(font)
+                                    # 등록 확인
+                                    if 'JapaneseFont' in pdfmetrics.getRegisteredFontNames():
+                                        japanese_font_registered = True
+                                        selected_font_name = 'JapaneseFont'
+                                        print(f"✅ 일본어 폰트 등록 성공 (TTC, subfontIndex={subfont_idx}): {font_path}")
+                                        break
+                                except Exception as subfont_error:
+                                    if subfont_idx == 3:  # 마지막 시도
+                                        print(f"⚠️ 일본어 TTC 폰트 등록 실패 (subfontIndex={subfont_idx}): {subfont_error}")
+                                    continue
+                            if japanese_font_registered:
+                                break
+                    except Exception as font_error:
+                        print(f"⚠️ 일본어 폰트 등록 실패 ({font_path}): {font_error}")
+                        continue
         
         # 폰트 등록 실패 시 경고
-        if not korean_font_registered:
-            print("⚠️ 한글 폰트를 찾을 수 없습니다. 기본 폰트를 사용합니다 (한글이 깨질 수 있음).")
-        if not japanese_font_registered:
-            print("⚠️ 일본어 폰트를 찾을 수 없습니다. 한글 폰트를 사용합니다.")
+        if not korean_font_registered and not japanese_font_registered:
+            print("⚠️ 경고: 한글/일본어 폰트를 찾을 수 없습니다. PDF에서 한글이 깨질 수 있습니다.")
+            print("   등록된 폰트 목록:", pdfmetrics.getRegisteredFontNames())
+            print("   폰트 경로 확인 필요: C:/Windows/Fonts/")
+            selected_font_name = None
             
     except Exception as e:
-        print(f"⚠️ 폰트 등록 실패: {e}")
+        error_msg = str(e)
+        print(f"⚠️ 폰트 등록 실패: {error_msg}")
         korean_font_registered = False
         japanese_font_registered = False
+        selected_font_name = None
     
     doc = SimpleDocTemplate(filepath, pagesize=A4)
     story = []
     styles = getSampleStyleSheet()
     
-    # ⭐ 수정: 한글/영어/일본어 폰트를 사용하는 스타일 생성
+    # ⭐ 수정: 한글/영어/일본어 폰트를 사용하는 스타일 생성 (폰트 강제 적용)
     def get_korean_style(base_style_name, **kwargs):
         base_style = styles[base_style_name]
         style_kwargs = {
             'parent': base_style,
             **kwargs
         }
-        # 폰트 우선순위: 일본어 폰트 > 한글 폰트 > 기본 폰트
-        # 일본어 폰트는 한자 지원이 더 좋고, 한글도 지원함
-        if japanese_font_registered:
-            style_kwargs['fontName'] = 'JapaneseFont'
-        elif korean_font_registered:
-            style_kwargs['fontName'] = 'KoreanFont'
-        # 폰트가 없으면 기본 폰트 사용 (영어는 문제없지만 한글/일본어는 깨질 수 있음)
+        # 선택된 폰트 사용 (폰트가 등록되어 있는 경우)
+        if selected_font_name:
+            registered_fonts = pdfmetrics.getRegisteredFontNames()
+            if selected_font_name in registered_fonts:
+                style_kwargs['fontName'] = selected_font_name
+            else:
+                print(f"⚠️ 경고: {selected_font_name}가 등록 목록에 없습니다. 등록된 폰트: {registered_fonts}")
+                # 폰트가 없으면 기본 폰트 사용 (한글이 깨질 수 있음)
+        else:
+            # 폰트가 없으면 기본 폰트 사용 (한글이 깨질 수 있음)
+            print("⚠️ 경고: 한글 폰트가 없어 기본 폰트를 사용합니다. 한글이 깨질 수 있습니다.")
         return ParagraphStyle(f'Korean{base_style_name}', **style_kwargs)
     
     # 제목 스타일 (한글 폰트 사용)
@@ -4715,25 +4736,45 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None)
                         text_str = text.decode('latin-1', errors='replace')
         else:
             text_str = str(text)
-                    # 이미 유니코드 문자열인 경우 그대로 사용
-            # 하지만 혹시 모를 인코딩 문제를 방지하기 위해 정규화
-            try:
-                # 유니코드 정규화 (NFC 형식으로 통일)
-                import unicodedata
-                text_str = unicodedata.normalize('NFC', text_str)
-            except:
-                pass
         
         # None 체크
         if text_str is None:
             return "N/A"
         
-        # 특수 문자 이스케이프 (HTML 엔티티로 변환)
+        # 유니코드 정규화 (NFC 형식으로 통일)
+        try:
+            import unicodedata
+            text_str = unicodedata.normalize('NFC', text_str)
+        except:
+            pass
+        
+        # 특수 문자 이스케이프 (HTML 엔티티로 변환) - ReportLab Paragraph는 HTML을 지원
+        # 하지만 &는 먼저 처리해야 함
         text_str = text_str.replace('&', '&amp;')
         text_str = text_str.replace('<', '&lt;')
         text_str = text_str.replace('>', '&gt;')
         text_str = text_str.replace('"', '&quot;')
         text_str = text_str.replace("'", '&#39;')
+        
+        # 한글/일본어 문자가 제대로 있는지 확인
+        try:
+            # 유니코드 범위 확인 (한글: AC00-D7AF, 일본어 히라가나: 3040-309F, 가타카나: 30A0-30FF, 한자: 4E00-9FFF)
+            has_korean = any('\uAC00' <= char <= '\uD7AF' for char in text_str)
+            has_japanese = any('\u3040' <= char <= '\u309F' or '\u30A0' <= char <= '\u30FF' or '\u4E00' <= char <= '\u9FFF' for char in text_str)
+            
+            if has_korean or has_japanese:
+                # 폰트 등록 상태 확인
+                registered_fonts = pdfmetrics.getRegisteredFontNames()
+                has_korean_font = 'KoreanFont' in registered_fonts
+                has_japanese_font = 'JapaneseFont' in registered_fonts
+                
+                if not has_korean_font and not has_japanese_font:
+                    print(f"⚠️ 경고: 한글/일본어 문자가 포함되어 있지만 폰트가 등록되지 않았습니다.")
+                    print(f"   텍스트 샘플: {text_str[:50]}")
+                    print(f"   등록된 폰트: {registered_fonts}")
+        except Exception as check_error:
+            # 확인 중 오류가 발생해도 계속 진행
+            pass
         
         return text_str
     
@@ -4796,12 +4837,20 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None)
     # PDF 빌드 (UTF-8 인코딩 명시, 폰트 서브셋팅 강화)
     try:
         # 폰트 등록 상태 확인 및 경고
+        registered_fonts = pdfmetrics.getRegisteredFontNames()
+        print(f"📋 등록된 폰트 목록: {registered_fonts}")
+        
         if not korean_font_registered and not japanese_font_registered:
             print("⚠️ 경고: 한글/일본어 폰트가 등록되지 않았습니다. PDF에서 한글이 깨질 수 있습니다.")
             print("   가능한 해결 방법:")
             print("   1. Windows 폰트 폴더에 한글 폰트가 설치되어 있는지 확인")
             print("   2. 관리자 권한으로 실행")
             print("   3. 폰트 파일 경로 확인")
+        else:
+            if korean_font_registered:
+                print(f"✅ 한글 폰트 등록 확인: KoreanFont in {registered_fonts}")
+            if japanese_font_registered:
+                print(f"✅ 일본어 폰트 등록 확인: JapaneseFont in {registered_fonts}")
         
         # PDF 빌드 실행
         doc.build(story)
