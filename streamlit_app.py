@@ -10979,6 +10979,9 @@ elif feature_selection == L["content_tab"]:
                             raise ValueError(f"Question {i+1} must have exactly 4 options.")
                         if not isinstance(q["answer"], int) or q["answer"] < 1 or q["answer"] > 4:
                             raise ValueError(f"Question {i+1} answer must be an integer between 1 and 4.")
+                        # explanation 필드가 없으면 기본값 추가
+                        if "explanation" not in q or not q.get("explanation"):
+                            q["explanation"] = f"정답은 {q['options'][q['answer']-1]}입니다. 이 문제에 대한 상세한 해설이 제공되지 않았습니다."
 
                     # 파싱 성공 및 데이터 유효성 검사 후 상태 저장
                     st.session_state.quiz_data = quiz_data
