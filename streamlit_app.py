@@ -889,11 +889,11 @@ FAQは10個生成してください。実際によくある質問と回答を含
                     # 언어별 기본 FAQ
                     default_faqs_by_lang = {
                         "ko": [
-                            {"question_ko": "회사 설립일은 언제인가요?", "answer_ko": "회사 설립일에 대한 정보를 확인 중입니다."},
-                            {"question_ko": "주요 사업 분야는 무엇인가요?", "answer_ko": "주요 사업 분야에 대한 정보를 확인 중입니다."},
-                            {"question_ko": "본사 위치는 어디인가요?", "answer_ko": "본사 위치에 대한 정보를 확인 중입니다."},
-                            {"question_ko": "직원 수는 얼마나 되나요?", "answer_ko": "직원 수에 대한 정보를 확인 중입니다."},
-                            {"question_ko": "주요 제품/서비스는 무엇인가요?", "answer_ko": "주요 제품/서비스에 대한 정보를 확인 중입니다."},
+                        {"question_ko": "회사 설립일은 언제인가요?", "answer_ko": "회사 설립일에 대한 정보를 확인 중입니다."},
+                        {"question_ko": "주요 사업 분야는 무엇인가요?", "answer_ko": "주요 사업 분야에 대한 정보를 확인 중입니다."},
+                        {"question_ko": "본사 위치는 어디인가요?", "answer_ko": "본사 위치에 대한 정보를 확인 중입니다."},
+                        {"question_ko": "직원 수는 얼마나 되나요?", "answer_ko": "직원 수에 대한 정보를 확인 중입니다."},
+                        {"question_ko": "주요 제품/서비스는 무엇인가요?", "answer_ko": "주요 제품/서비스에 대한 정보를 확인 중입니다."},
                         ],
                         "en": [
                             {"question_en": "When was the company founded?", "answer_en": "We are checking information about the company's founding date."},
@@ -1019,6 +1019,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "generating_company_info": "회사 정보를 생성하는 중...",
         "button_copy_answer": "답안 복사",
         "button_copy_hint": "힌트 복사",
+        "button_download_answer": "답안 다운로드",
+        "button_download_hint": "힌트 다운로드",
+        "copy_instruction": "💡 위 텍스트를 선택하고 Ctrl+C (Mac: Cmd+C)로 복사하세요.",
+        "copy_help_text": "텍스트를 선택하고 Ctrl+C (또는 Cmd+C)로 복사하세요.",
         "button_reset": "새로 시작",
         "answer_displayed": "답안이 표시되었습니다. 위의 텍스트를 복사하세요.",
         "hint_displayed": "힌트가 표시되었습니다. 위의 텍스트를 복사하세요.",
@@ -1043,6 +1047,16 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_inquiry_review": "고객 문의 재확인",
         "inquiry_question_label": "고객 문의 내용",
         "inquiry_question_placeholder": "고객이 문의한 내용을 입력하세요",
+        "inquiry_attachment_label": "📎 고객 첨부 파일 업로드 (사진/스크린샷)",
+        "inquiry_attachment_help": "특히 취소 불가 여행상품의 비행기 지연, 여권 이슈 등 불가피한 사유의 경우, 반드시 사진이나 스크린샷을 첨부해주세요.",
+        "inquiry_attachment_uploaded": "✅ 첨부 파일이 업로드되었습니다: {filename}",
+        "extracting_file_content": "파일 내용 추출 중...",
+        "detecting_language": "언어 감지 중...",
+        "translating_content": "파일 내용 번역 중...",
+        "file_translated": "✅ 파일 내용이 번역되었습니다.",
+        "file_extraction_error": "파일 내용 추출 중 오류가 발생했습니다: {error}",
+        "ocr_requires_manual": "이미지 OCR을 위해서는 Gemini API 키가 필요합니다. 이미지의 텍스트를 수동으로 입력해주세요.",
+        "ocr_error": "이미지 텍스트 추출 중 오류: {error}",
         "button_generate_ai_answer": "AI 답안 생성",
         "button_generate_hint": "응대 힌트 생성",
         "ai_answer_header": "AI 추천 답안",
@@ -1405,6 +1419,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "generating_company_info": "Generating company information...",
         "button_copy_answer": "Copy Answer",
         "button_copy_hint": "Copy Hint",
+        "button_download_answer": "Download Answer",
+        "button_download_hint": "Download Hint",
+        "copy_instruction": "💡 Select the text above and press Ctrl+C (Mac: Cmd+C) to copy.",
+        "copy_help_text": "Select the text and press Ctrl+C (or Cmd+C) to copy.",
         "button_reset": "Reset",
         "answer_displayed": "Answer displayed. Please copy the text above.",
         "hint_displayed": "Hint displayed. Please copy the text above.",
@@ -1429,6 +1447,16 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_inquiry_review": "Customer Inquiry Review",
         "inquiry_question_label": "Customer Inquiry",
         "inquiry_question_placeholder": "Enter the customer's inquiry",
+        "inquiry_attachment_label": "📎 Customer Attachment Upload (Photo/Screenshot)",
+        "inquiry_attachment_help": "For non-refundable travel products with unavoidable reasons (flight delays, passport issues, etc.), please attach photos or screenshots.",
+        "inquiry_attachment_uploaded": "✅ Attachment uploaded: {filename}",
+        "extracting_file_content": "Extracting file content...",
+        "detecting_language": "Detecting language...",
+        "translating_content": "Translating file content...",
+        "file_translated": "✅ File content has been translated.",
+        "file_extraction_error": "Error occurred while extracting file content: {error}",
+        "ocr_requires_manual": "Gemini API key is required for image OCR. Please manually enter the text from the image.",
+        "ocr_error": "Error extracting text from image: {error}",
         "button_generate_ai_answer": "Generate AI Answer",
         "button_generate_hint": "Generate Response Hint",
         "ai_answer_header": "AI Recommended Answer",
@@ -1794,6 +1822,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "generating_company_info": "会社情報を生成中...",
         "button_copy_answer": "回答コピー",
         "button_copy_hint": "ヒントコピー",
+        "button_download_answer": "回答ダウンロード",
+        "button_download_hint": "ヒントダウンロード",
+        "copy_instruction": "💡 上のテキストを選択してCtrl+C（Mac: Cmd+C）でコピーしてください。",
+        "copy_help_text": "テキストを選択してCtrl+C（またはCmd+C）でコピーしてください。",
         "button_reset": "リセット",
         "answer_displayed": "回答が表示されました。上のテキストをコピーしてください。",
         "hint_displayed": "ヒントが表示されました。上のテキストをコピーしてください。",
@@ -1818,6 +1850,16 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_inquiry_review": "顧客問い合わせ再確認",
         "inquiry_question_label": "顧客問い合わせ内容",
         "inquiry_question_placeholder": "顧客が問い合わせた内容を入力してください",
+        "inquiry_attachment_label": "📎 顧客添付ファイルアップロード (写真/スクリーンショット)",
+        "inquiry_attachment_help": "特にキャンセル不可の旅行商品で、飛行機の遅延、パスポートの問題などやむを得ない理由がある場合は、必ず写真やスクリーンショットを添付してください。",
+        "inquiry_attachment_uploaded": "✅ 添付ファイルがアップロードされました: {filename}",
+        "extracting_file_content": "ファイル内容を抽出中...",
+        "detecting_language": "言語を検出中...",
+        "translating_content": "ファイル内容を翻訳中...",
+        "file_translated": "✅ ファイル内容が翻訳されました。",
+        "file_extraction_error": "ファイル内容の抽出中にエラーが発生しました: {error}",
+        "ocr_requires_manual": "画像OCRにはGemini APIキーが必要です。画像のテキストを手動で入力してください。",
+        "ocr_error": "画像からのテキスト抽出中にエラーが発生しました: {error}",
         "button_generate_ai_answer": "AI回答生成",
         "button_generate_hint": "対応ヒント生成",
         "ai_answer_header": "AI推奨回答",
@@ -6784,6 +6826,176 @@ if feature_selection == L["company_info_tab"]:
             height=150
         )
         
+        # 고객 첨부 파일 업로드
+        uploaded_file = st.file_uploader(
+            L.get("inquiry_attachment_label", "📎 고객 첨부 파일 업로드 (사진/스크린샷)"),
+            type=["png", "jpg", "jpeg", "pdf"],
+            key="customer_inquiry_attachment",
+            help=L.get("inquiry_attachment_help", "특히 취소 불가 여행상품의 비행기 지연, 여권 이슈 등 불가피한 사유의 경우, 반드시 사진이나 스크린샷을 첨부해주세요.")
+        )
+        
+        # 업로드된 파일 정보 저장
+        attachment_info = ""
+        uploaded_file_info = None
+        file_content_extracted = ""
+        file_content_translated = ""
+        
+        if uploaded_file is not None:
+            file_name = uploaded_file.name
+            file_type = uploaded_file.type
+            file_size = len(uploaded_file.getvalue())
+            st.success(L.get("inquiry_attachment_uploaded", "✅ 첨부 파일이 업로드되었습니다: {filename}").format(filename=file_name))
+            
+            # 파일 정보 저장
+            uploaded_file_info = {
+                "name": file_name,
+                "type": file_type,
+                "size": file_size
+            }
+            
+            # 파일 내용 추출 (PDF, TXT, 이미지 파일인 경우)
+            if file_name.lower().endswith(('.pdf', '.txt', '.png', '.jpg', '.jpeg')):
+                try:
+                    with st.spinner(L.get("extracting_file_content", "파일 내용 추출 중...")):
+                        if file_name.lower().endswith('.pdf'):
+                            import tempfile
+                            import os
+                            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+                            tmp.write(uploaded_file.getvalue())
+                            tmp.flush()
+                            tmp.close()
+                            try:
+                                loader = PyPDFLoader(tmp.name)
+                                file_docs = loader.load()
+                                file_content_extracted = "\n".join([doc.page_content for doc in file_docs])
+                            finally:
+                                try:
+                                    os.remove(tmp.name)
+                                except:
+                                    pass
+                        elif file_name.lower().endswith('.txt'):
+                            uploaded_file.seek(0)  # 파일 포인터를 처음으로 이동
+                            file_content_extracted = uploaded_file.read().decode("utf-8", errors="ignore")
+                        elif file_name.lower().endswith(('.png', '.jpg', '.jpeg')):
+                            # 이미지 파일의 경우 OCR을 사용하여 텍스트 추출
+                            uploaded_file.seek(0)
+                            image_bytes = uploaded_file.getvalue()
+                            image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+                            
+                            # Gemini Vision API를 사용하여 이미지에서 텍스트 추출
+                            ocr_prompt = """이 이미지에 있는 모든 텍스트를 정확히 추출해주세요. 
+이미지에 한국어, 일본어, 영어 등 어떤 언어의 텍스트가 있든 모두 추출하고, 
+텍스트의 구조와 순서를 유지해주세요. 
+이미지에 텍스트가 없으면 "텍스트 없음"이라고 답변하세요.
+
+추출된 텍스트:"""
+                            
+                            try:
+                                # Gemini Vision API 호출
+                                gemini_key = get_api_key("gemini")
+                                if gemini_key:
+                                    import google.generativeai as genai
+                                    genai.configure(api_key=gemini_key)
+                                    model = genai.GenerativeModel('gemini-2.0-flash-exp')
+                                    
+                                    # 이미지와 프롬프트를 함께 전송
+                                    response = model.generate_content([
+                                        {
+                                            "mime_type": file_type,
+                                            "data": image_bytes
+                                        },
+                                        ocr_prompt
+                                    ])
+                                    file_content_extracted = response.text if response.text else ""
+                                else:
+                                    # Gemini 키가 없으면 LLM에 base64 이미지를 전송하여 OCR 요청
+                                    ocr_llm_prompt = f"""{ocr_prompt}
+
+이미지는 base64로 인코딩되어 전송되었습니다. 이미지에서 텍스트를 추출해주세요."""
+                                    # LLM이 이미지를 직접 처리할 수 없으므로, 사용자에게 안내
+                                    file_content_extracted = ""
+                                    st.info(L.get("ocr_requires_manual", "이미지 OCR을 위해서는 Gemini API 키가 필요합니다. 이미지의 텍스트를 수동으로 입력해주세요."))
+                            except Exception as ocr_error:
+                                error_msg = L.get("ocr_error", "이미지 텍스트 추출 중 오류: {error}")
+                                st.warning(error_msg.format(error=str(ocr_error)))
+                                file_content_extracted = ""
+                        
+                        # 파일 내용이 추출된 경우 언어 감지 및 번역 (일본어/영어 버전에서 한국어 파일 번역)
+                        if file_content_extracted and current_lang in ["ja", "en"]:
+                            # 한국어 내용인지 확인하고 번역
+                            with st.spinner(L.get("detecting_language", "언어 감지 중...")):
+                                # 언어 감지 프롬프트 (현재 언어에 맞춤)
+                                detect_prompts = {
+                                    "ja": f"""次のテキストの言語を検出してください。韓国語、日本語、英語のいずれかで答えてください。
+
+テキスト:
+{file_content_extracted[:500]}
+
+言語:""",
+                                    "en": f"""Detect the language of the following text. Answer with only one of: Korean, Japanese, or English.
+
+Text:
+{file_content_extracted[:500]}
+
+Language:""",
+                                    "ko": f"""다음 텍스트의 언어를 감지해주세요. 한국어, 일본어, 영어 중 하나로만 답변하세요.
+
+텍스트:
+{file_content_extracted[:500]}
+
+언어:"""
+                                }
+                                detect_prompt = detect_prompts.get(current_lang, detect_prompts["ko"])
+                                detected_lang = run_llm(detect_prompt).strip().lower()
+                                
+                                # 한국어로 감지된 경우 현재 언어로 번역
+                                if "한국어" in detected_lang or "korean" in detected_lang or "ko" in detected_lang:
+                                    with st.spinner(L.get("translating_content", "파일 내용 번역 중...")):
+                                        # 번역 프롬프트 (현재 언어에 맞춤)
+                                        translate_prompts = {
+                                            "ja": f"""次の韓国語テキストを日本語に翻訳してください。原文の意味とトーンを正確に維持しながら、自然な日本語で翻訳してください。
+
+韓国語テキスト:
+{file_content_extracted}
+
+日本語翻訳:""",
+                                            "en": f"""Please translate the following Korean text into English. Maintain the exact meaning and tone of the original text while translating into natural English.
+
+Korean text:
+{file_content_extracted}
+
+English translation:"""
+                                        }
+                                        translate_prompt = translate_prompts.get(current_lang)
+                                        if translate_prompt:
+                                            file_content_translated = run_llm(translate_prompt)
+                                            if file_content_translated and not file_content_translated.startswith("❌"):
+                                                st.info(L.get("file_translated", "✅ 파일 내용이 번역되었습니다."))
+                                            else:
+                                                file_content_translated = ""
+                except Exception as e:
+                    error_msg = L.get("file_extraction_error", "파일 내용 추출 중 오류가 발생했습니다: {error}")
+                    st.warning(error_msg.format(error=str(e)))
+            
+            # 언어별 파일 정보 텍스트 생성
+            file_content_to_include = file_content_translated if file_content_translated else file_content_extracted
+            content_section = ""
+            if file_content_to_include:
+                content_section = f"\n\n[파일 내용]\n{file_content_to_include[:2000]}"  # 최대 2000자만 포함
+                if len(file_content_to_include) > 2000:
+                    content_section += "\n...(내용이 길어 일부만 표시됨)"
+            
+            attachment_info_by_lang = {
+                "ko": f"\n\n[고객 첨부 파일 정보]\n- 파일명: {file_name}\n- 파일 타입: {file_type}\n- 파일 크기: {file_size} bytes\n- 참고: 고객이 {file_name} 파일을 첨부했습니다. 이 파일은 비행기 지연, 여권 이슈, 질병 등 불가피한 사유로 인한 취소 불가 여행상품 관련 증빙 자료일 수 있습니다. 파일 내용을 참고하여 응대하세요.{content_section}",
+                "en": f"\n\n[Customer Attachment Information]\n- File name: {file_name}\n- File type: {file_type}\n- File size: {file_size} bytes\n- Note: The customer has attached the file {file_name}. This file may be evidence related to non-refundable travel products due to unavoidable reasons such as flight delays, passport issues, illness, etc. Please refer to the file content when responding.{content_section}",
+                "ja": f"\n\n[顧客添付ファイル情報]\n- ファイル名: {file_name}\n- ファイルタイプ: {file_type}\n- ファイルサイズ: {file_size} bytes\n- 参考: 顧客が{file_name}ファイルを添付しました。このファイルは、飛行機の遅延、パスポートの問題、病気などやむを得ない理由によるキャンセル不可の旅行商品に関連する証拠資料である可能性があります。ファイルの内容を参照して対応してください。{content_section}"
+            }
+            attachment_info = attachment_info_by_lang.get(current_lang, attachment_info_by_lang["ko"])
+            
+            # 이미지 파일인 경우 미리보기 표시
+            if file_type and file_type.startswith("image/"):
+                st.image(uploaded_file, caption=file_name, use_container_width=True)
+        
         col_ai_answer, col_hint = st.columns(2)
         
         # AI 답안 생성
@@ -6814,33 +7026,39 @@ if feature_selection == L["company_info_tab"]:
 
 고객 문의: {customer_inquiry}
 {company_context}
+{attachment_info if attachment_info else ""}
 
 답안은 다음을 포함해야 합니다:
 1. 고객의 문의에 대한 명확한 답변
 2. 필요한 경우 추가 정보나 안내
 3. 친절하고 전문적인 톤
+4. 첨부 파일이 있는 경우, 해당 파일 내용을 참고하여 응대하세요. 특히 취소 불가 여행상품의 비행기 지연, 여권 이슈 등 불가피한 사유의 경우, 첨부된 증빙 자료를 확인하고 적절히 대응하세요.
 
 답안:""",
                             "en": f"""Please write a professional and friendly answer to the following customer inquiry.
 
 Customer Inquiry: {customer_inquiry}
 {company_context}
+{attachment_info if attachment_info else ""}
 
 The answer should include:
 1. Clear answer to the customer's inquiry
 2. Additional information or guidance if needed
 3. Friendly and professional tone
+4. If there is an attachment, please reference the file content in your response. For non-refundable travel products with unavoidable reasons (flight delays, passport issues, etc.), review the attached evidence and respond appropriately.
 
 Answer:""",
                             "ja": f"""次の顧客問い合わせに対する専門的で親切な回答を作成してください。
 
 顧客問い合わせ: {customer_inquiry}
 {company_context}
+{attachment_info if attachment_info else ""}
 
 回答には以下を含める必要があります:
 1. 顧客の問い合わせに対する明確な回答
 2. 必要に応じて追加情報や案内
 3. 親切で専門的なトーン
+4. 添付ファイルがある場合は、そのファイルの内容を参照して対応してください。特にキャンセル不可の旅行商品で、飛行機の遅延、パスポートの問題などやむを得ない理由がある場合は、添付された証拠資料を確認し、適切に対応してください。
 
 回答:"""
                         }
@@ -6870,36 +7088,42 @@ Answer:""",
 
 고객 문의: {customer_inquiry}
 {company_context}
+{attachment_info if attachment_info else ""}
 
 응대 힌트는 다음을 포함해야 합니다:
 1. 고객 문의의 핵심 포인트
 2. 응대 시 주의사항
 3. 권장 응대 방식
 4. 추가 확인이 필요한 사항 (있는 경우)
+5. 첨부 파일이 있는 경우, 해당 파일을 확인하고 증빙 자료로 활용하세요. 특히 취소 불가 여행상품의 경우, 첨부된 사진이나 스크린샷을 통해 불가피한 사유를 확인하고 적절한 조치를 취하세요.
 
 응대 힌트:""",
                             "en": f"""Please write response hints for the following customer inquiry.
 
 Customer Inquiry: {customer_inquiry}
 {company_context}
+{attachment_info if attachment_info else ""}
 
 Response hints should include:
 1. Key points of the customer inquiry
 2. Precautions when responding
 3. Recommended response method
 4. Items that need additional confirmation (if any)
+5. If there is an attachment, review the file and use it as evidence. For non-refundable travel products, verify unavoidable reasons through attached photos or screenshots and take appropriate action.
 
 Response Hints:""",
                             "ja": f"""次の顧客問い合わせに対する対応ヒントを作成してください。
 
 顧客問い合わせ: {customer_inquiry}
 {company_context}
+{attachment_info if attachment_info else ""}
 
 対応ヒントには以下を含める必要があります:
 1. 顧客問い合わせの核心ポイント
 2. 対応時の注意事項
 3. 推奨対応方法
 4. 追加確認が必要な事項（ある場合）
+5. 添付ファイルがある場合は、そのファイルを確認し、証拠資料として活用してください。特にキャンセル不可の旅行商品の場合、添付された写真やスクリーンショットを通じてやむを得ない理由を確認し、適切な措置を取ってください。
 
 対応ヒント:"""
                         }
@@ -6915,151 +7139,58 @@ Response Hints:""",
         if st.session_state.get("generated_ai_answer"):
             st.markdown("---")
             st.subheader(L["ai_answer_header"])
-            st.write(st.session_state.generated_ai_answer)
             
-            # 답안 복사 버튼 (실제 클립보드 복사 기능)
-            import json
             answer_text = st.session_state.generated_ai_answer
-            answer_for_js = json.dumps(answer_text).replace("'", "\\'")
             
-            # 복사 가능한 텍스트 영역 생성
-            copy_container = st.container()
-            with copy_container:
-                st.markdown(f'<textarea id="copy_answer_text_{st.session_state.get("copy_answer_id", 0)}" style="position: absolute; left: -9999px;">{answer_text}</textarea>', unsafe_allow_html=True)
+            # 답안을 선택 가능한 텍스트로 표시 (폰트 크기 확대)
+            import html as html_escape
+            answer_escaped = html_escape.escape(answer_text)
+            st.markdown(f"""
+            <div style="font-size: 18px; line-height: 1.8; padding: 20px; background-color: #f8f9fa; border-radius: 5px; border: 1px solid #dee2e6;">
+            <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: 'Malgun Gothic', '맑은 고딕', 'Noto Sans JP', sans-serif; margin: 0; font-size: 18px; color: #212529;">{answer_escaped}</pre>
+            </div>
+            """, unsafe_allow_html=True)
             
-            if st.button(f"📋 {L.get('button_copy_answer', '답안 복사')}", key="copy_answer_btn"):
-                # JavaScript를 사용하여 클립보드에 복사 (Streamlit iframe 환경 고려)
-                js_copy_script = f"""
-                <script>
-                (function() {{
-                    try {{
-                        const text = {answer_for_js};
-                        const copyToClipboard = function(text) {{
-                            // 방법 1: execCommand (가장 호환성 좋음)
-                            const textarea = document.createElement('textarea');
-                            textarea.value = text;
-                            textarea.style.position = 'fixed';
-                            textarea.style.opacity = '0';
-                            textarea.style.left = '-9999px';
-                            textarea.style.top = '0';
-                            document.body.appendChild(textarea);
-                            textarea.focus();
-                            textarea.select();
-                            
-                            try {{
-                                const successful = document.execCommand('copy');
-                                document.body.removeChild(textarea);
-                                if (successful) {{
-                                    return true;
-                                }}
-                            }} catch (e) {{
-                                document.body.removeChild(textarea);
-                            }}
-                            
-                            // 방법 2: navigator.clipboard (최신 브라우저)
-                            if (navigator.clipboard && navigator.clipboard.writeText) {{
-                                navigator.clipboard.writeText(text).then(function() {{
-                                    return true;
-                                }}, function(err) {{
-                                    console.error('Clipboard API 실패:', err);
-                                    return false;
-                                }});
-                                return true;
-                            }}
-                            
-                            return false;
-                        }};
-                        
-                        const success = copyToClipboard(text);
-                        if (success) {{
-                            console.log('복사 성공');
-                        }} else {{
-                            console.warn('복사 실패 - 사용자가 직접 복사해야 합니다');
-                        }}
-                    }} catch (err) {{
-                        console.error('복사 오류:', err);
-                    }}
-                }})();
-                </script>
-                """
-                
-                st.components.v1.html(js_copy_script, height=0)
-                st.success(L.get("toast_copy", "✅ 콘텐츠가 클립보드에 복사되었습니다!"))
-                st.session_state["copy_answer_id"] = st.session_state.get("copy_answer_id", 0) + 1
+            # 다운로드 버튼 추가 (더 안정적인 복사 방법)
+            col_copy, col_download = st.columns(2)
+            with col_copy:
+                st.info(L.get("copy_instruction", "💡 위 텍스트를 선택하고 Ctrl+C (Mac: Cmd+C)로 복사하세요."))
+            with col_download:
+                st.download_button(
+                    label=f"📥 {L.get('button_download_answer', '답안 다운로드')}",
+                    data=answer_text.encode('utf-8'),
+                    file_name=f"ai_answer_{st.session_state.get('copy_answer_id', 0)}.txt",
+                    mime="text/plain",
+                    key="download_answer_btn"
+                )
         
         if st.session_state.get("generated_hint"):
             st.markdown("---")
             st.subheader(L["hint_header"])
-            st.write(st.session_state.generated_hint)
             
-            # 힌트 복사 버튼 (실제 클립보드 복사 기능)
             hint_text = st.session_state.generated_hint
-            hint_for_js = json.dumps(hint_text).replace("'", "\\'")
             
-            # 복사 가능한 텍스트 영역 생성
-            hint_copy_container = st.container()
-            with hint_copy_container:
-                st.markdown(f'<textarea id="copy_hint_text_{st.session_state.get("copy_hint_id", 0)}" style="position: absolute; left: -9999px;">{hint_text}</textarea>', unsafe_allow_html=True)
+            # 힌트를 선택 가능한 텍스트로 표시 (폰트 크기 확대)
+            import html as html_escape
+            hint_escaped = html_escape.escape(hint_text)
+            st.markdown(f"""
+            <div style="font-size: 18px; line-height: 1.8; padding: 20px; background-color: #f8f9fa; border-radius: 5px; border: 1px solid #dee2e6;">
+            <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: 'Malgun Gothic', '맑은 고딕', 'Noto Sans JP', sans-serif; margin: 0; font-size: 18px; color: #212529;">{hint_escaped}</pre>
+            </div>
+            """, unsafe_allow_html=True)
             
-            if st.button(f"📋 {L.get('button_copy_hint', '힌트 복사')}", key="copy_hint_btn"):
-                # JavaScript를 사용하여 클립보드에 복사 (Streamlit iframe 환경 고려)
-                js_copy_script = f"""
-                <script>
-                (function() {{
-                    try {{
-                        const text = {hint_for_js};
-                        const copyToClipboard = function(text) {{
-                            // 방법 1: execCommand (가장 호환성 좋음)
-                            const textarea = document.createElement('textarea');
-                            textarea.value = text;
-                            textarea.style.position = 'fixed';
-                            textarea.style.opacity = '0';
-                            textarea.style.left = '-9999px';
-                            textarea.style.top = '0';
-                            document.body.appendChild(textarea);
-                            textarea.focus();
-                            textarea.select();
-                            
-                            try {{
-                                const successful = document.execCommand('copy');
-                                document.body.removeChild(textarea);
-                                if (successful) {{
-                                    return true;
-                                }}
-                            }} catch (e) {{
-                                document.body.removeChild(textarea);
-                            }}
-                            
-                            // 방법 2: navigator.clipboard (최신 브라우저)
-                            if (navigator.clipboard && navigator.clipboard.writeText) {{
-                                navigator.clipboard.writeText(text).then(function() {{
-                                    return true;
-                                }}, function(err) {{
-                                    console.error('Clipboard API 실패:', err);
-                                    return false;
-                                }});
-                                return true;
-                            }}
-                            
-                            return false;
-                        }};
-                        
-                        const success = copyToClipboard(text);
-                        if (success) {{
-                            console.log('복사 성공');
-                        }} else {{
-                            console.warn('복사 실패 - 사용자가 직접 복사해야 합니다');
-                        }}
-                    }} catch (err) {{
-                        console.error('복사 오류:', err);
-                    }}
-                }})();
-                </script>
-                """
-                
-                st.components.v1.html(js_copy_script, height=0)
-                st.success(L.get("toast_copy", "✅ 콘텐츠가 클립보드에 복사되었습니다!"))
-                st.session_state["copy_hint_id"] = st.session_state.get("copy_hint_id", 0) + 1
+            # 다운로드 버튼 추가 (더 안정적인 복사 방법)
+            col_copy_hint, col_download_hint = st.columns(2)
+            with col_copy_hint:
+                st.info(L.get("copy_instruction", "💡 위 텍스트를 선택하고 Ctrl+C (Mac: Cmd+C)로 복사하세요."))
+            with col_download_hint:
+                st.download_button(
+                    label=f"📥 {L.get('button_download_hint', '힌트 다운로드')}",
+                    data=hint_text.encode('utf-8'),
+                    file_name=f"response_hint_{st.session_state.get('copy_hint_id', 0)}.txt",
+                    mime="text/plain",
+                    key="download_hint_btn"
+                )
         
         # 초기화 버튼
         if st.session_state.get("generated_ai_answer") or st.session_state.get("generated_hint"):
