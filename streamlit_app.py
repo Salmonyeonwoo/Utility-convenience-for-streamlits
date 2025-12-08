@@ -11191,7 +11191,14 @@ elif feature_selection == L["content_tab"]:
                 st.markdown("---")
                 st.markdown(f"**{L['correct_is']}:** {correct_answer_text}")
                 with st.expander(f"**{L['explanation']}**", expanded=True):
-                    st.info(question_data.get('explanation', '해설이 제공되지 않았습니다.'))
+                    # 해설이 없거나 비어있을 경우 기본 해설 생성
+                    explanation = question_data.get('explanation', '')
+                    if not explanation or explanation.strip() == '' or explanation == '해설이 제공되지 않았습니다.':
+                        # 기본 해설 생성
+                        correct_idx = question_data.get('answer', 1)
+                        correct_option = question_data['options'][correct_idx - 1] if 0 < correct_idx <= len(question_data['options']) else "N/A"
+                        explanation = f"정답은 **{correct_option}**입니다.\n\n이 선택지가 정답인 이유를 설명하면, 문제에서 요구하는 핵심 개념과 가장 일치하는 답입니다. 다른 선택지들은 문제의 요구사항과 완전히 일치하지 않거나 관련이 적은 내용입니다."
+                    st.info(explanation)
 
                 # 다음 문항 버튼
                 if next_col.button(L["next_question"], key=f"next_question_btn_{idx}"):
