@@ -158,8 +158,11 @@ VOICE_META_FILE = os.path.join(DATA_DIR, "voice_records.json")
 SIM_META_FILE = os.path.join(DATA_DIR, "simulation_histories.json")
 VIDEO_MAPPING_DB_FILE = os.path.join(DATA_DIR, "video_mapping_database.json")  # ⭐ Gemini 제안: 비디오 매핑 데이터베이스
 FAQ_DB_FILE = os.path.join(DATA_DIR, "faq_database.json")  # FAQ 데이터베이스 파일
+PRODUCT_IMAGE_CACHE_FILE = os.path.join(DATA_DIR, "product_image_cache.json")  # 제품 이미지 캐시 파일
+PRODUCT_IMAGE_DIR = os.path.join(DATA_DIR, "product_images")  # 생성된 제품 이미지 저장 디렉토리
 
 os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(PRODUCT_IMAGE_DIR, exist_ok=True)
 os.makedirs(AUDIO_DIR, exist_ok=True)
 os.makedirs(RAG_INDEX_DIR, exist_ok=True)
 
@@ -365,44 +368,227 @@ def visualize_company_data(company_data: Dict[str, Any], lang: str = "ko") -> Di
     return charts
 
 
-def get_product_image_url(product_name: str) -> str:
-    """상품명을 기반으로 이미지 URL 생성 - 실제 상품 이미지 사용"""
+def load_product_image_cache() -> Dict[str, str]:
+    """제품 이미지 캐시 로드"""
+    return _load_json(PRODUCT_IMAGE_CACHE_FILE, {})
+
+
+def save_product_image_cache(cache_data: Dict[str, str]):
+    """제품 이미지 캐시 저장"""
+    _save_json(PRODUCT_IMAGE_CACHE_FILE, cache_data)
+
+
+def generate_product_image_prompt(product_name: str) -> str:
+    """제품명을 기반으로 이미지 생성 프롬프트 생성"""
+    product_lower = product_name.lower()
+    
+    # 언어별 제품명 추출 (한국어, 영어, 일본어)
+    lang_versions = []
+    if any(ord(c) >= 0xAC00 and ord(c) <= 0xD7A3 for c in product_name):  # 한글 포함
+        lang_versions.append(("ko", product_name))
+    if any(ord(c) >= 0x3040 and ord(c) <= 0x309F or ord(c) >= 0x30A0 and ord(c) <= 0x30FF for c in product_name):  # 일본어 포함
+        lang_versions.append(("ja", product_name))
+    if any(c.isalpha() and ord(c) < 128 for c in product_name):  # 영어 포함
+        lang_versions.append(("en", product_name))
+    
+    # 기본 프롬프트 구성
+    base_prompt = f"Professional product photo of {product_name}, "
+    
+    # 카테고리별 상세 프롬프트 추가
+    if "디즈니" in product_name or "disney" in product_lower or "ディズニー" in product_name:
+        return f"Beautiful, vibrant photo of Disneyland theme park entrance ticket for {product_name}, magical atmosphere, colorful, professional product photography, high quality, commercial style"
+    elif "유니버셜" in product_name or "universal" in product_lower or "ユニバーサル" in product_name:
+        return f"Professional photo of Universal Studios theme park ticket for {product_name}, exciting theme park atmosphere, high quality product photography, commercial style"
+    elif "스카이트리" in product_name or "skytree" in product_lower or "도쿄 타워" in product_name or "tokyo tower" in product_lower or "スカイツリー" in product_name or "東京タワー" in product_name:
+        return f"Beautiful photo of Tokyo Skytree or Tokyo Tower admission ticket for {product_name}, modern Tokyo cityscape background, professional product photography, high quality"
+    elif "갤럭시" in product_name or "galaxy" in product_lower:
+        return f"Professional product photo of Samsung Galaxy smartphone {product_name}, sleek modern design, premium quality, white background, commercial product photography, high resolution"
+    elif "qled" in product_lower or "tv" in product_lower or "티비" in product_name or "텔레비전" in product_name:
+        return f"Professional product photo of Samsung QLED TV {product_name}, modern sleek design, premium quality, minimalist background, commercial product photography, high resolution"
+    elif "티켓" in product_name or "ticket" in product_lower or "チケット" in product_name:
+        return f"Professional photo of admission ticket for {product_name}, clean design, high quality product photography, commercial style"
+    elif "호텔" in product_name or "hotel" in product_lower or "ホテル" in product_name:
+        return f"Beautiful photo of hotel booking voucher or hotel room for {product_name}, luxurious atmosphere, professional photography, high quality"
+    elif "항공" in product_name or "flight" in product_lower or "航空" in product_name:
+        return f"Professional photo of airline ticket or boarding pass for {product_name}, clean design, high quality product photography"
+    elif "여행" in product_name or "travel" in product_lower or "투어" in product_name or "tour" in product_lower or "旅行" in product_name or "ツアー" in product_name:
+        return f"Beautiful travel-related photo for {product_name}, scenic destination, professional photography, high quality, travel brochure style"
+    elif "음식" in product_name or "food" in product_lower or "레스토랑" in product_name or "restaurant" in product_lower or "食事" in product_name or "レストラン" in product_name:
+        return f"Appetizing food photo for {product_name}, restaurant dish, professional food photography, high quality, commercial style"
+    else:
+        return f"Professional product photo of {product_name}, clean background, high quality product photography, commercial style, well-lit"
+
+
+def generate_product_image_with_ai(product_name: str) -> str:
+    """AI를 사용하여 제품 이미지 생성 (DALL-E 사용)"""
     try:
+        # 캐시 확인
+        cache = load_product_image_cache()
+        cache_key = product_name.lower().strip()
+        
+        if cache_key in cache:
+            cached_path = cache[cache_key]
+            if os.path.exists(cached_path):
+                return cached_path
+        
+        # OpenAI API 키 확인
+        openai_key = get_api_key("openai")
+        if not openai_key:
+            # OpenAI 키가 없으면 기본 이미지 URL 반환
+            return ""
+        
+        # 이미지 생성 프롬프트 생성
+        image_prompt = generate_product_image_prompt(product_name)
+        
+        # DALL-E API 호출
+        client = OpenAI(api_key=openai_key)
+        response = client.images.generate(
+            model="dall-e-3",
+            prompt=image_prompt,
+            size="1024x1024",
+            quality="standard",
+            n=1,
+        )
+        
+        # 생성된 이미지 URL 가져오기
+        image_url = response.data[0].url
+        
+        # 이미지를 로컬에 저장
+        import hashlib
+        image_hash = hashlib.md5(product_name.encode('utf-8')).hexdigest()
+        image_filename = f"{image_hash}.png"
+        image_path = os.path.join(PRODUCT_IMAGE_DIR, image_filename)
+        
+        # 이미지 다운로드 및 저장
+        img_response = requests.get(image_url, timeout=10)
+        if img_response.status_code == 200:
+            with open(image_path, 'wb') as f:
+                f.write(img_response.content)
+            
+            # 캐시에 저장
+            cache[cache_key] = image_path
+            save_product_image_cache(cache)
+            
+            return image_path
+        else:
+            return ""
+            
+    except Exception as e:
+        print(f"⚠️ AI 이미지 생성 실패 ({product_name}): {e}")
+        return ""
+
+
+def get_product_image_url(product_name: str) -> str:
+    """상품명을 기반으로 이미지 URL 생성 - AI 이미지 생성 우선 사용"""
+    try:
+        # ⭐ 1순위: AI 이미지 생성 시도 (DALL-E)
+        ai_image_path = generate_product_image_with_ai(product_name)
+        if ai_image_path and os.path.exists(ai_image_path):
+            return ai_image_path
+        
+        # ⭐ 2순위: 기존 키워드 기반 이미지 매칭 (폴백)
         product_lower = product_name.lower()
         
         # 디즈니랜드 관련 상품 - 미키마우스 이미지 (한국어, 영어, 일본어 모두 체크)
         if ("디즈니" in product_name or "disney" in product_lower or "disneyland" in product_lower or 
             "tokyo disneyland" in product_lower or "hong kong disneyland" in product_lower or
             "ディズニー" in product_name or "ディズニーランド" in product_name):
-            return "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=400&h=300&fit=crop"
+            return "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=400&h=300&fit=crop&q=80"
         
         # 유니버셜 스튜디오 관련 상품 - 유니버셜 로고/지구본 이미지 (한국어, 영어, 일본어 모두 체크)
         if ("유니버셜" in product_name or "universal" in product_lower or "universal studio" in product_lower or
             "universal studios" in product_lower or "ユニバーサル" in product_name or "ユニバーサルスタジオ" in product_name):
-            return "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=400&h=300&fit=crop"
+            return "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=400&h=300&fit=crop&q=80"
         
         # 도쿄 스카이트리 관련 상품 - 스카이트리 건물 이미지 (한국어, 영어, 일본어 모두 체크)
         if ("스카이트리" in product_name or "skytree" in product_lower or "도쿄 타워" in product_name or 
             "tokyo tower" in product_lower or "tokyo skytree" in product_lower or
             "スカイツリー" in product_name or "東京タワー" in product_name or "東京スカイツリー" in product_name):
-            return "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop"
+            return "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop&q=80"
         
         # 홍콩 관련 상품 (디즈니랜드 외)
         if ("홍콩" in product_name or "hong kong" in product_lower or "香港" in product_name):
             if "disney" not in product_lower and "디즈니" not in product_name:
                 # 홍콩 공항 익스프레스 등
-                return "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=400&h=300&fit=crop"
+                return "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=400&h=300&fit=crop&q=80"
         
         # 방콕 관련 상품 (한국어, 영어, 일본어 모두 체크)
         if ("방콕" in product_name or "bangkok" in product_lower or "バンコク" in product_name):
-            return "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=400&h=300&fit=crop"
+            return "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=400&h=300&fit=crop&q=80"
+        
+        # 삼성 갤럭시 S 시리즈 관련 상품
+        if ("갤럭시 s" in product_lower or "galaxy s" in product_lower or "galaxy s24" in product_lower or
+            "galaxy s23" in product_lower or "galaxy s22" in product_lower or "galaxy s21" in product_lower or
+            "galaxy s20" in product_lower or "samsung galaxy s" in product_lower):
+            return "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=400&h=300&fit=crop&q=80"
+        
+        # 삼성 갤럭시 노트 시리즈 관련 상품
+        if ("갤럭시 노트" in product_lower or "galaxy note" in product_lower or "galaxy note24" in product_lower or
+            "galaxy note23" in product_lower or "galaxy note22" in product_lower or "galaxy note21" in product_lower or
+            "galaxy note20" in product_lower or "samsung galaxy note" in product_lower):
+            return "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=400&h=300&fit=crop&q=80"
+        
+        # 삼성 QLED TV 관련 상품
+        if ("qled" in product_lower or "삼성 qled" in product_lower or "samsung qled" in product_lower or
+            "삼성 tv" in product_lower or "samsung tv" in product_lower):
+            return "https://images.unsplash.com/photo-1593359677879-a4b92c0a3b8b?w=400&h=300&fit=crop&q=80"
+        
+        # 삼성 제품 일반 (위에서 매칭되지 않은 경우)
+        if ("삼성" in product_name or "samsung" in product_lower):
+            # 스마트폰 관련
+            if ("스마트폰" in product_name or "smartphone" in product_lower or "phone" in product_lower or
+                "갤럭시" in product_name or "galaxy" in product_lower):
+                return "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=400&h=300&fit=crop&q=80"
+            # TV 관련
+            elif ("tv" in product_lower or "티비" in product_name or "텔레비전" in product_name):
+                return "https://images.unsplash.com/photo-1593359677879-a4b92c0a3b8b?w=400&h=300&fit=crop&q=80"
+            # 기본 삼성 제품
+            else:
+                return "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=400&h=300&fit=crop&q=80"
+        
+        # 티켓 관련 상품
+        if ("티켓" in product_name or "ticket" in product_lower or "チケット" in product_name):
+            return "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop&q=80"
+        
+        # 호텔 관련 상품
+        if ("호텔" in product_name or "hotel" in product_lower or "ホテル" in product_name):
+            return "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop&q=80"
+        
+        # 항공 관련 상품
+        if ("항공" in product_name or "flight" in product_lower or "航空" in product_name or "airline" in product_lower):
+            return "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=300&fit=crop&q=80"
+        
+        # 여행/투어 관련 상품
+        if ("여행" in product_name or "travel" in product_lower or "투어" in product_name or "tour" in product_lower or
+            "旅行" in product_name or "ツアー" in product_name):
+            return "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop&q=80"
+        
+        # 음식/레스토랑 관련 상품
+        if ("음식" in product_name or "food" in product_lower or "레스토랑" in product_name or "restaurant" in product_lower or
+            "食事" in product_name or "レストラン" in product_name):
+            return "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop&q=80"
         
         # 기본값: 상품명 기반으로 일관된 이미지 생성
+        # 제품 카테고리를 추론하여 적절한 이미지 선택
         import hashlib
-        hash_obj = hashlib.md5(product_name.encode())
+        
+        # 제품명을 해시하여 일관된 이미지 ID 생성
+        hash_obj = hashlib.md5(product_name.encode('utf-8'))
         hash_int = int(hash_obj.hexdigest(), 16)
-        image_id = (hash_int % 1000) + 1
-        return f"https://picsum.photos/seed/{product_name}/400/300"
+        image_seed = hash_int % 1000
+        
+        # 카테고리별 Unsplash 이미지 (더 안정적인 이미지 ID 사용)
+        category_images = [
+            "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop&q=80",  # 티켓/여행
+            "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop&q=80",  # 여행지
+            "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop&q=80",  # 호텔
+            "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=300&fit=crop&q=80",  # 항공
+            "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop&q=80",  # 음식
+        ]
+        
+        # 해시 기반으로 일관된 이미지 선택
+        selected_image = category_images[image_seed % len(category_images)]
+        return selected_image
     except Exception:
         return ""
 
@@ -700,13 +886,31 @@ FAQは10個生成してください。実際によくある質問と回答を含
                 
                 # FAQ가 10개 미만이면 기본 FAQ 추가
                 if len(company_data.get("faqs", [])) < 10:
-                    default_faqs = [
-                        {"question_ko": "회사 설립일은 언제인가요?", "answer_ko": "회사 설립일에 대한 정보를 확인 중입니다."},
-                        {"question_ko": "주요 사업 분야는 무엇인가요?", "answer_ko": "주요 사업 분야에 대한 정보를 확인 중입니다."},
-                        {"question_ko": "본사 위치는 어디인가요?", "answer_ko": "본사 위치에 대한 정보를 확인 중입니다."},
-                        {"question_ko": "직원 수는 얼마나 되나요?", "answer_ko": "직원 수에 대한 정보를 확인 중입니다."},
-                        {"question_ko": "주요 제품/서비스는 무엇인가요?", "answer_ko": "주요 제품/서비스에 대한 정보를 확인 중입니다."},
-                    ]
+                    # 언어별 기본 FAQ
+                    default_faqs_by_lang = {
+                        "ko": [
+                            {"question_ko": "회사 설립일은 언제인가요?", "answer_ko": "회사 설립일에 대한 정보를 확인 중입니다."},
+                            {"question_ko": "주요 사업 분야는 무엇인가요?", "answer_ko": "주요 사업 분야에 대한 정보를 확인 중입니다."},
+                            {"question_ko": "본사 위치는 어디인가요?", "answer_ko": "본사 위치에 대한 정보를 확인 중입니다."},
+                            {"question_ko": "직원 수는 얼마나 되나요?", "answer_ko": "직원 수에 대한 정보를 확인 중입니다."},
+                            {"question_ko": "주요 제품/서비스는 무엇인가요?", "answer_ko": "주요 제품/서비스에 대한 정보를 확인 중입니다."},
+                        ],
+                        "en": [
+                            {"question_en": "When was the company founded?", "answer_en": "We are checking information about the company's founding date."},
+                            {"question_en": "What are the main business areas?", "answer_en": "We are checking information about the main business areas."},
+                            {"question_en": "Where is the headquarters located?", "answer_en": "We are checking information about the headquarters location."},
+                            {"question_en": "How many employees does the company have?", "answer_en": "We are checking information about the number of employees."},
+                            {"question_en": "What are the main products/services?", "answer_en": "We are checking information about the main products/services."},
+                        ],
+                        "ja": [
+                            {"question_ja": "会社の設立日はいつですか？", "answer_ja": "会社の設立日に関する情報を確認中です。"},
+                            {"question_ja": "主要な事業分野は何ですか？", "answer_ja": "主要な事業分野に関する情報を確認中です。"},
+                            {"question_ja": "本社の所在地はどこですか？", "answer_ja": "本社の所在地に関する情報を確認中です。"},
+                            {"question_ja": "従業員数は何人ですか？", "answer_ja": "従業員数に関する情報を確認中です。"},
+                            {"question_ja": "主要な製品・サービスは何ですか？", "answer_ja": "主要な製品・サービスに関する情報を確認中です。"},
+                        ]
+                    }
+                    default_faqs = default_faqs_by_lang.get(lang, default_faqs_by_lang["ko"])
                     existing_faqs = company_data.get("faqs", [])
                     # 부족한 만큼 기본 FAQ 추가
                     while len(existing_faqs) < 10:
@@ -731,8 +935,14 @@ FAQは10個生成してください。実際によくある質問と回答を含
                 "faqs": []
             }
     except Exception as e:
+        # 언어별 에러 메시지
+        error_messages = {
+            "ko": f"회사 정보 생성 중 오류가 발생했습니다: {str(e)}",
+            "en": f"An error occurred while generating company information: {str(e)}",
+            "ja": f"会社情報の生成中にエラーが発生しました: {str(e)}"
+        }
         return {
-            "company_info": f"회사 정보 생성 중 오류가 발생했습니다: {str(e)}",
+            "company_info": error_messages.get(lang, error_messages["ko"]),
             "popular_products": [],
             "trending_topics": [],
             "faqs": []
@@ -1095,6 +1305,43 @@ LANG: Dict[str, Dict[str, str]] = {
         "button_retry_translation": "번역 다시 시도",
         "customer_waiting_hold": "[고객: 잠시 대기 중입니다...]",
         "agent_hold_message": "[에이전트: Hold 중입니다. 통화 재개 버튼을 눌러주세요.]",
+        
+        # --- 비디오 파일 업로드 관련 ---
+        "video_upload_expander": "비디오 파일 업로드/로드",
+        "video_sync_enable": "비디오 동기화 활성화 (TTS와 함께 재생)",
+        "video_rag_title": "🎥 OpenAI/Gemini 기반 영상 RAG 기능",
+        "video_rag_desc": "✅ **현재 구현 방식 (영상 RAG):**\n\n1. **LLM 텍스트 분석**: OpenAI/Gemini API가 고객의 텍스트를 분석하여 감정 상태와 제스처를 자동 판단합니다.\n\n2. **지능형 비디오 선택**: 분석 결과에 따라 적절한 비디오 클립을 자동으로 선택합니다.\n   - 감정 상태: HAPPY, ANGRY, ASKING, SAD, NEUTRAL\n   - 제스처: HAND_WAVE, NOD, SHAKE_HEAD, POINT, NONE\n\n3. **TTS 동기화 재생**: 선택된 비디오와 TTS로 생성된 음성을 동시에 재생합니다.\n\n**사용 방법:**\n- 성별(남자/여자)과 감정 상태별로 비디오 파일을 업로드하세요.\n- 제스처별 비디오도 업로드 가능합니다 (예: `male_happy_hand_wave.mp4`).\n- 고객이 말하는 내용에 따라 LLM이 자동으로 적절한 비디오를 선택합니다.",
+        "video_gender_emotion_setting": "성별 및 감정 상태별 비디오 설정",
+        "video_gender_label": "성별",
+        "video_gender_male": "남자",
+        "video_gender_female": "여자",
+        "video_emotion_label": "감정 상태",
+        "video_upload_label": "비디오 파일 업로드 ({gender} - {emotion})",
+        "video_current_selection": "📹 현재 선택: {gender} - {emotion}",
+        "video_upload_prompt": "💡 '{filename}' 비디오 파일을 업로드하세요.",
+        "video_save_path": "📂 비디오 저장 경로:",
+        "video_directory_empty": "⚠️ 비디오 디렉토리에 파일이 없습니다. 파일을 업로드하세요.",
+        "video_directory_not_exist": "⚠️ 비디오 디렉토리가 존재하지 않습니다: {path}",
+        "video_local_path_input": "또는 로컬 파일 경로 입력",
+        "video_local_path_placeholder": "예: C:\\Users\\Admin\\Downloads\\video.mp4 또는 video.mp4",
+        "video_current_avatar": "📺 현재 고객 아바타 영상",
+        "video_avatar_upload_prompt": "💡 '{filename}' 비디오 파일을 업로드하면 영상이 표시됩니다.",
+        "video_uploaded_files": "📁 업로드된 비디오 파일:",
+        "video_bytes_saved": "✅ 비디오 바이트 저장 완료: {name} ({size} MB)",
+        "video_empty_error": "❌ 비디오 파일이 비어있습니다. 다시 업로드해주세요.",
+        "video_upload_error": "❌ 비디오 업로드 중 오류 발생: {error}",
+        "video_playback_error": "❌ 비디오 재생에 실패했습니다.",
+        "video_auto_play_info": "💡 이 비디오는 '{gender} - {emotion}' 상태에서 자동으로 재생됩니다.",
+        "video_preview_error": "비디오 미리보기 오류",
+        "video_similar_gender": "같은 성별의 다른 비디오",
+        "video_rename_hint": "💡 위 비디오 중 하나를 사용하려면 파일명을 변경하거나 새로 업로드하세요.",
+        "video_more_files": "... 외 {count}개",
+        "avatar_status_info": "상태: {state} | 성별: {gender}",
+        "customer_video_simulation": "고객 영상 시뮬레이션",
+        "customer_avatar": "고객 아바타",
+        "faq_question_prefix": "Q{num}.",
+        "visualization_chart": "시각화 차트",
+        "company_search_or_select": "회사명을 검색하거나 선택해주세요.",
     },
 
     # --- ⭐ 영어 버전 (한국어 100% 매칭) ---
@@ -1446,6 +1693,43 @@ LANG: Dict[str, Dict[str, str]] = {
         "button_retry_translation": "Retry Translation",
         "customer_waiting_hold": "[Customer: Please wait...]",
         "agent_hold_message": "[Agent: Call is on hold. Please click the resume button.]",
+        
+        # --- Video File Upload Related ---
+        "video_upload_expander": "Video File Upload/Load",
+        "video_sync_enable": "Enable Video Synchronization (Play with TTS)",
+        "video_rag_title": "🎥 OpenAI/Gemini Based Video RAG Feature",
+        "video_rag_desc": "✅ **Current Implementation (Video RAG):**\n\n1. **LLM Text Analysis**: OpenAI/Gemini API analyzes customer's text to automatically determine emotional state and gestures.\n\n2. **Intelligent Video Selection**: Automatically selects appropriate video clips based on analysis results.\n   - Emotional State: HAPPY, ANGRY, ASKING, SAD, NEUTRAL\n   - Gestures: HAND_WAVE, NOD, SHAKE_HEAD, POINT, NONE\n\n3. **TTS Synchronized Playback**: Plays selected video and TTS-generated audio simultaneously.\n\n**Usage:**\n- Upload video files by gender (male/female) and emotional state.\n- Gesture-specific videos can also be uploaded (e.g., `male_happy_hand_wave.mp4`).\n- LLM automatically selects appropriate videos based on customer's speech content.",
+        "video_gender_emotion_setting": "Video Settings by Gender and Emotional State",
+        "video_gender_label": "Gender",
+        "video_gender_male": "Male",
+        "video_gender_female": "Female",
+        "video_emotion_label": "Emotional State",
+        "video_upload_label": "Video File Upload ({gender} - {emotion})",
+        "video_current_selection": "📹 Current Selection: {gender} - {emotion}",
+        "video_upload_prompt": "💡 Please upload the '{filename}' video file.",
+        "video_save_path": "📂 Video Save Path:",
+        "video_directory_empty": "⚠️ There is no file in the video directory. Please upload the file.",
+        "video_directory_not_exist": "⚠️ Video directory does not exist: {path}",
+        "video_local_path_input": "Or Enter Local File Path",
+        "video_local_path_placeholder": "e.g., C:\\Users\\Admin\\Downloads\\video.mp4 or video.mp4",
+        "video_current_avatar": "📺 Current Customer Avatar Video",
+        "video_avatar_upload_prompt": "💡 Upload the '{filename}' video file to display the video.",
+        "video_uploaded_files": "📁 Uploaded Video Files:",
+        "video_bytes_saved": "✅ Video bytes saved: {name} ({size} MB)",
+        "video_empty_error": "❌ Video file is empty. Please upload again.",
+        "video_upload_error": "❌ Error occurred during video upload: {error}",
+        "video_playback_error": "❌ Failed to play video.",
+        "video_auto_play_info": "💡 This video will automatically play in '{gender} - {emotion}' state.",
+        "video_preview_error": "Video preview error",
+        "video_similar_gender": "Other videos of the same gender",
+        "video_rename_hint": "💡 To use one of the videos above, rename the file or upload a new one.",
+        "video_more_files": "... and {count} more",
+        "avatar_status_info": "Status: {state} | Gender: {gender}",
+        "customer_video_simulation": "Customer Video Simulation",
+        "customer_avatar": "Customer Avatar",
+        "faq_question_prefix": "Q{num}.",
+        "visualization_chart": "Visualization Chart",
+        "company_search_or_select": "Please search or select a company name.",
 
     },
 
@@ -1798,6 +2082,43 @@ LANG: Dict[str, Dict[str, str]] = {
         "button_retry_translation": "翻訳を再試行",
         "customer_waiting_hold": "[顧客: お待ちください...]",
         "agent_hold_message": "[エージェント: 通話が保留中です。通話再開ボタンをクリックしてください。]",
+        
+        # --- ビデオファイルアップロード関連 ---
+        "video_upload_expander": "ビデオファイルアップロード/ロード",
+        "video_sync_enable": "ビデオ同期を有効化 (TTSと一緒に再生)",
+        "video_rag_title": "🎥 OpenAI/GeminiベースのビデオRAG機能",
+        "video_rag_desc": "✅ **現在の実装方式 (ビデオRAG):**\n\n1. **LLMテキスト分析**: OpenAI/Gemini APIが顧客のテキストを分析し、感情状態とジェスチャーを自動判定します。\n\n2. **インテリジェントビデオ選択**: 分析結果に基づいて適切なビデオクリップを自動選択します。\n   - 感情状態: HAPPY, ANGRY, ASKING, SAD, NEUTRAL\n   - ジェスチャー: HAND_WAVE, NOD, SHAKE_HEAD, POINT, NONE\n\n3. **TTS同期再生**: 選択されたビデオとTTSで生成された音声を同時に再生します。\n\n**使用方法:**\n- 性別(男性/女性)と感情状態別にビデオファイルをアップロードしてください。\n- ジェスチャー別のビデオもアップロード可能です (例: `male_happy_hand_wave.mp4`)。\n- 顧客が話す内容に応じてLLMが自動的に適切なビデオを選択します。",
+        "video_gender_emotion_setting": "性別および感情状態別ビデオ設定",
+        "video_gender_label": "性別",
+        "video_gender_male": "男性",
+        "video_gender_female": "女性",
+        "video_emotion_label": "感情状態",
+        "video_upload_label": "ビデオファイルアップロード ({gender} - {emotion})",
+        "video_current_selection": "📹 現在の選択: {gender} - {emotion}",
+        "video_upload_prompt": "💡 '{filename}' ビデオファイルをアップロードしてください。",
+        "video_save_path": "📂 ビデオ保存パス:",
+        "video_directory_empty": "⚠️ ビデオディレクトリにファイルがありません。ファイルをアップロードしてください。",
+        "video_directory_not_exist": "⚠️ ビデオディレクトリが存在しません: {path}",
+        "video_local_path_input": "またはローカルファイルパス入力",
+        "video_local_path_placeholder": "例: C:\\Users\\Admin\\Downloads\\video.mp4 または video.mp4",
+        "video_current_avatar": "📺 現在の顧客アバター映像",
+        "video_avatar_upload_prompt": "💡 '{filename}' ビデオファイルをアップロードすると映像が表示されます。",
+        "video_uploaded_files": "📁 アップロードされたビデオファイル:",
+        "video_bytes_saved": "✅ ビデオバイト保存完了: {name} ({size} MB)",
+        "video_empty_error": "❌ ビデオファイルが空です。再度アップロードしてください。",
+        "video_upload_error": "❌ ビデオアップロード中にエラーが発生しました: {error}",
+        "video_playback_error": "❌ ビデオ再生に失敗しました。",
+        "video_auto_play_info": "💡 このビデオは '{gender} - {emotion}' 状態で自動的に再生されます。",
+        "video_preview_error": "ビデオプレビューエラー",
+        "video_similar_gender": "同じ性別の他のビデオ",
+        "video_rename_hint": "💡 上記のビデオのいずれかを使用するには、ファイル名を変更するか、新しくアップロードしてください。",
+        "video_more_files": "... 他 {count}件",
+        "avatar_status_info": "状態: {state} | 性別: {gender}",
+        "customer_video_simulation": "顧客映像シミュレーション",
+        "customer_avatar": "顧客アバター",
+        "faq_question_prefix": "Q{num}.",
+        "visualization_chart": "可視化チャート",
+        "company_search_or_select": "会社名を検索または選択してください。",
     }
 }
 
@@ -4196,49 +4517,104 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None)
         filename = f"customer_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     filepath = os.path.join(DATA_DIR, filename)
     
-    # ⭐ 수정: 한글 폰트 지원을 위한 폰트 설정
+    # ⭐ 수정: 한글/일본어 폰트 지원을 위한 폰트 설정
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
     
     # 한글 폰트 등록 시도 (시스템 폰트 사용)
     korean_font_registered = False
+    japanese_font_registered = False
+    
     try:
-        # Windows 기본 한글 폰트 경로 시도 (TTF 파일 우선, TTC는 지원하지 않음)
-        font_paths = [
-            "C:/Windows/Fonts/malgun.ttf",  # 맑은 고딕
+        # Windows 기본 한글 폰트 경로 시도 (더 많은 경로 추가)
+        korean_font_paths = [
+            "C:/Windows/Fonts/malgun.ttf",  # 맑은 고딕 (TTF)
+            "C:/Windows/Fonts/malgunsl.ttf",  # 맑은 고딕 (TTF, 대체)
             "C:/Windows/Fonts/NanumGothic.ttf",  # 나눔고딕
             "C:/Windows/Fonts/NanumBarunGothic.ttf",  # 나눔바른고딕
-            "C:/Windows/Fonts/batang.ttc",  # 바탕 (TTC는 TTFont로 직접 지원 안 됨)
+            "C:/Windows/Fonts/NanumGothicBold.ttf",  # 나눔고딕 볼드
+            "C:/Windows/Fonts/gulim.ttc",  # 굴림 (TTC)
+            "C:/Windows/Fonts/batang.ttc",  # 바탕 (TTC)
+            "C:/Windows/Fonts/malgun.ttc",  # 맑은 고딕 (TTC)
         ]
         
-        for font_path in font_paths:
+        # 일본어 폰트 경로 (한자 지원 강화)
+        japanese_font_paths = [
+            "C:/Windows/Fonts/msgothic.ttc",  # MS Gothic (일본어 한자 지원)
+            "C:/Windows/Fonts/msmincho.ttc",  # MS Mincho (일본어 한자 지원)
+            "C:/Windows/Fonts/meiryo.ttc",  # Meiryo (일본어)
+            "C:/Windows/Fonts/yuanti.ttc",  # Microsoft YaHei (중국어/일본어 한자 지원)
+        ]
+        
+        # 한글 폰트 등록
+        for font_path in korean_font_paths:
             if os.path.exists(font_path):
                 try:
-                    # TTC 파일은 TTFont로 직접 지원하지 않으므로 TTF만 사용
                     if font_path.endswith('.ttf'):
                         pdfmetrics.registerFont(TTFont('KoreanFont', font_path))
                         korean_font_registered = True
                         print(f"✅ 한글 폰트 등록 성공: {font_path}")
                         break
                     elif font_path.endswith('.ttc'):
-                        # TTC 파일은 첫 번째 폰트만 사용 시도
+                        # TTC 파일 처리 (여러 방법 시도)
                         try:
+                            # 방법 1: subfontIndex 사용
                             pdfmetrics.registerFont(TTFont('KoreanFont', font_path, subfontIndex=0))
                             korean_font_registered = True
-                            print(f"✅ 한글 폰트 등록 성공 (TTC): {font_path}")
+                            print(f"✅ 한글 폰트 등록 성공 (TTC, subfontIndex=0): {font_path}")
                             break
                         except:
+                            try:
+                                # 방법 2: subfontIndex 없이 시도
+                                pdfmetrics.registerFont(TTFont('KoreanFont', font_path))
+                                korean_font_registered = True
+                                print(f"✅ 한글 폰트 등록 성공 (TTC): {font_path}")
+                                break
+                            except Exception as ttc_error:
+                                print(f"⚠️ TTC 폰트 등록 실패 ({font_path}): {ttc_error}")
                             continue
                 except Exception as font_error:
                     print(f"⚠️ 폰트 등록 실패 ({font_path}): {font_error}")
                     continue
         
+        # 일본어 폰트 등록 (한자 지원 강화)
+        for font_path in japanese_font_paths:
+            if os.path.exists(font_path):
+                try:
+                    if font_path.endswith('.ttf'):
+                        pdfmetrics.registerFont(TTFont('JapaneseFont', font_path))
+                        japanese_font_registered = True
+                        print(f"✅ 일본어 폰트 등록 성공: {font_path}")
+                        break
+                    elif font_path.endswith('.ttc'):
+                        try:
+                            pdfmetrics.registerFont(TTFont('JapaneseFont', font_path, subfontIndex=0))
+                            japanese_font_registered = True
+                            print(f"✅ 일본어 폰트 등록 성공 (TTC, subfontIndex=0): {font_path}")
+                            break
+                        except:
+                            try:
+                                pdfmetrics.registerFont(TTFont('JapaneseFont', font_path))
+                                japanese_font_registered = True
+                                print(f"✅ 일본어 폰트 등록 성공 (TTC): {font_path}")
+                                break
+                            except Exception as ttc_error:
+                                print(f"⚠️ 일본어 TTC 폰트 등록 실패 ({font_path}): {ttc_error}")
+                                continue
+                except Exception as font_error:
+                    print(f"⚠️ 일본어 폰트 등록 실패 ({font_path}): {font_error}")
+                    continue
+        
+        # 폰트 등록 실패 시 경고
         if not korean_font_registered:
-            # 폰트를 찾지 못한 경우 기본 폰트 사용 (한글이 깨질 수 있음)
-            print("⚠️ 한글 폰트를 찾을 수 없습니다. 기본 폰트를 사용합니다.")
+            print("⚠️ 한글 폰트를 찾을 수 없습니다. 기본 폰트를 사용합니다 (한글이 깨질 수 있음).")
+        if not japanese_font_registered:
+            print("⚠️ 일본어 폰트를 찾을 수 없습니다. 한글 폰트를 사용합니다.")
+            
     except Exception as e:
         print(f"⚠️ 폰트 등록 실패: {e}")
         korean_font_registered = False
+        japanese_font_registered = False
     
     doc = SimpleDocTemplate(filepath, pagesize=A4)
     story = []
@@ -4251,8 +4627,11 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None)
             'parent': base_style,
             **kwargs
         }
-        # 한글 폰트가 등록된 경우 사용 (한글 폰트는 영어와 일본어도 지원)
-        if korean_font_registered:
+        # 폰트 우선순위: 일본어 폰트 > 한글 폰트 > 기본 폰트
+        # 일본어 폰트는 한자 지원이 더 좋고, 한글도 지원함
+        if japanese_font_registered:
+            style_kwargs['fontName'] = 'JapaneseFont'
+        elif korean_font_registered:
             style_kwargs['fontName'] = 'KoreanFont'
         # 폰트가 없으면 기본 폰트 사용 (영어는 문제없지만 한글/일본어는 깨질 수 있음)
         return ParagraphStyle(f'Korean{base_style_name}', **style_kwargs)
@@ -4271,29 +4650,49 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None)
     heading1_style = get_korean_style('Heading1')
     heading2_style = get_korean_style('Heading2')
     
-    # ⭐ 수정: 텍스트를 안전하게 처리하는 헬퍼 함수 (UTF-8 인코딩 명시적 처리)
+    # ⭐ 수정: 텍스트를 안전하게 처리하는 헬퍼 함수 (UTF-8 인코딩 명시적 처리, 한글/일본어 지원 강화)
     def safe_text(text):
-        """텍스트를 안전하게 처리하여 PDF에 표시"""
+        """텍스트를 안전하게 처리하여 PDF에 표시 (한글/일본어/한자 지원)"""
         if text is None:
             return "N/A"
+        
         # 문자열로 변환 (UTF-8 인코딩 명시적 처리)
+        text_str = None
         if isinstance(text, bytes):
-            text_str = text.decode('utf-8', errors='ignore')
+            # 바이트 문자열인 경우 UTF-8로 디코딩 시도
+            try:
+                text_str = text.decode('utf-8', errors='replace')
+            except:
+                try:
+                    # UTF-8 실패 시 다른 인코딩 시도
+                    text_str = text.decode('cp949', errors='replace')  # 한국어 Windows 인코딩
+                except:
+                    try:
+                        text_str = text.decode('shift_jis', errors='replace')  # 일본어 인코딩
+                    except:
+                        text_str = text.decode('latin-1', errors='replace')
         else:
             text_str = str(text)
-            # 유니코드 문자열이 아닌 경우 UTF-8로 디코딩 시도
-            try:
-                if isinstance(text_str, str):
                     # 이미 유니코드 문자열인 경우 그대로 사용
-                    pass
-                else:
-                    text_str = text_str.encode('utf-8').decode('utf-8')
+            # 하지만 혹시 모를 인코딩 문제를 방지하기 위해 정규화
+            try:
+                # 유니코드 정규화 (NFC 형식으로 통일)
+                import unicodedata
+                text_str = unicodedata.normalize('NFC', text_str)
             except:
                 pass
-        # 특수 문자 이스케이프
+        
+        # None 체크
+        if text_str is None:
+            return "N/A"
+        
+        # 특수 문자 이스케이프 (HTML 엔티티로 변환)
         text_str = text_str.replace('&', '&amp;')
         text_str = text_str.replace('<', '&lt;')
         text_str = text_str.replace('>', '&gt;')
+        text_str = text_str.replace('"', '&quot;')
+        text_str = text_str.replace("'", '&#39;')
+        
         return text_str
     
     # 제목 추가
@@ -4352,14 +4751,35 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None)
             story.append(Paragraph('-' * 80, normal_style))
             story.append(Spacer(1, 0.2*inch))
     
-    # PDF 빌드 (UTF-8 인코딩 명시)
+    # PDF 빌드 (UTF-8 인코딩 명시, 폰트 서브셋팅 강화)
     try:
+        # 폰트 등록 상태 확인 및 경고
+        if not korean_font_registered and not japanese_font_registered:
+            print("⚠️ 경고: 한글/일본어 폰트가 등록되지 않았습니다. PDF에서 한글이 깨질 수 있습니다.")
+            print("   가능한 해결 방법:")
+            print("   1. Windows 폰트 폴더에 한글 폰트가 설치되어 있는지 확인")
+            print("   2. 관리자 권한으로 실행")
+            print("   3. 폰트 파일 경로 확인")
+        
+        # PDF 빌드 실행
         doc.build(story)
+        print(f"✅ PDF 생성 완료: {filepath}")
+        
     except Exception as e:
         # 인코딩 오류가 발생하면 에러 메시지와 함께 재시도
-        print(f"PDF 빌드 오류: {e}")
-        # 스토리를 다시 빌드 (인코딩 문제 해결)
-        doc.build(story)
+        error_msg = str(e)
+        print(f"⚠️ PDF 빌드 오류: {error_msg}")
+        
+        # 폰트 관련 오류인 경우 추가 정보 제공
+        if 'font' in error_msg.lower() or 'encoding' in error_msg.lower():
+            print("   폰트/인코딩 오류로 보입니다. 폰트 등록 상태를 확인하세요.")
+            if korean_font_registered:
+                print(f"   - 한글 폰트: 등록됨")
+            if japanese_font_registered:
+                print(f"   - 일본어 폰트: 등록됨")
+        
+        # 재시도 (단순 재시도는 위험할 수 있으므로 에러를 다시 발생시킴)
+        raise Exception(f"PDF 생성 실패: {error_msg}")
     
     return filepath
 
@@ -6034,7 +6454,7 @@ if feature_selection == L["company_info_tab"]:
                 
                 if charts:
                     # 막대 그래프 표시 - 공백 축소
-                    st.markdown("#### 📊 시각화 차트")
+                    st.markdown(f"#### 📊 {L['visualization_chart']}")
                     col1_bar, col2_bar = st.columns(2)
                     
                     if "products_bar" in charts:
@@ -6076,7 +6496,7 @@ if feature_selection == L["company_info_tab"]:
                                 check_text = product.get(f"text_{lang_key}", "")
                                 if check_text:
                                     check_url = get_product_image_url(check_text)
-                                    if check_url and not check_url.startswith("https://picsum"):
+                                    if check_url:
                                         product_image_url = check_url
                                         image_found = True
                                         break
@@ -6085,14 +6505,40 @@ if feature_selection == L["company_info_tab"]:
                             if not image_found:
                                 product_image_url = get_product_image_url(product_text)
                         
-                        # 이미지 표시 시도
+                        # 이미지 표시 시도 (로컬 파일 및 URL 모두 지원)
                         image_displayed = False
                         if product_image_url:
                             try:
-                                # 이미지 URL이 유효한지 확인하고 표시
-                                st.image(product_image_url, caption=product_text[:30], use_container_width=True)
-                                image_displayed = True
-                            except Exception:
+                                # 로컬 파일 경로인 경우
+                                if os.path.exists(product_image_url):
+                                    st.image(product_image_url, caption=product_text[:30], use_container_width=True)
+                                    image_displayed = True
+                                # URL인 경우
+                                elif product_image_url.startswith("http://") or product_image_url.startswith("https://"):
+                                    try:
+                                        # HEAD 요청으로 이미지 존재 여부 확인 (타임아웃 2초)
+                                        response = requests.head(product_image_url, timeout=2, allow_redirects=True)
+                                        if response.status_code == 200:
+                                            st.image(product_image_url, caption=product_text[:30], use_container_width=True)
+                                            image_displayed = True
+                                        else:
+                                            image_displayed = False
+                                    except Exception:
+                                        # HEAD 요청 실패 시에도 이미지 표시 시도 (일부 서버는 HEAD를 지원하지 않음)
+                                        try:
+                                            st.image(product_image_url, caption=product_text[:30], use_container_width=True)
+                                            image_displayed = True
+                                        except Exception:
+                                            image_displayed = False
+                                else:
+                                    # 기타 경로 시도
+                                    try:
+                                        st.image(product_image_url, caption=product_text[:30], use_container_width=True)
+                                        image_displayed = True
+                                    except Exception:
+                                        image_displayed = False
+                            except Exception as img_error:
+                                # 이미지 로딩 실패
                                 image_displayed = False
                         
                         # 이미지 표시 실패 시 이모지 카드 표시
@@ -6157,7 +6603,7 @@ if feature_selection == L["company_info_tab"]:
                             else:
                                 st.write(L.get("checking_additional_info", "상세 내용: {topic}에 대한 추가 정보를 확인 중입니다.").format(topic=topic_text))
         else:
-            st.info("회사명을 검색하거나 선택해주세요.")
+            st.info(L["company_search_or_select"])
     
     # 탭 2: 자주 묻는 질문 (FAQ) - 검색 기능 포함
     with tab2:
@@ -6294,7 +6740,7 @@ if feature_selection == L["company_info_tab"]:
                 for idx, faq in enumerate(faqs, 1):
                     question = faq.get(f"question_{current_lang}", faq.get("question_ko", ""))
                     answer = faq.get(f"answer_{current_lang}", faq.get("answer_ko", ""))
-                    with st.expander(f"Q{idx}. {question}"):
+                    with st.expander(f"{L['faq_question_prefix'].format(num=idx)} {question}"):
                         st.write(f"**{L['faq_answer']}:** {answer}")
             else:
                 if faq_search_query and faq_search_btn:
@@ -7548,7 +7994,37 @@ elif feature_selection == L["sim_tab_chat_email"]:
                                                    "customer_closing_response"]:
                                     history_text += f"{role}: {msg['content']}\n"
 
-                            translated_summary, is_success = translate_text_with_llm(history_text, target_lang, source_lang)
+                            # ⭐ 수정: 먼저 핵심 포인트만 요약한 후 번역
+                            lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(source_lang, "Korean")
+                            summary_prompt = f"""
+You are an AI assistant that summarizes customer service conversations. 
+Extract ONLY the key points from the conversation below. Keep it concise and focused on:
+1. Customer's main inquiry/question
+2. Key information provided by the agent
+3. Important decisions or outcomes
+4. Any unresolved issues
+
+Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.
+
+--- Conversation ---
+{history_text}
+---
+
+Key Points Summary:
+"""
+                            
+                            # 요약 생성
+                            summarized_text = ""
+                            if st.session_state.is_llm_ready:
+                                try:
+                                    summarized_text = run_llm(summary_prompt).strip()
+                                except Exception as e:
+                                    print(f"요약 생성 실패, 전체 대화 사용: {e}")
+                                    summarized_text = history_text  # 요약 실패 시 전체 대화 사용
+                            else:
+                                summarized_text = history_text  # LLM이 없으면 전체 대화 사용
+                            
+                            translated_summary, is_success = translate_text_with_llm(summarized_text, target_lang, source_lang)
                             st.session_state.transfer_summary_text = translated_summary
                             st.session_state.translation_success = is_success
                             st.session_state.transfer_retry_count += 1
@@ -7868,8 +8344,39 @@ elif feature_selection == L["sim_tab_chat_email"]:
                                        "customer_closing_response"]:
                         history_text += f"{role}: {msg['content']}\n"
 
-                # 3. LLM 번역 실행 (수정된 번역 함수 사용)
-                translated_summary, is_success = translate_text_with_llm(history_text, target_lang,
+                # ⭐ 수정: 먼저 핵심 포인트만 요약한 후 번역
+                # 요약 프롬프트 생성
+                lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(current_lang_at_start, "Korean")
+                summary_prompt = f"""
+You are an AI assistant that summarizes customer service conversations. 
+Extract ONLY the key points from the conversation below. Keep it concise and focused on:
+1. Customer's main inquiry/question
+2. Key information provided by the agent
+3. Important decisions or outcomes
+4. Any unresolved issues
+
+Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.
+
+--- Conversation ---
+{history_text}
+---
+
+Key Points Summary:
+"""
+                
+                # 요약 생성
+                summarized_text = ""
+                if st.session_state.is_llm_ready:
+                    try:
+                        summarized_text = run_llm(summary_prompt).strip()
+                    except Exception as e:
+                        print(f"요약 생성 실패, 전체 대화 사용: {e}")
+                        summarized_text = history_text  # 요약 실패 시 전체 대화 사용
+                else:
+                    summarized_text = history_text  # LLM이 없으면 전체 대화 사용
+
+                # 3. LLM 번역 실행 (요약된 텍스트를 번역)
+                translated_summary, is_success = translate_text_with_llm(summarized_text, target_lang,
                                                              current_lang_at_start)  # Use current_lang_at_start as source
 
                 # 4. 세션 상태 업데이트
@@ -8295,7 +8802,7 @@ elif feature_selection == L["sim_tab_phone"]:
     col_video, col_cc = st.columns([1, 2])
 
     with col_video:
-        st.subheader("📺 고객 영상 시뮬레이션")
+        st.subheader(f"📺 {L['customer_video_simulation']}")
 
         if st.session_state.call_sim_stage == "WAITING_CALL":
             st.info("통화 수신 대기 중...")
@@ -8306,48 +8813,33 @@ elif feature_selection == L["sim_tab_phone"]:
         else:
             # ⭐ 비디오 파일 업로드 옵션 추가 (로컬 경로 지원)
             # 항상 펼쳐진 상태로 표시하여 비디오를 쉽게 확인할 수 있도록 함
-            with st.expander("비디오 파일 업로드/로드", expanded=True):
+            with st.expander(L["video_upload_expander"], expanded=True):
                 # 비디오 동기화 활성화 여부
                 st.session_state.is_video_sync_enabled = st.checkbox(
-                    "비디오 동기화 활성화 (TTS와 함께 재생)",
+                    L["video_sync_enable"],
                     value=st.session_state.is_video_sync_enabled,
                     key="video_sync_checkbox"
                 )
                 
                 # OpenAI/Gemini 기반 영상 RAG 설명
                 st.markdown("---")
-                st.markdown("**🎥 OpenAI/Gemini 기반 영상 RAG 기능**")
-                st.success("""
-                ✅ **현재 구현 방식 (영상 RAG):**
-                
-                1. **LLM 텍스트 분석**: OpenAI/Gemini API가 고객의 텍스트를 분석하여 감정 상태와 제스처를 자동 판단합니다.
-                
-                2. **지능형 비디오 선택**: 분석 결과에 따라 적절한 비디오 클립을 자동으로 선택합니다.
-                   - 감정 상태: HAPPY, ANGRY, ASKING, SAD, NEUTRAL
-                   - 제스처: HAND_WAVE, NOD, SHAKE_HEAD, POINT, NONE
-                
-                3. **TTS 동기화 재생**: 선택된 비디오와 TTS로 생성된 음성을 동시에 재생합니다.
-                
-                **사용 방법:**
-                - 성별(남자/여자)과 감정 상태별로 비디오 파일을 업로드하세요.
-                - 제스처별 비디오도 업로드 가능합니다 (예: `male_happy_hand_wave.mp4`).
-                - 고객이 말하는 내용에 따라 LLM이 자동으로 적절한 비디오를 선택합니다.
-                """)
+                st.markdown(f"**{L['video_rag_title']}**")
+                st.success(L["video_rag_desc"])
                 
                 # 가상 휴먼 기술은 현재 비활성화 (OpenAI/Gemini 기반 영상 RAG 사용)
                 st.session_state.virtual_human_enabled = False
                 
                 # 성별 및 감정 상태별 비디오 업로드
-                st.markdown("**성별 및 감정 상태별 비디오 설정**")
+                st.markdown(f"**{L['video_gender_emotion_setting']}**")
                 col_gender_video, col_emotion_video = st.columns(2)
                 
                 with col_gender_video:
-                    video_gender = st.radio("성별", ["남자", "여자"], key="video_gender_select", horizontal=True)
-                    gender_key = "male" if video_gender == "남자" else "female"
+                    video_gender = st.radio(L["video_gender_label"], [L["video_gender_male"], L["video_gender_female"]], key="video_gender_select", horizontal=True)
+                    gender_key = "male" if video_gender == L["video_gender_male"] else "female"
                 
                 with col_emotion_video:
                     video_emotion = st.selectbox(
-                        "감정 상태",
+                        L["video_emotion_label"],
                         ["NEUTRAL", "HAPPY", "ANGRY", "ASKING", "SAD"],
                         key="video_emotion_select"
                     )
@@ -8356,7 +8848,7 @@ elif feature_selection == L["sim_tab_phone"]:
                 # 해당 조합의 비디오 업로드
                 video_key = f"video_{gender_key}_{emotion_key}"
                 uploaded_video = st.file_uploader(
-                    f"비디오 파일 업로드 ({video_gender} - {video_emotion})",
+                    L["video_upload_label"].format(gender=video_gender, emotion=video_emotion),
                     type=["mp4", "webm", "ogg"],
                     key=f"customer_video_uploader_{gender_key}_{emotion_key}"
                 )
@@ -8383,7 +8875,7 @@ elif feature_selection == L["sim_tab_phone"]:
                             current_upload_size = len(video_bytes)
                             
                             if not video_bytes or len(video_bytes) == 0:
-                                st.error("❌ 비디오 파일이 비어있습니다. 다시 업로드해주세요.")
+                                st.error(L["video_empty_error"])
                             else:
                                 # 파일명 및 확장자 결정
                                 uploaded_filename = uploaded_video.name if hasattr(uploaded_video, 'name') else f"{gender_key}_{emotion_key}.mp4"
@@ -8407,18 +8899,18 @@ elif feature_selection == L["sim_tab_phone"]:
                                 }
                                 
                                 file_size_mb = current_upload_size / (1024 * 1024)
-                                st.success(f"✅ 비디오 바이트 저장 완료: {current_upload_name} ({file_size_mb:.2f} MB)")
+                                st.success(L["video_bytes_saved"].format(name=current_upload_name, size=f"{file_size_mb:.2f}"))
                                 
                                 # ⭐ 즉시 미리보기 (바이트 데이터 직접 사용)
                                 try:
                                     st.video(video_bytes, format=mime_type, autoplay=False, loop=False, muted=False)
                                 except Exception as video_error:
-                                    st.warning(f"⚠️ 비디오 미리보기 오류: {video_error}")
+                                    st.warning(f"⚠️ {L.get('video_preview_error', '비디오 미리보기 오류')}: {video_error}")
                                     # MIME 타입을 기본값으로 재시도
                                     try:
                                         st.video(video_bytes, format=f"video/{file_ext.lstrip('.')}", autoplay=False, loop=False, muted=False)
                                     except:
-                                        st.error("❌ 비디오 재생에 실패했습니다. 파일 형식을 확인해주세요.")
+                                        st.error(L["video_playback_error"])
                                 
                                 # ⭐ 옵션: 파일 저장도 시도 (백업용, 실패해도 바이트는 이미 저장됨)
                                 try:
@@ -8442,13 +8934,13 @@ elif feature_selection == L["sim_tab_phone"]:
                                 st.rerun()
                                 
                         except Exception as e:
-                            st.error(f"❌ 비디오 업로드 중 오류 발생: {str(e)}")
+                            st.error(L["video_upload_error"].format(error=str(e)))
                             import traceback
                             st.code(traceback.format_exc())
                 
                 # 업로드된 비디오가 있으면 현재 선택된 조합의 비디오 표시
                 st.markdown("---")
-                st.markdown(f"**📹 현재 선택: {video_gender} - {video_emotion}**")
+                st.markdown(f"**{L['video_current_selection'].format(gender=video_gender, emotion=video_emotion)}**")
                 
                 # ⭐ Gemini 제안: 세션 상태에서 바이트 데이터 직접 조회
                 video_bytes_key = f"video_bytes_{gender_key}_{emotion_key}"
@@ -8463,14 +8955,14 @@ elif feature_selection == L["sim_tab_phone"]:
                     st.success(f"✅ 비디오 바이트 데이터 발견: {upload_info.get('name', '업로드된 비디오')}")
                     try:
                         st.video(current_video_bytes, format=mime_type, autoplay=False, loop=False, muted=False)
-                        st.caption(f"💡 이 비디오는 '{video_gender} - {video_emotion}' 상태에서 자동으로 재생됩니다.")
+                        st.caption(L["video_auto_play_info"].format(gender=video_gender, emotion=video_emotion))
                     except Exception as e:
                         st.warning(f"비디오 재생 오류: {e}")
                         # MIME 타입을 기본값으로 재시도
                         try:
                             st.video(current_video_bytes, format=f"video/{file_ext.lstrip('.')}", autoplay=False, loop=False, muted=False)
                         except:
-                            st.error("❌ 비디오 재생에 실패했습니다.")
+                            st.error(L["video_playback_error"])
                 else:
                     # 바이트 데이터가 없으면 파일 경로로 시도 (하위 호환성)
                     current_video_path = get_video_path_by_avatar(
@@ -8486,20 +8978,20 @@ elif feature_selection == L["sim_tab_phone"]:
                             with open(current_video_path, "rb") as f:
                                 existing_video_bytes = f.read()
                             st.video(existing_video_bytes, format="video/mp4", autoplay=False, loop=False, muted=False)
-                            st.caption(f"💡 이 비디오는 '{video_gender} - {video_emotion}' 상태에서 자동으로 재생됩니다.")
+                            st.caption(L["video_auto_play_info"].format(gender=video_gender, emotion=video_emotion))
                         except Exception as e:
                             st.warning(f"비디오 재생 오류: {e}")
                     else:
-                        st.info(f"💡 '{gender_key}_{emotion_key}.mp4' 비디오 파일을 업로드하세요.")
+                        st.info(L["video_upload_prompt"].format(filename=f"{gender_key}_{emotion_key}.mp4"))
                     
                     # 디버깅 정보: 비디오 디렉토리와 파일 목록 표시
                     video_dir = os.path.join(DATA_DIR, "videos")
-                    st.caption(f"📂 비디오 저장 경로: {video_dir}")
+                    st.caption(L["video_save_path"] + f" {video_dir}")
                     
                     if os.path.exists(video_dir):
                         all_videos = [f for f in os.listdir(video_dir) if f.endswith(('.mp4', '.webm', '.ogg'))]
                         if all_videos:
-                            st.caption(f"📁 업로드된 모든 비디오 파일 ({len(all_videos)}개):")
+                            st.caption(f"{L['video_uploaded_files']} ({len(all_videos)}개):")
                             for vid in all_videos:
                                 st.caption(f"  - {vid}")
                             
@@ -8509,17 +9001,17 @@ elif feature_selection == L["sim_tab_phone"]:
                                 if f.startswith(f"{gender_key}_") and f.endswith(('.mp4', '.webm', '.ogg'))
                             ]
                             if similar_videos:
-                                st.caption(f"📁 같은 성별의 다른 비디오: {', '.join(similar_videos[:3])}")
-                                st.caption("💡 위 비디오 중 하나를 사용하려면 파일명을 변경하거나 새로 업로드하세요.")
+                                st.caption(f"📁 {L.get('video_similar_gender', '같은 성별의 다른 비디오')}: {', '.join(similar_videos[:3])}")
+                                st.caption(L.get("video_rename_hint", "💡 위 비디오 중 하나를 사용하려면 파일명을 변경하거나 새로 업로드하세요."))
                         else:
-                            st.caption("⚠️ 비디오 디렉토리에 파일이 없습니다. 파일을 업로드하세요.")
+                            st.caption(L["video_directory_empty"])
                     else:
-                        st.caption(f"⚠️ 비디오 디렉토리가 존재하지 않습니다: {video_dir}")
+                        st.caption(L["video_directory_not_exist"].format(path=video_dir))
                 
                 # 또는 로컬 파일 경로 입력 및 복사
                 video_path_input = st.text_input(
-                    "또는 로컬 파일 경로 입력",
-                    placeholder="예: C:\\Users\\Admin\\Downloads\\video.mp4 또는 video.mp4",
+                    L["video_local_path_input"],
+                    placeholder=L["video_local_path_placeholder"],
                     key="video_path_input"
                 )
                 
@@ -8599,7 +9091,7 @@ elif feature_selection == L["sim_tab_phone"]:
             
             # 상태 선택 및 비디오 표시
             st.markdown("---")
-            st.markdown("**📺 현재 고객 아바타 영상**")
+            st.markdown(f"**{L['video_current_avatar']}**")
             
             if st.session_state.is_on_hold:
                 avatar_state = "HOLD"
@@ -8654,8 +9146,8 @@ elif feature_selection == L["sim_tab_phone"]:
                         "SAD": "😢",
                         "HOLD": "⏸️"
                     }.get(avatar_state, "😐")
-                    st.markdown(f"### {avatar_emoji} 고객 아바타")
-                    st.info(f"상태: {avatar_state} | 성별: {customer_gender}")
+                    st.markdown(f"### {avatar_emoji} {L['customer_avatar']}")
+                    st.info(L.get("avatar_status_info", "상태: {state} | 성별: {gender}").format(state=avatar_state, gender=customer_gender))
             else:
                 # 비디오가 없으면 이모지로 표시
                 avatar_emoji = {
@@ -8668,17 +9160,17 @@ elif feature_selection == L["sim_tab_phone"]:
                 }.get(avatar_state, "😐")
                 
                 st.markdown(f"### {avatar_emoji} 고객 아바타")
-                st.info(f"상태: {avatar_state} | 성별: {customer_gender}")
-                st.warning(f"💡 '{customer_gender}_{avatar_state.lower()}.mp4' 비디오 파일을 업로드하면 영상이 표시됩니다.")
+                st.info(L.get("avatar_status_info", "상태: {state} | 성별: {gender}").format(state=avatar_state, gender=customer_gender))
+                st.warning(L["video_avatar_upload_prompt"].format(filename=f"{customer_gender}_{avatar_state.lower()}.mp4"))
                 
                 # 업로드된 비디오 목록 표시
                 video_dir = os.path.join(DATA_DIR, "videos")
                 if os.path.exists(video_dir):
                     uploaded_videos = [f for f in os.listdir(video_dir) if f.endswith(('.mp4', '.webm', '.ogg'))]
                     if uploaded_videos:
-                        st.caption(f"📁 업로드된 비디오 파일: {', '.join(uploaded_videos[:5])}")
+                        st.caption(f"{L['video_uploaded_files']}: {', '.join(uploaded_videos[:5])}")
                         if len(uploaded_videos) > 5:
-                            st.caption(f"... 외 {len(uploaded_videos) - 5}개")
+                            st.caption(L.get("video_more_files", f"... 외 {len(uploaded_videos) - 5}개").format(count=len(uploaded_videos) - 5))
 
     with col_cc:
         # ⭐ 수정: "전화 수신 중" 메시지는 통화 중일 때만 표시
@@ -9045,8 +9537,39 @@ elif feature_selection == L["sim_tab_phone"]:
                                        "customer_closing_response", "phone_exchange"]:  # phone_exchange 추가
                         history_text += f"{role}: {msg['content']}\n"
 
-                # 3. LLM 번역 실행 (수정된 번역 함수 사용)
-                translated_summary, is_success = translate_text_with_llm(history_text, target_lang,
+                # ⭐ 수정: 먼저 핵심 포인트만 요약한 후 번역
+                # 요약 프롬프트 생성
+                lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(current_lang_at_start, "Korean")
+                summary_prompt = f"""
+You are an AI assistant that summarizes customer service conversations. 
+Extract ONLY the key points from the conversation below. Keep it concise and focused on:
+1. Customer's main inquiry/question
+2. Key information provided by the agent
+3. Important decisions or outcomes
+4. Any unresolved issues
+
+Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.
+
+--- Conversation ---
+{history_text}
+---
+
+Key Points Summary:
+"""
+                
+                # 요약 생성
+                summarized_text = ""
+                if st.session_state.is_llm_ready:
+                    try:
+                        summarized_text = run_llm(summary_prompt).strip()
+                    except Exception as e:
+                        print(f"요약 생성 실패, 전체 대화 사용: {e}")
+                        summarized_text = history_text  # 요약 실패 시 전체 대화 사용
+                else:
+                    summarized_text = history_text  # LLM이 없으면 전체 대화 사용
+
+                # 3. LLM 번역 실행 (요약된 텍스트를 번역)
+                translated_summary, is_success = translate_text_with_llm(summarized_text, target_lang,
                                                              current_lang_at_start)  # Use current_lang_at_start as source
 
                 # 4. 세션 상태 업데이트
@@ -9295,6 +9818,9 @@ elif feature_selection == L["sim_tab_phone"]:
                         msg.get("role") == "phone_exchange" 
                         for msg in st.session_state.simulator_messages
                     )
+                    
+                    # ⭐ 수정: 전화 발신 모드 확인
+                    is_outbound_call = st.session_state.get("call_sim_mode", "INBOUND") == "OUTBOUND"
 
                     if is_first_greeting:
                         # 첫 인사말인 경우: 로그에 기록하고 고객 문의 재생 준비
@@ -9303,16 +9829,26 @@ elif feature_selection == L["sim_tab_phone"]:
                         )
                         # 아바타 표정 초기화
                         st.session_state.customer_avatar["state"] = "NEUTRAL"
-                        # ⭐ 수정: 고객 문의를 CC 자막에 미리 반영 (재생 전에 반영)
-                        if st.session_state.call_initial_query:
-                            st.session_state.current_customer_audio_text = st.session_state.call_initial_query
-                        # ⭐ 수정: 고객 문의 재생을 바로 실행 (같은 실행 주기에서 처리)
-                        # 고객 문의 재생 로직이 아래에 있으므로 플래그만 설정
-                        st.session_state.customer_turn_start = True
-                        # ⭐ 최적화: 플래그 설정 후 재실행하여 고객 문의 재생 로직 실행
-                        st.rerun()
+                        
+                        # ⭐ 수정: 전화 발신 모드에서 customer_initial_audio_bytes가 없으면 바로 고객 응답 생성
+                        if is_outbound_call and not st.session_state.get("customer_initial_audio_bytes"):
+                            # 전화 발신 모드이고 고객 문의 오디오가 없으면 바로 고객 응답 생성
+                            st.session_state.current_agent_audio_text = agent_response_transcript
+                            st.session_state.process_customer_reaction = True
+                            st.session_state.pending_agent_transcript = agent_response_transcript
+                            st.rerun()
+                        else:
+                            # ⭐ 수정: 고객 문의를 CC 자막에 미리 반영 (재생 전에 반영)
+                            if st.session_state.call_initial_query:
+                                st.session_state.current_customer_audio_text = st.session_state.call_initial_query
+                            # ⭐ 수정: 고객 문의 재생을 바로 실행 (같은 실행 주기에서 처리)
+                            # 고객 문의 재생 로직이 아래에 있으므로 플래그만 설정
+                            st.session_state.customer_turn_start = True
+                            # ⭐ 최적화: 플래그 설정 후 재실행하여 고객 문의 재생 로직 실행
+                            st.rerun()
                     else:
                         # 이후 응답인 경우: 기존 로직대로 고객 반응 생성
+                        # ⭐ 수정: 전화 발신 모드에서도 고객 반응이 생성되도록 보장
                         # ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
                         # 🎯 아바타 표정 업데이트 (LLM 기반 영상 RAG)
                         # LLM이 에이전트 응답을 분석하여 고객의 예상 반응(감정)을 판단
@@ -9345,6 +9881,9 @@ elif feature_selection == L["sim_tab_phone"]:
                             else:
                                 st.session_state.customer_avatar["state"] = "NEUTRAL"
                         # ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
+
+                        # ⭐ 수정: 전사 결과를 CC에 먼저 반영
+                        st.session_state.current_agent_audio_text = agent_response_transcript
 
                         # ⭐ 수정: 전사 결과가 CC에 반영되도록 먼저 재실행
                         # 채팅과 동일하게 전사 결과를 먼저 화면에 표시한 후 고객 반응 생성
@@ -9561,6 +10100,12 @@ elif feature_selection == L["sim_tab_phone"]:
             st.session_state.process_customer_reaction = False
             del st.session_state.pending_agent_transcript
 
+            # ⭐ 수정: 에이전트 응답을 먼저 CC에 반영
+            if hasattr(st.session_state, 'current_agent_audio_text'):
+                st.session_state.current_agent_audio_text = pending_transcript
+            else:
+                st.session_state.current_agent_audio_text = pending_transcript
+
             # 고객 반응 생성
             with st.spinner(L["generating_customer_response"]):
                 customer_reaction = generate_customer_reaction_for_call(
@@ -9666,13 +10211,17 @@ elif feature_selection == L["sim_tab_phone"]:
 
                     # 고객 반응 텍스트를 CC 영역에 반영
                     st.session_state.current_customer_audio_text = customer_reaction.strip()
+                    
+                    # ⭐ 수정: 고객 반응을 이력에 저장 (전화 발신 모드에서도 작동)
+                    agent_response_text = st.session_state.get("current_agent_audio_text", pending_transcript)
+                    log_entry = f"Agent: {agent_response_text} | Customer: {customer_reaction.strip()}"
+                    st.session_state.simulator_messages.append(
+                        {"role": "phone_exchange", "content": log_entry}
+                    )
 
                     # ⭐ 수정: "없습니다. 감사합니다" 응답 처리 - 에이전트가 감사 인사 후 종료
                     if L['customer_no_more_inquiries'] in customer_reaction:
-                        # 이력 저장
-                        log_entry = f"Agent: {st.session_state.current_agent_audio_text} | Customer: {st.session_state.current_customer_audio_text}"
-                        st.session_state.simulator_messages.append(
-                            {"role": "phone_exchange", "content": log_entry})
+                        # ⭐ 수정: 이력 저장은 이미 위에서 처리되었으므로 중복 저장 방지
                         
                         # ⭐ 추가: 에이전트가 감사 인사 메시지 전송
                         agent_name = st.session_state.get("agent_name", "000")
@@ -9711,10 +10260,7 @@ elif feature_selection == L["sim_tab_phone"]:
                         st.rerun()
                     # ⭐ 추가: "추가 문의 사항도 있습니다" 응답 처리 (통화 계속)
                     elif L['customer_has_additional_inquiries'] in customer_reaction:
-                        # 이력 저장
-                        log_entry = f"Agent: {st.session_state.current_agent_audio_text} | Customer: {st.session_state.current_customer_audio_text}"
-                        st.session_state.simulator_messages.append(
-                            {"role": "phone_exchange", "content": log_entry})
+                        # ⭐ 수정: 이력 저장은 이미 위에서 처리되었으므로 중복 저장 방지
                         
                         # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
                         st.session_state.current_agent_audio_text = ""
@@ -9725,10 +10271,7 @@ elif feature_selection == L["sim_tab_phone"]:
                         st.info("💡 고객이 추가 문의 사항이 있다고 했습니다. 다음 응답을 녹음하세요.")
                     else:
                         # 일반 고객 반응 처리
-                        # 이력 저장
-                        log_entry = f"Agent: {st.session_state.current_agent_audio_text} | Customer: {st.session_state.current_customer_audio_text}"
-                        st.session_state.simulator_messages.append(
-                            {"role": "phone_exchange", "content": log_entry})
+                        # ⭐ 수정: 이력 저장은 이미 위에서 처리되었으므로 중복 저장 방지
 
                         # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
                         st.session_state.current_agent_audio_text = ""
