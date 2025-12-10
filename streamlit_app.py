@@ -75,20 +75,30 @@ except ImportError:
     )
 from langchain_core.prompts import PromptTemplate
 try:
+    # langchain 패키지에서 ConversationBufferMemory import
     from langchain.memory import ConversationBufferMemory
-except ImportError:
+except ImportError as e:
+    # langchain 패키지가 설치되지 않았거나 버전이 맞지 않는 경우
+    import sys
     raise ImportError(
-        "❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.memory' 모듈을 찾을 수 없습니다.\n"
-        "다음 명령어로 설치해주세요: pip install langchain\n"
-        "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
+        f"❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.memory' 모듈을 찾을 수 없습니다.\n"
+        f"에러 상세: {str(e)}\n"
+        f"다음 명령어로 설치해주세요: pip install langchain\n"
+        f"또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt\n"
+        f"현재 Python 버전: {sys.version}"
     )
 try:
+    # langchain 패키지에서 ConversationChain import
     from langchain.chains import ConversationChain
-except ImportError:
+except ImportError as e:
+    # langchain 패키지가 설치되지 않았거나 버전이 맞지 않는 경우
+    import sys
     raise ImportError(
-        "❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.chains' 모듈을 찾을 수 없습니다.\n"
-        "다음 명령어로 설치해주세요: pip install langchain\n"
-        "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
+        f"❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.chains' 모듈을 찾을 수 없습니다.\n"
+        f"에러 상세: {str(e)}\n"
+        f"다음 명령어로 설치해주세요: pip install langchain\n"
+        f"또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt\n"
+        f"현재 Python 버전: {sys.version}"
     )
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
