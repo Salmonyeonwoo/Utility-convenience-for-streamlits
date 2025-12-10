@@ -74,48 +74,22 @@ except ImportError:
         "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
     )
 from langchain_core.prompts import PromptTemplate
-# ConversationBufferMemory import - 여러 경로 시도
-ConversationBufferMemory = None
 try:
-    # langchain 0.2.x 버전 경로
     from langchain.memory import ConversationBufferMemory
 except ImportError:
-    try:
-        # langchain 0.3.x+ 버전 경로 (langchain-core)
-        from langchain_core.memory import ConversationBufferMemory
-    except ImportError:
-        try:
-            # langchain-community 경로
-            from langchain_community.memory import ConversationBufferMemory
-        except ImportError as e:
-            # 모든 경로 실패 시 명확한 에러 메시지
-            import sys
-            raise ImportError(
-                f"❌ 'langchain.memory.ConversationBufferMemory' 모듈을 찾을 수 없습니다.\n"
-                f"에러 상세: {str(e)}\n"
-                f"다음 명령어로 호환되는 버전을 설치해주세요:\n"
-                f"  pip install 'langchain>=0.2.0,<0.3.0'\n"
-                f"또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt\n"
-                f"현재 Python 버전: {sys.version}\n"
-                f"참고: langchain 0.3.0 이상 버전에서는 모듈 구조가 변경되었습니다."
-            )
-
-# ConversationChain import - 여러 경로 시도 (사용되지 않을 수 있지만 호환성을 위해 유지)
-ConversationChain = None
+    raise ImportError(
+        "❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.memory' 모듈을 찾을 수 없습니다.\n"
+        "다음 명령어로 설치해주세요: pip install langchain\n"
+        "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
+    )
 try:
-    # langchain 0.2.x 버전 경로
     from langchain.chains import ConversationChain
 except ImportError:
-    try:
-        # langchain 0.3.x+ 버전 경로
-        from langchain_core.chains import ConversationChain
-    except ImportError:
-        try:
-            # langchain-community 경로
-            from langchain_community.chains import ConversationChain
-        except ImportError:
-            # ConversationChain은 실제로 사용되지 않으므로 None으로 유지
-            ConversationChain = None
+    raise ImportError(
+        "❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.chains' 모듈을 찾을 수 없습니다.\n"
+        "다음 명령어로 설치해주세요: pip install langchain\n"
+        "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
+    )
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -1001,8 +975,6 @@ LANG: Dict[str, Dict[str, str]] = {
         "simulator_tab": "AI 고객 응대 시뮬레이터",
         "company_info_tab": "회사 정보 및 FAQ",
         "company_info_tab_desc": "회사별 상세 정보, 인기 상품, 화제의 소식, FAQ를 검색하고 관리할 수 있는 기능입니다.",
-        "video_gen_tab": "비디오 생성 (AI API)",
-        "video_gen_tab_desc": "D-ID API를 사용하여 성별과 감정 상태에 맞는 비디오를 자동으로 생성합니다.",
         "sim_tab_chat_email_desc": "고객 응대 업무에서 채팅 및 이메일로 실제로 문의 응대가 될 수 있는 실전 대비 가상 시나리오입니다. AI가 응대 가이드라인과 초안을 생성하며, 고객 반응을 시뮬레이션하여 실전 대비 훈련이 가능합니다.",
         "sim_tab_phone_desc": "고객 응대 업무에서 전화로 실제로 문의 응대가 될 수 있는 실전 대비 가상 시나리오입니다. 음성 녹음 및 실시간 CC 자막 기능을 제공하며, 전화 통화 시뮬레이션을 통해 실전 응대 능력을 향상시킬 수 있습니다.",
         "rag_tab_desc": "업로드된 문서를 기반으로 질문에 답변하는 지식 챗봇입니다. PDF, TXT, HTML 파일을 업로드하여 RAG(Retrieval-Augmented Generation) 인덱스를 구축하고, 문서 내용을 기반으로 정확한 답변을 제공합니다.",
@@ -1308,10 +1280,6 @@ LANG: Dict[str, Dict[str, str]] = {
         "empty_response_warning": "응답을 입력하세요.",
         "customer_no_more_inquiries": "없습니다. 감사합니다.",
         "customer_has_additional_inquiries": "추가 문의 사항도 있습니다.",
-        "agent_confirmed_inquiry": "에이전트가 추가 문의 여부를 확인했습니다. 고객의 최종 답변을 자동으로 생성합니다.",
-        "customer_no_more_inquiries_confirmed": "고객이 더 이상 문의할 사항이 없다고 확인했습니다。",
-        "consultation_end": "상담 종료",
-        "consultation_end_instruction": "아래 **설문 조사 링크 전송 및 응대 종료** 버튼을 클릭하여 상담을 종료하세요.",
         "sim_end_chat_button": "설문 조사 링크 전송 및 응대 종료",
         "delete_mic_record": "❌ 녹음 삭제",
 
@@ -1419,8 +1387,6 @@ LANG: Dict[str, Dict[str, str]] = {
         "content_tab_desc": "A feature that generates personalized learning content using AI. You can generate key summary notes, multiple-choice quizzes, and practical examples tailored to learning topics and difficulty levels.",
         "lstm_tab_desc": "A feature that predicts learner achievement using LSTM models and visualizes it in a dashboard. Analyzes past quiz score data to predict future achievement and visually check learning performance.",
         "company_info_tab_desc": "Search and manage company-specific detailed information, popular products, trending news, and FAQs. Visualize company introductions, popular products, and trending news at a glance.",
-        "video_gen_tab": "Video Generation (AI API)",
-        "video_gen_tab_desc": "Automatically generate videos matching gender and emotion states using D-ID API.",
         "voice_rec_header_desc": "A feature for managing and storing voice recordings and transcription results. Record with a microphone or upload files to convert speech to text via Whisper API, and save and manage transcription results.",
         "more_features_label": "More Features",
         "rag_header": "RAG Knowledge Chatbot (Document Q&A)",
@@ -1722,10 +1688,6 @@ LANG: Dict[str, Dict[str, str]] = {
         "empty_response_warning": "Please enter a response。",
         "customer_no_more_inquiries": "No, that will be all, thank you。",
         "customer_has_additional_inquiries": "Yes, I have an additional question。",
-        "agent_confirmed_inquiry": "The agent has confirmed if there are additional inquiries. Automatically generating the customer's final response.",
-        "customer_no_more_inquiries_confirmed": "Confirmed that the customer has no further inquiries.",
-        "consultation_end": "End of Consultation",
-        "consultation_end_instruction": "Click the **Send Survey Link and End Response** button below to end the consultation.",
         "sim_end_chat_button": "Send Survey Link and End Consultations",
         "delete_mic_record": "❌ Delete recordings",
 
@@ -1834,8 +1796,6 @@ LANG: Dict[str, Dict[str, str]] = {
         "content_tab_desc": "AIを活用して個人向けの学習コンテンツを生成する機能です。学習テーマと難易度に合わせて要点サマリー、選択式クイズ、実践例などを生成できます。",
         "lstm_tab_desc": "LSTMモデルを活用して学習者の達成度を予測し、ダッシュボードで可視化する機能です。過去のクイズスコアデータを分析して将来の達成度を予測し、学習成果を視覚的に確認できます。",
         "company_info_tab_desc": "会社別の詳細情報、人気商品、話題のニュース、FAQを検索・管理できる機能です。会社紹介、人気商品、話題のニュースを視覚化して一目で確認できます。",
-        "video_gen_tab": "動画生成 (AI API)",
-        "video_gen_tab_desc": "D-ID APIを使用して、性別と感情状態に合わせた動画を自動生成します。",
         "voice_rec_header_desc": "音声録音および転写結果を管理・保存する機能です。マイクで録音するかファイルをアップロードしてWhisper APIを通じて音声をテキストに変換し、転写結果を保存・管理できます。",
         "more_features_label": "その他の機能",
         "rag_header": "RAG知識チャットボット (ドキュメントQ&A)",
@@ -2137,10 +2097,6 @@ LANG: Dict[str, Dict[str, str]] = {
         "empty_response_warning": "応答を入力してください。",
         "customer_no_more_inquiries": "いいえ、結構です。大丈夫です。有難う御座いました。",
         "customer_has_additional_inquiries": "はい、追加の問い合わせがあります。",
-        "agent_confirmed_inquiry": "エージェントが追加の問い合わせの有無を確認しました。お客様の最終回答を自動生成します。",
-        "customer_no_more_inquiries_confirmed": "お客様がこれ以上問い合わせがないことを確認しました。",
-        "consultation_end": "相談終了",
-        "consultation_end_instruction": "以下の**アンケートリンク送信および応対終了**ボタンをクリックして相談を終了してください。",
         "sim_end_chat_button": "アンケートリンクを送信して応対終了",
         "delete_mic_record": "録音を削除する",
 
@@ -2257,10 +2213,7 @@ if "last_audio" not in st.session_state:
 if "simulator_messages" not in st.session_state:
     st.session_state.simulator_messages = []
 if "simulator_memory" not in st.session_state:
-    if ConversationBufferMemory is not None:
-        st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history")
-    else:
-        st.session_state.simulator_memory = None
+    st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history")
 if "simulator_chain" not in st.session_state:
     st.session_state.simulator_chain = None
 if "initial_advice_provided" not in st.session_state:
@@ -6327,12 +6280,9 @@ with st.sidebar:
         except Exception:
             # 메모리 초기화 실패 시 새로 생성
             try:
-                if ConversationBufferMemory is not None:
-                    st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history")
-                else:
-                    st.session_state.simulator_memory = None
+                st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history")
             except Exception:
-                st.session_state.simulator_memory = None  # 초기화 실패해도 계속 진행
+                pass  # 초기화 실패해도 계속 진행
         st.session_state.initial_advice_provided = False
         st.session_state.is_chat_ended = False
         # ⭐ 수정: 위젯이 생성된 후에는 session_state를 직접 수정할 수 없으므로 플래그 사용
@@ -6373,13 +6323,72 @@ with st.sidebar:
     st.title(L["sidebar_title"])
     st.markdown("---")
 
+    # ⭐ API Key 설정 섹션 추가
+    st.subheader("🔑 API Key 설정")
+    
+    # LLM 선택
+    llm_options = {
+        "openai_gpt4": "OpenAI GPT-4",
+        "openai_gpt35": "OpenAI GPT-3.5",
+        "gemini_pro": "Google Gemini Pro",
+        "gemini_flash": "Google Gemini Flash",
+        "claude": "Anthropic Claude",
+        "groq": "Groq",
+        "nvidia": "NVIDIA NIM"
+    }
+    
+    current_llm = st.session_state.get("selected_llm", "openai_gpt4")
+    selected_llm = st.selectbox(
+        "LLM 모델 선택",
+        options=list(llm_options.keys()),
+        format_func=lambda x: llm_options[x],
+        index=list(llm_options.keys()).index(current_llm) if current_llm in llm_options else 0,
+        key="sidebar_llm_select"
+    )
+    if selected_llm != current_llm:
+        st.session_state.selected_llm = selected_llm
+    
+    # API Key 매핑
+    api_key_map = {
+        "openai_gpt4": "openai",
+        "openai_gpt35": "openai",
+        "gemini_pro": "gemini",
+        "gemini_flash": "gemini",
+        "claude": "claude",
+        "groq": "groq",
+        "nvidia": "nvidia"
+    }
+    
+    api_name = api_key_map.get(selected_llm, "openai")
+    api_config = SUPPORTED_APIS.get(api_name, {})
+    
+    if api_config:
+        # 현재 API Key 확인
+        current_key = get_api_key(api_name)
+        if not current_key:
+            # 수동 입력 필드
+            session_key = api_config.get("session_key", "")
+            manual_key = st.text_input(
+                api_config.get("label", "API Key"),
+                value=st.session_state.get(session_key, ""),
+                type="password",
+                placeholder=api_config.get("placeholder", "API Key를 입력하세요"),
+                key=f"manual_api_key_{selected_llm}"
+            )
+            if manual_key and manual_key != st.session_state.get(session_key, ""):
+                st.session_state[session_key] = manual_key
+        else:
+            st.success(f"✅ {api_config.get('label', 'API Key')} 설정됨")
+    
+    st.markdown("---")
+
     # ⭐ 기능 선택 - 기본값을 AI 챗 시뮬레이터로 설정
     if "feature_selection" not in st.session_state:
         st.session_state.feature_selection = L["sim_tab_chat_email"]
 
     # ⭐ 핵심 기능과 더보기 기능 분리 (회사 정보 및 FAQ 추가)
     core_features = [L["sim_tab_chat_email"], L["sim_tab_phone"], L["company_info_tab"]]
-    other_features = [L["rag_tab"], L["content_tab"], L["lstm_tab"], L["voice_rec_header"], L["video_gen_tab"]]
+    other_features = [L["rag_tab"], L["content_tab"], L["lstm_tab"], L["voice_rec_header"]]
     
     # 모든 기능을 하나의 리스트로 통합 (하나만 선택 가능하도록)
     all_features = core_features + other_features
@@ -6407,74 +6416,6 @@ with st.sidebar:
         st.session_state.feature_selection = selected_feature
     
     feature_selection = st.session_state.get("feature_selection", L["sim_tab_chat_email"])
-    
-    # ⭐ 비디오 생성기 탭이 아닐 때만 API Key 설정 섹션 표시
-    # 비디오 생성기 탭일 때는 API 키 입력 칸을 완전히 숨김
-    is_video_gen_tab = (
-        feature_selection == L.get("video_gen_tab", "비디오 생성 (AI API)") or
-        "비디오 생성" in str(feature_selection) or
-        "video_gen" in str(feature_selection).lower()
-    )
-    
-    if not is_video_gen_tab:
-        st.markdown("---")
-        
-        # ⭐ API Key 설정 섹션 추가
-        st.subheader("🔑 API Key 설정")
-        
-        # LLM 선택
-        llm_options = {
-            "openai_gpt4": "OpenAI GPT-4",
-            "openai_gpt35": "OpenAI GPT-3.5",
-            "gemini_pro": "Google Gemini Pro",
-            "gemini_flash": "Google Gemini Flash",
-            "claude": "Anthropic Claude",
-            "groq": "Groq",
-            "nvidia": "NVIDIA NIM"
-        }
-        
-        current_llm = st.session_state.get("selected_llm", "openai_gpt4")
-        selected_llm = st.selectbox(
-            "LLM 모델 선택",
-            options=list(llm_options.keys()),
-            format_func=lambda x: llm_options[x],
-            index=list(llm_options.keys()).index(current_llm) if current_llm in llm_options else 0,
-            key="sidebar_llm_select"
-        )
-        if selected_llm != current_llm:
-            st.session_state.selected_llm = selected_llm
-        
-        # API Key 매핑
-        api_key_map = {
-            "openai_gpt4": "openai",
-            "openai_gpt35": "openai",
-            "gemini_pro": "gemini",
-            "gemini_flash": "gemini",
-            "claude": "claude",
-            "groq": "groq",
-            "nvidia": "nvidia"
-        }
-        
-        api_name = api_key_map.get(selected_llm, "openai")
-        api_config = SUPPORTED_APIS.get(api_name, {})
-        
-        if api_config:
-            # 현재 API Key 확인
-            current_key = get_api_key(api_name)
-            if not current_key:
-                # 수동 입력 필드
-                session_key = api_config.get("session_key", "")
-                manual_key = st.text_input(
-                    api_config.get("label", "API Key"),
-                    value=st.session_state.get(session_key, ""),
-                    type="password",
-                    placeholder=api_config.get("placeholder", "API Key를 입력하세요"),
-                    key=f"manual_api_key_{selected_llm}"
-                )
-                if manual_key and manual_key != st.session_state.get(session_key, ""):
-                    st.session_state[session_key] = manual_key
-            else:
-                st.success(f"✅ {api_config.get('label', 'API Key')} 설정됨")
 
 # 메인 타이틀
 # ⭐ L 변수가 정의되어 있는지 확인 (사이드바에서 이미 정의됨)
@@ -6510,93 +6451,6 @@ elif feature_selection == L["company_info_tab"]:
     # 공백 축소: 제목과 설명을 한 줄로 간결하게 표시
     st.markdown(f"#### 📋 {L['company_info_tab']}")
     st.caption(L['company_info_tab_desc'])
-elif feature_selection == L["video_gen_tab"]:
-    st.markdown(f"#### 🎬 {L['video_gen_tab']}")
-    st.caption(L['video_gen_tab_desc'])
-    
-    # 비디오 생성기 탭 구현
-    current_lang = st.session_state.get("language", "ko")
-    if current_lang not in ["ko", "en", "ja"]:
-        current_lang = "ko"
-    L = LANG.get(current_lang, LANG["ko"])
-    
-    st.markdown("---")
-    
-    # ⭐ API 키 입력 칸 제거 - Streamlit Secrets 또는 환경 변수만 사용
-    # API 키는 이미 get_api_key() 함수를 통해 관리되므로 별도 입력 칸 불필요
-    
-    # Lottie 애니메이션 사용 가능 여부 확인
-    try:
-        from streamlit_lottie import st_lottie
-        LOTTIE_AVAILABLE = True
-    except ImportError:
-        LOTTIE_AVAILABLE = False
-        st.info("💡 Lottie 애니메이션을 사용하려면 `pip install streamlit-lottie`를 실행하세요. (현재는 비디오 파일 업로드만 지원됩니다)")
-    
-    # 아바타 이미지 URL 입력 (API 키 입력 칸 제거)
-    avatar_image_url = st.text_input(
-        "아바타 이미지 URL",
-        value=st.session_state.get("avatar_image_url", "https://avatar.iran.liara.run/public/5"),
-        key="avatar_image_url_input",
-        placeholder="https://example.com/avatar.jpg"
-    )
-    st.session_state.avatar_image_url = avatar_image_url
-    
-    # 비디오 생성 버튼
-    if st.button("비디오 생성", type="primary", key="generate_video_btn"):
-        # D-ID API 키 확인 (Streamlit Secrets 또는 환경 변수에서만 가져옴)
-        d_id_api_key = os.environ.get("D_ID_API_KEY") or (st.secrets.get("D_ID_API_KEY") if hasattr(st, "secrets") else None)
-        
-        if not d_id_api_key:
-            st.error("❌ 오류: D-ID API 키가 설정되지 않았습니다. Streamlit Secrets에 'D_ID_API_KEY'를 설정하거나 환경 변수로 설정하세요.")
-        else:
-            # Lottie 애니메이션 사용 가능한 경우
-            if LOTTIE_AVAILABLE:
-                st.info("💡 Lottie 애니메이션은 비디오 생성이 아닌 애니메이션 표시용입니다. D-ID API를 사용하여 실제 비디오를 생성합니다.")
-            
-            # D-ID API를 사용한 비디오 생성 로직 (실제 구현 필요)
-            with st.spinner("비디오 생성 중... (약 30초~2분 소요)"):
-                st.info("⚠️ 비디오 생성 기능은 D-ID API 연동이 필요합니다. 현재는 미구현 상태입니다.")
-                st.info("💡 대신 Lottie 애니메이션을 사용하여 시각적 효과를 제공할 수 있습니다.")
-    
-    # Lottie 애니메이션 예시 (선택사항)
-    if LOTTIE_AVAILABLE:
-        st.markdown("---")
-        st.markdown("### Lottie 애니메이션 예시")
-        try:
-            # 예시 Lottie 애니메이션 URL
-            lottie_url = "https://assets5.lottiefiles.com/packages/lf20_V9t630.json"
-            st_lottie(lottie_url, height=300, key="lottie_example")
-            st.caption("💡 Lottie 애니메이션은 비디오 생성이 아닌 애니메이션 표시용입니다.")
-        except Exception as e:
-            st.warning(f"Lottie 애니메이션 로드 오류: {e}")
-    
-    # 사용 가이드
-    with st.expander("사용 가이드", expanded=True):
-        st.markdown("""
-        **D-ID API 사용 방법:**
-        
-        1. **API 키 발급**
-           - D-ID Studio에 가입
-           - API 키 발급(무료 크레딧 제공)
-        
-        2. **이미지 준비**
-           - 아바타로 사용할 사람의 얼굴 사진 준비
-           - URL로 접근 가능한 이미지 또는 파일 업로드
-        
-        3. **비디오 생성**
-           - 성별과 감정 상태 선택
-           - 스크립트 입력 (비디오에서 말할 내용)
-           - 생성 버튼 클릭
-        
-        4. **결과 확인**
-           - 생성 완료 후 비디오 자동 재생
-           - 다운로드 버튼으로 저장
-        
-        **주의사항:**
-        - API 사용량에 따라 비용이 발생할 수 있습니다
-        - 비디오 생성에는 시간이 걸릴 수 있습니다 (약 30초~2분)
-        """)
 
 # ========================================
 # 10. 기능별 페이지
@@ -7414,7 +7268,6 @@ Response Hints:""",
             if st.button(f"🔄 {L.get('button_reset', '새로 시작')}", key="reset_inquiry_btn"):
                 st.session_state.generated_ai_answer = None
                 st.session_state.generated_hint = None
-                st.rerun()
 
 # -------------------- Voice Record Tab --------------------
 
@@ -7497,7 +7350,6 @@ if feature_selection == L["voice_rec_header"]:
                 )
                 st.success(L["saved_success"])
                 st.session_state.last_transcript = ""
-                # ⭐ 최적화: 버튼 클릭 후 Streamlit이 자동으로 재실행하므로 rerun 제거
             except Exception as e:
                 st.error(f"{L['error']} {e}")
 
@@ -7566,7 +7418,6 @@ if feature_selection == L["voice_rec_header"]:
                                             break
                                     save_voice_records(records)
                                     st.success(L["retranscribe"] + " " + L["saved_success"])
-                                    # ⭐ 최적화: 버튼 클릭 후 Streamlit이 자동으로 재실행하므로 rerun 제거
                                 except Exception as e:
                                     st.error(f"{L['error']} {e}")
 
@@ -7578,7 +7429,6 @@ if feature_selection == L["voice_rec_header"]:
                             else:
                                 st.error(L["delete_fail"])
                             st.session_state[f"confirm_del_{rec_id}"] = False
-                            # ⭐ 최적화: 버튼 클릭 후 Streamlit이 자동으로 재실행하므로 rerun 제거
                         else:
                             st.session_state[f"confirm_del_{rec_id}"] = True
                             st.warning(L["delete_confirm_rec"])
@@ -7618,7 +7468,6 @@ elif feature_selection == L["sim_tab_chat_email"]:
                     st.session_state.sim_attachment_context_for_llm = ""  # 컨텍스트 초기화
                     st.session_state.agent_attachment_file = []  # 에이전트 첨부 파일 초기화
                     st.success(L["delete_success"])
-                    # ⭐ 최적화: 버튼 클릭 후 Streamlit이 자동으로 재실행하므로 rerun 제거
             if c_no.button(L["delete_confirm_no"], key="confirm_del_no"):
                 st.session_state.show_delete_confirm = False
 
@@ -8006,8 +7855,6 @@ elif feature_selection == L["sim_tab_chat_email"]:
             # 전화 발신 관련 상태 초기화
             st.session_state.sim_call_outbound_summary = ""
             st.session_state.sim_call_outbound_target = None
-            # ⭐ 재실행
-            st.rerun()
         # st.stop()
 
     # =========================
@@ -8430,8 +8277,6 @@ Key Points Summary:
                     if ai_draft and not ai_draft.startswith("❌"):
                         st.session_state.agent_response_area_text = ai_draft
                         st.success(L["draft_success"])
-                        # ⭐ 재실행하여 텍스트 영역 업데이트
-                        st.rerun()
                     else:
                         st.error(ai_draft if ai_draft else L.get("draft_error", "응답 초안 생성에 실패했습니다."))
 
@@ -8445,14 +8290,12 @@ Key Points Summary:
                 # 전화 발신 시뮬레이션: 현지 업체
                 st.session_state.sim_call_outbound_target = "현지 업체/파트너"
                 st.session_state.sim_stage = "OUTBOUND_CALL_IN_PROGRESS"
-                st.rerun()
 
         with call_cols[1]:
             if st.button(L["button_call_outbound_to_customer"], key="btn_call_outbound_customer", use_container_width=True):
                 # 전화 발신 시뮬레이션: 고객
                 st.session_state.sim_call_outbound_target = "고객"
                 st.session_state.sim_stage = "OUTBOUND_CALL_IN_PROGRESS"
-                st.rerun()
 
         st.markdown("---")
         # --- 전화 발신 버튼 추가 끝 ---
@@ -8538,7 +8381,6 @@ Key Points Summary:
                     # ⭐ 수정: 위젯이 생성된 후에는 session_state를 직접 수정할 수 없으므로 플래그 사용
                     st.session_state.reset_agent_response_area = True
                     st.success("녹음이 삭제되었습니다. 다시 녹음해 주세요.")
-                    st.rerun()
 
             # 3. 전사(Whisper) 버튼 (기존 로직 대체)
             col_tr, _ = st.columns([1, 2])
@@ -8575,9 +8417,6 @@ Key Points Summary:
                                 if len(transcribed_text) > 50:
                                     snippet += "..."
                                 st.success(L["whisper_success"] + f"\n\n**인식 내용:** *{snippet}*")
-                                # ⭐ 수정: 전사 결과가 입력창에 반영되도록 UI 업데이트
-                                # 전사 완료 후 다음 단계로 진행할 수 있도록 rerun
-                                st.rerun()  # UI 업데이트
 
         col_text, col_button = st.columns([4, 1])
 
@@ -8652,8 +8491,6 @@ Key Points Summary:
             # 플래그를 설정합니다. 위젯 생성 전에 이 플래그를 확인하여 값을 초기화합니다.
             st.session_state.reset_agent_response_area = True
             
-            # ⭐ 재실행: 이 부분이 즉시 고객 반응을 생성하도록 유도합니다.
-            st.rerun()
 
         # --- 언어 이관 버튼 ---
         st.markdown("---")
@@ -8769,7 +8606,6 @@ Key Points Summary:
 
             # 6. UI 재실행 (언어 변경 적용)
             st.success(f"✅ {LANG[target_lang]['transfer_summary_header']}가 준비되었습니다. 새로운 응대를 시작하세요.")
-            st.rerun()
 
 
         for i, target_lang in enumerate(languages):
@@ -8852,8 +8688,6 @@ Key Points Summary:
             )
 
         st.session_state.realtime_hint_text = ""  # 힌트 초기화
-        # ⭐ 재실행: 고객 반응이 추가되었으므로 상태 변경 반영
-        st.rerun()
 
 
     # =========================
@@ -8887,7 +8721,6 @@ Key Points Summary:
                 # [추가] TTS 버튼 렌더링을 위해 sleep/rerun 강제
                 time.sleep(0.1)
                 st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
-                st.rerun()
 
         # [2] 이메일 - 상담 종료 버튼 (즉시 종료)
         with col_email_end:
@@ -8906,7 +8739,6 @@ Key Points Summary:
                 time.sleep(0.1)
                 st.session_state.is_chat_ended = True
                 st.session_state.sim_stage = "CLOSING"  # 바로 CLOSING으로 전환
-                st.rerun()
 
     # =========================
     # 8. 고객 최종 응답 생성 및 처리 (WAIT_CUSTOMER_CLOSING_RESPONSE)
@@ -8928,14 +8760,13 @@ Key Points Summary:
         
         # 고객 응답이 아직 생성되지 않은 경우에만 생성
         if last_customer_message is None:
-            st.info(L["agent_confirmed_inquiry"])
+            st.info("에이전트가 추가 문의 여부를 확인했습니다. 고객의 최종 답변을 자동으로 생성합니다.")
 
             # 고객 답변 자동 생성 (LLM Key 검증 포함)
             if not st.session_state.is_llm_ready:
                 st.warning("LLM Key가 없어 고객 반응 자동 생성이 불가합니다. 수동으로 '고객 반응 생성' 버튼을 클릭하거나 AGENT_TURN으로 돌아가세요。")
                 if st.button(L["customer_generate_response_button"], key="btn_generate_final_response"):
                     st.session_state.sim_stage = "AGENT_TURN"
-                    st.rerun()
                 st.stop()
             
             # LLM이 준비된 경우 고객 응답 생성
@@ -8984,9 +8815,9 @@ Key Points Summary:
                 
                 # ⭐ 수정: 현재 단계에서 바로 버튼 표시 (FINAL_CLOSING_ACTION으로 이동하지 않음)
                 st.markdown("---")
-                st.success(f"✅ {L['customer_no_more_inquiries_confirmed']}")
-                st.markdown(f"### 📋 {L['consultation_end']}")
-                st.info(L["consultation_end_instruction"])
+                st.success("✅ 고객이 더 이상 문의할 사항이 없다고 확인했습니다。")
+                st.markdown("### 📋 상담 종료")
+                st.info("아래 **설문 조사 링크 전송 및 응대 종료** 버튼을 클릭하여 상담을 종료하세요.")
                 st.markdown("---")
                 
                 # 버튼을 중앙에 크게 표시
@@ -9021,7 +8852,6 @@ Key Points Summary:
                     )
                     
                     st.session_state.realtime_hint_text = ""  # 힌트 초기화
-                    st.rerun()
             # (B) "추가 문의 사항도 있습니다" 경로 -> AGENT_TURN으로 복귀
             elif L['customer_has_additional_inquiries'] in final_customer_reaction:
                 st.session_state.sim_stage = "AGENT_TURN"
@@ -9031,7 +8861,6 @@ Key Points Summary:
                     attachment_context=st.session_state.sim_attachment_context_for_llm,
                 )
                 st.session_state.realtime_hint_text = ""
-                st.rerun()
 
     # =========================
     # 9. 최종 종료 행동 (FINAL_CLOSING_ACTION)
@@ -9045,9 +8874,9 @@ Key Points Summary:
         
         # ⭐ 수정: 명확한 안내 메시지와 함께 버튼 표시
         st.markdown("---")
-        st.success(f"✅ {L['customer_no_more_inquiries_confirmed']}")
-        st.markdown(f"### 📋 {L['consultation_end']}")
-        st.info(L["consultation_end_instruction"])
+        st.success("✅ 고객이 더 이상 문의할 사항이 없다고 확인했습니다。")
+        st.markdown("### 📋 상담 종료")
+        st.info("아래 **설문 조사 링크 전송 및 응대 종료** 버튼을 클릭하여 상담을 종료하세요.")
         st.markdown("---")
         
         # 버튼을 중앙에 크게 표시
@@ -9083,7 +8912,6 @@ Key Points Summary:
             )
             
             st.session_state.realtime_hint_text = ""  # 힌트 초기화
-            st.rerun()
 
 # ========================================
 # 전화 시뮬레이터 로직
@@ -9278,9 +9106,6 @@ elif feature_selection == L["sim_tab_phone"]:
                                 except:
                                     pass  # 파일 저장 실패해도 바이트는 이미 저장됨
                                 
-                                # rerun 호출 (업로드된 파일 객체가 사라지기 전에 처리 완료)
-                                st.rerun()
-                                
                         except Exception as e:
                             st.error(L["video_upload_error"].format(error=str(e)))
                             import traceback
@@ -9428,9 +9253,8 @@ elif feature_selection == L["sim_tab_phone"]:
                         except Exception as copy_error:
                             st.info(f"💡 파일 복사는 건너뛰었습니다 (바이트 데이터는 메모리에 저장됨): {copy_error}")
                         
-                        # 입력 필드 초기화 및 rerun
+                        # 입력 필드 초기화
                         st.session_state.video_path_input = ""
-                        st.rerun()
                         
                     except Exception as e:
                         st.error(f"❌ 비디오 파일 로드 오류: {str(e)}")
@@ -9710,7 +9534,6 @@ elif feature_selection == L["sim_tab_phone"]:
                 # ✅ 상태 변경 후 재실행하여 IN_CALL 상태로 전환
                 # 에이전트가 인사말을 녹음할 수 있도록 안내 메시지 표시
                 st.info(L["call_started_message"])
-                st.rerun()
 
         # 전화 발신 (새로운 세션 시작)
         with col_out:
@@ -9776,7 +9599,6 @@ elif feature_selection == L["sim_tab_phone"]:
                 st.session_state.sim_audio_bytes = None
 
                 st.success(f"'{call_target_selection}'에게 전화 발신 시뮬레이션이 시작되었습니다. 아래 마이크 버튼을 눌러 인사말을 녹음하세요。")
-                st.rerun()
 
         # ------------------
         # IN_CALL 상태 (통화 중)
@@ -9831,12 +9653,10 @@ elif feature_selection == L["sim_tab_phone"]:
                     if st.session_state.hold_start_time:
                         st.session_state.total_hold_duration += datetime.now() - st.session_state.hold_start_time
                         st.session_state.hold_start_time = None
-                    st.rerun()  # ⭐ [수정 10] Resume 후 UI 갱신을 위해 rerun 추가
             else:
                 if st.button(L["button_hold"], key="hold_call_btn"):
                     st.session_state.is_on_hold = True
                     st.session_state.hold_start_time = datetime.now()
-                    st.rerun()  # ⭐ [수정 10] Hold 후 UI 갱신을 위해 rerun 추가
 
         # ------------------------------
         # Hold 표시
@@ -9952,7 +9772,6 @@ Key Points Summary:
 
             # 6. UI 재실행 (언어 변경 적용)
             st.success(f"✅ {LANG[target_lang]['transfer_summary_header']}가 준비되었습니다. 새로운 응대를 시작하세요.")
-            st.rerun()
 
 
         st.markdown("---")
@@ -9988,8 +9807,6 @@ Key Points Summary:
             if st.button(L["btn_request_phone_summary"], key=f"btn_request_phone_summary_{st.session_state.sim_instance_id}"):
                 # 요약 함수 호출
                 st.session_state.customer_history_summary = summarize_history_with_ai(st.session_state.language)
-                # ⭐ 최적화: 요약 생성 후 UI 업데이트를 위해 rerun 필요 (유지)
-                st.rerun()
 
         # 2. 이관 번역 재시도 버튼 (이관 후 번역이 실패했을 경우)
         if st.session_state.language != st.session_state.language_at_transfer_start and not st.session_state.transfer_summary_text:
@@ -10006,8 +9823,6 @@ Key Points Summary:
                         )
                         st.session_state.transfer_summary_text = translated_summary
                         st.session_state.translation_success = is_success
-                        # ⭐ 최적화: 번역 재시도 후 UI 업데이트를 위해 rerun 필요 (유지)
-                        st.rerun()
 
         # 3. 요약 내용 표시
         if st.session_state.transfer_summary_text:
@@ -10039,8 +9854,6 @@ Key Points Summary:
                     # 전화 탭이므로 is_call=True
                     hint = generate_realtime_hint(current_lang, is_call=True)
                     st.session_state.realtime_hint_text = hint
-                    # ⭐ 최적화: 힌트 생성 후 UI 업데이트를 위해 rerun 필요 (유지)
-                    st.rerun()
 
         # =========================
         # CC 자막 / 음성 입력 및 제어 로직 (기존 로직)
@@ -10788,7 +10601,6 @@ Key Points Summary:
             st.session_state.customer_initial_audio_bytes = None
             st.session_state.customer_history_summary = ""
             st.session_state.sim_audio_bytes = None
-            st.rerun() # 새 시뮬레이션 시작 시 rerun
 
 
 # -------------------- RAG Tab --------------------
@@ -11125,9 +10937,6 @@ elif feature_selection == L["content_tab"]:
                             raise ValueError(f"Question {i+1} must have exactly 4 options.")
                         if not isinstance(q["answer"], int) or q["answer"] < 1 or q["answer"] > 4:
                             raise ValueError(f"Question {i+1} answer must be an integer between 1 and 4.")
-                        # explanation 필드가 없으면 기본값 추가
-                        if "explanation" not in q or not q.get("explanation"):
-                            q["explanation"] = f"정답은 {q['options'][q['answer']-1]}입니다. 이 문제에 대한 상세한 해설이 제공되지 않았습니다."
 
                     # 파싱 성공 및 데이터 유효성 검사 후 상태 저장
                     st.session_state.quiz_data = quiz_data
@@ -11337,14 +11146,7 @@ elif feature_selection == L["content_tab"]:
                 st.markdown("---")
                 st.markdown(f"**{L['correct_is']}:** {correct_answer_text}")
                 with st.expander(f"**{L['explanation']}**", expanded=True):
-                    # 해설이 없거나 비어있을 경우 기본 해설 생성
-                    explanation = question_data.get('explanation', '')
-                    if not explanation or explanation.strip() == '' or explanation == '해설이 제공되지 않았습니다.':
-                        # 기본 해설 생성
-                        correct_idx = question_data.get('answer', 1)
-                        correct_option = question_data['options'][correct_idx - 1] if 0 < correct_idx <= len(question_data['options']) else "N/A"
-                        explanation = f"정답은 **{correct_option}**입니다.\n\n이 선택지가 정답인 이유를 설명하면, 문제에서 요구하는 핵심 개념과 가장 일치하는 답입니다. 다른 선택지들은 문제의 요구사항과 완전히 일치하지 않거나 관련이 적은 내용입니다."
-                    st.info(explanation)
+                    st.info(question_data.get('explanation', '해설이 제공되지 않았습니다.'))
 
                 # 다음 문항 버튼
                 if next_col.button(L["next_question"], key=f"next_question_btn_{idx}"):
