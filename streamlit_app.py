@@ -1169,6 +1169,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "call_started_message": "통화가 시작되었습니다. 아래 마이크 버튼을 눌러 인사말을 녹음하세요.",
         "call_on_hold_message": "통화가 Hold 중입니다. 통화 재개 후 녹음이 가능합니다.",
         "recording_complete_transcribing": "🎙️ 녹음 완료. 전사 처리 중...",
+        "recording_complete_press_transcribe": "✅ 녹음 완료! 아래 전사 버튼을 눌러 텍스트로 변환하세요.",
+        "customer_positive_solution_reaction": "고객이 솔루션에 긍정적으로 반응했습니다. 추가 문의 여부를 확인해 주세요.",
         "transcription_empty_warning": "⚠️ 전사 결과가 비어있습니다. 다시 녹음해주세요. (마이크 입력이 없거나 음소거된 경우)",
         "transcription_error": "[ERROR: 전사 실패]",
         "transcription_no_result": "❌ 전사 결과가 없습니다.",
@@ -1282,6 +1284,12 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_has_additional_inquiries": "추가 문의 사항도 있습니다.",
         "sim_end_chat_button": "설문 조사 링크 전송 및 응대 종료",
         "delete_mic_record": "❌ 녹음 삭제",
+        "agent_confirmed_additional_inquiry": "에이전트가 추가 문의 여부를 확인했습니다. 고객의 최종 답변을 자동으로 생성합니다.",
+        "llm_key_missing_customer_response": "LLM Key가 없어 고객 반응 자동 생성이 불가합니다. 수동으로 '고객 반응 생성' 버튼을 클릭하거나 AGENT_TURN으로 돌아가세요。",
+        "customer_response_generation_failed": "고객 응답을 생성할 수 없습니다. 다시 시도해주세요.",
+        "no_more_inquiries_confirmed": "✅ 고객이 더 이상 문의할 사항이 없다고 확인했습니다。",
+        "consultation_end_header": "📋 상담 종료",
+        "click_survey_button_to_end": "아래 **설문 조사 링크 전송 및 응대 종료** 버튼을 클릭하여 상담을 종료하세요.",
 
         # --- 첨부 파일 기능 추가 ---
         "attachment_label": "고객 첨부 파일 업로드 (스크린샷 등)",
@@ -1577,6 +1585,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "call_started_message": "Call started. Please click the microphone button below to record your greeting.",
         "call_on_hold_message": "Call is on hold. Recording is available after resuming the call.",
         "recording_complete_transcribing": "🎙️ Recording complete. Transcribing...",
+        "recording_complete_press_transcribe": "✅ Recording complete! Press the transcribe button below to convert to text.",
+        "customer_positive_solution_reaction": "The customer responded positively to the solution. Please check if there are any additional inquiries.",
         "transcription_empty_warning": "⚠️ Transcription result is empty. Please record again. (No microphone input or muted)",
         "transcription_error": "[ERROR: Transcription failed]",
         "transcription_no_result": "❌ No transcription result.",
@@ -1690,6 +1700,12 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_has_additional_inquiries": "Yes, I have an additional question。",
         "sim_end_chat_button": "Send Survey Link and End Consultations",
         "delete_mic_record": "❌ Delete recordings",
+        "agent_confirmed_additional_inquiry": "The agent has confirmed if there are any additional inquiries. Automatically generating the customer's final response.",
+        "llm_key_missing_customer_response": "LLM Key is missing. Customer response auto-generation is unavailable. Please manually click the 'Generate Customer Response' button or return to AGENT_TURN。",
+        "customer_response_generation_failed": "Failed to generate customer response. Please try again.",
+        "no_more_inquiries_confirmed": "✅ Confirmed that the customer has no further inquiries。",
+        "consultation_end_header": "📋 End of Consultation",
+        "click_survey_button_to_end": "Please end the consultation by clicking the **Send Survey Link and End Consultations** button below.",
 
         # --- 첨부 파일 기능 추가 ---
         "attachment_label": "Customer Attachment Upload (Screenshot, etc。)",
@@ -1983,6 +1999,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "call_started_message": "通話が開始されました。下のマイクボタンをクリックして挨拶を録音してください。",
         "call_on_hold_message": "通話が保留中です。通話を再開した後、録音が可能です。",
         "recording_complete_transcribing": "🎙️ 録音完了。転写処理中...",
+        "recording_complete_press_transcribe": "✅ 録音完了！以下の転写ボタンを押してテキストに変換してください。",
+        "customer_positive_solution_reaction": "お客様がソリューションに肯定的に反応しました。追加の問い合わせの有無を確認してください。",
         "transcription_empty_warning": "⚠️ 転写結果が空です。もう一度録音してください。（マイク入力がないか、ミュートされています）",
         "transcription_error": "[ERROR: 転写失敗]",
         "transcription_no_result": "❌ 転写結果がありません。",
@@ -2099,6 +2117,12 @@ LANG: Dict[str, Dict[str, str]] = {
         "customer_has_additional_inquiries": "はい、追加の問い合わせがあります。",
         "sim_end_chat_button": "アンケートリンクを送信して応対終了",
         "delete_mic_record": "録音を削除する",
+        "agent_confirmed_additional_inquiry": "エージェントが追加の問い合わせの有無を確認しました。お客様の最終回答を自動生成します。",
+        "llm_key_missing_customer_response": "LLMキーがないため、顧客の反応を自動生成できません。手動で「顧客の返信を生成」ボタンをクリックするか、AGENT_TURNに戻ってください。",
+        "customer_response_generation_failed": "顧客の応答を生成できませんでした。もう一度お試しください。",
+        "no_more_inquiries_confirmed": "✅ お客様に追加の問い合わせがないことを確認しました。",
+        "consultation_end_header": "📋 相談終了",
+        "click_survey_button_to_end": "以下の**アンケートリンクを送信して応対終了**ボタンをクリックして相談を終了してください。",
 
         # --- 첨부 파일 기능 추가 ---
         "attachment_label": "顧客の添付ファイルアップロード (スクリーンショットなど)",
@@ -8358,7 +8382,12 @@ Key Points Summary:
 
         if mic_audio and mic_audio.get("bytes"):
             st.session_state.sim_audio_bytes = mic_audio["bytes"]
-            st.info("✅ 녹음 완료! 아래 전사 버튼을 눌러 텍스트로 변환하세요.")
+            # 언어 키 안전하게 가져오기
+            current_lang = st.session_state.get("language", "ko")
+            if current_lang not in ["ko", "en", "ja"]:
+                current_lang = "ko"
+            L = LANG.get(current_lang, LANG["ko"])
+            st.info(L["recording_complete_press_transcribe"])
 
         if st.session_state.sim_audio_bytes:
             col_audio, col_transcribe, col_del = st.columns([3, 1, 1])
@@ -8484,12 +8513,27 @@ Key Points Summary:
             st.session_state.realtime_hint_text = ""  # 힌트 초기화
             st.session_state.sim_call_outbound_summary = ""  # 전화 발신 요약 초기화
 
-            # ⭐ 수정: 고객 반응 생성 로직을 다음 단계에서 처리하도록 sim_stage 변경
-            st.session_state.sim_stage = "CUSTOMER_TURN"
-            
             # ⭐ 수정: agent_response_area_text는 rerun 후 위젯이 다시 생성될 때 초기화되도록
             # 플래그를 설정합니다. 위젯 생성 전에 이 플래그를 확인하여 값을 초기화합니다.
             st.session_state.reset_agent_response_area = True
+            
+            # ⭐ 수정: 응답 전송 시 바로 고객 반응 자동 생성
+            if st.session_state.is_llm_ready:
+                # LLM이 준비된 경우 바로 고객 반응 생성
+                with st.spinner(L["generating_customer_response"]):
+                    customer_response = generate_customer_reaction(st.session_state.language, is_call=False)
+                
+                # 고객 반응을 메시지에 추가
+                st.session_state.simulator_messages.append(
+                    {"role": "customer", "content": customer_response}
+                )
+            else:
+                # LLM이 없는 경우 플래그 설정하여 CUSTOMER_TURN 단계에서 수동 생성 가능하도록
+                st.session_state.need_customer_response = True
+            
+            # ⭐ 수정: 고객 반응 생성 후 CUSTOMER_TURN 단계로 이동하고 UI 업데이트
+            st.session_state.sim_stage = "CUSTOMER_TURN"
+            st.rerun()
             
 
         # --- 언어 이관 버튼 ---
@@ -8632,15 +8676,53 @@ Key Points Summary:
         st.info(L["customer_turn_info"])
 
         # 1. 고객 반응 생성
-        with st.spinner(L["generating_customer_response"]):
-            customer_response = generate_customer_reaction(st.session_state.language, is_call=False)
+        # 이미 고객 반응이 생성되어 있는지 확인
+        last_customer_message = None
+        for msg in reversed(st.session_state.simulator_messages):
+            if msg.get("role") == "customer" and msg.get("content"):
+                last_customer_message = msg.get("content", "")
+                break
+        
+        if last_customer_message is None:
+            # 고객 반응이 없는 경우에만 생성
+            with st.spinner(L["generating_customer_response"]):
+                customer_response = generate_customer_reaction(st.session_state.language, is_call=False)
 
-        # 2. 대화 로그 업데이트
-        st.session_state.simulator_messages.append(
-            {"role": "customer", "content": customer_response}
-        )
+            # 2. 대화 로그 업데이트
+            st.session_state.simulator_messages.append(
+                {"role": "customer", "content": customer_response}
+            )
+            
+            # 3. 생성 직후 바로 다음 단계 결정
+            positive_closing_phrases = [L["customer_positive_response"], L["customer_no_more_inquiries"]]
+            is_positive_closing = any(phrase in customer_response for phrase in positive_closing_phrases)
+            
+            # 다음 단계 결정
+            if L["customer_positive_response"] in customer_response:
+                if st.session_state.is_solution_provided:
+                    st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
+                else:
+                    st.session_state.sim_stage = "AGENT_TURN"
+            elif is_positive_closing:
+                if L['customer_no_more_inquiries'] in customer_response:
+                    st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
+                else:
+                    if st.session_state.is_solution_provided:
+                        st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
+                    else:
+                        st.session_state.sim_stage = "AGENT_TURN"
+            elif customer_response.startswith(L["customer_escalation_start"]):
+                st.session_state.sim_stage = "ESCALATION_REQUIRED"
+            else:
+                # 고객이 추가 질문하거나 정보 제공한 경우 -> 에이전트 턴으로 이동
+                st.session_state.sim_stage = "AGENT_TURN"
+            
+            # UI 업데이트를 위해 rerun
+            st.rerun()
+        else:
+            customer_response = last_customer_message
 
-        # 3. 종료 조건 검토
+        # 3. 종료 조건 검토 (이미 고객 반응이 있는 경우)
         positive_closing_phrases = [L["customer_positive_response"], L["customer_no_more_inquiries"]]
         is_positive_closing = any(phrase in customer_response for phrase in positive_closing_phrases)
 
@@ -8674,11 +8756,9 @@ Key Points Summary:
             # 에이전트 턴으로 유지 (고객이 추가 질문하거나 정보 제공)
             st.session_state.sim_stage = "AGENT_TURN"
 
-            # 4. 재실행
+        st.session_state.is_solution_provided = False  # 종료 단계 진입 후 플래그 리셋
 
-            st.session_state.is_solution_provided = False  # 종료 단계 진입 후 플래그 리셋
-
-            # 이력 저장 (종료되지 않은 경우에만 저장)
+        # 이력 저장 (종료되지 않은 경우에만 저장)
         # ⭐ 수정: "없습니다. 감사합니다" 답변 시에는 이미 이력 저장을 했으므로 중복 저장 방지
         if st.session_state.sim_stage != "CLOSING":
             save_simulation_history_local(
@@ -8688,13 +8768,21 @@ Key Points Summary:
             )
 
         st.session_state.realtime_hint_text = ""  # 힌트 초기화
+        
+        # 다음 단계로 이동했으므로 UI 업데이트를 위해 rerun
+        st.rerun()
 
 
     # =========================
     # 7. 종료 확인 메시지 대기 (WAIT_CLOSING_CONFIRMATION_FROM_AGENT)
     # =========================
     elif st.session_state.sim_stage == "WAIT_CLOSING_CONFIRMATION_FROM_AGENT":
-        st.success("고객이 솔루션에 긍정적으로 반응했습니다. 추가 문의 여부를 확인해 주세요.")
+        # 언어 키 안전하게 가져오기
+        current_lang = st.session_state.get("language", "ko")
+        if current_lang not in ["ko", "en", "ja"]:
+            current_lang = "ko"
+        L = LANG.get(current_lang, LANG["ko"])
+        st.success(L["customer_positive_solution_reaction"])
 
         col_chat_end, col_email_end = st.columns(2)  # 버튼을 나란히 배치
 
@@ -8721,6 +8809,7 @@ Key Points Summary:
                 # [추가] TTS 버튼 렌더링을 위해 sleep/rerun 강제
                 time.sleep(0.1)
                 st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
+                st.rerun()
 
         # [2] 이메일 - 상담 종료 버튼 (즉시 종료)
         with col_email_end:
@@ -8760,16 +8849,16 @@ Key Points Summary:
         
         # 고객 응답이 아직 생성되지 않은 경우에만 생성
         if last_customer_message is None:
-            st.info("에이전트가 추가 문의 여부를 확인했습니다. 고객의 최종 답변을 자동으로 생성합니다.")
-
             # 고객 답변 자동 생성 (LLM Key 검증 포함)
             if not st.session_state.is_llm_ready:
-                st.warning("LLM Key가 없어 고객 반응 자동 생성이 불가합니다. 수동으로 '고객 반응 생성' 버튼을 클릭하거나 AGENT_TURN으로 돌아가세요。")
+                st.warning(L["llm_key_missing_customer_response"])
                 if st.button(L["customer_generate_response_button"], key="btn_generate_final_response"):
                     st.session_state.sim_stage = "AGENT_TURN"
+                    st.rerun()
                 st.stop()
             
             # LLM이 준비된 경우 고객 응답 생성
+            st.info(L["agent_confirmed_additional_inquiry"])
             with st.spinner(L["generating_customer_response"]):
                 final_customer_reaction = generate_customer_closing_response(st.session_state.language)
 
@@ -8782,12 +8871,24 @@ Key Points Summary:
         # 고객 응답에 따라 처리 (생성 직후 또는 이미 있는 경우 모두 처리)
         if last_customer_message is None:
             # 고객 응답이 없는 경우 (이미 생성했는데도 None인 경우는 에러)
-            st.warning("고객 응답을 생성할 수 없습니다. 다시 시도해주세요.")
+            st.warning(L["customer_response_generation_failed"])
         else:
             final_customer_reaction = last_customer_message
             
             # (A) "없습니다. 감사합니다" 경로 -> 에이전트가 감사 인사 후 버튼 표시
-            if L['customer_no_more_inquiries'] in final_customer_reaction:
+            # 더 유연한 매칭을 위해 키워드 체크 추가
+            no_more_keywords = [
+                L['customer_no_more_inquiries'],
+                "No, that will be all",
+                "no more",
+                "없습니다",
+                "감사합니다",
+                "結構です",
+                "ありがとう"
+            ]
+            has_no_more_inquiry = any(keyword.lower() in final_customer_reaction.lower() for keyword in no_more_keywords)
+            
+            if L['customer_no_more_inquiries'] in final_customer_reaction or has_no_more_inquiry:
                 # ⭐ 수정: 에이전트 감사 인사가 아직 추가되지 않은 경우에만 추가
                 agent_closing_added = False
                 for msg in reversed(st.session_state.simulator_messages):
@@ -8815,9 +8916,9 @@ Key Points Summary:
                 
                 # ⭐ 수정: 현재 단계에서 바로 버튼 표시 (FINAL_CLOSING_ACTION으로 이동하지 않음)
                 st.markdown("---")
-                st.success("✅ 고객이 더 이상 문의할 사항이 없다고 확인했습니다。")
-                st.markdown("### 📋 상담 종료")
-                st.info("아래 **설문 조사 링크 전송 및 응대 종료** 버튼을 클릭하여 상담을 종료하세요.")
+                st.success(L["no_more_inquiries_confirmed"])
+                st.markdown(f"### {L['consultation_end_header']}")
+                st.info(L["click_survey_button_to_end"])
                 st.markdown("---")
                 
                 # 버튼을 중앙에 크게 표시
@@ -8852,6 +8953,7 @@ Key Points Summary:
                     )
                     
                     st.session_state.realtime_hint_text = ""  # 힌트 초기화
+                    st.rerun()  # 버튼 클릭 후 UI 업데이트
             # (B) "추가 문의 사항도 있습니다" 경로 -> AGENT_TURN으로 복귀
             elif L['customer_has_additional_inquiries'] in final_customer_reaction:
                 st.session_state.sim_stage = "AGENT_TURN"
@@ -8861,6 +8963,40 @@ Key Points Summary:
                     attachment_context=st.session_state.sim_attachment_context_for_llm,
                 )
                 st.session_state.realtime_hint_text = ""
+                st.rerun()  # AGENT_TURN으로 이동 후 UI 업데이트
+            else:
+                # 고객 응답이 생성되었지만 조건에 맞지 않는 경우에도 버튼 표시
+                # (기본적으로 "없습니다. 감사합니다"로 간주)
+                st.markdown("---")
+                st.success(L["no_more_inquiries_confirmed"])
+                st.markdown(f"### {L['consultation_end_header']}")
+                st.info(L["click_survey_button_to_end"])
+                st.markdown("---")
+                
+                col1, col2, col3 = st.columns([1, 3, 1])
+                with col2:
+                    end_chat_button = st.button(
+                        L["sim_end_chat_button"], 
+                        key="btn_final_end_chat_fallback", 
+                        use_container_width=True, 
+                        type="primary"
+                    )
+                
+                if end_chat_button:
+                    st.session_state.start_time = None
+                    end_msg = L["prompt_survey"]
+                    st.session_state.simulator_messages.append(
+                        {"role": "system_end", "content": end_msg}
+                    )
+                    st.session_state.is_chat_ended = True
+                    st.session_state.sim_stage = "CLOSING"
+                    save_simulation_history_local(
+                        st.session_state.customer_query_text_area, customer_type_display,
+                        st.session_state.simulator_messages, is_chat_ended=True,
+                        attachment_context=st.session_state.sim_attachment_context_for_llm,
+                    )
+                    st.session_state.realtime_hint_text = ""
+                    st.rerun()
 
     # =========================
     # 9. 최종 종료 행동 (FINAL_CLOSING_ACTION)
@@ -8874,9 +9010,9 @@ Key Points Summary:
         
         # ⭐ 수정: 명확한 안내 메시지와 함께 버튼 표시
         st.markdown("---")
-        st.success("✅ 고객이 더 이상 문의할 사항이 없다고 확인했습니다。")
-        st.markdown("### 📋 상담 종료")
-        st.info("아래 **설문 조사 링크 전송 및 응대 종료** 버튼을 클릭하여 상담을 종료하세요.")
+        st.success(L["no_more_inquiries_confirmed"])
+        st.markdown(f"### {L['consultation_end_header']}")
+        st.info(L["click_survey_button_to_end"])
         st.markdown("---")
         
         # 버튼을 중앙에 크게 표시
