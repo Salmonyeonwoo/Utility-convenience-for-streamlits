@@ -1,34 +1,49 @@
+# === Streamlit Core ===
 streamlit==1.38.0
 
-# LLM Core
+# === LLM Core ===
 openai
 google-generativeai
 anthropic
 groq
 
-# LangChain (LLM 라우팅 및 RAG 프레임워크)
+# === LangChain (LLM 라우팅 및 RAG 프레임워크) ===
+# LangChain 분리 패키지 (필수)
 langchain
 langchain-core
 langchain-community
+
+# LangChain 연동 모듈 (LLM/Embedding)
 langchain-openai
 langchain-google-genai
 langchain-nvidia-ai-endpoints
+
+# LangChain RAG 도구
 langchain-text-splitters
 
-# 전사 및 오디오
+# === 음성 기록 및 전사 ===
 streamlit-mic-recorder
 numpy
 pandas
 
-# RAG (문서 처리 기능 유지 시)
+# === RAG (문서 처리 기능 유지 시) ===
 faiss-cpu
 pypdf
 sentence-transformers
 
-# 시각화 (선택적)
+# === 시각화 (선택적) ===
 plotly
 matplotlib
 
-# 추가 필수 패키지
+# === 추가 필수 패키지 (Docx, PPTX, PDF, Network) ===
 requests
 openpyxl
+
+# Word 문서 생성/편집 지원 (streamlit_app (5).py에 사용됨)
+python-docx
+# PPTX 문서 생성 지원 (streamlit_app (5).py에 사용됨)
+python-pptx
+# PDF 문서 생성 지원 (reportlab) (streamlit_app (5).py에 사용됨)
+reportlab
+# OpenMP 충돌 문제 해결 및 NumPy 의존성 안정화를 위해 추가
+scipy
