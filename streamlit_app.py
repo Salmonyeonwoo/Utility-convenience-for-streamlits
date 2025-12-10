@@ -75,20 +75,30 @@ except ImportError:
     )
 from langchain_core.prompts import PromptTemplate
 try:
+    # langchain 패키지에서 ConversationBufferMemory import
     from langchain.memory import ConversationBufferMemory
-except ImportError:
+except ImportError as e:
+    # langchain 패키지가 설치되지 않았거나 버전이 맞지 않는 경우
+    import sys
     raise ImportError(
-        "❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.memory' 모듈을 찾을 수 없습니다.\n"
-        "다음 명령어로 설치해주세요: pip install langchain\n"
-        "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
+        f"❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.memory' 모듈을 찾을 수 없습니다.\n"
+        f"에러 상세: {str(e)}\n"
+        f"다음 명령어로 설치해주세요: pip install langchain\n"
+        f"또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt\n"
+        f"현재 Python 버전: {sys.version}"
     )
 try:
+    # langchain 패키지에서 ConversationChain import
     from langchain.chains import ConversationChain
-except ImportError:
+except ImportError as e:
+    # langchain 패키지가 설치되지 않았거나 버전이 맞지 않는 경우
+    import sys
     raise ImportError(
-        "❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.chains' 모듈을 찾을 수 없습니다.\n"
-        "다음 명령어로 설치해주세요: pip install langchain\n"
-        "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
+        f"❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.chains' 모듈을 찾을 수 없습니다.\n"
+        f"에러 상세: {str(e)}\n"
+        f"다음 명령어로 설치해주세요: pip install langchain\n"
+        f"또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt\n"
+        f"현재 Python 버전: {sys.version}"
     )
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -975,6 +985,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "simulator_tab": "AI 고객 응대 시뮬레이터",
         "company_info_tab": "회사 정보 및 FAQ",
         "company_info_tab_desc": "회사별 상세 정보, 인기 상품, 화제의 소식, FAQ를 검색하고 관리할 수 있는 기능입니다.",
+        "video_gen_tab": "비디오 생성 (AI API)",
+        "video_gen_tab_desc": "D-ID API를 사용하여 성별과 감정 상태에 맞는 비디오를 자동으로 생성합니다.",
         "sim_tab_chat_email_desc": "고객 응대 업무에서 채팅 및 이메일로 실제로 문의 응대가 될 수 있는 실전 대비 가상 시나리오입니다. AI가 응대 가이드라인과 초안을 생성하며, 고객 반응을 시뮬레이션하여 실전 대비 훈련이 가능합니다.",
         "sim_tab_phone_desc": "고객 응대 업무에서 전화로 실제로 문의 응대가 될 수 있는 실전 대비 가상 시나리오입니다. 음성 녹음 및 실시간 CC 자막 기능을 제공하며, 전화 통화 시뮬레이션을 통해 실전 응대 능력을 향상시킬 수 있습니다.",
         "rag_tab_desc": "업로드된 문서를 기반으로 질문에 답변하는 지식 챗봇입니다. PDF, TXT, HTML 파일을 업로드하여 RAG(Retrieval-Augmented Generation) 인덱스를 구축하고, 문서 내용을 기반으로 정확한 답변을 제공합니다.",
@@ -1391,6 +1403,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "content_tab_desc": "A feature that generates personalized learning content using AI. You can generate key summary notes, multiple-choice quizzes, and practical examples tailored to learning topics and difficulty levels.",
         "lstm_tab_desc": "A feature that predicts learner achievement using LSTM models and visualizes it in a dashboard. Analyzes past quiz score data to predict future achievement and visually check learning performance.",
         "company_info_tab_desc": "Search and manage company-specific detailed information, popular products, trending news, and FAQs. Visualize company introductions, popular products, and trending news at a glance.",
+        "video_gen_tab": "Video Generation (AI API)",
+        "video_gen_tab_desc": "Automatically generate videos matching gender and emotion states using D-ID API.",
         "voice_rec_header_desc": "A feature for managing and storing voice recordings and transcription results. Record with a microphone or upload files to convert speech to text via Whisper API, and save and manage transcription results.",
         "more_features_label": "More Features",
         "rag_header": "RAG Knowledge Chatbot (Document Q&A)",
@@ -1804,6 +1818,8 @@ LANG: Dict[str, Dict[str, str]] = {
         "content_tab_desc": "AIを活用して個人向けの学習コンテンツを生成する機能です。学習テーマと難易度に合わせて要点サマリー、選択式クイズ、実践例などを生成できます。",
         "lstm_tab_desc": "LSTMモデルを活用して学習者の達成度を予測し、ダッシュボードで可視化する機能です。過去のクイズスコアデータを分析して将来の達成度を予測し、学習成果を視覚的に確認できます。",
         "company_info_tab_desc": "会社別の詳細情報、人気商品、話題のニュース、FAQを検索・管理できる機能です。会社紹介、人気商品、話題のニュースを視覚化して一目で確認できます。",
+        "video_gen_tab": "動画生成 (AI API)",
+        "video_gen_tab_desc": "D-ID APIを使用して、性別と感情状態に合わせた動画を自動生成します。",
         "voice_rec_header_desc": "音声録音および転写結果を管理・保存する機能です。マイクで録音するかファイルをアップロードしてWhisper APIを通じて音声をテキストに変換し、転写結果を保存・管理できます。",
         "more_features_label": "その他の機能",
         "rag_header": "RAG知識チャットボット (ドキュメントQ&A)",
@@ -6335,72 +6351,13 @@ with st.sidebar:
     st.title(L["sidebar_title"])
     st.markdown("---")
 
-    # ⭐ API Key 설정 섹션 추가
-    st.subheader("🔑 API Key 설정")
-    
-    # LLM 선택
-    llm_options = {
-        "openai_gpt4": "OpenAI GPT-4",
-        "openai_gpt35": "OpenAI GPT-3.5",
-        "gemini_pro": "Google Gemini Pro",
-        "gemini_flash": "Google Gemini Flash",
-        "claude": "Anthropic Claude",
-        "groq": "Groq",
-        "nvidia": "NVIDIA NIM"
-    }
-    
-    current_llm = st.session_state.get("selected_llm", "openai_gpt4")
-    selected_llm = st.selectbox(
-        "LLM 모델 선택",
-        options=list(llm_options.keys()),
-        format_func=lambda x: llm_options[x],
-        index=list(llm_options.keys()).index(current_llm) if current_llm in llm_options else 0,
-        key="sidebar_llm_select"
-    )
-    if selected_llm != current_llm:
-        st.session_state.selected_llm = selected_llm
-    
-    # API Key 매핑
-    api_key_map = {
-        "openai_gpt4": "openai",
-        "openai_gpt35": "openai",
-        "gemini_pro": "gemini",
-        "gemini_flash": "gemini",
-        "claude": "claude",
-        "groq": "groq",
-        "nvidia": "nvidia"
-    }
-    
-    api_name = api_key_map.get(selected_llm, "openai")
-    api_config = SUPPORTED_APIS.get(api_name, {})
-    
-    if api_config:
-        # 현재 API Key 확인
-        current_key = get_api_key(api_name)
-        if not current_key:
-            # 수동 입력 필드
-            session_key = api_config.get("session_key", "")
-            manual_key = st.text_input(
-                api_config.get("label", "API Key"),
-                value=st.session_state.get(session_key, ""),
-                type="password",
-                placeholder=api_config.get("placeholder", "API Key를 입력하세요"),
-                key=f"manual_api_key_{selected_llm}"
-            )
-            if manual_key and manual_key != st.session_state.get(session_key, ""):
-                st.session_state[session_key] = manual_key
-        else:
-            st.success(f"✅ {api_config.get('label', 'API Key')} 설정됨")
-    
-    st.markdown("---")
-
     # ⭐ 기능 선택 - 기본값을 AI 챗 시뮬레이터로 설정
     if "feature_selection" not in st.session_state:
         st.session_state.feature_selection = L["sim_tab_chat_email"]
 
     # ⭐ 핵심 기능과 더보기 기능 분리 (회사 정보 및 FAQ 추가)
     core_features = [L["sim_tab_chat_email"], L["sim_tab_phone"], L["company_info_tab"]]
-    other_features = [L["rag_tab"], L["content_tab"], L["lstm_tab"], L["voice_rec_header"]]
+    other_features = [L["rag_tab"], L["content_tab"], L["lstm_tab"], L["voice_rec_header"], L["video_gen_tab"]]
     
     # 모든 기능을 하나의 리스트로 통합 (하나만 선택 가능하도록)
     all_features = core_features + other_features
@@ -6428,6 +6385,74 @@ with st.sidebar:
         st.session_state.feature_selection = selected_feature
     
     feature_selection = st.session_state.get("feature_selection", L["sim_tab_chat_email"])
+    
+    # ⭐ 비디오 생성기 탭이 아닐 때만 API Key 설정 섹션 표시
+    # 비디오 생성기 탭일 때는 API 키 입력 칸을 완전히 숨김
+    is_video_gen_tab = (
+        feature_selection == L.get("video_gen_tab", "비디오 생성 (AI API)") or
+        "비디오 생성" in str(feature_selection) or
+        "video_gen" in str(feature_selection).lower()
+    )
+    
+    if not is_video_gen_tab:
+        st.markdown("---")
+        
+        # ⭐ API Key 설정 섹션 추가
+        st.subheader("🔑 API Key 설정")
+        
+        # LLM 선택
+        llm_options = {
+            "openai_gpt4": "OpenAI GPT-4",
+            "openai_gpt35": "OpenAI GPT-3.5",
+            "gemini_pro": "Google Gemini Pro",
+            "gemini_flash": "Google Gemini Flash",
+            "claude": "Anthropic Claude",
+            "groq": "Groq",
+            "nvidia": "NVIDIA NIM"
+        }
+        
+        current_llm = st.session_state.get("selected_llm", "openai_gpt4")
+        selected_llm = st.selectbox(
+            "LLM 모델 선택",
+            options=list(llm_options.keys()),
+            format_func=lambda x: llm_options[x],
+            index=list(llm_options.keys()).index(current_llm) if current_llm in llm_options else 0,
+            key="sidebar_llm_select"
+        )
+        if selected_llm != current_llm:
+            st.session_state.selected_llm = selected_llm
+        
+        # API Key 매핑
+        api_key_map = {
+            "openai_gpt4": "openai",
+            "openai_gpt35": "openai",
+            "gemini_pro": "gemini",
+            "gemini_flash": "gemini",
+            "claude": "claude",
+            "groq": "groq",
+            "nvidia": "nvidia"
+        }
+        
+        api_name = api_key_map.get(selected_llm, "openai")
+        api_config = SUPPORTED_APIS.get(api_name, {})
+        
+        if api_config:
+            # 현재 API Key 확인
+            current_key = get_api_key(api_name)
+            if not current_key:
+                # 수동 입력 필드
+                session_key = api_config.get("session_key", "")
+                manual_key = st.text_input(
+                    api_config.get("label", "API Key"),
+                    value=st.session_state.get(session_key, ""),
+                    type="password",
+                    placeholder=api_config.get("placeholder", "API Key를 입력하세요"),
+                    key=f"manual_api_key_{selected_llm}"
+                )
+                if manual_key and manual_key != st.session_state.get(session_key, ""):
+                    st.session_state[session_key] = manual_key
+            else:
+                st.success(f"✅ {api_config.get('label', 'API Key')} 설정됨")
 
 # 메인 타이틀
 # ⭐ L 변수가 정의되어 있는지 확인 (사이드바에서 이미 정의됨)
@@ -6463,6 +6488,93 @@ elif feature_selection == L["company_info_tab"]:
     # 공백 축소: 제목과 설명을 한 줄로 간결하게 표시
     st.markdown(f"#### 📋 {L['company_info_tab']}")
     st.caption(L['company_info_tab_desc'])
+elif feature_selection == L["video_gen_tab"]:
+    st.markdown(f"#### 🎬 {L['video_gen_tab']}")
+    st.caption(L['video_gen_tab_desc'])
+    
+    # 비디오 생성기 탭 구현
+    current_lang = st.session_state.get("language", "ko")
+    if current_lang not in ["ko", "en", "ja"]:
+        current_lang = "ko"
+    L = LANG.get(current_lang, LANG["ko"])
+    
+    st.markdown("---")
+    
+    # ⭐ API 키 입력 칸 제거 - Streamlit Secrets 또는 환경 변수만 사용
+    # API 키는 이미 get_api_key() 함수를 통해 관리되므로 별도 입력 칸 불필요
+    
+    # Lottie 애니메이션 사용 가능 여부 확인
+    try:
+        from streamlit_lottie import st_lottie
+        LOTTIE_AVAILABLE = True
+    except ImportError:
+        LOTTIE_AVAILABLE = False
+        st.info("💡 Lottie 애니메이션을 사용하려면 `pip install streamlit-lottie`를 실행하세요. (현재는 비디오 파일 업로드만 지원됩니다)")
+    
+    # 아바타 이미지 URL 입력 (API 키 입력 칸 제거)
+    avatar_image_url = st.text_input(
+        "아바타 이미지 URL",
+        value=st.session_state.get("avatar_image_url", "https://avatar.iran.liara.run/public/5"),
+        key="avatar_image_url_input",
+        placeholder="https://example.com/avatar.jpg"
+    )
+    st.session_state.avatar_image_url = avatar_image_url
+    
+    # 비디오 생성 버튼
+    if st.button("비디오 생성", type="primary", key="generate_video_btn"):
+        # D-ID API 키 확인 (Streamlit Secrets 또는 환경 변수에서만 가져옴)
+        d_id_api_key = os.environ.get("D_ID_API_KEY") or (st.secrets.get("D_ID_API_KEY") if hasattr(st, "secrets") else None)
+        
+        if not d_id_api_key:
+            st.error("❌ 오류: D-ID API 키가 설정되지 않았습니다. Streamlit Secrets에 'D_ID_API_KEY'를 설정하거나 환경 변수로 설정하세요.")
+        else:
+            # Lottie 애니메이션 사용 가능한 경우
+            if LOTTIE_AVAILABLE:
+                st.info("💡 Lottie 애니메이션은 비디오 생성이 아닌 애니메이션 표시용입니다. D-ID API를 사용하여 실제 비디오를 생성합니다.")
+            
+            # D-ID API를 사용한 비디오 생성 로직 (실제 구현 필요)
+            with st.spinner("비디오 생성 중... (약 30초~2분 소요)"):
+                st.info("⚠️ 비디오 생성 기능은 D-ID API 연동이 필요합니다. 현재는 미구현 상태입니다.")
+                st.info("💡 대신 Lottie 애니메이션을 사용하여 시각적 효과를 제공할 수 있습니다.")
+    
+    # Lottie 애니메이션 예시 (선택사항)
+    if LOTTIE_AVAILABLE:
+        st.markdown("---")
+        st.markdown("### Lottie 애니메이션 예시")
+        try:
+            # 예시 Lottie 애니메이션 URL
+            lottie_url = "https://assets5.lottiefiles.com/packages/lf20_V9t630.json"
+            st_lottie(lottie_url, height=300, key="lottie_example")
+            st.caption("💡 Lottie 애니메이션은 비디오 생성이 아닌 애니메이션 표시용입니다.")
+        except Exception as e:
+            st.warning(f"Lottie 애니메이션 로드 오류: {e}")
+    
+    # 사용 가이드
+    with st.expander("사용 가이드", expanded=True):
+        st.markdown("""
+        **D-ID API 사용 방법:**
+        
+        1. **API 키 발급**
+           - D-ID Studio에 가입
+           - API 키 발급(무료 크레딧 제공)
+        
+        2. **이미지 준비**
+           - 아바타로 사용할 사람의 얼굴 사진 준비
+           - URL로 접근 가능한 이미지 또는 파일 업로드
+        
+        3. **비디오 생성**
+           - 성별과 감정 상태 선택
+           - 스크립트 입력 (비디오에서 말할 내용)
+           - 생성 버튼 클릭
+        
+        4. **결과 확인**
+           - 생성 완료 후 비디오 자동 재생
+           - 다운로드 버튼으로 저장
+        
+        **주의사항:**
+        - API 사용량에 따라 비용이 발생할 수 있습니다
+        - 비디오 생성에는 시간이 걸릴 수 있습니다 (약 30초~2분)
+        """)
 
 # ========================================
 # 10. 기능별 페이지
