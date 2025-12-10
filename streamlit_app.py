@@ -74,32 +74,48 @@ except ImportError:
         "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
     )
 from langchain_core.prompts import PromptTemplate
+# ConversationBufferMemory import - 여러 경로 시도
+ConversationBufferMemory = None
 try:
-    # langchain 패키지에서 ConversationBufferMemory import
+    # langchain 0.2.x 버전 경로
     from langchain.memory import ConversationBufferMemory
-except ImportError as e:
-    # langchain 패키지가 설치되지 않았거나 버전이 맞지 않는 경우
-    import sys
-    raise ImportError(
-        f"❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.memory' 모듈을 찾을 수 없습니다.\n"
-        f"에러 상세: {str(e)}\n"
-        f"다음 명령어로 설치해주세요: pip install langchain\n"
-        f"또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt\n"
-        f"현재 Python 버전: {sys.version}"
-    )
+except ImportError:
+    try:
+        # langchain 0.3.x+ 버전 경로 (langchain-core)
+        from langchain_core.memory import ConversationBufferMemory
+    except ImportError:
+        try:
+            # langchain-community 경로
+            from langchain_community.memory import ConversationBufferMemory
+        except ImportError as e:
+            # 모든 경로 실패 시 명확한 에러 메시지
+            import sys
+            raise ImportError(
+                f"❌ 'langchain.memory.ConversationBufferMemory' 모듈을 찾을 수 없습니다.\n"
+                f"에러 상세: {str(e)}\n"
+                f"다음 명령어로 호환되는 버전을 설치해주세요:\n"
+                f"  pip install 'langchain>=0.2.0,<0.3.0'\n"
+                f"또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt\n"
+                f"현재 Python 버전: {sys.version}\n"
+                f"참고: langchain 0.3.0 이상 버전에서는 모듈 구조가 변경되었습니다."
+            )
+
+# ConversationChain import - 여러 경로 시도 (사용되지 않을 수 있지만 호환성을 위해 유지)
+ConversationChain = None
 try:
-    # langchain 패키지에서 ConversationChain import
+    # langchain 0.2.x 버전 경로
     from langchain.chains import ConversationChain
-except ImportError as e:
-    # langchain 패키지가 설치되지 않았거나 버전이 맞지 않는 경우
-    import sys
-    raise ImportError(
-        f"❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.chains' 모듈을 찾을 수 없습니다.\n"
-        f"에러 상세: {str(e)}\n"
-        f"다음 명령어로 설치해주세요: pip install langchain\n"
-        f"또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt\n"
-        f"현재 Python 버전: {sys.version}"
-    )
+except ImportError:
+    try:
+        # langchain 0.3.x+ 버전 경로
+        from langchain_core.chains import ConversationChain
+    except ImportError:
+        try:
+            # langchain-community 경로
+            from langchain_community.chains import ConversationChain
+        except ImportError:
+            # ConversationChain은 실제로 사용되지 않으므로 None으로 유지
+            ConversationChain = None
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -2241,7 +2257,10 @@ if "last_audio" not in st.session_state:
 if "simulator_messages" not in st.session_state:
     st.session_state.simulator_messages = []
 if "simulator_memory" not in st.session_state:
-    st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history")
+    if ConversationBufferMemory is not None:
+        st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history")
+    else:
+        st.session_state.simulator_memory = None
 if "simulator_chain" not in st.session_state:
     st.session_state.simulator_chain = None
 if "initial_advice_provided" not in st.session_state:
@@ -6308,9 +6327,12 @@ with st.sidebar:
         except Exception:
             # 메모리 초기화 실패 시 새로 생성
             try:
-                st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history")
+                if ConversationBufferMemory is not None:
+                    st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history")
+                else:
+                    st.session_state.simulator_memory = None
             except Exception:
-                pass  # 초기화 실패해도 계속 진행
+                st.session_state.simulator_memory = None  # 초기화 실패해도 계속 진행
         st.session_state.initial_advice_provided = False
         st.session_state.is_chat_ended = False
         # ⭐ 수정: 위젯이 생성된 후에는 session_state를 직접 수정할 수 없으므로 플래그 사용
