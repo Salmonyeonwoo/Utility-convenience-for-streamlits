@@ -8967,6 +8967,31 @@ Key Points Summary:
             else:
                 # 고객 응답이 생성되었지만 조건에 맞지 않는 경우에도 버튼 표시
                 # (기본적으로 "없습니다. 감사합니다"로 간주)
+                # ⭐ 수정: fallback 경로에서도 에이전트 감사 인사 메시지 추가
+                agent_closing_added = False
+                for msg in reversed(st.session_state.simulator_messages):
+                    if msg.get("role") == "agent_response":
+                        # 이미 에이전트 감사 인사가 있는지 확인
+                        agent_msg_content = msg.get("content", "")
+                        if "감사" in agent_msg_content or "Thank you" in agent_msg_content or "ありがとう" in agent_msg_content:
+                            agent_closing_added = True
+                        break
+                
+                if not agent_closing_added:
+                    # ⭐ 추가: 에이전트가 감사 인사 메시지 전송
+                    agent_name = st.session_state.get("agent_name", "000")
+                    if current_lang == "ko":
+                        agent_closing_msg = f"연락 주셔서 감사드립니다. 지금까지 상담원 {agent_name}였습니다. 즐거운 하루 되세요."
+                    elif current_lang == "en":
+                        agent_closing_msg = f"Thank you for contacting us. This was {agent_name}. Have a great day!"
+                    else:  # ja
+                        agent_closing_msg = f"お問い合わせいただき、ありがとうございました。担当は{agent_name}でした。良い一日をお過ごしください。"
+                    
+                    # 에이전트 감사 인사를 메시지에 추가
+                    st.session_state.simulator_messages.append(
+                        {"role": "agent_response", "content": agent_closing_msg}
+                    )
+                
                 st.markdown("---")
                 st.success(L["no_more_inquiries_confirmed"])
                 st.markdown(f"### {L['consultation_end_header']}")
@@ -8983,20 +9008,28 @@ Key Points Summary:
                     )
                 
                 if end_chat_button:
+                    # AHT 타이머 정지
                     st.session_state.start_time = None
+                    
+                    # 설문 조사 링크 전송 메시지 추가
                     end_msg = L["prompt_survey"]
                     st.session_state.simulator_messages.append(
                         {"role": "system_end", "content": end_msg}
                     )
+                    
+                    # 채팅 종료 처리
                     st.session_state.is_chat_ended = True
                     st.session_state.sim_stage = "CLOSING"
+                    
+                    # 이력 저장
                     save_simulation_history_local(
                         st.session_state.customer_query_text_area, customer_type_display,
                         st.session_state.simulator_messages, is_chat_ended=True,
                         attachment_context=st.session_state.sim_attachment_context_for_llm,
                     )
-                    st.session_state.realtime_hint_text = ""
-                    st.rerun()
+                    
+                    st.session_state.realtime_hint_text = ""  # 힌트 초기화
+                    st.rerun()  # 버튼 클릭 후 UI 업데이트
 
     # =========================
     # 9. 최종 종료 행동 (FINAL_CLOSING_ACTION)
