@@ -6491,8 +6491,8 @@ if feature_selection == L["company_info_tab"]:
     faq_data = load_faq_database()
     companies = list(faq_data.get("companies", {}).keys())
     
-    # 회사명 검색 입력 (상단에 배치) - 입력란 길이 축소 (회사명은 보통 짧음)
-    col_search_header, col_search_input, col_search_btn = st.columns([0.5, 1.2, 0.8])
+    # 회사명 검색 입력 (상단에 배치) - 입력란은 글로벌 기업 영문명 고려하여 원래 크기 유지
+    col_search_header, col_search_input, col_search_btn = st.columns([0.5, 1.2, 0.2])
     with col_search_header:
         st.write(f"**{L['search_company']}**")
     with col_search_input:
@@ -6504,7 +6504,7 @@ if feature_selection == L["company_info_tab"]:
             label_visibility="collapsed"
         )
     with col_search_btn:
-        search_button = st.button(L["company_search_button"], key="company_search_btn", type="primary", use_container_width=True)
+        search_button = st.button(f"🔍 {L['company_search_button']}", key="company_search_btn", type="primary", use_container_width=True)
     
     # 검색된 회사 정보 저장
     searched_company = st.session_state.get("searched_company", "")
