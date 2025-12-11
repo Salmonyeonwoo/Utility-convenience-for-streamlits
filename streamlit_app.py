@@ -75,21 +75,33 @@ except ImportError:
     )
 from langchain_core.prompts import PromptTemplate
 try:
-    from langchain.memory import ConversationBufferMemory
+    # 최신 langchain에서는 여러 경로를 시도
+    try:
+        from langchain.memory import ConversationBufferMemory
+    except ImportError:
+        try:
+            from langchain_classic.memory import ConversationBufferMemory
+        except ImportError:
+            from langchain_core.memory import ConversationBufferMemory
 except ImportError:
     raise ImportError(
         "❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.memory' 모듈을 찾을 수 없습니다.\n"
-        "다음 명령어로 설치해주세요: pip install langchain\n"
+        "다음 명령어로 설치해주세요: pip install langchain langchain-classic\n"
         "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
     )
 try:
-    from langchain.chains import ConversationChain
+    # 최신 langchain에서는 여러 경로를 시도
+    try:
+        from langchain.chains import ConversationChain
+    except ImportError:
+        try:
+            from langchain_classic.chains import ConversationChain
+        except ImportError:
+            # ConversationChain이 없을 경우 None으로 설정 (코드에서 사용하지 않을 수 있음)
+            ConversationChain = None
 except ImportError:
-    raise ImportError(
-        "❌ 'langchain' 패키지가 설치되지 않았거나 'langchain.chains' 모듈을 찾을 수 없습니다.\n"
-        "다음 명령어로 설치해주세요: pip install langchain\n"
-        "또는 requirements.txt의 모든 패키지를 설치: pip install -r requirements.txt"
-    )
+    # ConversationChain은 선택적이므로 ImportError를 발생시키지 않음
+    ConversationChain = None
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
