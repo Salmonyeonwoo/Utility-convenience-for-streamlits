@@ -1236,6 +1236,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "scores_comparison_title": "감정 및 만족도 점수 비교",
         "similarity_score_label": "유사도",
         "satisfaction_score_label": "만족도",
+        "customer_satisfaction_score_label": "고객 만족도 점수",
         "sentiment_trend_label": "감정 점수 추이",
         "satisfaction_trend_label": "만족도 점수 추이",
         "case_trends_title": "과거 케이스 점수 추이",
@@ -1247,6 +1248,24 @@ LANG: Dict[str, Dict[str, str]] = {
         "phone_provided_label": "전화번호 제공",
         "region_label": "지역",
         "btn_request_phone_summary": "이력 요약 요청",
+        
+        # --- 다운로드 문서 관련 텍스트 ---
+        "download_history_title": "고객 응대 이력 요약",
+        "download_history_number": "이력 #",
+        "download_initial_inquiry": "초기 문의",
+        "download_summary": "요약",
+        "download_main_inquiry": "주요 문의",
+        "download_key_response": "핵심 응답",
+        "download_customer_characteristics": "고객 특성",
+        "download_privacy_summary": "개인정보 요약",
+        "download_address_provided": "주소 제공",
+        "download_overall_summary": "전체 요약",
+        "download_yes": "예",
+        "download_no": "아니오",
+        "download_created_date": "생성일",
+        "download_cultural_background": "문화적 배경",
+        "download_communication_style": "소통 스타일",
+        "download_region_hint": "지역 힌트",
 
         # --- 추가된 전화 발신 기능 관련 ---
         "button_call_outbound": "전화 발신",
@@ -1652,6 +1671,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "scores_comparison_title": "Sentiment & Satisfaction Scores",
         "similarity_score_label": "Similarity",
         "satisfaction_score_label": "Satisfaction",
+        "customer_satisfaction_score_label": "Customer Satisfaction Score",
         "sentiment_trend_label": "Sentiment Trend",
         "satisfaction_trend_label": "Satisfaction Trend",
         "case_trends_title": "Case Score Trends",
@@ -1663,6 +1683,24 @@ LANG: Dict[str, Dict[str, str]] = {
         "phone_provided_label": "Phone Provided",
         "region_label": "Region",
         "btn_request_phone_summary": "Request to summarize histories",
+        
+        # --- 다운로드 문서 관련 텍스트 ---
+        "download_history_title": "Customer Interaction History Summary",
+        "download_history_number": "History #",
+        "download_initial_inquiry": "Initial Inquiry",
+        "download_summary": "Summary",
+        "download_main_inquiry": "Main Inquiry",
+        "download_key_response": "Key Response",
+        "download_customer_characteristics": "Customer Characteristics",
+        "download_privacy_summary": "Privacy Summary",
+        "download_address_provided": "Address Provided",
+        "download_overall_summary": "Overall Summary",
+        "download_yes": "Yes",
+        "download_no": "No",
+        "download_created_date": "Created Date",
+        "download_cultural_background": "Cultural Background",
+        "download_communication_style": "Communication Style",
+        "download_region_hint": "Region Hint",
 
         # --- 추가된 전화 발신 기능 관련 ---
         "button_call_outbound": "Call Outbound",
@@ -2069,6 +2107,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "scores_comparison_title": "感情及び満足度のスコア",
         "similarity_score_label": "類似性",
         "satisfaction_score_label": "満足度",
+        "customer_satisfaction_score_label": "顧客満足度スコア",
         "sentiment_trend_label": "感情のスコアの推測",
         "satisfaction_trend_label": "満足度のスコアの推測",
         "case_trends_title": "過去に推定されたスコア",
@@ -2080,6 +2119,24 @@ LANG: Dict[str, Dict[str, str]] = {
         "phone_provided_label": "提供された電話番号",
         "region_label": "地域",
         "btn_request_phone_summary": "履歴を要約する",
+        
+        # --- 다운로드 문서 관련 텍스트 ---
+        "download_history_title": "顧客対応履歴要約",
+        "download_history_number": "履歴 #",
+        "download_initial_inquiry": "初期問い合わせ",
+        "download_summary": "要約",
+        "download_main_inquiry": "主な問い合わせ",
+        "download_key_response": "核心応答",
+        "download_customer_characteristics": "顧客特性",
+        "download_privacy_summary": "個人情報要約",
+        "download_address_provided": "住所提供",
+        "download_overall_summary": "全体要約",
+        "download_yes": "はい",
+        "download_no": "いいえ",
+        "download_created_date": "作成日",
+        "download_cultural_background": "文化的背景",
+        "download_communication_style": "コミュニケーションスタイル",
+        "download_region_hint": "地域ヒント",
 
         # --- 추가된 전화 발신 기능 관련 ---
         "button_call_outbound": "電話発信",
@@ -4479,10 +4536,15 @@ def delete_all_history_local():
 # ========================================
 # DB 저장 기능 (Word/PPTX/PDF)
 # ========================================
-def export_history_to_word(histories: List[Dict[str, Any]], filename: str = None) -> str:
+def export_history_to_word(histories: List[Dict[str, Any]], filename: str = None, lang: str = "ko") -> str:
     """이력을 Word 파일로 저장"""
     if not IS_DOCX_AVAILABLE:
         raise ImportError("Word 저장을 위해 python-docx가 필요합니다: pip install python-docx")
+    
+    # 언어 설정 확인 및 기본값 설정
+    if lang not in ["ko", "en", "ja"]:
+        lang = "ko"
+    L = LANG.get(lang, LANG["ko"])
     
     if filename is None:
         filename = f"customer_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
@@ -4491,48 +4553,48 @@ def export_history_to_word(histories: List[Dict[str, Any]], filename: str = None
     doc = DocxDocument()
     
     # 제목 추가
-    title = doc.add_heading('고객 응대 이력 요약', 0)
+    title = doc.add_heading(L.get("download_history_title", "고객 응대 이력 요약"), 0)
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     
     # 각 이력 추가
     for i, hist in enumerate(histories, 1):
         # 이력 제목
-        doc.add_heading(f'이력 #{i}', level=1)
+        doc.add_heading(f'{L.get("download_history_number", "이력 #")}{i}', level=1)
         
         # 기본 정보
         doc.add_paragraph(f'ID: {hist.get("id", "N/A")}')
-        doc.add_paragraph(f'날짜: {hist.get("timestamp", "N/A")}')
-        doc.add_paragraph(f'초기 문의: {hist.get("initial_query", "N/A")}')
-        doc.add_paragraph(f'고객 유형: {hist.get("customer_type", "N/A")}')
-        doc.add_paragraph(f'언어: {hist.get("language_key", "N/A")}')
+        doc.add_paragraph(f'{L.get("date_label", "날짜")}: {hist.get("timestamp", "N/A")}')
+        doc.add_paragraph(f'{L.get("download_initial_inquiry", "초기 문의")}: {hist.get("initial_query", "N/A")}')
+        doc.add_paragraph(f'{L.get("customer_type_label", "고객 유형")}: {hist.get("customer_type", "N/A")}')
+        doc.add_paragraph(f'{L.get("language_label", "언어")}: {hist.get("language_key", "N/A")}')
         
         summary = hist.get('summary', {})
         if summary:
             # 요약 섹션
-            doc.add_heading('요약', level=2)
-            doc.add_paragraph(f'주요 문의: {summary.get("main_inquiry", "N/A")}')
-            doc.add_paragraph(f'핵심 응답: {", ".join(summary.get("key_responses", []))}')
-            doc.add_paragraph(f'고객 감정 점수: {summary.get("customer_sentiment_score", "N/A")}/100')
-            doc.add_paragraph(f'고객 만족도 점수: {summary.get("customer_satisfaction_score", "N/A")}/100')
+            doc.add_heading(L.get("download_summary", "요약"), level=2)
+            doc.add_paragraph(f'{L.get("download_main_inquiry", "주요 문의")}: {summary.get("main_inquiry", "N/A")}')
+            doc.add_paragraph(f'{L.get("download_key_response", "핵심 응답")}: {", ".join(summary.get("key_responses", []))}')
+            doc.add_paragraph(f'{L.get("sentiment_score_label", "고객 감정 점수")}: {summary.get("customer_sentiment_score", "N/A")}/100')
+            doc.add_paragraph(f'{L.get("customer_satisfaction_score_label", "고객 만족도 점수")}: {summary.get("customer_satisfaction_score", "N/A")}/100')
             
             # 고객 특성
             characteristics = summary.get('customer_characteristics', {})
-            doc.add_heading('고객 특성', level=2)
-            doc.add_paragraph(f'언어: {characteristics.get("language", "N/A")}')
-            doc.add_paragraph(f'문화적 배경: {characteristics.get("cultural_hints", "N/A")}')
-            doc.add_paragraph(f'지역: {characteristics.get("region", "N/A")}')
-            doc.add_paragraph(f'소통 스타일: {characteristics.get("communication_style", "N/A")}')
+            doc.add_heading(L.get("download_customer_characteristics", "고객 특성"), level=2)
+            doc.add_paragraph(f'{L.get("language_label", "언어")}: {characteristics.get("language", "N/A")}')
+            doc.add_paragraph(f'{L.get("download_cultural_background", "문화적 배경")}: {characteristics.get("cultural_hints", "N/A")}')
+            doc.add_paragraph(f'{L.get("region_label", "지역")}: {characteristics.get("region", "N/A")}')
+            doc.add_paragraph(f'{L.get("download_communication_style", "소통 스타일")}: {characteristics.get("communication_style", "N/A")}')
             
             # 개인정보 요약
             privacy = summary.get('privacy_info', {})
-            doc.add_heading('개인정보 요약', level=2)
-            doc.add_paragraph(f'이메일 제공: {"예" if privacy.get("has_email") else "아니오"}')
-            doc.add_paragraph(f'전화번호 제공: {"예" if privacy.get("has_phone") else "아니오"}')
-            doc.add_paragraph(f'주소 제공: {"예" if privacy.get("has_address") else "아니오"}')
-            doc.add_paragraph(f'지역 힌트: {privacy.get("region_hint", "N/A")}')
+            doc.add_heading(L.get("download_privacy_summary", "개인정보 요약"), level=2)
+            doc.add_paragraph(f'{L.get("email_provided_label", "이메일 제공")}: {L.get("download_yes", "예") if privacy.get("has_email") else L.get("download_no", "아니오")}')
+            doc.add_paragraph(f'{L.get("phone_provided_label", "전화번호 제공")}: {L.get("download_yes", "예") if privacy.get("has_phone") else L.get("download_no", "아니오")}')
+            doc.add_paragraph(f'{L.get("download_address_provided", "주소 제공")}: {L.get("download_yes", "예") if privacy.get("has_address") else L.get("download_no", "아니오")}')
+            doc.add_paragraph(f'{L.get("download_region_hint", "지역 힌트")}: {privacy.get("region_hint", "N/A")}')
             
             # 전체 요약
-            doc.add_paragraph(f'전체 요약: {summary.get("summary", "N/A")}')
+            doc.add_paragraph(f'{L.get("download_overall_summary", "전체 요약")}: {summary.get("summary", "N/A")}')
         
         # 구분선
         if i < len(histories):
@@ -4542,10 +4604,15 @@ def export_history_to_word(histories: List[Dict[str, Any]], filename: str = None
     return filepath
 
 
-def export_history_to_pptx(histories: List[Dict[str, Any]], filename: str = None) -> str:
+def export_history_to_pptx(histories: List[Dict[str, Any]], filename: str = None, lang: str = "ko") -> str:
     """이력을 PPTX 파일로 저장"""
     if not IS_PPTX_AVAILABLE:
         raise ImportError("PPTX 저장을 위해 python-pptx가 필요합니다: pip install python-pptx")
+    
+    # 언어 설정 확인 및 기본값 설정
+    if lang not in ["ko", "en", "ja"]:
+        lang = "ko"
+    L = LANG.get(lang, LANG["ko"])
     
     if filename is None:
         filename = f"customer_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pptx"
@@ -4560,8 +4627,8 @@ def export_history_to_pptx(histories: List[Dict[str, Any]], filename: str = None
     slide = prs.slides.add_slide(title_slide_layout)
     title = slide.shapes.title
     subtitle = slide.placeholders[1]
-    title.text = "고객 응대 이력 요약"
-    subtitle.text = f"생성일: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    title.text = L.get("download_history_title", "고객 응대 이력 요약")
+    subtitle.text = f"{L.get('download_created_date', '생성일')}: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     
     # 각 이력에 대해 슬라이드 생성
     for i, hist in enumerate(histories, 1):
@@ -4573,45 +4640,50 @@ def export_history_to_pptx(histories: List[Dict[str, Any]], filename: str = None
         title_shape = shapes.title
         body_shape = shapes.placeholders[1]
         
-        title_shape.text = f"이력 #{i}"
+        title_shape.text = f"{L.get('download_history_number', '이력 #')}{i}"
         
         tf = body_shape.text_frame
         tf.text = f"ID: {hist.get('id', 'N/A')}"
         
         p = tf.add_paragraph()
-        p.text = f"날짜: {hist.get('timestamp', 'N/A')}"
+        p.text = f"{L.get('date_label', '날짜')}: {hist.get('timestamp', 'N/A')}"
         p.level = 0
         
         p = tf.add_paragraph()
-        p.text = f"초기 문의: {hist.get('initial_query', 'N/A')}"
+        p.text = f"{L.get('download_initial_inquiry', '초기 문의')}: {hist.get('initial_query', 'N/A')}"
         p.level = 0
         
         p = tf.add_paragraph()
-        p.text = f"고객 유형: {hist.get('customer_type', 'N/A')}"
+        p.text = f"{L.get('customer_type_label', '고객 유형')}: {hist.get('customer_type', 'N/A')}"
         p.level = 0
         
         summary = hist.get('summary', {})
         if summary:
             p = tf.add_paragraph()
-            p.text = f"주요 문의: {summary.get('main_inquiry', 'N/A')}"
+            p.text = f"{L.get('download_main_inquiry', '주요 문의')}: {summary.get('main_inquiry', 'N/A')}"
             p.level = 0
             
             p = tf.add_paragraph()
-            p.text = f"고객 감정 점수: {summary.get('customer_sentiment_score', 'N/A')}/100"
+            p.text = f"{L.get('sentiment_score_label', '고객 감정 점수')}: {summary.get('customer_sentiment_score', 'N/A')}/100"
             p.level = 0
             
             p = tf.add_paragraph()
-            p.text = f"고객 만족도 점수: {summary.get('customer_satisfaction_score', 'N/A')}/100"
+            p.text = f"{L.get('customer_satisfaction_score_label', '고객 만족도 점수')}: {summary.get('customer_satisfaction_score', 'N/A')}/100"
             p.level = 0
     
     prs.save(filepath)
     return filepath
 
 
-def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None) -> str:
+def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None, lang: str = "ko") -> str:
     """이력을 PDF 파일로 저장 (한글/일본어 인코딩 지원 강화)"""
     if not IS_REPORTLAB_AVAILABLE:
         raise ImportError("PDF 저장을 위해 reportlab이 필요합니다: pip install reportlab")
+    
+    # 언어 설정 확인 및 기본값 설정
+    if lang not in ["ko", "en", "ja"]:
+        lang = "ko"
+    L = LANG.get(lang, LANG["ko"])
     
     if filename is None:
         filename = f"customer_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -4880,14 +4952,14 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None)
         return Paragraph(text_str, style)
     
     # 제목 추가
-    title_text, _ = safe_text('고객 응대 이력 요약')
+    title_text, _ = safe_text(L.get("download_history_title", "고객 응대 이력 요약"))
     story.append(Paragraph(title_text, title_style))
     story.append(Spacer(1, 0.2*inch))
     
     # 각 이력 추가
     for i, hist in enumerate(histories, 1):
         # 이력 제목
-        heading_text, _ = safe_text(f'이력 #{i}')
+        heading_text, _ = safe_text(f'{L.get("download_history_number", "이력 #")}{i}')
         story.append(Paragraph(heading_text, heading1_style))
         story.append(Spacer(1, 0.1*inch))
         
@@ -4895,25 +4967,25 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None)
         id_text, _ = safe_text(f'ID: {hist.get("id", "N/A")}')
         story.append(create_paragraph(id_text, normal_style))
         
-        timestamp_text, _ = safe_text(f'날짜: {hist.get("timestamp", "N/A")}')
+        timestamp_text, _ = safe_text(f'{L.get("date_label", "날짜")}: {hist.get("timestamp", "N/A")}')
         story.append(create_paragraph(timestamp_text, normal_style))
         
-        query_text, _ = safe_text(f'초기 문의: {hist.get("initial_query", "N/A")}')
+        query_text, _ = safe_text(f'{L.get("download_initial_inquiry", "초기 문의")}: {hist.get("initial_query", "N/A")}')
         story.append(create_paragraph(query_text, normal_style))
         
-        customer_type_text, _ = safe_text(f'고객 유형: {hist.get("customer_type", "N/A")}')
+        customer_type_text, _ = safe_text(f'{L.get("customer_type_label", "고객 유형")}: {hist.get("customer_type", "N/A")}')
         story.append(create_paragraph(customer_type_text, normal_style))
         
-        language_text, _ = safe_text(f'언어: {hist.get("language_key", "N/A")}')
+        language_text, _ = safe_text(f'{L.get("language_label", "언어")}: {hist.get("language_key", "N/A")}')
         story.append(create_paragraph(language_text, normal_style))
         
         summary = hist.get('summary', {})
         if summary:
             story.append(Spacer(1, 0.1*inch))
-            summary_title, _ = safe_text('요약')
+            summary_title, _ = safe_text(L.get("download_summary", "요약"))
             story.append(Paragraph(summary_title, heading2_style))
             
-            main_inquiry_text, _ = safe_text(f'주요 문의: {summary.get("main_inquiry", "N/A")}')
+            main_inquiry_text, _ = safe_text(f'{L.get("download_main_inquiry", "주요 문의")}: {summary.get("main_inquiry", "N/A")}')
             story.append(create_paragraph(main_inquiry_text, normal_style))
             
             key_responses = summary.get("key_responses", [])
@@ -4925,50 +4997,50 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None)
                 responses_text = ", ".join(responses_list)
             else:
                 responses_text, _ = safe_text(key_responses)
-            responses_para_text, _ = safe_text(f'핵심 응답: {responses_text}')
+            responses_para_text, _ = safe_text(f'{L.get("download_key_response", "핵심 응답")}: {responses_text}')
             story.append(create_paragraph(responses_para_text, normal_style))
             
-            sentiment_text, _ = safe_text(f'고객 감정 점수: {summary.get("customer_sentiment_score", "N/A")}/100')
+            sentiment_text, _ = safe_text(f'{L.get("sentiment_score_label", "고객 감정 점수")}: {summary.get("customer_sentiment_score", "N/A")}/100')
             story.append(create_paragraph(sentiment_text, normal_style))
             
-            satisfaction_text, _ = safe_text(f'고객 만족도 점수: {summary.get("customer_satisfaction_score", "N/A")}/100')
+            satisfaction_text, _ = safe_text(f'{L.get("customer_satisfaction_score_label", "고객 만족도 점수")}: {summary.get("customer_satisfaction_score", "N/A")}/100')
             story.append(create_paragraph(satisfaction_text, normal_style))
             
             characteristics = summary.get('customer_characteristics', {})
             story.append(Spacer(1, 0.1*inch))
-            char_title, _ = safe_text('고객 특성')
+            char_title, _ = safe_text(L.get("download_customer_characteristics", "고객 특성"))
             story.append(Paragraph(char_title, heading2_style))
             
-            lang_char_text, _ = safe_text(f'언어: {characteristics.get("language", "N/A")}')
+            lang_char_text, _ = safe_text(f'{L.get("language_label", "언어")}: {characteristics.get("language", "N/A")}')
             story.append(create_paragraph(lang_char_text, normal_style))
             
-            cultural_text, _ = safe_text(f'문화적 배경: {characteristics.get("cultural_hints", "N/A")}')
+            cultural_text, _ = safe_text(f'{L.get("download_cultural_background", "문화적 배경")}: {characteristics.get("cultural_hints", "N/A")}')
             story.append(create_paragraph(cultural_text, normal_style))
             
-            region_text, _ = safe_text(f'지역: {characteristics.get("region", "N/A")}')
+            region_text, _ = safe_text(f'{L.get("region_label", "지역")}: {characteristics.get("region", "N/A")}')
             story.append(create_paragraph(region_text, normal_style))
             
-            comm_style_text, _ = safe_text(f'소통 스타일: {characteristics.get("communication_style", "N/A")}')
+            comm_style_text, _ = safe_text(f'{L.get("download_communication_style", "소통 스타일")}: {characteristics.get("communication_style", "N/A")}')
             story.append(create_paragraph(comm_style_text, normal_style))
             
             privacy = summary.get('privacy_info', {})
             story.append(Spacer(1, 0.1*inch))
-            privacy_title, _ = safe_text('개인정보 요약')
+            privacy_title, _ = safe_text(L.get("download_privacy_summary", "개인정보 요약"))
             story.append(Paragraph(privacy_title, heading2_style))
             
-            email_text, _ = safe_text(f'이메일 제공: {"예" if privacy.get("has_email") else "아니오"}')
+            email_text, _ = safe_text(f'{L.get("email_provided_label", "이메일 제공")}: {L.get("download_yes", "예") if privacy.get("has_email") else L.get("download_no", "아니오")}')
             story.append(create_paragraph(email_text, normal_style))
             
-            phone_text, _ = safe_text(f'전화번호 제공: {"예" if privacy.get("has_phone") else "아니오"}')
+            phone_text, _ = safe_text(f'{L.get("phone_provided_label", "전화번호 제공")}: {L.get("download_yes", "예") if privacy.get("has_phone") else L.get("download_no", "아니오")}')
             story.append(create_paragraph(phone_text, normal_style))
             
-            address_text, _ = safe_text(f'주소 제공: {"예" if privacy.get("has_address") else "아니오"}')
+            address_text, _ = safe_text(f'{L.get("download_address_provided", "주소 제공")}: {L.get("download_yes", "예") if privacy.get("has_address") else L.get("download_no", "아니오")}')
             story.append(create_paragraph(address_text, normal_style))
             
-            region_hint_text, _ = safe_text(f'지역 힌트: {privacy.get("region_hint", "N/A")}')
+            region_hint_text, _ = safe_text(f'{L.get("download_region_hint", "지역 힌트")}: {privacy.get("region_hint", "N/A")}')
             story.append(create_paragraph(region_hint_text, normal_style))
             
-            full_summary_text, _ = safe_text(f'전체 요약: {summary.get("summary", "N/A")}')
+            full_summary_text, _ = safe_text(f'{L.get("download_overall_summary", "전체 요약")}: {summary.get("summary", "N/A")}')
             story.append(create_paragraph(full_summary_text, normal_style))
         
         # 구분선
@@ -7930,9 +8002,14 @@ elif feature_selection == L["sim_tab_chat_email"]:
         
         # 다운로드 버튼들을 직접 표시
         if current_session_history:
+            # 현재 언어 가져오기
+            current_lang = st.session_state.get("language", "ko")
+            if current_lang not in ["ko", "en", "ja"]:
+                current_lang = "ko"
+            
             with download_col1:
                 try:
-                    filepath_word = export_history_to_word(current_session_history)
+                    filepath_word = export_history_to_word(current_session_history, lang=current_lang)
                     with open(filepath_word, "rb") as f:
                         st.download_button(
                             label=L.get("download_history_word", "📥 이력 다운로드 (Word)"),
@@ -7946,7 +8023,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             
             with download_col2:
                 try:
-                    filepath_pptx = export_history_to_pptx(current_session_history)
+                    filepath_pptx = export_history_to_pptx(current_session_history, lang=current_lang)
                     with open(filepath_pptx, "rb") as f:
                         st.download_button(
                             label=L.get("download_history_pptx", "📥 이력 다운로드 (PPTX)"),
@@ -7960,7 +8037,7 @@ elif feature_selection == L["sim_tab_chat_email"]:
             
             with download_col3:
                 try:
-                    filepath_pdf = export_history_to_pdf(current_session_history)
+                    filepath_pdf = export_history_to_pdf(current_session_history, lang=current_lang)
                     with open(filepath_pdf, "rb") as f:
                         st.download_button(
                             label=L.get("download_history_pdf", "📥 이력 다운로드 (PDF)"),
@@ -11049,9 +11126,14 @@ Key Points Summary:
         
         # 다운로드 버튼들을 직접 표시
         if current_session_history:
+            # 현재 언어 가져오기
+            current_lang = st.session_state.get("language", "ko")
+            if current_lang not in ["ko", "en", "ja"]:
+                current_lang = "ko"
+            
             with download_col1:
                 try:
-                    filepath_word = export_history_to_word(current_session_history)
+                    filepath_word = export_history_to_word(current_session_history, lang=current_lang)
                     with open(filepath_word, "rb") as f:
                         st.download_button(
                             label=L.get("download_history_word", "📥 이력 다운로드 (Word)"),
@@ -11065,7 +11147,7 @@ Key Points Summary:
             
             with download_col2:
                 try:
-                    filepath_pptx = export_history_to_pptx(current_session_history)
+                    filepath_pptx = export_history_to_pptx(current_session_history, lang=current_lang)
                     with open(filepath_pptx, "rb") as f:
                         st.download_button(
                             label=L.get("download_history_pptx", "📥 이력 다운로드 (PPTX)"),
@@ -11079,7 +11161,7 @@ Key Points Summary:
             
             with download_col3:
                 try:
-                    filepath_pdf = export_history_to_pdf(current_session_history)
+                    filepath_pdf = export_history_to_pdf(current_session_history, lang=current_lang)
                     with open(filepath_pdf, "rb") as f:
                         st.download_button(
                             label=L.get("download_history_pdf", "📥 이력 다운로드 (PDF)"),
