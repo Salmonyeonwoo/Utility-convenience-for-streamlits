@@ -8619,6 +8619,27 @@ Key Points Summary:
                 {"role": "agent_response", "content": final_response_content}
             )
 
+            # ⭐ 추가: 에이전트 응답에 메일 끝인사가 포함되어 있는지 확인
+            email_closing_patterns = [
+                "추가 문의사항이 있으면 언제든지 연락", "추가 문의 사항이 있으면 언제든지 연락",
+                "추가 문의사항이 있으시면", "추가 문의 사항이 있으시면",
+                "언제든지 연락", "언제든지 연락 주세요",
+                "additional inquiries", "any additional questions", "any further questions",
+                "feel free to contact", "please feel free to contact",
+                "please don't hesitate to contact", "don't hesitate to contact",
+                "please let me know", "let me know", "let me know if",
+                "please let me know so", "let me know so",
+                "if you have any questions", "if you have any further questions",
+                "if you need any assistance", "if you need further assistance",
+                "if you encounter any issues", "if you still have", "if you remain unclear",
+                "I can assist further", "I can help further", "I can assist",
+                "so I can assist", "so I can help", "so I can assist further",
+                "追加のご質問", "追加のお問い合わせ", "ご質問がございましたら", "お問い合わせがございましたら"
+            ]
+            is_email_closing_in_response = any(pattern.lower() in final_response_content.lower() for pattern in email_closing_patterns)
+            if is_email_closing_in_response:
+                st.session_state.has_email_closing = True  # 플래그 설정
+
             # 입력창/오디오/첨부 파일 초기화
             # ⭐ 수정: 위젯이 생성된 후에는 session_state를 직접 수정할 수 없으므로,
             # rerun 후 위젯이 다시 생성될 때 초기값이 적용되도록 플래그를 사용합니다.
@@ -8642,6 +8663,21 @@ Key Points Summary:
                 st.session_state.simulator_messages.append(
                     {"role": "customer", "content": customer_response}
                 )
+                
+                # ⭐ 추가: 메일 끝인사가 포함된 경우 고객 응답 확인 및 설문 조사 버튼 활성화
+                if st.session_state.get("has_email_closing", False):
+                    # 고객의 긍정 반응 확인
+                    positive_keywords = [
+                        "No, that will be all", "no more", "없습니다", "감사합니다", "Thank you", "ありがとう",
+                        "추가 문의 사항 없습니다", "추가 문의사항 없습니다", "no additional", "追加の質問はありません",
+                        "알겠습니다", "알겠어요", "ok", "okay", "네", "yes", "좋습니다", "good", "fine", "괜찮습니다"
+                    ]
+                    is_positive = any(keyword.lower() in customer_response.lower() for keyword in positive_keywords)
+                    
+                    if is_positive or L.get('customer_no_more_inquiries', '') in customer_response:
+                        # 설문 조사 버튼 활성화를 위해 WAIT_CUSTOMER_CLOSING_RESPONSE 단계로 이동
+                        st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
+                        st.rerun()
             else:
                 # LLM이 없는 경우 플래그 설정하여 CUSTOMER_TURN 단계에서 수동 생성 가능하도록
                 st.session_state.need_customer_response = True
@@ -8841,9 +8877,109 @@ Key Points Summary:
         positive_closing_phrases = [L["customer_positive_response"], L["customer_no_more_inquiries"]]
         is_positive_closing = any(phrase in customer_response for phrase in positive_closing_phrases)
 
+        # ⭐ 추가: 메일 응대 종료 문구 확인 (플래그 또는 에이전트의 마지막 응답 확인)
+        # 먼저 플래그 확인 (에이전트 응답 전송 시 설정됨)
+        is_email_closing = st.session_state.get("has_email_closing", False)
+        
+        # 플래그가 없으면 에이전트의 마지막 응답에서 직접 확인
+        if not is_email_closing:
+            last_agent_response = None
+            for msg in reversed(st.session_state.simulator_messages):
+                if msg.get("role") == "agent_response" and msg.get("content"):
+                    last_agent_response = msg.get("content", "")
+                    break
+            
+            # 메일 끝인사 문구 패턴 (다국어 지원) - 더 포괄적인 패턴 추가
+            email_closing_patterns = [
+                "추가 문의사항이 있으면 언제든지 연락", "추가 문의 사항이 있으면 언제든지 연락",
+                "추가 문의사항이 있으시면", "추가 문의 사항이 있으시면",
+                "언제든지 연락", "언제든지 연락 주세요",
+                "additional inquiries", "any additional questions", "any further questions",
+                "feel free to contact", "please feel free to contact",
+                "please don't hesitate to contact", "don't hesitate to contact",
+                "please let me know", "let me know", "let me know if",
+                "please let me know so", "let me know so",
+                "if you have any questions", "if you have any further questions",
+                "if you need any assistance", "if you need further assistance",
+                "if you encounter any issues", "if you still have", "if you remain unclear",
+                "I can assist further", "I can help further", "I can assist",
+                "so I can assist", "so I can help", "so I can assist further",
+                "追加のご質問", "追加のお問い合わせ", "ご質問がございましたら", "お問い合わせがございましたら"
+            ]
+            
+            if last_agent_response:
+                is_email_closing = any(pattern.lower() in last_agent_response.lower() for pattern in email_closing_patterns)
+                if is_email_closing:
+                    st.session_state.has_email_closing = True  # 플래그 업데이트
+
+        # ⭐ 수정: 메일 끝인사가 포함된 경우, 고객의 긍정 반응이나 "추가 문의 사항 없습니다" 답변을 인식하면 설문 조사 링크 전송 버튼 자동 활성화
+        if is_email_closing:
+            # 고객의 긍정 반응 또는 "추가 문의 사항 없습니다" 답변 확인
+            no_more_keywords = [
+                L['customer_no_more_inquiries'],
+                "No, that will be all",
+                "no more",
+                "없습니다",
+                "감사합니다",
+                "Thank you",
+                "ありがとう",
+                "追加 문의 사항 없습니다",
+                "추가 문의사항 없습니다",
+                "no additional",
+                "追加の質問はありません",
+                "알겠습니다",
+                "알겠어요",
+                "ok",
+                "okay",
+                "네",
+                "yes"
+            ]
+            has_no_more_inquiry = any(keyword.lower() in customer_response.lower() for keyword in no_more_keywords)
+            
+            # 긍정 반응 키워드 추가 (더 포괄적인 인식)
+            positive_keywords = [
+                "알겠습니다", "알겠어요", "네", "yes", "ok", "okay", "감사합니다", "thank you", "ありがとう",
+                "좋습니다", "good", "fine", "괜찮습니다", "알겠습니다 감사합니다"
+            ]
+            is_positive_response = any(keyword.lower() in customer_response.lower() for keyword in positive_keywords)
+            
+            # 긍정 반응이 있거나 "추가 문의 사항 없습니다" 답변이 있으면 설문 조사 링크 전송 버튼 활성화
+            if is_positive_closing or has_no_more_inquiry or L['customer_no_more_inquiries'] in customer_response or is_positive_response:
+                # 에이전트 감사 인사가 아직 추가되지 않은 경우에만 추가
+                agent_closing_added = False
+                for msg in reversed(st.session_state.simulator_messages):
+                    if msg.get("role") == "agent_response":
+                        agent_msg_content = msg.get("content", "")
+                        if "감사" in agent_msg_content or "Thank you" in agent_msg_content or "ありがとう" in agent_msg_content:
+                            agent_closing_added = True
+                        break
+                
+                if not agent_closing_added:
+                    # 에이전트가 감사 인사 메시지 전송
+                    agent_name = st.session_state.get("agent_name", "000")
+                    if current_lang == "ko":
+                        agent_closing_msg = f"연락 주셔서 감사드립니다. 지금까지 상담원 {agent_name}였습니다. 즐거운 하루 되세요."
+                    elif current_lang == "en":
+                        agent_closing_msg = f"Thank you for contacting us. This was {agent_name}. Have a great day!"
+                    else:  # ja
+                        agent_closing_msg = f"お問い合わせいただき、ありがとうございました。担当は{agent_name}でした。良い一日をお過ごしください。"
+                    
+                    # 에이전트 감사 인사를 메시지에 추가
+                    st.session_state.simulator_messages.append(
+                        {"role": "agent_response", "content": agent_closing_msg}
+                    )
+                
+                # 설문 조사 링크 전송 버튼 활성화를 위해 WAIT_CUSTOMER_CLOSING_RESPONSE 단계로 이동
+                # (실제로는 고객 응답이 이미 있으므로 바로 설문 조사 버튼 표시)
+                st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
+                st.rerun()
+            else:
+                # 메일 끝인사가 있지만 고객이 추가 질문을 한 경우
+                st.session_state.sim_stage = "AGENT_TURN"
+                st.rerun()
         # ⭐ 수정: 고객이 "알겠습니다. 감사합니다"라고 답변했을 때, 솔루션이 제공된 경우에만 추가 문의 여부 확인 단계로 이동
         # 정확한 문자열 비교가 아닌 포함 여부로 확인 (LLM 응답이 약간 다를 수 있음)
-        if L["customer_positive_response"] in customer_response:
+        elif L["customer_positive_response"] in customer_response:
             # 솔루션이 제공된 경우에만 추가 문의 여부 확인 단계로 이동
             if st.session_state.is_solution_provided:
                 st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
@@ -8955,10 +9091,51 @@ Key Points Summary:
         L = LANG.get(current_lang, LANG["ko"])
         customer_type_display = st.session_state.get("customer_type_sim_select", L["customer_type_options"][0])
         
+        # ⭐ 추가: 메일 응대 종료 문구 확인 (에이전트의 마지막 응답에 "추가 문의사항이 있으면 언제든지 연락 주세요" 같은 문구가 포함되어 있는지 확인)
+        last_agent_response = None
+        for msg in reversed(st.session_state.simulator_messages):
+            if msg.get("role") == "agent_response" and msg.get("content"):
+                last_agent_response = msg.get("content", "")
+                break
+        
+        # 메일 끝인사 문구 패턴 (다국어 지원) - 더 포괄적인 패턴 추가
+        email_closing_patterns = [
+            "추가 문의사항이 있으면 언제든지 연락",
+            "추가 문의 사항이 있으면 언제든지 연락",
+            "추가 문의사항이 있으시면 언제든지 연락",
+            "추가 문의 사항이 있으시면 언제든지 연락",
+            "추가 문의사항이 있으시면",
+            "추가 문의 사항이 있으시면",
+            "추가 문의사항이 있으면",
+            "추가 문의 사항이 있으면",
+            "언제든지 연락",
+            "언제든지 연락 주세요",
+            "언제든지 연락 주시기 바랍니다",
+            "additional inquiries",
+            "any additional questions",
+            "any further questions",
+            "feel free to contact",
+            "please feel free to contact",
+            "please don't hesitate to contact",
+            "don't hesitate to contact",
+            "追加のご質問",
+            "追加のお問い合わせ",
+            "ご質問がございましたら",
+            "お問い合わせがございましたら"
+        ]
+        
+        is_email_closing = False
+        if last_agent_response:
+            is_email_closing = any(pattern.lower() in last_agent_response.lower() for pattern in email_closing_patterns)
+        
         # ⭐ 수정: 이미 고객 응답이 생성되어 있는지 확인
         last_customer_message = None
         for msg in reversed(st.session_state.simulator_messages):
             if msg.get("role") == "customer_rebuttal":
+                last_customer_message = msg.get("content", "")
+                break
+            # ⭐ 추가: customer 역할의 메시지도 확인 (메일 끝인사가 포함된 경우 CUSTOMER_TURN에서 이미 고객 응답이 생성되었을 수 있음)
+            elif msg.get("role") == "customer" and is_email_closing:
                 last_customer_message = msg.get("content", "")
                 break
         
@@ -8999,11 +9176,88 @@ Key Points Summary:
                 "없습니다",
                 "감사합니다",
                 "結構です",
-                "ありがとう"
+                "ありがとう",
+                "추가 문의 사항 없습니다",
+                "추가 문의사항 없습니다",
+                "no additional",
+                "追加の質問はありません"
             ]
             has_no_more_inquiry = any(keyword.lower() in final_customer_reaction.lower() for keyword in no_more_keywords)
             
-            if L['customer_no_more_inquiries'] in final_customer_reaction or has_no_more_inquiry:
+            # ⭐ 추가: 메일 끝인사가 포함된 경우, 고객의 긍정 반응이나 "추가 문의 사항 없습니다" 답변을 인식하면 설문 조사 링크 전송 버튼 자동 활성화
+            # 긍정 반응 키워드 추가
+            positive_keywords = [
+                "알겠습니다", "알겠어요", "네", "yes", "ok", "okay", "감사합니다", "thank you", "ありがとう"
+            ]
+            is_positive_response = any(keyword.lower() in final_customer_reaction.lower() for keyword in positive_keywords)
+            
+            if is_email_closing and (has_no_more_inquiry or L['customer_no_more_inquiries'] in final_customer_reaction or is_positive_response):
+                # 에이전트 감사 인사가 아직 추가되지 않은 경우에만 추가
+                agent_closing_added = False
+                for msg in reversed(st.session_state.simulator_messages):
+                    if msg.get("role") == "agent_response":
+                        agent_msg_content = msg.get("content", "")
+                        if "감사" in agent_msg_content or "Thank you" in agent_msg_content or "ありがとう" in agent_msg_content:
+                            agent_closing_added = True
+                        break
+                
+                if not agent_closing_added:
+                    # 에이전트가 감사 인사 메시지 전송
+                    agent_name = st.session_state.get("agent_name", "000")
+                    if current_lang == "ko":
+                        agent_closing_msg = f"연락 주셔서 감사드립니다. 지금까지 상담원 {agent_name}였습니다. 즐거운 하루 되세요."
+                    elif current_lang == "en":
+                        agent_closing_msg = f"Thank you for contacting us. This was {agent_name}. Have a great day!"
+                    else:  # ja
+                        agent_closing_msg = f"お問い合わせいただき、ありがとうございました。担当は{agent_name}でした。良い一日をお過ごしください。"
+                    
+                    # 에이전트 감사 인사를 메시지에 추가
+                    st.session_state.simulator_messages.append(
+                        {"role": "agent_response", "content": agent_closing_msg}
+                    )
+                
+                # 설문 조사 링크 전송 버튼 표시
+                st.markdown("---")
+                st.success(L["no_more_inquiries_confirmed"])
+                st.markdown(f"### {L['consultation_end_header']}")
+                st.info(L["click_survey_button_to_end"])
+                st.markdown("---")
+                
+                # 버튼을 중앙에 크게 표시
+                col1, col2, col3 = st.columns([1, 3, 1])
+                with col2:
+                    end_chat_button = st.button(
+                        L["sim_end_chat_button"], 
+                        key="btn_final_end_chat_email_closing", 
+                        use_container_width=True, 
+                        type="primary"
+                    )
+                
+                if end_chat_button:
+                    # AHT 타이머 정지
+                    st.session_state.start_time = None
+
+                    # 설문 조사 링크 전송 메시지 추가
+                    end_msg = L["prompt_survey"]
+                    st.session_state.simulator_messages.append(
+                        {"role": "system_end", "content": end_msg}
+                    )
+
+                    # 채팅 종료 처리
+                    st.session_state.is_chat_ended = True
+                    st.session_state.sim_stage = "CLOSING"
+                    
+                    # 이력 저장
+                    save_simulation_history_local(
+                        st.session_state.customer_query_text_area, customer_type_display,
+                        st.session_state.simulator_messages, is_chat_ended=True,
+                        attachment_context=st.session_state.sim_attachment_context_for_llm,
+                    )
+                    
+                    st.session_state.realtime_hint_text = ""  # 힌트 초기화
+                    st.rerun()  # 버튼 클릭 후 UI 업데이트
+            # 메일 끝인사가 포함된 경우 여기서 처리 완료, 다른 로직은 실행하지 않음
+            elif L['customer_no_more_inquiries'] in final_customer_reaction or has_no_more_inquiry:
                 # ⭐ 수정: 에이전트 감사 인사가 아직 추가되지 않은 경우에만 추가
                 agent_closing_added = False
                 for msg in reversed(st.session_state.simulator_messages):
@@ -10972,21 +11226,20 @@ elif feature_selection == L["rag_tab"]:
             if st.button(L["button_start_analysis"]):
                 if not st.session_state.is_llm_ready:
                     st.error(L["simulation_no_key_warning"])
-                    # st.stop()
-
-                with st.spinner(L["data_analysis_progress"]):
-                    vectorstore, count = build_rag_index(uploaded_files)
-
-                if vectorstore:
-                    st.session_state.rag_vectorstore = vectorstore
-                    st.session_state.is_rag_ready = True
-                    st.success(L["embed_success"].format(count=count))
-                    st.session_state.rag_messages = [
-                        {"role": "assistant", "content": f"✅ {len(uploaded_files)}개 파일 분석 완료. 질문해 주세요."}
-                    ]
                 else:
-                    st.error(L["embed_fail"])
-                    st.session_state.is_rag_ready = False
+                    with st.spinner(L["data_analysis_progress"]):
+                        vectorstore, count = build_rag_index(uploaded_files)
+
+                    if vectorstore:
+                        st.session_state.rag_vectorstore = vectorstore
+                        st.session_state.is_rag_ready = True
+                        st.success(L["embed_success"].format(count=count))
+                        st.session_state.rag_messages = [
+                            {"role": "assistant", "content": f"✅ {len(uploaded_files)}개 파일 분석 완료. 질문해 주세요."}
+                        ]
+                    else:
+                        st.error(L["embed_fail"])
+                        st.session_state.is_rag_ready = False
     else:
         st.info(L["warning_no_files"])
         st.session_state.is_rag_ready = False
