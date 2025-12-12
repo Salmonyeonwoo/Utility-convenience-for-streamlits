@@ -228,9 +228,10 @@ def get_company_info_faq(company: str, lang: str = "ko") -> Dict[str, Any]:
             "popular_products": company_data.get("popular_products", []),
             "trending_topics": company_data.get("trending_topics", []),
             "faqs": company_data.get("faqs", []),
-            "interview_questions": company_data.get("interview_questions", [])
+            "interview_questions": company_data.get("interview_questions", []),
+            "ceo_info": company_data.get("ceo_info", {})
         }
-    return {"info": "", "popular_products": [], "trending_topics": [], "faqs": [], "interview_questions": []}
+    return {"info": "", "popular_products": [], "trending_topics": [], "faqs": [], "interview_questions": [], "ceo_info": {}}
 
 
 def visualize_company_data(company_data: Dict[str, Any], lang: str = "ko") -> Dict[str, Any]:
@@ -822,11 +823,20 @@ def generate_company_info_with_llm(company_name: str, lang: str = "ko") -> Dict[
         {{"question_ko": "면접 질문3", "answer_ko": "면접 질문3에 대한 상세한 답변입니다. 회사의 비전, 문화, 업무 환경 등을 고려하여 구체적이고 실용적인 답변을 제공합니다. (200자 이상)", "category_ko": "직무 이해"}},
         {{"question_ko": "면접 질문4", "answer_ko": "면접 질문4에 대한 상세한 답변입니다. 회사의 비전, 문화, 업무 환경 등을 고려하여 구체적이고 실용적인 답변을 제공합니다. (200자 이상)", "category_ko": "회사 이해"}},
         {{"question_ko": "면접 질문5", "answer_ko": "면접 질문5에 대한 상세한 답변입니다. 회사의 비전, 문화, 업무 환경 등을 고려하여 구체적이고 실용적인 답변을 제공합니다. (200자 이상)", "category_ko": "업무 관련"}}
-    ]
+    ],
+    "ceo_info": {{
+        "name_ko": "대표이사/CEO 이름",
+        "position_ko": "직책 (예: 대표이사, CEO, 공동대표이사 등)",
+        "bio_ko": "대표이사/CEO에 대한 상세한 소개입니다. 학력, 경력, 주요 성과, 리더십 스타일 등을 포함하여 300자 이상 작성해주세요.",
+        "tenure_ko": "재임 기간 (예: 2020년 ~ 현재)",
+        "education_ko": "학력 정보",
+        "career_ko": "주요 경력 및 성과"
+    }}
 }}
 
 FAQ는 10개를 생성해주세요. 실제로 자주 묻는 질문과 답변을 포함해주세요.
-면접 질문은 5개 이상 생성해주세요. 실제 면접에서 나올 만한 핵심 질문들을 포함하고, 각 질문에 대한 상세한 답변(200자 이상)과 카테고리(회사 이해, 업무 관련, 직무 이해 등)를 제공해주세요.""",
+면접 질문은 5개 이상 생성해주세요. 실제 면접에서 나올 만한 핵심 질문들을 포함하고, 각 질문에 대한 상세한 답변(200자 이상)과 카테고리(회사 이해, 업무 관련, 직무 이해 등)를 제공해주세요.
+CEO/대표이사 정보는 현재 재임 중인 대표이사 또는 CEO의 실제 정보를 포함해주세요. 이름, 직책, 상세 소개(300자 이상), 재임 기간, 학력, 주요 경력을 포함해주세요.""",
         "en": f"""Please provide detailed information about the following company: {company_name}
 
 Respond in JSON format as follows:
@@ -860,11 +870,20 @@ Respond in JSON format as follows:
         {{"question_en": "Interview Question 3", "answer_en": "Detailed answer for interview question 3. Provide specific and practical answers considering the company's vision, culture, work environment, etc. (200+ characters)", "category_en": "Job Understanding"}},
         {{"question_en": "Interview Question 4", "answer_en": "Detailed answer for interview question 4. Provide specific and practical answers considering the company's vision, culture, work environment, etc. (200+ characters)", "category_en": "Company Understanding"}},
         {{"question_en": "Interview Question 5", "answer_en": "Detailed answer for interview question 5. Provide specific and practical answers considering the company's vision, culture, work environment, etc. (200+ characters)", "category_en": "Work Related"}}
-    ]
+    ],
+    "ceo_info": {{
+        "name_en": "CEO/President Name",
+        "position_en": "Position (e.g., CEO, President, Co-CEO, etc.)",
+        "bio_en": "Detailed introduction of the CEO/President. Include education, career, major achievements, leadership style, etc. (300+ characters)",
+        "tenure_en": "Tenure (e.g., 2020 - Present)",
+        "education_en": "Education Information",
+        "career_en": "Major Career and Achievements"
+    }}
 }}
 
 Generate 10 FAQs with real frequently asked questions and answers.
-Generate at least 5 interview questions that are likely to be asked in actual interviews. Include core questions with detailed answers (200+ characters) and categories (Company Understanding, Work Related, Job Understanding, etc.) for each question.""",
+Generate at least 5 interview questions that are likely to be asked in actual interviews. Include core questions with detailed answers (200+ characters) and categories (Company Understanding, Work Related, Job Understanding, etc.) for each question.
+Include CEO/President information for the current CEO or President. Include name, position, detailed introduction (300+ characters), tenure, education, and major career achievements.""",
         "ja": f"""次の会社に関する詳細情報を提供してください: {company_name}
 
 次の形式でJSONで応答してください:
@@ -898,11 +917,20 @@ Generate at least 5 interview questions that are likely to be asked in actual in
         {{"question_ja": "面接質問3", "answer_ja": "面接質問3に対する詳細な回答です。会社のビジョン、文化、業務環境などを考慮して、具体的で実用的な回答を提供します。（200文字以上）", "category_ja": "職務理解"}},
         {{"question_ja": "面接質問4", "answer_ja": "面接質問4に対する詳細な回答です。会社のビジョン、文化、業務環境などを考慮して、具体的で実用的な回答を提供します。（200文字以上）", "category_ja": "会社理解"}},
         {{"question_ja": "面接質問5", "answer_ja": "面接質問5に対する詳細な回答です。会社のビジョン、文化、業務環境などを考慮して、具体的で実用的な回答を提供します。（200文字以上）", "category_ja": "業務関連"}}
-    ]
+    ],
+    "ceo_info": {{
+        "name_ja": "代表取締役/CEO名",
+        "position_ja": "役職（例：代表取締役、CEO、共同代表取締役など）",
+        "bio_ja": "代表取締役/CEOに関する詳細な紹介です。学歴、経歴、主要な成果、リーダーシップスタイルなどを含めて300文字以上で作成してください。",
+        "tenure_ja": "在任期間（例：2020年～現在）",
+        "education_ja": "学歴情報",
+        "career_ja": "主要な経歴および成果"
+    }}
 }}
 
 FAQは10個生成してください。実際によくある質問と回答を含めてください。
-面接質問は5個以上生成してください。実際の面接で出る可能性のある核心的な質問を含め、各質問に対する詳細な回答（200文字以上）とカテゴリー（会社理解、業務関連、職務理解など）を提供してください。"""
+面接質問は5個以上生成してください。実際の面接で出る可能性のある核心的な質問を含め、各質問に対する詳細な回答（200文字以上）とカテゴリー（会社理解、業務関連、職務理解など）を提供してください。
+CEO/代表取締役情報は現在在任中の代表取締役またはCEOの実際の情報を含めてください。名前、役職、詳細な紹介（300文字以上）、在任期間、学歴、主要な経歴を含めてください。"""
     }
     
     prompt = lang_prompts.get(lang, lang_prompts["ko"])
@@ -966,7 +994,8 @@ FAQは10個生成してください。実際によくある質問と回答を含
                     "popular_products": [],
                     "trending_topics": [],
                     "faqs": [],
-                    "interview_questions": []
+                    "interview_questions": [],
+                    "ceo_info": {}
                 }
         else:
             # JSON이 아닌 경우 기본 구조 반환
@@ -975,7 +1004,8 @@ FAQは10個生成してください。実際によくある質問と回答を含
                 "popular_products": [],
                 "trending_topics": [],
                 "faqs": [],
-                "interview_questions": []
+                "interview_questions": [],
+                "ceo_info": {}
             }
     except Exception as e:
         # 언어별 에러 메시지
@@ -989,7 +1019,8 @@ FAQは10個生成してください。実際によくある質問と回答を含
             "popular_products": [],
             "trending_topics": [],
             "faqs": [],
-            "interview_questions": []
+            "interview_questions": [],
+            "ceo_info": {}
         }
 
 
@@ -1123,6 +1154,12 @@ LANG: Dict[str, Dict[str, str]] = {
         "interview_questions": "면접 예상 질문",
         "interview_questions_desc": "면접에서 나올 만한 핵심 질문들과 상세한 답변입니다. 면접 준비와 회사 이해에 도움이 됩니다.",
         "interview_category_other": "기타",
+        "ceo_info": "CEO/대표이사 정보",
+        "position": "직책",
+        "tenure": "재임 기간",
+        "ceo_bio": "소개",
+        "education": "학력",
+        "career": "주요 경력",
         "embed_success": "총 {count}개 청크로 학습 DB 구축 완료!",
         "embed_fail": "임베딩 실패: 무료 티어 한도 초과 또는 네트워크 문제。",
         "warning_no_files": "먼저 학습 자료를 업로드하세요。",
@@ -1559,6 +1596,12 @@ LANG: Dict[str, Dict[str, str]] = {
         "interview_questions": "Interview Questions",
         "interview_questions_desc": "Core questions likely to be asked in interviews with detailed answers. Helps with interview preparation and company understanding.",
         "interview_category_other": "Other",
+        "ceo_info": "CEO/President Information",
+        "position": "Position",
+        "tenure": "Tenure",
+        "ceo_bio": "Introduction",
+        "education": "Education",
+        "career": "Major Career",
         "embed_success": "Learning DB built with {count} chunks!",
         "embed_fail": "Embedding failed: quota exceeded or network issue.",
         "warning_no_files": "Please upload study materials first.",
@@ -1998,6 +2041,12 @@ LANG: Dict[str, Dict[str, str]] = {
         "interview_questions": "面接予想質問",
         "interview_questions_desc": "面接で出る可能性のある核心的な質問と詳細な回答です。面接準備と会社理解に役立ちます。",
         "interview_category_other": "その他",
+        "ceo_info": "CEO/代表取締役情報",
+        "position": "役職",
+        "tenure": "在任期間",
+        "ceo_bio": "紹介",
+        "education": "学歴",
+        "career": "主要な経歴",
         "embed_success": "{count}個のチャンクでDB構築完了!",
         "embed_fail": "埋め込み失敗：クォータ超過またはネットワーク問題。",
         "warning_no_files": "資料をアップロードしてください。",
@@ -6753,7 +6802,8 @@ if feature_selection == L["company_info_tab"]:
                     "popular_products": generated_data.get("popular_products", []),
                     "trending_topics": generated_data.get("trending_topics", []),
                     "faqs": generated_data.get("faqs", []),
-                    "interview_questions": generated_data.get("interview_questions", [])
+                    "interview_questions": generated_data.get("interview_questions", []),
+                    "ceo_info": generated_data.get("ceo_info", {})
                 }
                 save_faq_database(faq_data)
     
@@ -6768,7 +6818,8 @@ if feature_selection == L["company_info_tab"]:
                 "popular_products": display_data.get("popular_products", []),
                 "trending_topics": display_data.get("trending_topics", []),
                 "faqs": display_data.get("faqs", []),
-                "interview_questions": display_data.get("interview_questions", [])
+                "interview_questions": display_data.get("interview_questions", []),
+                "ceo_info": display_data.get("ceo_info", {})
             })
             save_faq_database(faq_data)
     elif companies:
@@ -6783,7 +6834,8 @@ if feature_selection == L["company_info_tab"]:
             "popular_products": company_db_data.get("popular_products", []),
             "trending_topics": company_db_data.get("trending_topics", []),
             "faqs": company_db_data.get("faqs", []),
-            "interview_questions": company_db_data.get("interview_questions", [])
+            "interview_questions": company_db_data.get("interview_questions", []),
+            "ceo_info": company_db_data.get("ceo_info", {})
         }
     else:
         display_company = None
@@ -6966,6 +7018,55 @@ if feature_selection == L["company_info_tab"]:
                                     st.write(L.get("checking_additional_info", "상세 내용: {topic}에 대한 추가 정보를 확인 중입니다.").format(topic=topic_text))
                             else:
                                 st.write(L.get("checking_additional_info", "상세 내용: {topic}에 대한 추가 정보를 확인 중입니다.").format(topic=topic_text))
+            
+            # CEO/대표이사 정보 표시
+            if display_data.get("ceo_info"):
+                ceo_info = display_data["ceo_info"]
+                ceo_name = ceo_info.get(f"name_{current_lang}", ceo_info.get("name_ko", ""))
+                ceo_position = ceo_info.get(f"position_{current_lang}", ceo_info.get("position_ko", ""))
+                ceo_bio = ceo_info.get(f"bio_{current_lang}", ceo_info.get("bio_ko", ""))
+                ceo_tenure = ceo_info.get(f"tenure_{current_lang}", ceo_info.get("tenure_ko", ""))
+                ceo_education = ceo_info.get(f"education_{current_lang}", ceo_info.get("education_ko", ""))
+                ceo_career = ceo_info.get(f"career_{current_lang}", ceo_info.get("career_ko", ""))
+                
+                if ceo_name or ceo_position:
+                    st.markdown(f"#### 👔 {L.get('ceo_info', 'CEO/대표이사 정보')}")
+                    st.markdown("---")
+                    
+                    # CEO 정보 카드 형태로 표시
+                    col_ceo_left, col_ceo_right = st.columns([1, 2])
+                    
+                    with col_ceo_left:
+                        # CEO 이름과 직책
+                        if ceo_name:
+                            st.markdown(f"### {ceo_name}")
+                        if ceo_position:
+                            st.markdown(f"**{L.get('position', '직책')}:** {ceo_position}")
+                        if ceo_tenure:
+                            st.markdown(f"**{L.get('tenure', '재임 기간')}:** {ceo_tenure}")
+                    
+                    with col_ceo_right:
+                        # 상세 소개
+                        if ceo_bio:
+                            st.markdown(f"**{L.get('ceo_bio', '소개')}**")
+                            st.markdown(ceo_bio)
+                    
+                    # 학력 및 경력 정보
+                    if ceo_education or ceo_career:
+                        st.markdown("---")
+                        col_edu, col_career = st.columns(2)
+                        
+                        with col_edu:
+                            if ceo_education:
+                                st.markdown(f"**{L.get('education', '학력')}**")
+                                st.markdown(ceo_education)
+                        
+                        with col_career:
+                            if ceo_career:
+                                st.markdown(f"**{L.get('career', '주요 경력')}**")
+                                st.markdown(ceo_career)
+                    
+                    st.markdown("---")
             
             # 면접 질문 목록 표시
             if display_data.get("interview_questions"):
