@@ -227,9 +227,10 @@ def get_company_info_faq(company: str, lang: str = "ko") -> Dict[str, Any]:
             "info": company_data.get(f"info_{lang}", company_data.get("info_ko", "")),
             "popular_products": company_data.get("popular_products", []),
             "trending_topics": company_data.get("trending_topics", []),
-            "faqs": company_data.get("faqs", [])
+            "faqs": company_data.get("faqs", []),
+            "interview_questions": company_data.get("interview_questions", [])
         }
-    return {"info": "", "popular_products": [], "trending_topics": [], "faqs": []}
+    return {"info": "", "popular_products": [], "trending_topics": [], "faqs": [], "interview_questions": []}
 
 
 def visualize_company_data(company_data: Dict[str, Any], lang: str = "ko") -> Dict[str, Any]:
@@ -814,10 +815,18 @@ def generate_company_info_with_llm(company_name: str, lang: str = "ko") -> Dict[
         {{"question_ko": "질문8", "answer_ko": "답변8"}},
         {{"question_ko": "질문9", "answer_ko": "답변9"}},
         {{"question_ko": "질문10", "answer_ko": "답변10"}}
+    ],
+    "interview_questions": [
+        {{"question_ko": "면접 질문1", "answer_ko": "면접 질문1에 대한 상세한 답변입니다. 회사의 비전, 문화, 업무 환경 등을 고려하여 구체적이고 실용적인 답변을 제공합니다. (200자 이상)", "category_ko": "회사 이해"}},
+        {{"question_ko": "면접 질문2", "answer_ko": "면접 질문2에 대한 상세한 답변입니다. 회사의 비전, 문화, 업무 환경 등을 고려하여 구체적이고 실용적인 답변을 제공합니다. (200자 이상)", "category_ko": "업무 관련"}},
+        {{"question_ko": "면접 질문3", "answer_ko": "면접 질문3에 대한 상세한 답변입니다. 회사의 비전, 문화, 업무 환경 등을 고려하여 구체적이고 실용적인 답변을 제공합니다. (200자 이상)", "category_ko": "직무 이해"}},
+        {{"question_ko": "면접 질문4", "answer_ko": "면접 질문4에 대한 상세한 답변입니다. 회사의 비전, 문화, 업무 환경 등을 고려하여 구체적이고 실용적인 답변을 제공합니다. (200자 이상)", "category_ko": "회사 이해"}},
+        {{"question_ko": "면접 질문5", "answer_ko": "면접 질문5에 대한 상세한 답변입니다. 회사의 비전, 문화, 업무 환경 등을 고려하여 구체적이고 실용적인 답변을 제공합니다. (200자 이상)", "category_ko": "업무 관련"}}
     ]
 }}
 
-FAQ는 10개를 생성해주세요. 실제로 자주 묻는 질문과 답변을 포함해주세요.""",
+FAQ는 10개를 생성해주세요. 실제로 자주 묻는 질문과 답변을 포함해주세요.
+면접 질문은 5개 이상 생성해주세요. 실제 면접에서 나올 만한 핵심 질문들을 포함하고, 각 질문에 대한 상세한 답변(200자 이상)과 카테고리(회사 이해, 업무 관련, 직무 이해 등)를 제공해주세요.""",
         "en": f"""Please provide detailed information about the following company: {company_name}
 
 Respond in JSON format as follows:
@@ -844,10 +853,18 @@ Respond in JSON format as follows:
         {{"question_en": "Question8", "answer_en": "Answer8"}},
         {{"question_en": "Question9", "answer_en": "Answer9"}},
         {{"question_en": "Question10", "answer_en": "Answer10"}}
+    ],
+    "interview_questions": [
+        {{"question_en": "Interview Question 1", "answer_en": "Detailed answer for interview question 1. Provide specific and practical answers considering the company's vision, culture, work environment, etc. (200+ characters)", "category_en": "Company Understanding"}},
+        {{"question_en": "Interview Question 2", "answer_en": "Detailed answer for interview question 2. Provide specific and practical answers considering the company's vision, culture, work environment, etc. (200+ characters)", "category_en": "Work Related"}},
+        {{"question_en": "Interview Question 3", "answer_en": "Detailed answer for interview question 3. Provide specific and practical answers considering the company's vision, culture, work environment, etc. (200+ characters)", "category_en": "Job Understanding"}},
+        {{"question_en": "Interview Question 4", "answer_en": "Detailed answer for interview question 4. Provide specific and practical answers considering the company's vision, culture, work environment, etc. (200+ characters)", "category_en": "Company Understanding"}},
+        {{"question_en": "Interview Question 5", "answer_en": "Detailed answer for interview question 5. Provide specific and practical answers considering the company's vision, culture, work environment, etc. (200+ characters)", "category_en": "Work Related"}}
     ]
 }}
 
-Generate 10 FAQs with real frequently asked questions and answers.""",
+Generate 10 FAQs with real frequently asked questions and answers.
+Generate at least 5 interview questions that are likely to be asked in actual interviews. Include core questions with detailed answers (200+ characters) and categories (Company Understanding, Work Related, Job Understanding, etc.) for each question.""",
         "ja": f"""次の会社に関する詳細情報を提供してください: {company_name}
 
 次の形式でJSONで応答してください:
@@ -874,10 +891,18 @@ Generate 10 FAQs with real frequently asked questions and answers.""",
         {{"question_ja": "質問8", "answer_ja": "回答8"}},
         {{"question_ja": "質問9", "answer_ja": "回答9"}},
         {{"question_ja": "質問10", "answer_ja": "回答10"}}
+    ],
+    "interview_questions": [
+        {{"question_ja": "面接質問1", "answer_ja": "面接質問1に対する詳細な回答です。会社のビジョン、文化、業務環境などを考慮して、具体的で実用的な回答を提供します。（200文字以上）", "category_ja": "会社理解"}},
+        {{"question_ja": "面接質問2", "answer_ja": "面接質問2に対する詳細な回答です。会社のビジョン、文化、業務環境などを考慮して、具体的で実用的な回答を提供します。（200文字以上）", "category_ja": "業務関連"}},
+        {{"question_ja": "面接質問3", "answer_ja": "面接質問3に対する詳細な回答です。会社のビジョン、文化、業務環境などを考慮して、具体的で実用的な回答を提供します。（200文字以上）", "category_ja": "職務理解"}},
+        {{"question_ja": "面接質問4", "answer_ja": "面接質問4に対する詳細な回答です。会社のビジョン、文化、業務環境などを考慮して、具体的で実用的な回答を提供します。（200文字以上）", "category_ja": "会社理解"}},
+        {{"question_ja": "面接質問5", "answer_ja": "面接質問5に対する詳細な回答です。会社のビジョン、文化、業務環境などを考慮して、具体的で実用的な回答を提供します。（200文字以上）", "category_ja": "業務関連"}}
     ]
 }}
 
-FAQは10個生成してください。実際によくある質問と回答を含めてください。"""
+FAQは10個生成してください。実際によくある質問と回答を含めてください。
+面接質問は5個以上生成してください。実際の面接で出る可能性のある核心的な質問を含め、各質問に対する詳細な回答（200文字以上）とカテゴリー（会社理解、業務関連、職務理解など）を提供してください。"""
     }
     
     prompt = lang_prompts.get(lang, lang_prompts["ko"])
@@ -940,7 +965,8 @@ FAQは10個生成してください。実際によくある質問と回答を含
                     "company_info": response[:1000] if len(response) > 1000 else response,
                     "popular_products": [],
                     "trending_topics": [],
-                    "faqs": []
+                    "faqs": [],
+                    "interview_questions": []
                 }
         else:
             # JSON이 아닌 경우 기본 구조 반환
@@ -948,7 +974,8 @@ FAQは10個生成してください。実際によくある質問と回答を含
                 "company_info": response[:1000] if len(response) > 1000 else response,
                 "popular_products": [],
                 "trending_topics": [],
-                "faqs": []
+                "faqs": [],
+                "interview_questions": []
             }
     except Exception as e:
         # 언어별 에러 메시지
@@ -961,7 +988,8 @@ FAQは10個生成してください。実際によくある質問と回答を含
             "company_info": error_messages.get(lang, error_messages["ko"]),
             "popular_products": [],
             "trending_topics": [],
-            "faqs": []
+            "faqs": [],
+            "interview_questions": []
         }
 
 
@@ -1092,6 +1120,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "faq_saved_success": "FAQ가 저장되었습니다.",
         "company_added_success": "회사가 추가되었습니다.",
         "company_updated_success": "회사 정보가 업데이트되었습니다.",
+        "interview_questions": "면접 예상 질문",
+        "interview_questions_desc": "면접에서 나올 만한 핵심 질문들과 상세한 답변입니다. 면접 준비와 회사 이해에 도움이 됩니다.",
+        "interview_category_other": "기타",
         "embed_success": "총 {count}개 청크로 학습 DB 구축 완료!",
         "embed_fail": "임베딩 실패: 무료 티어 한도 초과 또는 네트워크 문제。",
         "warning_no_files": "먼저 학습 자료를 업로드하세요。",
@@ -1525,6 +1556,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "faq_saved_success": "FAQ saved successfully.",
         "company_added_success": "Company added successfully.",
         "company_updated_success": "Company information updated successfully.",
+        "interview_questions": "Interview Questions",
+        "interview_questions_desc": "Core questions likely to be asked in interviews with detailed answers. Helps with interview preparation and company understanding.",
+        "interview_category_other": "Other",
         "embed_success": "Learning DB built with {count} chunks!",
         "embed_fail": "Embedding failed: quota exceeded or network issue.",
         "warning_no_files": "Please upload study materials first.",
@@ -1961,6 +1995,9 @@ LANG: Dict[str, Dict[str, str]] = {
         "faq_saved_success": "FAQが保存されました。",
         "company_added_success": "会社が追加されました。",
         "company_updated_success": "会社情報が更新されました。",
+        "interview_questions": "面接予想質問",
+        "interview_questions_desc": "面接で出る可能性のある核心的な質問と詳細な回答です。面接準備と会社理解に役立ちます。",
+        "interview_category_other": "その他",
         "embed_success": "{count}個のチャンクでDB構築完了!",
         "embed_fail": "埋め込み失敗：クォータ超過またはネットワーク問題。",
         "warning_no_files": "資料をアップロードしてください。",
@@ -6715,7 +6752,8 @@ if feature_selection == L["company_info_tab"]:
                     "info_ja": "",
                     "popular_products": generated_data.get("popular_products", []),
                     "trending_topics": generated_data.get("trending_topics", []),
-                    "faqs": generated_data.get("faqs", [])
+                    "faqs": generated_data.get("faqs", []),
+                    "interview_questions": generated_data.get("interview_questions", [])
                 }
                 save_faq_database(faq_data)
     
@@ -6729,7 +6767,8 @@ if feature_selection == L["company_info_tab"]:
                 f"info_{current_lang}": display_data.get("company_info", ""),
                 "popular_products": display_data.get("popular_products", []),
                 "trending_topics": display_data.get("trending_topics", []),
-                "faqs": display_data.get("faqs", [])
+                "faqs": display_data.get("faqs", []),
+                "interview_questions": display_data.get("interview_questions", [])
             })
             save_faq_database(faq_data)
     elif companies:
@@ -6743,7 +6782,8 @@ if feature_selection == L["company_info_tab"]:
             "company_info": company_db_data.get(f"info_{current_lang}", company_db_data.get("info_ko", "")),
             "popular_products": company_db_data.get("popular_products", []),
             "trending_topics": company_db_data.get("trending_topics", []),
-            "faqs": company_db_data.get("faqs", [])
+            "faqs": company_db_data.get("faqs", []),
+            "interview_questions": company_db_data.get("interview_questions", [])
         }
     else:
         display_company = None
@@ -6926,6 +6966,35 @@ if feature_selection == L["company_info_tab"]:
                                     st.write(L.get("checking_additional_info", "상세 내용: {topic}에 대한 추가 정보를 확인 중입니다.").format(topic=topic_text))
                             else:
                                 st.write(L.get("checking_additional_info", "상세 내용: {topic}에 대한 추가 정보를 확인 중입니다.").format(topic=topic_text))
+            
+            # 면접 질문 목록 표시
+            if display_data.get("interview_questions"):
+                st.markdown(f"#### 💼 {L.get('interview_questions', '면접 예상 질문')}")
+                st.markdown(f"*{L.get('interview_questions_desc', '면접에서 나올 만한 핵심 질문들과 상세한 답변입니다. 면접 준비와 회사 이해에 도움이 됩니다.')}*")
+                st.markdown("---")
+                
+                # 카테고리별로 그룹화
+                interview_by_category = {}
+                for idx, iq in enumerate(display_data["interview_questions"]):
+                    question = iq.get(f"question_{current_lang}", iq.get("question_ko", ""))
+                    answer = iq.get(f"answer_{current_lang}", iq.get("answer_ko", ""))
+                    category = iq.get(f"category_{current_lang}", iq.get("category_ko", L.get("interview_category_other", "기타")))
+                    
+                    if category not in interview_by_category:
+                        interview_by_category[category] = []
+                    interview_by_category[category].append({
+                        "question": question,
+                        "answer": answer,
+                        "index": idx + 1
+                    })
+                
+                # 카테고리별로 표시
+                for category, questions in interview_by_category.items():
+                    with st.expander(f"📋 **{category}** ({len(questions)}{L.get('items', '개')})"):
+                        for item in questions:
+                            st.markdown(f"**{item['index']}. {item['question']}**")
+                            st.markdown(item['answer'])
+                            st.markdown("---")
         else:
             st.info(L["company_search_or_select"])
     
