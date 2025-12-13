@@ -1175,7 +1175,6 @@ LANG: Dict[str, Dict[str, str]] = {
         "escalation_system_msg": "📌 システムメッセージ: 顧客の要請により、上級者/専門チームへ転送されました。",
         "button_escalate": "エスカレーション処理",
         "button_continue": "対応を続ける",
-        "button_retry_translation": "翻訳を再試行",
         "llm_translation_error": "❌ 翻訳失敗: LLM応答エラー",
         "timer_metric": "経過時間",
         "timer_info_ok": "AHT (15分基準)",
