@@ -2691,7 +2691,7 @@ Response Hints:""",
     
     # 피드백 저장 콜백 함수
     def save_feedback(index):
-        """에이전트 응답에 대한 고객 피드백을 저장"""
+        # 에이전트 응답에 대한 고객 피드백을 저장
         feedback_key = f"feedback_{st.session_state.sim_instance_id}_{index}"
         if feedback_key in st.session_state:
             feedback_value = st.session_state[feedback_key]
