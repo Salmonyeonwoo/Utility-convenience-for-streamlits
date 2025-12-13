@@ -2024,6 +2024,8 @@ Response Hints:""",
             <div style="font-size: 18px; line-height: 1.8; padding: 20px; background-color: #f8f9fa; border-radius: 5px; border: 1px solid #dee2e6;">
             <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: 'Malgun Gothic', '맑은 고딕', 'Noto Sans JP', sans-serif; margin: 0; font-size: 18px; color: #212529;">{hint_escaped}</pre>
             </div>
+            """, unsafe_allow_html=True)
+    
     # =========================
     # 0. 전체 이력 삭제
     # =========================
