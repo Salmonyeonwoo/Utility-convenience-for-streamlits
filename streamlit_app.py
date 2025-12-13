@@ -6173,7 +6173,7 @@ elif feature_selection == L["content_tab"]:
                 share_url = "https://utility-convenience-salmonyeonwoo.streamlit.app/"  # 실제 배포 URL로 가정
 
                 # JavaScript 실행: 네이티브 공유 호출
-                html_content = """
+                html_content = f"""
 <script>{js_native_share}
                         const shared = triggerNativeShare('{share_title}', '{share_text}', '{share_url}');
                         if (shared) {{
@@ -6197,12 +6197,7 @@ elif feature_selection == L["content_tab"]:
                            }}
                         }}
 </script>
-""".format(
-                        js_native_share=js_native_share,
-                        share_title=share_title,
-                        share_text=share_text,
-                        share_url=share_url
-                    )
+"""
                 st.components.v1.html(html_content, height=0)
 
                 # Streamlit의 toast 메시지는 네이티브 공유 성공 여부를 알 수 없으므로 URL 복사 완료를 알림
