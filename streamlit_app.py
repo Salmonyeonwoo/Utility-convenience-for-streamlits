@@ -5862,13 +5862,14 @@ elif feature_selection == L["content_tab"]:
                         
                         # 문제별 결과 표시
                         with st.container():
-                            st.markdown(f"""
-                            <div style="border-left: 4px solid {status_color}; padding-left: 10px; margin-bottom: 15px;">
-                                <strong>{status_icon} 문항 {i+1}:</strong> {question_item['question']}<br>
-                                <span style="color: {status_color};">{L['your_answer']}: {user_answer_text}</span><br>
-                                <span style="color: green;">{L['correct_answer_label']}: {correct_answer_text}</span>
-                            </div>
-                            """, unsafe_allow_html=True)
+                            html_content = (
+                                f"<div style=\"border-left: 4px solid {status_color}; padding-left: 10px; margin-bottom: 15px;\">\n"
+                                f"    <strong>{status_icon} 문항 {i+1}:</strong> {question_item['question']}<br>\n"
+                                f"    <span style=\"color: {status_color};\">{L['your_answer']}: {user_answer_text}</span><br>\n"
+                                f"    <span style=\"color: green;\">{L['correct_answer_label']}: {correct_answer_text}</span>\n"
+                                f"</div>"
+                            )
+                            st.markdown(html_content, unsafe_allow_html=True)
             else:
                 # Plotly가 없는 경우 텍스트로만 표시
                 st.markdown(f"**{L['correct_questions']}:** {score}개")
