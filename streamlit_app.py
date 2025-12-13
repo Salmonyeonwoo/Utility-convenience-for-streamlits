@@ -808,22 +808,8 @@ def visualize_customer_characteristics(summary: Dict[str, Any], current_lang_key
     )
 
     return fig
-- Gender: {customer_profile.get('gender', 'unknown')}
-- Sentiment Score: {customer_profile.get('sentiment_score', 50)}/100
-- Communication Style: {customer_profile.get('communication_style', 'unknown')}
-- Urgency: {customer_profile.get('urgency_level', 'medium')}
-- Predicted Type: {customer_profile.get('predicted_customer_type', 'normal')}
 
-Similar Past Cases (Successful Resolutions):
-{past_cases_text}
 
-Provide a concise guideline in {lang_name} that:
-1. Identifies what worked well in similar past cases
-2. Suggests specific approaches based on successful patterns
-3. Warns about potential pitfalls based on past experiences
-4. Recommends response strategies that led to high customer satisfaction
-
-Guideline (in {lang_name}):
 def _generate_initial_advice(customer_query, customer_type_display, customer_email, customer_phone, current_lang_key,
                              customer_attachment_file):
     """Supervisor 가이드라인과 초안을 생성하는 함수 (저장된 데이터 활용)"""
