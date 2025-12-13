@@ -3163,9 +3163,109 @@ if feature_selection == L["sim_tab_chat_email"]:
                 )
                 try:
                     summary_text = run_llm(summary_prompt).strip()
-                    # 번역 로직은 여기에 추가
+                    
+                    # 번역 로직 추가
+                    lang_name_target = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(target_lang, "Korean")
+                    translated_summary, is_success = translate_text_with_llm(
+                        summary_text,
+                        target_lang,
+                        current_lang_at_start
+                    )
+                    
+                    # 이관 요약 저장
+                    st.session_state.transfer_summary_text = translated_summary
+                    st.session_state.translation_success = is_success
+                    st.session_state.language_at_transfer_start = current_lang_at_start
+                    
+                    # 언어 변경
+                    st.session_state.language = target_lang
+                    L = LANG.get(target_lang, LANG["ko"])
+                    
+                    # 시스템 메시지 추가
+                    system_msg = L["transfer_system_msg"].format(target_lang=lang_name_target)
+                    st.session_state.simulator_messages.append(
+                        {"role": "system_transfer", "content": system_msg}
+                    )
+                    
+                    # 이관 요약을 supervisor 메시지로 추가
+                    summary_msg = f"### {L['transfer_summary_header']}\n\n{translated_summary}"
+                    st.session_state.simulator_messages.append(
+                        {"role": "supervisor", "content": summary_msg}
+                    )
+                    
+                    # 이력 저장
+                    customer_type_display = st.session_state.get("customer_type_sim_select", "")
+                    save_simulation_history_local(
+                        st.session_state.customer_query_text_area,
+                        customer_type_display,
+                        st.session_state.simulator_messages,
+                        is_chat_ended=False,
+                        attachment_context=st.session_state.sim_attachment_context_for_llm,
+                    )
+                    
+                    # AGENT_TURN으로 이동
+                    st.session_state.sim_stage = "AGENT_TURN"
+                    st.rerun()
+                    
                 except Exception as e:
+                    st.error(f"이관 처리 중 오류 발생: {e}")
                     summary_text = f"요약 생성 오류: {e}"
+        
+        # 이관 버튼 렌더링
+        for idx, lang_code in enumerate(languages):
+            lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(lang_code, lang_code)
+            transfer_label = L.get(f"transfer_to_{lang_code}", f"Transfer to {lang_name} Team")
+            
+            with transfer_cols[idx]:
+                if st.button(
+                    transfer_label,
+                    key=f"btn_transfer_{lang_code}_{st.session_state.sim_instance_id}",
+                    use_container_width=True
+                ):
+                    transfer_session(lang_code, st.session_state.simulator_messages)
+    
+    # =========================
+    # 5-B. 에스컬레이션 요청 단계 (ESCALATION_REQUIRED)
+    # =========================
+    elif st.session_state.sim_stage == "ESCALATION_REQUIRED":
+        # 언어 키 안전하게 가져오기
+        current_lang = st.session_state.get("language", "ko")
+        if current_lang not in ["ko", "en", "ja"]:
+            current_lang = "ko"
+        L = LANG.get(current_lang, LANG["ko"])
+        
+        st.warning(L.get("escalation_required_msg", "🚨 고객이 에스컬레이션을 요청했습니다. 상급자나 전문 팀으로 이관이 필요합니다."))
+        
+        # 에스컬레이션 처리 옵션
+        col_escalate, col_continue = st.columns(2)
+        
+        with col_escalate:
+            if st.button(L.get("button_escalate", "에스컬레이션 처리"), key=f"btn_escalate_{st.session_state.sim_instance_id}"):
+                # 에스컬레이션 시스템 메시지 추가
+                escalation_msg = L.get("escalation_system_msg", "📌 시스템 메시지: 고객 요청에 따라 상급자/전문 팀으로 이관되었습니다.")
+                st.session_state.simulator_messages.append(
+                    {"role": "system_end", "content": escalation_msg}
+                )
+                
+                # 이력 저장
+                customer_type_display = st.session_state.get("customer_type_sim_select", "")
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area,
+                    customer_type_display,
+                    st.session_state.simulator_messages,
+                    is_chat_ended=True,
+                    attachment_context=st.session_state.sim_attachment_context_for_llm,
+                )
+                
+                # 종료 단계로 이동
+                st.session_state.sim_stage = "CLOSING"
+                st.rerun()
+        
+        with col_continue:
+            if st.button(L.get("button_continue", "계속 응대"), key=f"btn_continue_{st.session_state.sim_instance_id}"):
+                # 계속 응대하는 경우 AGENT_TURN으로 이동
+                st.session_state.sim_stage = "AGENT_TURN"
+                st.rerun()
     
     # =========================
     # 6. 고객 반응 생성 단계 (CUSTOMER_TURN)
