@@ -6145,6 +6145,8 @@ elif feature_selection == L["content_tab"]:
                       return false;
                    }}
                }}
+            """
+            
             def mock_download(file_type: str, file_name: str):
                 # 모의 다운로드 기능: 파일명과 함께 성공 토스트 메시지를 출력합니다.
                 st.toast(f"📥 {file_type} 파일을 생성하여 다운로드를 시작합니다: {file_name}")
