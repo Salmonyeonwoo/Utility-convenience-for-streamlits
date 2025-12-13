@@ -6174,7 +6174,7 @@ elif feature_selection == L["content_tab"]:
 
                 # JavaScript 실행: 네이티브 공유 호출
                 html_content = """
-                    <script>{js_native_share}
+<script>{js_native_share}
                         const shared = triggerNativeShare('{share_title}', '{share_text}', '{share_url}');
                         if (shared) {{
                            // 네이티브 공유 성공 시 (토스트 메시지는 브라우저가 관리)
@@ -6196,8 +6196,8 @@ elif feature_selection == L["content_tab"]:
                               alert('URL이 클립보드에 복사되었습니다.');
                            }}
                         }}
-                    </script>
-                    """.format(
+</script>
+""".format(
                         js_native_share=js_native_share,
                         share_title=share_title,
                         share_text=share_text,
