@@ -69,6 +69,7 @@ try:
     from reportlab.lib.pagesizes import letter
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
     from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.colors import black
     IS_REPORTLAB_AVAILABLE = True
 except ImportError:
     IS_REPORTLAB_AVAILABLE = False
