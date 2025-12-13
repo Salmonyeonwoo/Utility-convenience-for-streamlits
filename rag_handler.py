@@ -21,6 +21,7 @@ import os
 import tempfile
 import numpy as np
 import streamlit as st
+from typing import List
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
