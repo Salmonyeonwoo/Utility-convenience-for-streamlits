@@ -5602,42 +5602,45 @@ elif feature_selection == L["content_tab"]:
             target_lang = {"ko": "Korean", "en": "English", "ja": "Japanese"}[st.session_state.language]
 
             # 공통 프롬프트 설정 (퀴즈 형식을 포함하지 않는 기본 템플릿)
-            system_prompt = f"""
-            You are a professional AI coach. Generate learning content in {target_lang} for the topic '{topic}' at the '{level}' difficulty.
-            The content format requested is: {content_display}.
-            Output ONLY the raw content.
-            """
+            system_prompt = (
+                f"You are a professional AI coach. Generate learning content in {target_lang} "
+                f"for the topic '{topic}' at the '{level}' difficulty. "
+                f"The content format requested is: {content_display}. "
+                f"Output ONLY the raw content."
+            )
 
             if content_type == "quiz":
                 # 퀴즈 전용 프롬프트 및 JSON 구조 강제 (로직 유지)
                 lang_instruction = {"ko": "한국어로", "en": "in English", "ja": "日本語で"}.get(st.session_state.language, "in Korean")
-                quiz_prompt = f"""
-                You are an expert quiz generator. Based on the topic '{topic}' and difficulty '{level}', generate 10 multiple-choice questions.
-                IMPORTANT: All questions, options, and explanations must be written {lang_instruction}.
-                Your output MUST be a **raw JSON object** containing a single key "quiz_questions" which holds an array of 10 questions.
-                Each object in the array must strictly follow the required keys: 
-                - "question" (string): The question text in {lang_instruction}
-                - "options" (array of 4 strings): Four answer choices in {lang_instruction}
-                - "answer" (integer): The correct answer index starting from 1 (1-4)
-                - "explanation" (string): A DETAILED and COMPREHENSIVE explanation (at least 2-3 sentences, preferably 50-100 words) explaining:
-                  * Why the correct answer is right
-                  * Why other options are incorrect (briefly mention key differences)
-                  * Additional context or background information that helps understanding
-                  * Real-world examples or applications if relevant
-                  Write the explanation in {lang_instruction} with clear, educational content.
-                DO NOT include any explanation, introductory text, or markdown code blocks (e.g., ```json).
-                Output ONLY the raw JSON object, starting with '{{' and ending with '}}'.
-                Example structure:
-                {{
-                  "quiz_questions": [
-                    {{
-                      "question": "질문 내용",
-                      "options": ["선택지1", "선택지2", "선택지3", "선택지4"],
-                      "answer": 1,
-                      "explanation": "정답인 이유를 상세히 설명하고, 다른 선택지가 왜 틀렸는지 간단히 언급하며, 관련 배경 지식이나 실제 사례를 포함한 충분히 긴 해설 내용 (최소 2-3문장, 50-100단어 정도)"
-                    }}
-                  ]
-                }}
+                quiz_prompt = (
+                    f"You are an expert quiz generator. Based on the topic '{topic}' and difficulty '{level}', generate 10 multiple-choice questions.\n"
+                    f"IMPORTANT: All questions, options, and explanations must be written {lang_instruction}.\n"
+                    f"Your output MUST be a **raw JSON object** containing a single key \"quiz_questions\" which holds an array of 10 questions.\n"
+                    f"Each object in the array must strictly follow the required keys:\n"
+                    f"- \"question\" (string): The question text in {lang_instruction}\n"
+                    f"- \"options\" (array of 4 strings): Four answer choices in {lang_instruction}\n"
+                    f"- \"answer\" (integer): The correct answer index starting from 1 (1-4)\n"
+                    f"- \"explanation\" (string): A DETAILED and COMPREHENSIVE explanation (at least 2-3 sentences, preferably 50-100 words) explaining:\n"
+                    f"  * Why the correct answer is right\n"
+                    f"  * Why other options are incorrect (briefly mention key differences)\n"
+                    f"  * Additional context or background information that helps understanding\n"
+                    f"  * Real-world examples or applications if relevant\n"
+                    f"  Write the explanation in {lang_instruction} with clear, educational content.\n"
+                    f"DO NOT include any explanation, introductory text, or markdown code blocks (e.g., ```json).\n"
+                    f"Output ONLY the raw JSON object, starting with '{{' and ending with '}}'.\n"
+                    f"Example structure:\n"
+                    f"{{\n"
+                    f"  \"quiz_questions\": [\n"
+                    f"    {{\n"
+                    f"      \"question\": \"질문 내용\",\n"
+                    f"      \"options\": [\"선택지1\", \"선택지2\", \"선택지3\", \"선택지4\"],\n"
+                    f"      \"answer\": 1,\n"
+                    f"      \"explanation\": \"정답인 이유를 상세히 설명하고, 다른 선택지가 왜 틀렸는지 간단히 언급하며, 관련 배경 지식이나 실제 사례를 포함한 충분히 긴 해설 내용 (최소 2-3문장, 50-100단어 정도)\"\n"
+                    f"    }}\n"
+                    f"  ]\n"
+                    f"}}"
+                )
+            
             def extract_json_from_text(text):
                 """텍스트에서 JSON 객체를 추출하는 함수"""
                 if not text:
