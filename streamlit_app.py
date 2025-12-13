@@ -808,25 +808,6 @@ def visualize_customer_characteristics(summary: Dict[str, Any], current_lang_key
     )
 
     return fig
-
-
-[Case {idx}] (Similarity: {similarity:.1f}%)
-- Inquiry: {summary.get('main_inquiry', 'N/A')}
-- Customer Sentiment: {summary.get('customer_sentiment_score', 50)}/100
-- Customer Satisfaction: {summary.get('customer_satisfaction_score', 50)}/100
-- Key Responses: {', '.join(summary.get('key_responses', [])[:3])}
-- Summary: {summary.get('summary', 'N/A')[:200]}
-"""
-
-    guideline_prompt = f"""
-You are an AI Customer Support Supervisor analyzing past successful cases to provide guidance.
-
-Based on the following similar past cases and their successful resolution strategies, provide actionable guidelines for handling the current customer inquiry.
-
-Current Customer Inquiry:
-{customer_query}
-
-Current Customer Profile:
 - Gender: {customer_profile.get('gender', 'unknown')}
 - Sentiment Score: {customer_profile.get('sentiment_score', 50)}/100
 - Communication Style: {customer_profile.get('communication_style', 'unknown')}
