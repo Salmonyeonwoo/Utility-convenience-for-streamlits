@@ -6207,4 +6207,5 @@ elif feature_selection == L["content_tab"]:
             # 4. 복사 버튼 (기능 활성화 - 콘텐츠 텍스트 복사)
             if col_copy.button("📋", key=f"content_copy_{current_content_id}"):
                 # JavaScript를 실행하여 복사 (execCommand 사용으로 안정화)
-                st.components.v1.html(
+                st.components.v1.html(js_copy_script, height=0)
+                st.toast(L.get("toast_copy", "복사 완료!"))
