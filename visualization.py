@@ -28,10 +28,12 @@ from lang_pack import LANG
 # Plotly 사용 가능 여부 확인
 try:
     import plotly.graph_objects as go
+    import plotly.express as px
     from plotly.subplots import make_subplots
     IS_PLOTLY_AVAILABLE = True
 except ImportError:
     IS_PLOTLY_AVAILABLE = False
+    px = None
 
 def visualize_customer_profile_scores(customer_profile: Dict[str, Any], current_lang_key: str):
     """고객 프로필 점수를 시각화 (감정 점수, 긴급도)"""
