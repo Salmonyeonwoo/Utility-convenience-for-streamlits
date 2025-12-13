@@ -1357,7 +1357,7 @@ if feature_selection == L["company_info_tab"]:
                                           "🌏" if "여행" in product_text or "travel" in product_text.lower() or "사파리" in product_text else \
                                           "📦"
                             st.markdown(
-                                """
+                                f"""
                                 <div style='text-align: center; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                                 border-radius: 10px; color: white; min-height: 200px; display: flex; flex-direction: column; justify-content: center;'>
                                     <h1 style='font-size: 64px; margin: 0;'>{product_emoji}</h1>
