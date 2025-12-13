@@ -2706,9 +2706,8 @@ if feature_selection == L["sim_tab_chat_email"]:
                 st.session_state.simulator_messages[index]["feedback"] = feedback_value
     
     # 채팅/이메일 탭에서만 메시지 표시
-    if feature_selection == L["sim_tab_chat_email"]:
-        # 메시지가 있을 때만 표시
-        if st.session_state.simulator_messages:
+    # 메시지가 있을 때만 표시
+    if st.session_state.simulator_messages:
             for idx, msg in enumerate(st.session_state.simulator_messages):
                 role = msg["role"]
                 content = msg["content"]
