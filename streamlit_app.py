@@ -2706,48 +2706,48 @@ Response Hints:""",
         # 메시지가 있을 때만 표시
         if st.session_state.simulator_messages:
             for idx, msg in enumerate(st.session_state.simulator_messages):
-            role = msg["role"]
-            content = msg["content"]
-            avatar = {"customer": "🙋", "supervisor": "🤖", "agent_response": "🧑‍💻", "customer_rebuttal": "✨",
-                      "system_end": "📌", "system_transfer": "📌"}.get(role, "💬")
-            tts_role = "customer" if role.startswith("customer") or role == "customer_rebuttal" else (
-                "agent" if role == "agent_response" else "supervisor")
+                role = msg["role"]
+                content = msg["content"]
+                avatar = {"customer": "🙋", "supervisor": "🤖", "agent_response": "🧑‍💻", "customer_rebuttal": "✨",
+                          "system_end": "📌", "system_transfer": "📌"}.get(role, "💬")
+                tts_role = "customer" if role.startswith("customer") or role == "customer_rebuttal" else (
+                    "agent" if role == "agent_response" else "supervisor")
 
-            with st.chat_message(role, avatar=avatar):
-                st.markdown(content)
-                # 인덱스를 render_tts_button에 전달하여 고유 키 생성에 사용
-                render_tts_button(content, st.session_state.language, role=tts_role, prefix=f"{role}_", index=idx)
-                
-                # ⭐ 에이전트 응답에 대한 피드백 위젯 추가
-                if role == "agent_response":
-                    feedback_key = f"feedback_{st.session_state.sim_instance_id}_{idx}"
-                    # 기존 피드백 값 가져오기
-                    existing_feedback = msg.get("feedback", None)
-                    if existing_feedback is not None:
-                        st.session_state[feedback_key] = existing_feedback
+                with st.chat_message(role, avatar=avatar):
+                    st.markdown(content)
+                    # 인덱스를 render_tts_button에 전달하여 고유 키 생성에 사용
+                    render_tts_button(content, st.session_state.language, role=tts_role, prefix=f"{role}_", index=idx)
                     
-                    # 피드백 위젯 표시
-                    st.feedback(
-                        "thumbs",
-                        key=feedback_key,
-                        disabled=existing_feedback is not None,
-                        on_change=save_feedback,
-                        args=[idx],
-                    )
+                    # ⭐ 에이전트 응답에 대한 피드백 위젯 추가
+                    if role == "agent_response":
+                        feedback_key = f"feedback_{st.session_state.sim_instance_id}_{idx}"
+                        # 기존 피드백 값 가져오기
+                        existing_feedback = msg.get("feedback", None)
+                        if existing_feedback is not None:
+                            st.session_state[feedback_key] = existing_feedback
+                        
+                        # 피드백 위젯 표시
+                        st.feedback(
+                            "thumbs",
+                            key=feedback_key,
+                            disabled=existing_feedback is not None,
+                            on_change=save_feedback,
+                            args=[idx],
+                        )
 
-                # ⭐ [새로운 로직] 고객 첨부 파일 렌더링 (첫 번째 메시지인 경우)
-                if idx == 0 and role == "customer" and st.session_state.customer_attachment_b64:
-                    mime = st.session_state.customer_attachment_mime or "image/png"
-                    data_url = f"data:{mime};base64,{st.session_state.customer_attachment_b64}"
+                    # ⭐ [새로운 로직] 고객 첨부 파일 렌더링 (첫 번째 메시지인 경우)
+                    if idx == 0 and role == "customer" and st.session_state.customer_attachment_b64:
+                        mime = st.session_state.customer_attachment_mime or "image/png"
+                        data_url = f"data:{mime};base64,{st.session_state.customer_attachment_b64}"
 
-                    # 이미지 파일만 표시 (PDF 등은 아직 처리하지 않음)
-                    if mime.startswith("image/"):
-                        st.image(data_url, caption=f"첨부된 증거물 ({st.session_state.customer_attachment_file.name})",
-                                 use_column_width=True)
-                    elif mime == "application/pdf":
-                        # PDF 파일일 경우, 파일 이름과 함께 다운로드 링크 또는 경고 표시
-                        st.warning(
-                            f"첨부된 PDF 파일 ({st.session_state.customer_attachment_file.name})은 현재 인라인 미리보기가 지원되지 않습니다.")
+                        # 이미지 파일만 표시 (PDF 등은 아직 처리하지 않음)
+                        if mime.startswith("image/"):
+                            st.image(data_url, caption=f"첨부된 증거물 ({st.session_state.customer_attachment_file.name})",
+                                     use_column_width=True)
+                        elif mime == "application/pdf":
+                            # PDF 파일일 경우, 파일 이름과 함께 다운로드 링크 또는 경고 표시
+                            st.warning(
+                                f"첨부된 PDF 파일 ({st.session_state.customer_attachment_file.name})은 현재 인라인 미리보기가 지원되지 않습니다.")
 
     # 이관 요약 표시 (이관 후에만) - 루프 밖으로 이동하여 한 번만 표시
     if st.session_state.transfer_summary_text or (st.session_state.language != st.session_state.language_at_transfer_start and st.session_state.language_at_transfer_start):
