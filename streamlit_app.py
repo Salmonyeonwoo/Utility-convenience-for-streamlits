@@ -6173,31 +6173,31 @@ elif feature_selection == L["content_tab"]:
                 share_url = "https://utility-convenience-salmonyeonwoo.streamlit.app/"  # 실제 배포 URL로 가정
 
                 # JavaScript 실행: 네이티브 공유 호출
-                html_content = f"""
-<script>{js_native_share}
-                        const shared = triggerNativeShare('{share_title}', '{share_text}', '{share_url}');
-                        if (shared) {{
-                           // 네이티브 공유 성공 시 (토스트 메시지는 브라우저가 관리)
-                            console.log("Native Share Attempted.");
-                        }} else {{
-                           // 네이티브 공유 미지원 시, 대신 URL 복사
-                           const url = window.location.href;
-                           const textarea = document.createElement('textarea');
-                           textarea.value = url;
-                           document.body.appendChild(textarea);
-                           textarea.select();
-                           document.execCommand('copy');
-                           document.body.removeChild(textarea);
-                           // PC 환경에서 URL 복사 완료 토스트 메시지 출력
-                           const toastElement = window.parent.document.querySelector('[data-testid="stToast"]');
-                           if (toastElement) {{
-                               // 이미 토스트 메시지가 열려 있다면 갱신 (Streamlit의 toast 기능을 가정)
-                           }} else {{
-                              alert('URL이 클립보드에 복사되었습니다.');
-                           }}
-                        }}
-</script>
-"""
+                html_content = (
+                    f"<script>{js_native_share}\n"
+                    f"    const shared = triggerNativeShare('{share_title}', '{share_text}', '{share_url}');\n"
+                    f"    if (shared) {{\n"
+                    f"       // 네이티브 공유 성공 시 (토스트 메시지는 브라우저가 관리)\n"
+                    f"        console.log(\"Native Share Attempted.\");\n"
+                    f"    }} else {{\n"
+                    f"       // 네이티브 공유 미지원 시, 대신 URL 복사\n"
+                    f"       const url = window.location.href;\n"
+                    f"       const textarea = document.createElement('textarea');\n"
+                    f"       textarea.value = url;\n"
+                    f"       document.body.appendChild(textarea);\n"
+                    f"       textarea.select();\n"
+                    f"       document.execCommand('copy');\n"
+                    f"       document.body.removeChild(textarea);\n"
+                    f"       // PC 환경에서 URL 복사 완료 토스트 메시지 출력\n"
+                    f"       const toastElement = window.parent.document.querySelector('[data-testid=\"stToast\"]');\n"
+                    f"       if (toastElement) {{\n"
+                    f"           // 이미 토스트 메시지가 열려 있다면 갱신 (Streamlit의 toast 기능을 가정)\n"
+                    f"       }} else {{\n"
+                    f"          alert('URL이 클립보드에 복사되었습니다.');\n"
+                    f"       }}\n"
+                    f"    }}\n"
+                    f"</script>"
+                )
                 st.components.v1.html(html_content, height=0)
 
                 # Streamlit의 toast 메시지는 네이티브 공유 성공 여부를 알 수 없으므로 URL 복사 완료를 알림
