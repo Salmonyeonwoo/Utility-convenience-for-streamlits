@@ -3113,7 +3113,7 @@ Response Hints:""",
 
 
         def transfer_session(target_lang: str, current_messages: List[Dict[str, str]]):
-            """언어 이관 시스템 메시지를 추가하고 세션 언어를 변경합니다."""
+            # 언어 이관 시스템 메시지를 추가하고 세션 언어를 변경합니다.
 
             # API 키 체크는 run_llm 내부에서 처리되지만, 명시적으로 Gemini 키를 요구함
             if not get_api_key("gemini"):
@@ -4566,7 +4566,7 @@ elif feature_selection == L["sim_tab_phone"]:
         # (중략) - **이관, 힌트, 요약, CC, Whisper 전사, 고객 반응 생성**
         # ------------------------------
         def transfer_session(target_lang: str, current_messages: List[Dict[str, str]]):
-            """언어 이관 시스템 메시지를 추가하고 세션 언어를 변경합니다."""
+            # 언어 이관 시스템 메시지를 추가하고 세션 언어를 변경합니다.
 
             current_lang = st.session_state.language  # 현재 언어 확인 (Source language)
             L = LANG[current_lang]
