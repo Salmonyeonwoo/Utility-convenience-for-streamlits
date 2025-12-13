@@ -3851,11 +3851,14 @@ def verify_customer_info(
     
     Args:
         provided_info: 고객이 제공한 검증 정보
-            - receipt_number: 영수증 번호
-            - card_last4: 카드 뒷자리 4자리
+            - receipt_number: 영수증/예약 번호
+            - card_last4: 카드 뒷자리 4자리 (카드 결제인 경우)
+            - account_number: 계좌번호 (온라인뱅킹인 경우)
+            - payment_method: 결제 수단
             - customer_name: 고객 성함
             - customer_email: 고객 이메일
             - customer_phone: 고객 연락처
+            - file_uploaded: 파일 업로드 여부
         stored_info: 시스템에 저장된 검증 정보 (동일한 구조)
     
     Returns:
@@ -3863,23 +3866,46 @@ def verify_customer_info(
     """
     verification_results = {
         "receipt_number": False,
-        "card_last4": False,
+        "payment_info": False,  # 카드 뒷자리 또는 계좌번호
         "customer_name": False,
         "customer_email": False,
-        "customer_phone": False
+        "customer_phone": False,
+        "file_uploaded": False
     }
     
-    # 영수증 번호 검증 (대소문자 무시, 공백 제거)
+    # 파일 업로드 확인 (파일이 있으면 추가 점수)
+    if provided_info.get("file_uploaded"):
+        verification_results["file_uploaded"] = True
+    
+    # 영수증/예약 번호 검증 (대소문자 무시, 공백 제거)
     if provided_info.get("receipt_number") and stored_info.get("receipt_number"):
         provided_receipt = provided_info["receipt_number"].strip().upper().replace(" ", "")
         stored_receipt = stored_info["receipt_number"].strip().upper().replace(" ", "")
         verification_results["receipt_number"] = provided_receipt == stored_receipt
     
-    # 카드 뒷자리 4자리 검증 (숫자만 추출하여 비교)
-    if provided_info.get("card_last4") and stored_info.get("card_last4"):
-        provided_card = "".join(filter(str.isdigit, provided_info["card_last4"]))[-4:]
-        stored_card = "".join(filter(str.isdigit, stored_info["card_last4"]))[-4:]
-        verification_results["card_last4"] = provided_card == stored_card and len(provided_card) == 4
+    # 결제 정보 검증 (결제 수단에 따라 다르게 처리)
+    payment_method = provided_info.get("payment_method", "")
+    
+    # 카드 결제인 경우
+    if "카드" in payment_method or "card" in payment_method.lower():
+        if provided_info.get("card_last4") and stored_info.get("card_last4"):
+            provided_card = "".join(filter(str.isdigit, provided_info["card_last4"]))[-4:]
+            stored_card = "".join(filter(str.isdigit, stored_info["card_last4"]))[-4:]
+            verification_results["payment_info"] = provided_card == stored_card and len(provided_card) == 4
+    
+    # 온라인뱅킹인 경우
+    elif "온라인뱅킹" in payment_method or "online banking" in payment_method.lower():
+        if provided_info.get("account_number") and stored_info.get("account_number"):
+            provided_account = "".join(filter(str.isdigit, provided_info["account_number"]))
+            stored_account = "".join(filter(str.isdigit, stored_info["account_number"]))
+            # 계좌번호는 마지막 4-6자리 비교
+            verification_results["payment_info"] = provided_account[-6:] == stored_account[-6:] or provided_account[-4:] == stored_account[-4:]
+    
+    # 카카오페이, 네이버페이, GrabPay, Touch N Go 등은 결제 수단 정보만으로 확인 가능
+    elif payment_method and stored_info.get("payment_method"):
+        provided_payment = payment_method.strip().lower()
+        stored_payment = stored_info["payment_method"].strip().lower()
+        verification_results["payment_info"] = provided_payment == stored_payment
     
     # 고객 성함 검증 (대소문자 무시, 공백 정규화)
     if provided_info.get("customer_name") and stored_info.get("customer_name"):
@@ -3900,11 +3926,59 @@ def verify_customer_info(
         # 마지막 4-10자리 비교 (국가코드 제외)
         verification_results["customer_phone"] = provided_phone[-10:] == stored_phone[-10:] or provided_phone[-4:] == stored_phone[-4:]
     
-    # 전체 검증 성공 여부: 최소 3개 이상 일치해야 함 (보안상 완전 일치보다는 유연하게)
+    # 전체 검증 성공 여부: 최소 3개 이상 일치해야 함 (파일 업로드 시 추가 점수)
     matched_count = sum(verification_results.values())
+    # 파일이 업로드된 경우 2점 추가
+    if verification_results["file_uploaded"]:
+        matched_count += 1
     is_verified = matched_count >= 3
     
     return is_verified, verification_results
+
+
+def check_if_customer_provided_verification_info(messages: List[Dict[str, Any]]) -> bool:
+    """
+    고객이 검증 정보를 제공했는지 확인합니다.
+    고객 메시지에서 영수증, 예약번호, 카드, 결제수단, 성함, 이메일, 연락처 등의 키워드가 있는지 확인합니다.
+    
+    Args:
+        messages: 대화 메시지 리스트
+    
+    Returns:
+        검증 정보 제공 여부
+    """
+    if not messages:
+        return False
+    
+    # 최근 고객 메시지 확인 (최근 3개)
+    recent_customer_messages = [
+        msg.get("content", "").lower() 
+        for msg in messages[-5:] 
+        if msg.get("role") in ["customer", "customer_rebuttal", "initial_query"]
+    ]
+    
+    if not recent_customer_messages:
+        return False
+    
+    # 검증 정보 관련 키워드
+    verification_keywords = [
+        "영수증", "receipt", "領収書",
+        "예약", "reservation", "予約", "booking",
+        "카드", "card", "カード",
+        "카카오페이", "kakao pay", "kakaopay",
+        "네이버페이", "naver pay", "naverpay",
+        "온라인뱅킹", "online banking", "オンラインバンキング",
+        "grabpay", "touch n go", "tng",
+        "계좌", "account number", "口座",
+        "성함", "name", "氏名",
+        "이메일", "email", "メール",
+        "연락처", "phone", "電話",
+        "전화번호", "phone number", "電話番号"
+    ]
+    
+    # 최근 고객 메시지에서 키워드 확인
+    combined_text = " ".join(recent_customer_messages)
+    return any(keyword.lower() in combined_text for keyword in verification_keywords)
 
 
 def check_if_login_related_inquiry(customer_query: str) -> bool:

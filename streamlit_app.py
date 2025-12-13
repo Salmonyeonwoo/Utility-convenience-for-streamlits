@@ -174,7 +174,7 @@ from simulation_handler import (
     detect_text_language, analyze_customer_profile, find_similar_cases,
     generate_guideline_from_past_cases, _generate_initial_advice,
     mask_email, verify_customer_info, check_if_login_related_inquiry,
-    delete_all_history_local
+    check_if_customer_provided_verification_info, delete_all_history_local
 )
 from visualization import (
     visualize_customer_profile_scores, visualize_similarity_cases,
@@ -2865,30 +2865,86 @@ if feature_selection == L["sim_tab_chat_email"]:
             st.info(
                 f"📎 최초 문의 시 첨부된 파일 정보:\n\n{st.session_state.sim_attachment_context_for_llm.replace('[ATTACHMENT STATUS]', '').strip()}")
 
-        # --- 고객 검증 프로세스 (로그인/계정 관련 문의인 경우) ---
+        # --- 고객 검증 프로세스 (로그인/계정 관련 문의이고 고객이 정보를 제공한 경우) ---
         initial_query = st.session_state.get('customer_query_text_area', '')
         is_login_inquiry = check_if_login_related_inquiry(initial_query)
         
-        if is_login_inquiry and not st.session_state.is_customer_verified:
+        # 고객이 검증 정보를 제공했는지 확인
+        customer_provided_info = False
+        if st.session_state.simulator_messages:
+            customer_provided_info = check_if_customer_provided_verification_info(st.session_state.simulator_messages)
+        
+        # 로그인 관련 문의이고, 고객이 정보를 제공했으며, 아직 검증되지 않은 경우에만 검증 UI 표시
+        if is_login_inquiry and customer_provided_info and not st.session_state.is_customer_verified:
             st.markdown("---")
             st.markdown(f"### {L['verification_header']}")
             st.warning(L['verification_warning'])
             
             with st.expander(L.get("verification_info_input", "고객 검증 정보 입력"), expanded=True):
+                # 파일 업로더 (스크린샷/사진 스캔용)
+                verification_file = st.file_uploader(
+                    L.get("verification_file_upload_label", "검증 파일 업로드 (스크린샷/사진)"),
+                    type=["png", "jpg", "jpeg", "pdf"],
+                    key="verification_file_uploader",
+                    help="고객이 제공한 영수증, 예약 확인서, 결제 내역 등의 스크린샷/사진을 업로드하세요."
+                )
+                
+                if verification_file:
+                    st.info(f"✅ 파일 업로드 완료: {verification_file.name} ({verification_file.size} bytes)")
+                    # 파일 정보를 세션 상태에 저장
+                    st.session_state.verification_file_info = {
+                        "filename": verification_file.name,
+                        "size": verification_file.size,
+                        "type": verification_file.type
+                    }
+                
                 verification_cols = st.columns(2)
                 
                 with verification_cols[0]:
                     verification_receipt = st.text_input(
                         L['verification_receipt_label'],
                         key="verification_receipt_input",
-                        help=L.get("verification_receipt_help", "고객이 제공한 영수증 번호를 입력하세요.")
+                        help=L.get("verification_receipt_help", "고객이 제공한 영수증 번호 또는 예약 번호를 입력하세요.")
                     )
-                    verification_card = st.text_input(
-                        L['verification_card_label'],
-                        key="verification_card_input",
-                        max_chars=4,
-                        help=L.get("verification_card_help", "고객이 제공한 카드 뒷자리 4자리를 입력하세요.")
+                    
+                    # 결제 수단 선택
+                    payment_method_options = [
+                        L.get("payment_method_card", "신용/체크카드"),
+                        L.get("payment_method_kakaopay", "카카오페이"),
+                        L.get("payment_method_naverpay", "네이버페이"),
+                        L.get("payment_method_online_banking", "온라인뱅킹"),
+                        L.get("payment_method_grabpay", "GrabPay"),
+                        L.get("payment_method_tng", "Touch N Go"),
+                        L.get("payment_method_other", "기타")
+                    ]
+                    verification_payment_method = st.selectbox(
+                        L['verification_payment_method_label'],
+                        options=payment_method_options,
+                        key="verification_payment_method_input",
+                        help="고객이 사용한 결제 수단을 선택하세요."
                     )
+                    
+                    # 결제 정보 입력 (카드 뒷자리 또는 계좌번호)
+                    if verification_payment_method == L.get("payment_method_card", "신용/체크카드"):
+                        verification_card = st.text_input(
+                            L['verification_card_label'],
+                            key="verification_card_input",
+                            max_chars=4,
+                            help=L.get("verification_card_help", "고객이 제공한 카드 뒷자리 4자리를 입력하세요.")
+                        )
+                        verification_account = ""
+                    elif verification_payment_method == L.get("payment_method_online_banking", "온라인뱅킹"):
+                        verification_account = st.text_input(
+                            L['verification_account_label'],
+                            key="verification_account_input",
+                            help="고객이 제공한 계좌번호를 입력하세요."
+                        )
+                        verification_card = ""
+                    else:
+                        # 카카오페이, 네이버페이 등은 결제 수단 정보만으로 확인 가능
+                        verification_card = ""
+                        verification_account = ""
+                    
                     verification_name = st.text_input(
                         L['verification_name_label'],
                         key="verification_name_input",
@@ -2915,12 +2971,22 @@ if feature_selection == L["sim_tab_chat_email"]:
                 verify_cols = st.columns([1, 1])
                 with verify_cols[0]:
                     if st.button(L['button_verify'], key="btn_verify_customer", use_container_width=True, type="primary"):
+                        # 파일이 업로드된 경우 파일 정보도 포함
+                        file_verified = False
+                        if verification_file:
+                            # 파일이 업로드되었으면 검증 성공으로 간주 (실제로는 OCR/이미지 분석 필요)
+                            file_verified = True
+                            st.session_state.verification_file_verified = True
+                        
                         provided_info = {
                             "receipt_number": verification_receipt,
-                            "card_last4": verification_card,
+                            "card_last4": verification_card if verification_payment_method == L.get("payment_method_card", "신용/체크카드") else "",
+                            "account_number": verification_account if verification_payment_method == L.get("payment_method_online_banking", "온라인뱅킹") else "",
+                            "payment_method": verification_payment_method,
                             "customer_name": verification_name,
                             "customer_email": verification_email,
-                            "customer_phone": verification_phone
+                            "customer_phone": verification_phone,
+                            "file_uploaded": file_verified
                         }
                         
                         # 검증 실행 (시스템 내부에서만 실행)
