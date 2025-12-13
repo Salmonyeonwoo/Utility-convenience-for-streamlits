@@ -5439,22 +5439,19 @@ elif feature_selection == L["rag_tab"]:
         
         if recent_histories:
             # LLM을 사용하여 고객 가이드 생성
-            guide_prompt = f"""
-당신은 CS 센터 교육 전문가입니다. 다음 고객 응대 이력 데이터를 분석하여 종합적인 고객 응대 가이드라인을 작성하세요.
-
-분석할 이력 데이터:
-{json.dumps([h.get('summary', {}) for h in recent_histories if h.get('summary')], ensure_ascii=False, indent=2)}
-
-다음 내용을 포함하여 가이드라인을 작성하세요:
-1. 고객 유형별 응대 전략 (일반/까다로운/매우 불만족)
-2. 문화권별 응대 가이드 (언어, 문화적 배경 고려)
-3. 주요 문의 유형별 해결 방법
-4. 고객 감정 점수에 따른 응대 전략
-5. 개인정보 처리 가이드
-6. 효과적인 소통 스타일 권장사항
-
-가이드라인을 한국어로 작성하세요.
-"""
+            history_data = json.dumps([h.get('summary', {}) for h in recent_histories if h.get('summary')], ensure_ascii=False, indent=2)
+            guide_prompt = (
+                f"당신은 CS 센터 교육 전문가입니다. 다음 고객 응대 이력 데이터를 분석하여 종합적인 고객 응대 가이드라인을 작성하세요.\n\n"
+                f"분석할 이력 데이터:\n{history_data}\n\n"
+                f"다음 내용을 포함하여 가이드라인을 작성하세요:\n"
+                f"1. 고객 유형별 응대 전략 (일반/까다로운/매우 불만족)\n"
+                f"2. 문화권별 응대 가이드 (언어, 문화적 배경 고려)\n"
+                f"3. 주요 문의 유형별 해결 방법\n"
+                f"4. 고객 감정 점수에 따른 응대 전략\n"
+                f"5. 개인정보 처리 가이드\n"
+                f"6. 효과적인 소통 스타일 권장사항\n\n"
+                f"가이드라인을 한국어로 작성하세요."
+            )
             
             if st.session_state.is_llm_ready:
                 with st.spinner("고객 가이드 생성 중..."):
