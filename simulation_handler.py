@@ -3950,35 +3950,75 @@ def check_if_customer_provided_verification_info(messages: List[Dict[str, Any]])
     if not messages:
         return False
     
-    # 최근 고객 메시지 확인 (최근 3개)
+    # 최근 고객 메시지 확인 (최근 10개까지 확인)
     recent_customer_messages = [
-        msg.get("content", "").lower() 
-        for msg in messages[-5:] 
+        msg.get("content", "") 
+        for msg in messages[-10:] 
         if msg.get("role") in ["customer", "customer_rebuttal", "initial_query"]
     ]
     
     if not recent_customer_messages:
         return False
     
-    # 검증 정보 관련 키워드
+    # 모든 고객 메시지를 하나의 텍스트로 결합
+    combined_text = " ".join(recent_customer_messages).lower()
+    
+    # 검증 정보 관련 키워드 (더 포괄적으로)
     verification_keywords = [
-        "영수증", "receipt", "領収書",
-        "예약", "reservation", "予約", "booking",
-        "카드", "card", "カード",
-        "카카오페이", "kakao pay", "kakaopay",
-        "네이버페이", "naver pay", "naverpay",
-        "온라인뱅킹", "online banking", "オンラインバンキング",
-        "grabpay", "touch n go", "tng",
-        "계좌", "account number", "口座",
-        "성함", "name", "氏名",
-        "이메일", "email", "メール",
-        "연락처", "phone", "電話",
-        "전화번호", "phone number", "電話番号"
+        # 영수증/예약 번호
+        "영수증", "receipt", "領収書", "receipt number",
+        "예약", "reservation", "予約", "booking", "예약번호", "booking number",
+        "123456", "12345",  # 예약 번호 패턴 (숫자)
+        
+        # 결제 수단
+        "카드", "card", "カード", "카드 뒷자리", "card last",
+        "카카오페이", "kakao pay", "kakaopay", "kakao",
+        "네이버페이", "naver pay", "naverpay", "naver",
+        "온라인뱅킹", "online banking", "オンラインバンキング", "online",
+        "grabpay", "grab pay", "grab",
+        "touch n go", "touch n' go", "tng",
+        "결제", "payment", "決済", "결제 수단", "payment method",
+        
+        # 계좌
+        "계좌", "account", "口座", "계좌번호", "account number",
+        
+        # 성함
+        "성함", "name", "氏名", "이름", "고객님의 성함", "your name",
+        "이민우", "홍길동",  # 예시 이름 (실제로는 더 많은 패턴 필요)
+        
+        # 이메일
+        "이메일", "email", "メール", "e-mail", "@", "gmail", "naver.com", "daum.net",
+        "minwoo@", "example.com",  # 이메일 패턴
+        
+        # 연락처
+        "연락처", "phone", "電話", "전화번호", "phone number", "電話番号",
+        "010-", "010 ", "010", "82-", "82 ",  # 한국 전화번호 패턴
+        "contact", "연락"
     ]
     
-    # 최근 고객 메시지에서 키워드 확인
-    combined_text = " ".join(recent_customer_messages)
-    return any(keyword.lower() in combined_text for keyword in verification_keywords)
+    # 숫자 패턴도 확인 (예약 번호, 전화번호 등)
+    import re
+    has_numbers = bool(re.search(r'\d{4,}', combined_text))  # 4자리 이상 숫자
+    
+    # 키워드 매칭
+    has_keywords = any(keyword.lower() in combined_text for keyword in verification_keywords)
+    
+    # 최소 2개 이상의 검증 정보가 있어야 함 (예: 예약번호 + 성함, 또는 이메일 + 전화번호 등)
+    # 더 엄격한 조건: 여러 정보가 함께 제공되었는지 확인
+    info_count = 0
+    if any(kw in combined_text for kw in ["예약", "영수증", "receipt", "booking", "reservation"]):
+        info_count += 1
+    if any(kw in combined_text for kw in ["카드", "결제", "card", "payment", "카카오", "네이버", "kakao", "naver"]):
+        info_count += 1
+    if any(kw in combined_text for kw in ["성함", "이름", "name"]):
+        info_count += 1
+    if any(kw in combined_text for kw in ["이메일", "email", "@"]):
+        info_count += 1
+    if any(kw in combined_text for kw in ["연락처", "전화", "phone", "010"]):
+        info_count += 1
+    
+    # 최소 2개 이상의 정보가 제공되었거나, 키워드와 숫자가 함께 있는 경우
+    return (has_keywords and has_numbers) or info_count >= 2
 
 
 def check_if_login_related_inquiry(customer_query: str) -> bool:

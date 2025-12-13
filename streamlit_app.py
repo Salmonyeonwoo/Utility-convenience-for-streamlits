@@ -2873,8 +2873,17 @@ if feature_selection == L["sim_tab_chat_email"]:
         customer_provided_info = False
         if st.session_state.simulator_messages:
             customer_provided_info = check_if_customer_provided_verification_info(st.session_state.simulator_messages)
+            # 디버깅용: 정보 제공 여부 확인
+            if is_login_inquiry:
+                st.session_state.debug_verification_info = customer_provided_info
         
         # 로그인 관련 문의이고, 고객이 정보를 제공했으며, 아직 검증되지 않은 경우에만 검증 UI 표시
+        # 디버깅: 조건 확인
+        if is_login_inquiry:
+            if not customer_provided_info:
+                # 정보가 아직 제공되지 않은 경우 안내 메시지 표시
+                st.info("ℹ️ 고객이 검증 정보를 제공하면 검증 UI가 표시됩니다.")
+        
         if is_login_inquiry and customer_provided_info and not st.session_state.is_customer_verified:
             st.markdown("---")
             st.markdown(f"### {L['verification_header']}")
