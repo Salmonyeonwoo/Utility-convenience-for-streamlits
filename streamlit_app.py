@@ -5642,7 +5642,7 @@ elif feature_selection == L["content_tab"]:
                 )
             
             def extract_json_from_text(text):
-                """텍스트에서 JSON 객체를 추출하는 함수"""
+                # 텍스트에서 JSON 객체를 추출하는 함수
                 if not text:
                     return None
                 
