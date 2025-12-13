@@ -25,7 +25,7 @@ from datetime import datetime
 from typing import List, Dict, Any, Tuple, Optional
 import streamlit as st
 
-from config import SIM_META_FILE, RAG_INDEX_DIR
+from config import SIM_META_FILE, RAG_INDEX_DIR, DATA_DIR
 from utils import _load_json, _save_json
 from llm_client import get_api_key, run_llm
 from lang_pack import LANG
