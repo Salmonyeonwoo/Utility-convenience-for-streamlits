@@ -916,6 +916,15 @@ Customer Inquiry:
 {attachment_block}
 {profile_block}
 {past_cases_block}
+"""
+    
+    try:
+        response = run_llm(initial_prompt)
+        # 응답 파싱 및 반환 로직은 여기에 추가
+        return response
+    except Exception as e:
+        return f"오류 발생: {e}"
+
 # ========================================
 # 9. 사이드바
 # ========================================
