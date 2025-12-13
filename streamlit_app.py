@@ -3282,6 +3282,9 @@ Response Hints:""",
                 "yes"
             ]
             has_no_more_inquiry = any(keyword.lower() in customer_response.lower() for keyword in no_more_keywords)
+            # "없습니다"와 "감사합니다"가 함께 있는 경우도 인식
+            if "없습니다" in customer_response and "감사합니다" in customer_response:
+                has_no_more_inquiry = True
             
             # 긍정 반응 키워드 추가 (더 포괄적인 인식)
             positive_keywords = [
