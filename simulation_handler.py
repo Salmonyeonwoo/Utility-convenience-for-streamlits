@@ -70,6 +70,7 @@ try:
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.colors import black
+    from reportlab.lib.units import inch
     IS_REPORTLAB_AVAILABLE = True
 except ImportError:
     IS_REPORTLAB_AVAILABLE = False
