@@ -2699,7 +2699,8 @@ Response Hints:""",
             if index < len(st.session_state.simulator_messages):
                 st.session_state.simulator_messages[index]["feedback"] = feedback_value
     
-    for idx, msg in enumerate(st.session_state.simulator_messages):
+    if feature_selection == L["sim_tab_chat_email"]:
+        for idx, msg in enumerate(st.session_state.simulator_messages):
         role = msg["role"]
         content = msg["content"]
         avatar = {"customer": "🙋", "supervisor": "🤖", "agent_response": "🧑‍💻", "customer_rebuttal": "✨",
