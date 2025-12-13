@@ -20,14 +20,35 @@
 import os
 import json
 import uuid
+import tempfile
 from datetime import datetime
 from typing import List, Dict, Any, Tuple, Optional
 import streamlit as st
 
-from config import SIM_META_FILE
+from config import SIM_META_FILE, RAG_INDEX_DIR
 from utils import _load_json, _save_json
 from llm_client import get_api_key, run_llm
 from lang_pack import LANG
+
+# Langchain imports for RAG functionality
+from langchain_core.documents import Document
+from langchain_community.vectorstores import FAISS
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
+# 임베딩 모델 사용 가능 여부 확인
+try:
+    from langchain_google_genai import GoogleGenerativeAIEmbeddings
+    IS_GEMINI_EMBEDDING_AVAILABLE = True
+except ImportError:
+    IS_GEMINI_EMBEDDING_AVAILABLE = False
+
+try:
+    from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
+    IS_NVIDIA_EMBEDDING_AVAILABLE = True
+except ImportError:
+    IS_NVIDIA_EMBEDDING_AVAILABLE = False
 
 # Word, PPTX, PDF 내보내기 라이브러리
 try:
