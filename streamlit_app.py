@@ -2492,9 +2492,9 @@ Response Hints:""",
         st.success(f"✅ {L['call_outbound_simulation_header']}가 완료되었습니다. 요약을 확인하고 고객에게 회신하세요.")
 
     # ========================================
-    # 3. 초기 문의 입력 (WAIT_FIRST_QUERY)
+    # 3. 초기 문의 입력 (WAIT_FIRST_QUERY) - 채팅/메일 탭에서만 표시
     # ========================================
-    if st.session_state.sim_stage == "WAIT_FIRST_QUERY":
+    if feature_selection == L["sim_tab_chat_email"] and st.session_state.sim_stage == "WAIT_FIRST_QUERY":
         customer_query = st.text_area(
             L["customer_query_label"],
             key="customer_query_text_area",

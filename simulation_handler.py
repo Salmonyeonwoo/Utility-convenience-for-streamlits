@@ -54,6 +54,7 @@ except ImportError:
 try:
     from docx import Document
     from docx.shared import Inches, Pt
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
     IS_DOCX_AVAILABLE = True
 except ImportError:
     IS_DOCX_AVAILABLE = False
@@ -1850,7 +1851,7 @@ def export_history_to_word(histories: List[Dict[str, Any]], filename: str = None
         filename = f"customer_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
     filepath = os.path.join(DATA_DIR, filename)
     
-    doc = DocxDocument()
+    doc = Document()
     
     # 제목 추가
     title = doc.add_heading(L.get("download_history_title", "고객 응대 이력 요약"), 0)
@@ -2108,7 +2109,7 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None,
         korean_font_registered = False
         japanese_font_registered = False
     
-    doc = SimpleDocTemplate(filepath, pagesize=A4)
+    doc = SimpleDocTemplate(filepath, pagesize=letter)
     story = []
     styles = getSampleStyleSheet()
     
