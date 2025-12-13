@@ -3143,22 +3143,16 @@ Response Hints:""",
                 # ⭐ 수정: 먼저 핵심 포인트만 요약한 후 번역
                 # 요약 프롬프트 생성
                 lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(current_lang_at_start, "Korean")
-                summary_prompt = f"""
-You are an AI assistant that summarizes customer service conversations. 
-Extract ONLY the key points from the conversation below. Keep it concise and focused on:
-1. Customer's main inquiry/question
-2. Key information provided by the agent
-3. Important decisions or outcomes
-4. Any unresolved issues
-
-Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.
-
---- Conversation ---
-{history_text}
----
-
-Key Points Summary:
-"""
+                summary_prompt = (
+                    f"You are an AI assistant that summarizes customer service conversations. "
+                    f"Extract ONLY the key points from the conversation below. Keep it concise and focused on: "
+                    f"1. Customer's main inquiry/question "
+                    f"2. Key information provided by the agent "
+                    f"3. Important decisions or outcomes "
+                    f"4. Any unresolved issues\n\n"
+                    f"Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.\n\n"
+                    f"--- Conversation ---\n{history_text}\n---\n\nKey Points Summary:"
+                )
                 try:
                     summary_text = run_llm(summary_prompt).strip()
                     # 번역 로직은 여기에 추가
@@ -4597,21 +4591,16 @@ elif feature_selection == L["sim_tab_phone"]:
                 # ⭐ 수정: 먼저 핵심 포인트만 요약한 후 번역
                 # 요약 프롬프트 생성
                 lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(current_lang_at_start, "Korean")
-                summary_prompt = f"""
-You are an AI assistant that summarizes customer service conversations. 
-Extract ONLY the key points from the conversation below. Keep it concise and focused on:
-1. Customer's main inquiry/question
-2. Key information provided by the agent
-3. Important decisions or outcomes
-4. Any unresolved issues
-
-Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.
-
---- Conversation ---
-{history_text}
----
-
-Key Points Summary:
+                summary_prompt = (
+                    f"You are an AI assistant that summarizes customer service conversations. "
+                    f"Extract ONLY the key points from the conversation below. Keep it concise and focused on: "
+                    f"1. Customer's main inquiry/question "
+                    f"2. Key information provided by the agent "
+                    f"3. Important decisions or outcomes "
+                    f"4. Any unresolved issues\n\n"
+                    f"Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.\n\n"
+                    f"--- Conversation ---\n{history_text}\n---\n\nKey Points Summary:"
+                )
         # =========================
         # AI 요약 버튼 및 표시 로직 (추가된 기능)
         # =========================
