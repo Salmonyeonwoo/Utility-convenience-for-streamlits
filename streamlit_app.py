@@ -2792,6 +2792,13 @@ Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the 
 ---
 
 Key Points Summary:
+"""
+                            try:
+                                summary_text = run_llm(summary_prompt).strip()
+                                # 번역 로직은 여기에 추가
+                            except Exception as e:
+                                summary_text = f"요약 생성 오류: {e}"
+    
     # =========================
     # 5. 에이전트 입력 단계 (AGENT_TURN)
     # =========================
