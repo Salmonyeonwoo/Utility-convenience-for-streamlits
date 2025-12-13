@@ -293,6 +293,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "verification_completed": "✅ 고객 검증 완료 - 모든 정보 힌트 제공 가능",
         "verification_restrictions": "⚠️ 검증 전 제한 사항",
         "verification_restrictions_text": "- ❌ **고객 정보 힌트 제공 금지**: 검증 완료 전까지 고객의 개인정보(이메일, 전화번호, 성함 등)를 힌트로 제공하지 마세요.\n- ✅ **이메일 힌트 예외**: 상황에 따라 이메일의 앞/뒤 1-3자리만 힌트로 제공 가능합니다. (예: \"ab***@ex***.com\")\n- ✅ **검증 완료 후**: 모든 정보 힌트 제공 가능",
+        "verification_info_input": "고객 검증 정보 입력",
         "timer_metric": "상담 경과 시간 (AHT)",
         "timer_info_ok": "AHT (15분 기준)",
         "timer_info_warn": "AHT (10분 초과)",

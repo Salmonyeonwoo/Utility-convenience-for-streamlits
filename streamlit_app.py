@@ -2910,9 +2910,10 @@ if feature_selection == L["sim_tab_chat_email"]:
                 stored_verification_info = st.session_state.verification_info.copy()
                 
                 # 검증 버튼
-                verify_cols = st.columns([1, 1, 2])
+                st.markdown("---")
+                verify_cols = st.columns([1, 1])
                 with verify_cols[0]:
-                    if st.button(L['button_verify'], key="btn_verify_customer", use_container_width=True):
+                    if st.button(L['button_verify'], key="btn_verify_customer", use_container_width=True, type="primary"):
                         provided_info = {
                             "receipt_number": verification_receipt,
                             "card_last4": verification_card,
@@ -2941,10 +2942,11 @@ if feature_selection == L["sim_tab_chat_email"]:
                 with verify_cols[1]:
                     if st.button(L['button_retry_verification'], key="btn_retry_verification", use_container_width=True):
                         st.session_state.verification_stage = "WAIT_VERIFICATION"
+                        st.session_state.verification_info["verification_attempts"] = 0
                         st.rerun()
                 
                 # 검증 시도 횟수 표시
-                if st.session_state.verification_info["verification_attempts"] > 0:
+                if st.session_state.verification_info.get("verification_attempts", 0) > 0:
                     st.info(L['verification_attempts'].format(count=st.session_state.verification_info['verification_attempts']))
             
             # 검증되지 않은 상태에서는 힌트 및 초안 생성 제한

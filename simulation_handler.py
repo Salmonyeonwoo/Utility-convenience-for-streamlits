@@ -3917,6 +3917,9 @@ def check_if_login_related_inquiry(customer_query: str) -> bool:
     Returns:
         로그인/계정 관련 문의인지 여부
     """
+    if not customer_query or not customer_query.strip():
+        return False
+    
     login_keywords = [
         "로그인", "login", "ログイン",
         "계정", "account", "アカウント",
@@ -3925,9 +3928,19 @@ def check_if_login_related_inquiry(customer_query: str) -> bool:
         "접속", "access", "アクセス",
         "인증", "authentication", "認証",
         "로그인 안됨", "cannot login", "ログインできない",
-        "로그인 오류", "login error", "ログインエラー"
+        "로그인 오류", "login error", "ログインエラー",
+        "로그인 안", "로그인 실패", "로그인 문제",
+        "계정 문제", "계정 잠금", "계정 오류",
+        "account problem", "account error", "account locked",
+        "password reset", "비밀번호 재설정", "パスワードリセット",
+        "forgot password", "비밀번호 분실", "パスワード忘れ"
     ]
     
     query_lower = customer_query.lower()
-    return any(keyword.lower() in query_lower for keyword in login_keywords)
+    # 각 키워드를 개별적으로 확인 (부분 문자열 매칭)
+    for keyword in login_keywords:
+        if keyword.lower() in query_lower:
+            return True
+    
+    return False
 
