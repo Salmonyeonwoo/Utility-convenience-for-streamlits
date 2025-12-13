@@ -1751,7 +1751,7 @@ if feature_selection == L["company_info_tab"]:
                                     file_content_extracted = response.text if response.text else ""
                                 else:
                                     # Gemini 키가 없으면 LLM에 base64 이미지를 전송하여 OCR 요청
-                                    ocr_llm_prompt = f"""{ocr_prompt}
+                                    ocr_llm_prompt = """{ocr_prompt}
 
 이미지는 base64로 인코딩되어 전송되었습니다. 이미지에서 텍스트를 추출해주세요."""
                                     # LLM이 이미지를 직접 처리할 수 없으므로, 사용자에게 안내
