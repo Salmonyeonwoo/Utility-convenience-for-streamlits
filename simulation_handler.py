@@ -2245,7 +2245,6 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None,
         # 추천 폰트가 있고 스타일에 폰트가 설정되지 않은 경우
         if recommended_font and auto_font:
             # 새로운 스타일 생성 (폰트 포함)
-            from reportlab.lib.styles import ParagraphStyle
             style_with_font = ParagraphStyle(
                 name=f'{style.name}_with_font',
                 parent=style,
