@@ -3952,12 +3952,16 @@ def check_if_customer_provided_verification_info(messages: List[Dict[str, Any]])
         return False
     
     # 최근 고객 메시지 확인 (최근 10개까지 확인)
-    recent_customer_messages = [
-        msg.get("content", "") 
-        for msg in messages[-10:] 
-        if msg.get("role") in ["customer", "customer_rebuttal", "initial_query"]
-    ]
+    # 모든 메시지를 확인하여 고객 관련 메시지 추출
+    recent_customer_messages = []
+    for msg in messages[-10:]:
+        role = msg.get("role", "")
+        content = msg.get("content", "")
+        # 고객 역할 확인 (더 포괄적으로)
+        if role in ["customer", "customer_rebuttal", "initial_query"] or "customer" in role.lower():
+            recent_customer_messages.append(content)
     
+    # 메시지가 없으면 False
     if not recent_customer_messages:
         return False
     
@@ -3980,32 +3984,44 @@ def check_if_customer_provided_verification_info(messages: List[Dict[str, Any]])
     # 최소 2개 이상의 검증 정보가 있어야 함
     info_count = 0
     
-    # 1. 예약/영수증 번호 확인
+    # 1. 예약/영수증 번호 확인 (더 포괄적으로)
     if (re.search(r'예약\s*번호', combined_text) or 
         re.search(r'영수증\s*번호', combined_text) or
+        re.search(r'예약.*[:：]\s*\d{4,}', combined_text_original) or
+        re.search(r'영수증.*[:：]\s*\d{4,}', combined_text_original) or
+        re.search(r'예약번호.*[:：]\s*\d{4,}', combined_text_original) or
         re.search(r'예약.*\d{4,}', combined_text) or
         re.search(r'영수증.*\d{4,}', combined_text) or
         re.search(r'booking.*number', combined_text) or
-        re.search(r'receipt.*number', combined_text)):
+        re.search(r'receipt.*number', combined_text) or
+        re.search(r'\d{5,}', combined_text_original)):  # 5자리 이상 숫자도 예약번호로 간주
         info_count += 1
     
     # 2. 결제 수단 확인 (카드, 카카오페이, 네이버페이, VISA, Master 등)
     payment_keywords = [
         "카드", "card", "visa", "master", "amex", "american express",
+        "신용카드", "체크카드", "credit card", "debit card",
         "카카오페이", "kakao", "kakaopay",
         "네이버페이", "naver", "naverpay",
         "온라인뱅킹", "online banking", "online",
         "grabpay", "grab pay", "grab",
         "touch n go", "touch n' go", "tng",
-        "결제 수단", "payment method", "payment"
+        "결제 수단", "payment method", "payment", "결제하", "결제 내역"
     ]
-    if any(kw in combined_text for kw in payment_keywords):
+    # 결제 수단 키워드가 있거나, "결제 수단 :" 같은 패턴이 있는 경우
+    if (any(kw in combined_text for kw in payment_keywords) or
+        re.search(r'결제\s*수단\s*[:：]', combined_text_original)):
         info_count += 1
     
     # 3. 성함 확인 (이름, 성함 키워드 + 한글/영문 이름 패턴)
-    name_keywords = ["성함", "이름", "name", "제 이름", "고객님의 성함", "my name"]
-    # 한글 이름 패턴 (2-4자 한글)
-    korean_name_pattern = re.search(r'[가-힣]{2,4}', combined_text_original)
+    name_keywords = ["성함", "이름", "name", "제 이름", "고객님의 성함", "my name", "고객님의 이름"]
+    # 한글 이름 패턴 (2-4자 한글, 성함/이름 키워드 뒤에 오는 경우)
+    korean_name_pattern = (
+        re.search(r'성함\s*[:：]\s*[가-힣]{2,4}', combined_text_original) or
+        re.search(r'이름\s*[:：]\s*[가-힣]{2,4}', combined_text_original) or
+        re.search(r'고객님의\s*성함\s*[:：]\s*[가-힣]{2,4}', combined_text_original) or
+        re.search(r'[가-힣]{2,4}', combined_text_original)  # 단순 한글 이름 패턴도 확인
+    )
     # 영문 이름 패턴
     english_name_pattern = re.search(r'\b[A-Z][a-z]+\s+[A-Z][a-z]+\b', combined_text_original)
     
