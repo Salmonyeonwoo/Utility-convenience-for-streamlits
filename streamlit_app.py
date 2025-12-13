@@ -173,7 +173,8 @@ from simulation_handler import (
     generate_customer_closing_response, generate_agent_first_greeting,
     detect_text_language, analyze_customer_profile, find_similar_cases,
     generate_guideline_from_past_cases, _generate_initial_advice,
-    mask_email, verify_customer_info, check_if_login_related_inquiry
+    mask_email, verify_customer_info, check_if_login_related_inquiry,
+    delete_all_history_local
 )
 from visualization import (
     visualize_customer_profile_scores, visualize_similarity_cases,
