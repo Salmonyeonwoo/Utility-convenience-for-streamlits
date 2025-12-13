@@ -3963,6 +3963,10 @@ def check_if_customer_provided_verification_info(messages: List[Dict[str, Any]])
     
     # 메시지가 없으면 False
     if not recent_customer_messages:
+        # 디버깅: 메시지가 없는 경우 로그
+        print(f"[DEBUG] No customer messages found. Total messages: {len(messages)}")
+        if messages:
+            print(f"[DEBUG] Available roles: {[msg.get('role') for msg in messages[-5:]]}")
         return False
     
     # 모든 고객 메시지를 하나의 텍스트로 결합 (원본 대소문자 유지)
@@ -4043,7 +4047,18 @@ def check_if_customer_provided_verification_info(messages: List[Dict[str, Any]])
     
     # 최소 2개 이상의 정보가 제공되었거나, 이메일/전화번호 중 하나와 다른 정보가 함께 있는 경우
     # 또는 숫자(예약번호)와 결제수단/성함이 함께 있는 경우
-    return info_count >= 2 or (has_email and info_count >= 1) or (has_phone and info_count >= 1)
+    result = info_count >= 2 or (has_email and info_count >= 1) or (has_phone and info_count >= 1)
+    
+    # 디버깅: 감지 결과 로그
+    print(f"[DEBUG] Verification info detection:")
+    print(f"  - Combined text (first 200 chars): {combined_text_original[:200]}")
+    print(f"  - Info count: {info_count}")
+    print(f"  - Has email: {has_email}")
+    print(f"  - Has phone: {has_phone}")
+    print(f"  - Has numbers: {has_numbers}")
+    print(f"  - Result: {result}")
+    
+    return result
 
 
 def check_if_login_related_inquiry(customer_query: str) -> bool:

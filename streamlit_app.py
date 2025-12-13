@@ -2872,10 +2872,16 @@ if feature_selection == L["sim_tab_chat_email"]:
         # 고객이 검증 정보를 제공했는지 확인
         customer_provided_info = False
         if st.session_state.simulator_messages:
+            # 디버깅: 메시지 확인
+            all_roles = [msg.get("role") for msg in st.session_state.simulator_messages]
+            customer_messages = [msg for msg in st.session_state.simulator_messages if msg.get("role") in ["customer", "customer_rebuttal", "initial_query"]]
+            
             customer_provided_info = check_if_customer_provided_verification_info(st.session_state.simulator_messages)
             # 디버깅용: 정보 제공 여부 확인
             if is_login_inquiry:
                 st.session_state.debug_verification_info = customer_provided_info
+                st.session_state.debug_all_roles = all_roles
+                st.session_state.debug_customer_messages_count = len(customer_messages)
         
         # 로그인 관련 문의이고, 고객이 정보를 제공했으며, 아직 검증되지 않은 경우에만 검증 UI 표시
         # 디버깅: 조건 확인
@@ -2889,16 +2895,31 @@ if feature_selection == L["sim_tab_chat_email"]:
                 st.write(f"- 검증 UI 표시 조건: {is_login_inquiry and customer_provided_info and not st.session_state.is_customer_verified}")
                 
                 if st.session_state.simulator_messages:
-                    recent_messages = [
-                        {"role": msg.get("role"), "content": msg.get("content", "")[:200]} 
-                        for msg in st.session_state.simulator_messages[-5:] 
+                    st.write(f"**전체 메시지 수:** {len(st.session_state.simulator_messages)}")
+                    st.write(f"**모든 role 목록:** {st.session_state.debug_all_roles if 'debug_all_roles' in st.session_state else [msg.get('role') for msg in st.session_state.simulator_messages]}")
+                    st.write(f"**고객 메시지 수:** {st.session_state.debug_customer_messages_count if 'debug_customer_messages_count' in st.session_state else len([m for m in st.session_state.simulator_messages if m.get('role') in ['customer', 'customer_rebuttal', 'initial_query']])}")
+                    
+                    # 모든 메시지 표시 (최근 10개)
+                    st.write(f"**최근 모든 메시지 (최근 10개):**")
+                    for i, msg in enumerate(st.session_state.simulator_messages[-10:], 1):
+                        role = msg.get("role", "unknown")
+                        content = msg.get("content", "")[:300]
+                        st.write(f"{i}. [{role}] {content}")
+                    
+                    # 고객 메시지만 필터링하여 표시
+                    customer_messages = [
+                        {"role": msg.get("role"), "content": msg.get("content", "")[:300]} 
+                        for msg in st.session_state.simulator_messages[-10:] 
                         if msg.get("role") in ["customer", "customer_rebuttal", "initial_query"]
                     ]
-                    st.write(f"**최근 고객 메시지 (최근 5개):**")
-                    for i, msg in enumerate(recent_messages, 1):
-                        st.write(f"{i}. [{msg['role']}] {msg['content']}")
+                    st.write(f"**고객 메시지만 (최근 10개):**")
+                    if customer_messages:
+                        for i, msg in enumerate(customer_messages, 1):
+                            st.write(f"{i}. [{msg['role']}] {msg['content']}")
+                    else:
+                        st.write("고객 메시지 없음")
                 else:
-                    st.write("**고객 메시지 없음**")
+                    st.write("**메시지 없음**")
             
             if not customer_provided_info:
                 # 정보가 아직 제공되지 않은 경우 안내 메시지 표시
