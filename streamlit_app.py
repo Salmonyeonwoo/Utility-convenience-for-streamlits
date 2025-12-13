@@ -2703,12 +2703,12 @@ Response Hints:""",
     
     if feature_selection == L["sim_tab_chat_email"]:
         for idx, msg in enumerate(st.session_state.simulator_messages):
-        role = msg["role"]
-        content = msg["content"]
-        avatar = {"customer": "🙋", "supervisor": "🤖", "agent_response": "🧑‍💻", "customer_rebuttal": "✨",
-                  "system_end": "📌", "system_transfer": "📌"}.get(role, "💬")
-        tts_role = "customer" if role.startswith("customer") or role == "customer_rebuttal" else (
-            "agent" if role == "agent_response" else "supervisor")
+            role = msg["role"]
+            content = msg["content"]
+            avatar = {"customer": "🙋", "supervisor": "🤖", "agent_response": "🧑‍💻", "customer_rebuttal": "✨",
+                      "system_end": "📌", "system_transfer": "📌"}.get(role, "💬")
+            tts_role = "customer" if role.startswith("customer") or role == "customer_rebuttal" else (
+                "agent" if role == "agent_response" else "supervisor")
 
         with st.chat_message(role, avatar=avatar):
             st.markdown(content)
