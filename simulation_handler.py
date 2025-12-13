@@ -321,6 +321,48 @@ Good: "I understand you're having trouble activating your eSIM in Paris. Let me 
     else:
         attachment_context = ""
 
+    # 고객 검증 상태 확인 (로그인/계정 관련 문의인 경우)
+    is_login_inquiry = check_if_login_related_inquiry(initial_customer_query)
+    is_customer_verified = st.session_state.get("is_customer_verified", False)
+    verification_warning = ""
+    
+    if is_login_inquiry and not is_customer_verified:
+        # 검증되지 않은 고객에게는 정보 힌트 제공 금지
+        customer_email = st.session_state.get("customer_email", "")
+        customer_phone = st.session_state.get("customer_phone", "")
+        customer_name = st.session_state.get("customer_name", "")
+        
+        # 이메일은 마스킹하여 힌트 제공 가능 (앞/뒤 1-3자리만)
+        masked_email = mask_email(customer_email, show_chars=2) if customer_email else ""
+        
+        verification_warning = f"""
+**⚠️ CRITICAL SECURITY REQUIREMENT - CUSTOMER VERIFICATION NOT COMPLETED:**
+
+This is a LOGIN/ACCOUNT related inquiry, but the customer has NOT been verified yet.
+
+**STRICT RULES YOU MUST FOLLOW:**
+1. **DO NOT provide ANY customer information hints** (email, phone, name, receipt number, card number) in your response
+2. **EXCEPTION**: You MAY provide a masked email hint ONLY if absolutely necessary: "{masked_email}" (only first/last 2-3 characters visible, rest masked)
+3. **DO NOT reveal**: Full email addresses, phone numbers, customer names, receipt numbers, card numbers, or any other personal information
+4. **You MUST request verification information** from the customer before proceeding with account-related assistance
+5. **Your response should ask the customer to provide verification details** (receipt number, card last 4 digits, name, email, phone) WITHOUT revealing what information you already have
+
+**VERIFICATION REQUEST TEMPLATE:**
+- "To ensure account security, please provide the following information for verification: [receipt number / card last 4 digits / name / email / phone]"
+- DO NOT mention what information you already have
+- DO NOT provide hints about the information
+
+**ONLY AFTER VERIFICATION IS COMPLETED** can you provide full information hints and proceed with account assistance.
+
+**CURRENT STATUS**: Customer verification: NOT COMPLETED ❌
+"""
+    elif is_login_inquiry and is_customer_verified:
+        verification_warning = """
+**✅ CUSTOMER VERIFICATION COMPLETED:**
+
+The customer has been successfully verified. You may now provide information hints and proceed with account-related assistance.
+"""
+
     # 고객 유형 및 반복 불만 패턴 분석
     customer_type = st.session_state.get('customer_type_sim_select', '일반적인 문의')
     is_difficult_customer = customer_type in ["까다로운 고객", "매우 불만족스러운 고객", "Difficult Customer",
@@ -510,6 +552,8 @@ Generate a response draft that is SPECIFICALLY tailored to the customer's EXACT 
 **FULL CONVERSATION HISTORY:**
 {history_text}
 {attachment_context}
+
+{verification_warning}
 
 **PREVIOUS RESPONSES TO AVOID REPEATING:**
 {previous_responses_context if previous_responses_context else "No previous responses to compare against."}
@@ -3757,4 +3801,133 @@ Customer Inquiry:
                 return f"❌ AI Advice Generation Error: {e}"
 
 
+# ========================================
+# 고객 검증 관련 함수
+# ========================================
+
+def mask_email(email: str, show_chars: int = 2) -> str:
+    """
+    이메일 주소를 마스킹합니다.
+    앞/뒤 show_chars 자리만 표시하고 나머지는 * 처리합니다.
+    
+    Args:
+        email: 마스킹할 이메일 주소
+        show_chars: 앞/뒤에 표시할 문자 수 (기본값: 2)
+    
+    Returns:
+        마스킹된 이메일 주소 (예: "ab***@ex***.com")
+    """
+    if not email or "@" not in email:
+        return email
+    
+    local_part, domain = email.split("@", 1)
+    domain_parts = domain.split(".", 1)
+    
+    # 로컬 부분 마스킹 (앞 show_chars 자리만 표시)
+    if len(local_part) <= show_chars:
+        masked_local = local_part
+    else:
+        masked_local = local_part[:show_chars] + "*" * (len(local_part) - show_chars)
+    
+    # 도메인 부분 마스킹 (앞 show_chars 자리만 표시)
+    if len(domain_parts[0]) <= show_chars:
+        masked_domain = domain_parts[0]
+    else:
+        masked_domain = domain_parts[0][:show_chars] + "*" * (len(domain_parts[0]) - show_chars)
+    
+    if len(domain_parts) > 1:
+        return f"{masked_local}@{masked_domain}.{domain_parts[1]}"
+    else:
+        return f"{masked_local}@{masked_domain}"
+
+
+def verify_customer_info(
+    provided_info: Dict[str, str],
+    stored_info: Dict[str, str]
+) -> Tuple[bool, Dict[str, bool]]:
+    """
+    고객이 제공한 정보와 저장된 정보를 비교하여 검증합니다.
+    시스템 내부에서만 실행되며, confidential 정보를 보호합니다.
+    
+    Args:
+        provided_info: 고객이 제공한 검증 정보
+            - receipt_number: 영수증 번호
+            - card_last4: 카드 뒷자리 4자리
+            - customer_name: 고객 성함
+            - customer_email: 고객 이메일
+            - customer_phone: 고객 연락처
+        stored_info: 시스템에 저장된 검증 정보 (동일한 구조)
+    
+    Returns:
+        (전체 검증 성공 여부, 각 필드별 검증 결과)
+    """
+    verification_results = {
+        "receipt_number": False,
+        "card_last4": False,
+        "customer_name": False,
+        "customer_email": False,
+        "customer_phone": False
+    }
+    
+    # 영수증 번호 검증 (대소문자 무시, 공백 제거)
+    if provided_info.get("receipt_number") and stored_info.get("receipt_number"):
+        provided_receipt = provided_info["receipt_number"].strip().upper().replace(" ", "")
+        stored_receipt = stored_info["receipt_number"].strip().upper().replace(" ", "")
+        verification_results["receipt_number"] = provided_receipt == stored_receipt
+    
+    # 카드 뒷자리 4자리 검증 (숫자만 추출하여 비교)
+    if provided_info.get("card_last4") and stored_info.get("card_last4"):
+        provided_card = "".join(filter(str.isdigit, provided_info["card_last4"]))[-4:]
+        stored_card = "".join(filter(str.isdigit, stored_info["card_last4"]))[-4:]
+        verification_results["card_last4"] = provided_card == stored_card and len(provided_card) == 4
+    
+    # 고객 성함 검증 (대소문자 무시, 공백 정규화)
+    if provided_info.get("customer_name") and stored_info.get("customer_name"):
+        provided_name = " ".join(provided_info["customer_name"].strip().split()).upper()
+        stored_name = " ".join(stored_info["customer_name"].strip().split()).upper()
+        verification_results["customer_name"] = provided_name == stored_name
+    
+    # 이메일 검증 (대소문자 무시)
+    if provided_info.get("customer_email") and stored_info.get("customer_email"):
+        provided_email = provided_info["customer_email"].strip().lower()
+        stored_email = stored_info["customer_email"].strip().lower()
+        verification_results["customer_email"] = provided_email == stored_email
+    
+    # 연락처 검증 (숫자만 추출하여 비교)
+    if provided_info.get("customer_phone") and stored_info.get("customer_phone"):
+        provided_phone = "".join(filter(str.isdigit, provided_info["customer_phone"]))
+        stored_phone = "".join(filter(str.isdigit, stored_info["customer_phone"]))
+        # 마지막 4-10자리 비교 (국가코드 제외)
+        verification_results["customer_phone"] = provided_phone[-10:] == stored_phone[-10:] or provided_phone[-4:] == stored_phone[-4:]
+    
+    # 전체 검증 성공 여부: 최소 3개 이상 일치해야 함 (보안상 완전 일치보다는 유연하게)
+    matched_count = sum(verification_results.values())
+    is_verified = matched_count >= 3
+    
+    return is_verified, verification_results
+
+
+def check_if_login_related_inquiry(customer_query: str) -> bool:
+    """
+    고객 문의가 로그인/계정 관련인지 확인합니다.
+    
+    Args:
+        customer_query: 고객 문의 내용
+    
+    Returns:
+        로그인/계정 관련 문의인지 여부
+    """
+    login_keywords = [
+        "로그인", "login", "ログイン",
+        "계정", "account", "アカウント",
+        "비밀번호", "password", "パスワード",
+        "아이디", "id", "ID", "ユーザーID",
+        "접속", "access", "アクセス",
+        "인증", "authentication", "認証",
+        "로그인 안됨", "cannot login", "ログインできない",
+        "로그인 오류", "login error", "ログインエラー"
+    ]
+    
+    query_lower = customer_query.lower()
+    return any(keyword.lower() in query_lower for keyword in login_keywords)
 

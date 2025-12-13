@@ -172,7 +172,8 @@ from simulation_handler import (
     generate_customer_reaction_for_first_greeting, summarize_history_for_call,
     generate_customer_closing_response, generate_agent_first_greeting,
     detect_text_language, analyze_customer_profile, find_similar_cases,
-    generate_guideline_from_past_cases, _generate_initial_advice
+    generate_guideline_from_past_cases, _generate_initial_advice,
+    mask_email, verify_customer_info, check_if_login_related_inquiry
 )
 from visualization import (
     visualize_customer_profile_scores, visualize_similarity_cases,
@@ -315,6 +316,20 @@ if "customer_phone" not in st.session_state:  # FIX: customer_phone 초기화
     st.session_state.customer_phone = ""
 if "agent_response_input_box_widget" not in st.session_state:  # FIX: customer_phone 초기화
     st.session_state.agent_response_input_box_widget = ""
+# 고객 검증 관련 상태
+if "is_customer_verified" not in st.session_state:
+    st.session_state.is_customer_verified = False
+if "verification_info" not in st.session_state:  # 시스템 내부 검증 정보 (confidential)
+    st.session_state.verification_info = {
+        "receipt_number": "",
+        "card_last4": "",
+        "customer_name": "",
+        "customer_email": "",
+        "customer_phone": "",
+        "verification_attempts": 0
+    }
+if "verification_stage" not in st.session_state:  # WAIT_VERIFICATION, VERIFICATION_IN_PROGRESS, VERIFIED, VERIFICATION_FAILED
+    st.session_state.verification_stage = "WAIT_VERIFICATION"
 if "sim_instance_id" not in st.session_state:  # FIX: DuplicateWidgetID 방지용 인스턴스 ID 초기화
     st.session_state.sim_instance_id = str(uuid.uuid4())
 if "sim_attachment_context_for_llm" not in st.session_state:
@@ -2576,6 +2591,26 @@ if feature_selection == L["sim_tab_chat_email"]:
             st.session_state.transfer_summary_text = ""  # 이관 요약 리셋
             st.session_state.start_time = None  # AHT 타이머 초기화 (첫 고객 반응 후 시작)
             st.session_state.sim_instance_id = str(uuid.uuid4())  # 새 시뮬레이션 ID 할당
+            
+            # 고객 검증 상태 초기화 (로그인/계정 관련 문의인 경우)
+            is_login_inquiry = check_if_login_related_inquiry(customer_query)
+            if is_login_inquiry:
+                # 검증 정보 초기화 및 고객이 제공한 정보를 시스템 검증 정보로 저장 (시뮬레이션용)
+                # 실제로는 DB에서 가져와야 하지만, 시뮬레이션에서는 고객이 제공한 정보를 저장
+                st.session_state.is_customer_verified = False
+                st.session_state.verification_stage = "WAIT_VERIFICATION"
+                st.session_state.verification_info = {
+                    "receipt_number": "",  # 실제로는 DB에서 가져와야 함
+                    "card_last4": "",  # 실제로는 DB에서 가져와야 함
+                    "customer_name": "",  # 실제로는 DB에서 가져와야 함
+                    "customer_email": st.session_state.customer_email,  # 고객이 제공한 정보
+                    "customer_phone": st.session_state.customer_phone,  # 고객이 제공한 정보
+                    "verification_attempts": 0
+                }
+            else:
+                # 로그인 관련 문의가 아닌 경우 검증 불필요
+                st.session_state.is_customer_verified = True
+                st.session_state.verification_stage = "NOT_REQUIRED"
             # 전화 발신 관련 상태 초기화
             st.session_state.sim_call_outbound_summary = ""
             st.session_state.sim_call_outbound_target = None
@@ -2828,6 +2863,97 @@ if feature_selection == L["sim_tab_chat_email"]:
         if st.session_state.sim_attachment_context_for_llm:
             st.info(
                 f"📎 최초 문의 시 첨부된 파일 정보:\n\n{st.session_state.sim_attachment_context_for_llm.replace('[ATTACHMENT STATUS]', '').strip()}")
+
+        # --- 고객 검증 프로세스 (로그인/계정 관련 문의인 경우) ---
+        initial_query = st.session_state.get('customer_query_text_area', '')
+        is_login_inquiry = check_if_login_related_inquiry(initial_query)
+        
+        if is_login_inquiry and not st.session_state.is_customer_verified:
+            st.markdown("---")
+            st.markdown(f"### {L['verification_header']}")
+            st.warning(L['verification_warning'])
+            
+            with st.expander(L.get("verification_info_input", "고객 검증 정보 입력"), expanded=True):
+                verification_cols = st.columns(2)
+                
+                with verification_cols[0]:
+                    verification_receipt = st.text_input(
+                        L['verification_receipt_label'],
+                        key="verification_receipt_input",
+                        help=L.get("verification_receipt_help", "고객이 제공한 영수증 번호를 입력하세요.")
+                    )
+                    verification_card = st.text_input(
+                        L['verification_card_label'],
+                        key="verification_card_input",
+                        max_chars=4,
+                        help=L.get("verification_card_help", "고객이 제공한 카드 뒷자리 4자리를 입력하세요.")
+                    )
+                    verification_name = st.text_input(
+                        L['verification_name_label'],
+                        key="verification_name_input",
+                        help=L.get("verification_name_help", "고객이 제공한 성함을 입력하세요.")
+                    )
+                
+                with verification_cols[1]:
+                    verification_email = st.text_input(
+                        L['verification_email_label'],
+                        key="verification_email_input",
+                        help=L.get("verification_email_help", "고객이 제공한 이메일 주소를 입력하세요.")
+                    )
+                    verification_phone = st.text_input(
+                        L['verification_phone_label'],
+                        key="verification_phone_input",
+                        help=L.get("verification_phone_help", "고객이 제공한 연락처를 입력하세요.")
+                    )
+                
+                # 시스템에 저장된 검증 정보 (시뮬레이션용 - 실제로는 DB에서 가져옴)
+                stored_verification_info = st.session_state.verification_info.copy()
+                
+                # 검증 버튼
+                verify_cols = st.columns([1, 1, 2])
+                with verify_cols[0]:
+                    if st.button(L['button_verify'], key="btn_verify_customer", use_container_width=True):
+                        provided_info = {
+                            "receipt_number": verification_receipt,
+                            "card_last4": verification_card,
+                            "customer_name": verification_name,
+                            "customer_email": verification_email,
+                            "customer_phone": verification_phone
+                        }
+                        
+                        # 검증 실행 (시스템 내부에서만 실행)
+                        is_verified, verification_results = verify_customer_info(
+                            provided_info, stored_verification_info
+                        )
+                        
+                        if is_verified:
+                            st.session_state.is_customer_verified = True
+                            st.session_state.verification_stage = "VERIFIED"
+                            st.session_state.verification_info["verification_attempts"] += 1
+                            st.success(L['verification_success'])
+                            st.rerun()
+                        else:
+                            st.session_state.verification_stage = "VERIFICATION_FAILED"
+                            st.session_state.verification_info["verification_attempts"] += 1
+                            failed_fields = [k for k, v in verification_results.items() if not v]
+                            st.error(L['verification_failed'].format(failed_fields=', '.join(failed_fields)))
+                
+                with verify_cols[1]:
+                    if st.button(L['button_retry_verification'], key="btn_retry_verification", use_container_width=True):
+                        st.session_state.verification_stage = "WAIT_VERIFICATION"
+                        st.rerun()
+                
+                # 검증 시도 횟수 표시
+                if st.session_state.verification_info["verification_attempts"] > 0:
+                    st.info(L['verification_attempts'].format(count=st.session_state.verification_info['verification_attempts']))
+            
+            # 검증되지 않은 상태에서는 힌트 및 초안 생성 제한
+            st.markdown("---")
+            st.markdown(f"### {L['verification_restrictions']}")
+            st.info(L['verification_restrictions_text'])
+        
+        elif is_login_inquiry and st.session_state.is_customer_verified:
+            st.success(L['verification_completed'])
 
         # --- AI 응답 초안 생성 버튼 (요청 1 반영) ---
         if st.button(L["button_generate_draft"], key=f"btn_generate_ai_draft_{st.session_state.sim_instance_id}"):
