@@ -2880,9 +2880,29 @@ if feature_selection == L["sim_tab_chat_email"]:
         # 로그인 관련 문의이고, 고객이 정보를 제공했으며, 아직 검증되지 않은 경우에만 검증 UI 표시
         # 디버깅: 조건 확인
         if is_login_inquiry:
+            # 디버깅 정보 표시 (항상 표시)
+            with st.expander("🔍 검증 감지 디버깅 정보", expanded=True):
+                st.write(f"**조건 확인:**")
+                st.write(f"- 로그인 관련 문의: ✅ {is_login_inquiry}")
+                st.write(f"- 고객 정보 제공 감지: {'✅' if customer_provided_info else '❌'} {customer_provided_info}")
+                st.write(f"- 검증 완료 여부: {'✅' if st.session_state.is_customer_verified else '❌'} {st.session_state.is_customer_verified}")
+                st.write(f"- 검증 UI 표시 조건: {is_login_inquiry and customer_provided_info and not st.session_state.is_customer_verified}")
+                
+                if st.session_state.simulator_messages:
+                    recent_messages = [
+                        {"role": msg.get("role"), "content": msg.get("content", "")[:200]} 
+                        for msg in st.session_state.simulator_messages[-5:] 
+                        if msg.get("role") in ["customer", "customer_rebuttal", "initial_query"]
+                    ]
+                    st.write(f"**최근 고객 메시지 (최근 5개):**")
+                    for i, msg in enumerate(recent_messages, 1):
+                        st.write(f"{i}. [{msg['role']}] {msg['content']}")
+                else:
+                    st.write("**고객 메시지 없음**")
+            
             if not customer_provided_info:
                 # 정보가 아직 제공되지 않은 경우 안내 메시지 표시
-                st.info("ℹ️ 고객이 검증 정보를 제공하면 검증 UI가 표시됩니다.")
+                st.warning("⚠️ 고객이 검증 정보를 제공하면 검증 UI가 표시됩니다. 위의 디버깅 정보를 확인하세요.")
         
         if is_login_inquiry and customer_provided_info and not st.session_state.is_customer_verified:
             st.markdown("---")
