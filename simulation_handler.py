@@ -3961,65 +3961,73 @@ def check_if_customer_provided_verification_info(messages: List[Dict[str, Any]])
     if not recent_customer_messages:
         return False
     
-    # 모든 고객 메시지를 하나의 텍스트로 결합
-    combined_text = " ".join(recent_customer_messages).lower()
+    # 모든 고객 메시지를 하나의 텍스트로 결합 (원본 대소문자 유지)
+    combined_text_original = " ".join(recent_customer_messages)
+    combined_text = combined_text_original.lower()
     
-    # 검증 정보 관련 키워드 (더 포괄적으로)
-    verification_keywords = [
-        # 영수증/예약 번호
-        "영수증", "receipt", "領収書", "receipt number",
-        "예약", "reservation", "予約", "booking", "예약번호", "booking number",
-        "123456", "12345",  # 예약 번호 패턴 (숫자)
-        
-        # 결제 수단
-        "카드", "card", "カード", "카드 뒷자리", "card last",
-        "카카오페이", "kakao pay", "kakaopay", "kakao",
-        "네이버페이", "naver pay", "naverpay", "naver",
-        "온라인뱅킹", "online banking", "オンラインバンキング", "online",
-        "grabpay", "grab pay", "grab",
-        "touch n go", "touch n' go", "tng",
-        "결제", "payment", "決済", "결제 수단", "payment method",
-        
-        # 계좌
-        "계좌", "account", "口座", "계좌번호", "account number",
-        
-        # 성함
-        "성함", "name", "氏名", "이름", "고객님의 성함", "your name",
-        "이민우", "홍길동",  # 예시 이름 (실제로는 더 많은 패턴 필요)
-        
-        # 이메일
-        "이메일", "email", "メール", "e-mail", "@", "gmail", "naver.com", "daum.net",
-        "minwoo@", "example.com",  # 이메일 패턴
-        
-        # 연락처
-        "연락처", "phone", "電話", "전화번호", "phone number", "電話番号",
-        "010-", "010 ", "010", "82-", "82 ",  # 한국 전화번호 패턴
-        "contact", "연락"
-    ]
-    
-    # 숫자 패턴도 확인 (예약 번호, 전화번호 등)
     import re
+    
+    # 숫자 패턴 확인 (예약 번호, 전화번호 등)
     has_numbers = bool(re.search(r'\d{4,}', combined_text))  # 4자리 이상 숫자
     
-    # 키워드 매칭
-    has_keywords = any(keyword.lower() in combined_text for keyword in verification_keywords)
+    # 이메일 패턴 확인
+    has_email = bool(re.search(r'[\w\.-]+@[\w\.-]+\.\w+', combined_text_original))
     
-    # 최소 2개 이상의 검증 정보가 있어야 함 (예: 예약번호 + 성함, 또는 이메일 + 전화번호 등)
-    # 더 엄격한 조건: 여러 정보가 함께 제공되었는지 확인
+    # 전화번호 패턴 확인 (010-1234-5678, 010 1234 5678, 01012345678 등)
+    has_phone = bool(re.search(r'010[-.\s]?\d{3,4}[-.\s]?\d{4}', combined_text_original) or 
+                     re.search(r'010\d{8}', combined_text_original))
+    
+    # 최소 2개 이상의 검증 정보가 있어야 함
     info_count = 0
-    if any(kw in combined_text for kw in ["예약", "영수증", "receipt", "booking", "reservation"]):
-        info_count += 1
-    if any(kw in combined_text for kw in ["카드", "결제", "card", "payment", "카카오", "네이버", "kakao", "naver"]):
-        info_count += 1
-    if any(kw in combined_text for kw in ["성함", "이름", "name"]):
-        info_count += 1
-    if any(kw in combined_text for kw in ["이메일", "email", "@"]):
-        info_count += 1
-    if any(kw in combined_text for kw in ["연락처", "전화", "phone", "010"]):
+    
+    # 1. 예약/영수증 번호 확인
+    if (re.search(r'예약\s*번호', combined_text) or 
+        re.search(r'영수증\s*번호', combined_text) or
+        re.search(r'예약.*\d{4,}', combined_text) or
+        re.search(r'영수증.*\d{4,}', combined_text) or
+        re.search(r'booking.*number', combined_text) or
+        re.search(r'receipt.*number', combined_text)):
         info_count += 1
     
-    # 최소 2개 이상의 정보가 제공되었거나, 키워드와 숫자가 함께 있는 경우
-    return (has_keywords and has_numbers) or info_count >= 2
+    # 2. 결제 수단 확인 (카드, 카카오페이, 네이버페이, VISA, Master 등)
+    payment_keywords = [
+        "카드", "card", "visa", "master", "amex", "american express",
+        "카카오페이", "kakao", "kakaopay",
+        "네이버페이", "naver", "naverpay",
+        "온라인뱅킹", "online banking", "online",
+        "grabpay", "grab pay", "grab",
+        "touch n go", "touch n' go", "tng",
+        "결제 수단", "payment method", "payment"
+    ]
+    if any(kw in combined_text for kw in payment_keywords):
+        info_count += 1
+    
+    # 3. 성함 확인 (이름, 성함 키워드 + 한글/영문 이름 패턴)
+    name_keywords = ["성함", "이름", "name", "제 이름", "고객님의 성함", "my name"]
+    # 한글 이름 패턴 (2-4자 한글)
+    korean_name_pattern = re.search(r'[가-힣]{2,4}', combined_text_original)
+    # 영문 이름 패턴
+    english_name_pattern = re.search(r'\b[A-Z][a-z]+\s+[A-Z][a-z]+\b', combined_text_original)
+    
+    if (any(kw in combined_text for kw in name_keywords) or 
+        korean_name_pattern or 
+        english_name_pattern):
+        info_count += 1
+    
+    # 4. 이메일 확인
+    if has_email:
+        info_count += 1
+    
+    # 5. 연락처 확인
+    if (has_phone or 
+        re.search(r'연락처', combined_text) or 
+        re.search(r'전화번호', combined_text) or
+        re.search(r'phone', combined_text)):
+        info_count += 1
+    
+    # 최소 2개 이상의 정보가 제공되었거나, 이메일/전화번호 중 하나와 다른 정보가 함께 있는 경우
+    # 또는 숫자(예약번호)와 결제수단/성함이 함께 있는 경우
+    return info_count >= 2 or (has_email and info_count >= 1) or (has_phone and info_count >= 1)
 
 
 def check_if_login_related_inquiry(customer_query: str) -> bool:
