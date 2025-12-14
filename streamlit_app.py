@@ -2826,59 +2826,57 @@ if feature_selection == L["sim_tab_chat_email"]:
                             
                             if not source_lang or not target_lang:
                                 st.error("언어 정보가 올바르지 않습니다.")
-                                return
-
-                            # 이전 대화 내용 재가공
-                            history_text = ""
-                            for msg in st.session_state.simulator_messages:
-                                role = "Customer" if msg["role"].startswith("customer") or msg["role"] == "initial_query" else "Agent"
-                                if msg["role"] in ["initial_query", "customer_rebuttal", "agent_response", "customer_closing_response"]:
-                                    content = msg.get("content", "").strip()
-                                    if content:
-                                        history_text += f"{role}: {content}\n"
-                            
-                            if not history_text.strip():
-                                st.warning("번역할 대화 내용이 없습니다.")
-                                return
-
-                            # ⭐ 수정: 먼저 핵심 포인트만 요약한 후 번역
-                            lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(source_lang, "Korean")
-                            summary_prompt = (
-                                f"You are an AI assistant that summarizes customer service conversations. "
-                                f"Extract ONLY the key points from the conversation below. Keep it concise and focused on: "
-                                f"1. Customer's main inquiry/question "
-                                f"2. Key information provided by the agent "
-                                f"3. Important decisions or outcomes "
-                                f"4. Any unresolved issues\n\n"
-                                f"Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.\n\n"
-                                f"--- Conversation ---\n{history_text}\n---\n\nKey Points Summary:"
-                            )
-                            
-                            with st.spinner(L.get("transfer_loading", "번역 중...")):
-                                summary_text = run_llm(summary_prompt).strip()
+                            else:
+                                # 이전 대화 내용 재가공
+                                history_text = ""
+                                for msg in st.session_state.simulator_messages:
+                                    role = "Customer" if msg["role"].startswith("customer") or msg["role"] == "initial_query" else "Agent"
+                                    if msg["role"] in ["initial_query", "customer_rebuttal", "agent_response", "customer_closing_response"]:
+                                        content = msg.get("content", "").strip()
+                                        if content:
+                                            history_text += f"{role}: {content}\n"
                                 
-                                if not summary_text:
-                                    st.warning("요약 생성에 실패했습니다. 원본 텍스트로 번역을 시도합니다.")
-                                    summary_text = history_text
-                                
-                                # 번역 로직 추가
-                                translated_summary, is_success = translate_text_with_llm(
-                                    summary_text,
-                                    target_lang,
-                                    source_lang
-                                )
-                                
-                                if not translated_summary:
-                                    st.warning("번역 결과가 비어있습니다. 원본 텍스트를 사용합니다.")
-                                    translated_summary = summary_text
-                                    is_success = False
-                                
-                                # 번역 결과 저장
-                                st.session_state.transfer_summary_text = translated_summary
-                                st.session_state.translation_success = is_success
-                                
-                                # 화면 갱신
-                                st.rerun()
+                                if not history_text.strip():
+                                    st.warning("번역할 대화 내용이 없습니다.")
+                                else:
+                                    # ⭐ 수정: 먼저 핵심 포인트만 요약한 후 번역
+                                    lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(source_lang, "Korean")
+                                    summary_prompt = (
+                                        f"You are an AI assistant that summarizes customer service conversations. "
+                                        f"Extract ONLY the key points from the conversation below. Keep it concise and focused on: "
+                                        f"1. Customer's main inquiry/question "
+                                        f"2. Key information provided by the agent "
+                                        f"3. Important decisions or outcomes "
+                                        f"4. Any unresolved issues\n\n"
+                                        f"Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.\n\n"
+                                        f"--- Conversation ---\n{history_text}\n---\n\nKey Points Summary:"
+                                    )
+                                    
+                                    with st.spinner(L.get("transfer_loading", "번역 중...")):
+                                        summary_text = run_llm(summary_prompt).strip()
+                                        
+                                        if not summary_text:
+                                            st.warning("요약 생성에 실패했습니다. 원본 텍스트로 번역을 시도합니다.")
+                                            summary_text = history_text
+                                        
+                                        # 번역 로직 추가
+                                        translated_summary, is_success = translate_text_with_llm(
+                                            summary_text,
+                                            target_lang,
+                                            source_lang
+                                        )
+                                        
+                                        if not translated_summary:
+                                            st.warning("번역 결과가 비어있습니다. 원본 텍스트를 사용합니다.")
+                                            translated_summary = summary_text
+                                            is_success = False
+                                        
+                                        # 번역 결과 저장
+                                        st.session_state.transfer_summary_text = translated_summary
+                                        st.session_state.translation_success = is_success
+                                        
+                                        # 화면 갱신
+                                        st.rerun()
                         except Exception as e:
                             import traceback
                             error_details = traceback.format_exc()
@@ -3816,63 +3814,62 @@ if feature_selection == L["sim_tab_chat_email"]:
             if not get_api_key("gemini"):
                 st.error(L["simulation_no_key_warning"].replace('API Key', 'Gemini API Key'))
                 # st.stop()
-                return
+            else:
+                # AHT 타이머 중지
+                st.session_state.start_time = None
 
-            # AHT 타이머 중지
-            st.session_state.start_time = None
+                # 1. 로딩 시작 (시간 양해 메시지 시뮬레이션)
+                with st.spinner(L["transfer_loading"]):
+                    # 실제 대기 시간 5~10초 (3~10분 시뮬레이션)
+                    time.sleep(np.random.uniform(5, 10))
 
-            # 1. 로딩 시작 (시간 양해 메시지 시뮬레이션)
-            with st.spinner(L["transfer_loading"]):
-                # 실제 대기 시간 5~10초 (3~10분 시뮬레이션)
-                time.sleep(np.random.uniform(5, 10))
+                    # 2. 대화 기록을 번역할 텍스트로 가공
+                    history_text = ""
+                    for msg in current_messages:
+                        role = "Customer" if msg["role"].startswith("customer") or msg[
+                            "role"] == "initial_query" else "Agent"
+                        if msg["role"] in ["initial_query", "customer_rebuttal", "agent_response",
+                                           "customer_closing_response"]:
+                            history_text += f"{role}: {msg['content']}\n"
 
-                # 2. 대화 기록을 번역할 텍스트로 가공
-                history_text = ""
-                for msg in current_messages:
-                    role = "Customer" if msg["role"].startswith("customer") or msg[
-                        "role"] == "initial_query" else "Agent"
-                    if msg["role"] in ["initial_query", "customer_rebuttal", "agent_response",
-                                       "customer_closing_response"]:
-                        history_text += f"{role}: {msg['content']}\n"
-
-                # ⭐ 수정: 먼저 핵심 포인트만 요약한 후 번역
-                # 요약 프롬프트 생성
-                lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(current_lang_at_start, "Korean")
-                summary_prompt = (
-                    f"You are an AI assistant that summarizes customer service conversations. "
-                    f"Extract ONLY the key points from the conversation below. Keep it concise and focused on: "
-                    f"1. Customer's main inquiry/question "
-                    f"2. Key information provided by the agent "
-                    f"3. Important decisions or outcomes "
-                    f"4. Any unresolved issues\n\n"
-                    f"Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.\n\n"
-                    f"--- Conversation ---\n{history_text}\n---\n\nKey Points Summary:"
-                )
-                try:
-                    summary_text = run_llm(summary_prompt).strip()
-                    
-                    # 번역 로직 추가
-                    lang_name_target = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(target_lang, "Korean")
-                    translated_summary, is_success = translate_text_with_llm(
-                        summary_text,
-                        target_lang,
-                        current_lang_at_start
+                    # ⭐ 수정: 먼저 핵심 포인트만 요약한 후 번역
+                    # 요약 프롬프트 생성
+                    lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(current_lang_at_start, "Korean")
+                    summary_prompt = (
+                        f"You are an AI assistant that summarizes customer service conversations. "
+                        f"Extract ONLY the key points from the conversation below. Keep it concise and focused on: "
+                        f"1. Customer's main inquiry/question "
+                        f"2. Key information provided by the agent "
+                        f"3. Important decisions or outcomes "
+                        f"4. Any unresolved issues\n\n"
+                        f"Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.\n\n"
+                        f"--- Conversation ---\n{history_text}\n---\n\nKey Points Summary:"
                     )
-                    
-                    # 이관 요약 저장
-                    st.session_state.transfer_summary_text = translated_summary
-                    st.session_state.translation_success = is_success
-                    st.session_state.language_at_transfer_start = current_lang_at_start
-                    
-                    # 언어 변경
-                    st.session_state.language = target_lang
-                    L = LANG.get(target_lang, LANG["ko"])
-                    
-                    # 시스템 메시지 추가
-                    system_msg = L["transfer_system_msg"].format(target_lang=lang_name_target)
-                    st.session_state.simulator_messages.append(
-                        {"role": "system_transfer", "content": system_msg}
-                    )
+                    try:
+                        summary_text = run_llm(summary_prompt).strip()
+                        
+                        # 번역 로직 추가
+                        lang_name_target = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(target_lang, "Korean")
+                        translated_summary, is_success = translate_text_with_llm(
+                            summary_text,
+                            target_lang,
+                            current_lang_at_start
+                        )
+                        
+                        # 이관 요약 저장
+                        st.session_state.transfer_summary_text = translated_summary
+                        st.session_state.translation_success = is_success
+                        st.session_state.language_at_transfer_start = current_lang_at_start
+                        
+                        # 언어 변경
+                        st.session_state.language = target_lang
+                        L = LANG.get(target_lang, LANG["ko"])
+                        
+                        # 시스템 메시지 추가
+                        system_msg = L["transfer_system_msg"].format(target_lang=lang_name_target)
+                        st.session_state.simulator_messages.append(
+                            {"role": "system_transfer", "content": system_msg}
+                        )
                     
                     # 이관 요약을 supervisor 메시지로 추가
                     summary_msg = f"### {L['transfer_summary_header']}\n\n{translated_summary}"
@@ -5367,39 +5364,78 @@ elif feature_selection == L["sim_tab_phone"]:
             # API 키 체크
             if not st.session_state.is_llm_ready:
                 st.error(L["simulation_no_key_warning"].replace('API Key', 'LLM API Key'))
-                return
+            else:
+                current_lang_at_start = st.session_state.language  # Source language
 
-            current_lang_at_start = st.session_state.language  # Source language
+                # AHT 타이머 정지 (실제로 통화가 종료되는 것은 아니므로, AHT는 계속 흐름)
+                # st.session_state.start_time = None
 
-            # AHT 타이머 정지 (실제로 통화가 종료되는 것은 아니므로, AHT는 계속 흐름)
-            # st.session_state.start_time = None
+                # 1. 로딩 시작 (시간 양해 메시지 시뮬레이션)
+                with st.spinner(L["transfer_loading"]):
+                    time.sleep(np.random.uniform(5, 10))
 
-            # 1. 로딩 시작 (시간 양해 메시지 시뮬레이션)
-            with st.spinner(L["transfer_loading"]):
-                time.sleep(np.random.uniform(5, 10))
+                    # 2. 대화 기록을 번역할 텍스트로 가공
+                    history_text = ""
+                    for msg in current_messages:
+                        role = "Customer" if msg["role"].startswith("customer") or msg[
+                            "role"] == "initial_query" else "Agent"
+                        if msg["role"] in ["initial_query", "customer_rebuttal", "agent_response",
+                                           "customer_closing_response", "phone_exchange"]:  # phone_exchange 추가
+                            history_text += f"{role}: {msg['content']}\n"
 
-                # 2. 대화 기록을 번역할 텍스트로 가공
-                history_text = ""
-                for msg in current_messages:
-                    role = "Customer" if msg["role"].startswith("customer") or msg[
-                        "role"] == "initial_query" else "Agent"
-                    if msg["role"] in ["initial_query", "customer_rebuttal", "agent_response",
-                                       "customer_closing_response", "phone_exchange"]:  # phone_exchange 추가
-                        history_text += f"{role}: {msg['content']}\n"
-
-                # ⭐ 수정: 먼저 핵심 포인트만 요약한 후 번역
-                # 요약 프롬프트 생성
-                lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(current_lang_at_start, "Korean")
-                summary_prompt = (
-                    f"You are an AI assistant that summarizes customer service conversations. "
-                    f"Extract ONLY the key points from the conversation below. Keep it concise and focused on: "
-                    f"1. Customer's main inquiry/question "
-                    f"2. Key information provided by the agent "
-                    f"3. Important decisions or outcomes "
-                    f"4. Any unresolved issues\n\n"
-                    f"Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.\n\n"
-                    f"--- Conversation ---\n{history_text}\n---\n\nKey Points Summary:"
-                )
+                    # ⭐ 수정: 먼저 핵심 포인트만 요약한 후 번역
+                    # 요약 프롬프트 생성
+                    lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(current_lang_at_start, "Korean")
+                    summary_prompt = (
+                        f"You are an AI assistant that summarizes customer service conversations. "
+                        f"Extract ONLY the key points from the conversation below. Keep it concise and focused on: "
+                        f"1. Customer's main inquiry/question "
+                        f"2. Key information provided by the agent "
+                        f"3. Important decisions or outcomes "
+                        f"4. Any unresolved issues\n\n"
+                        f"Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.\n\n"
+                        f"--- Conversation ---\n{history_text}\n---\n\nKey Points Summary:"
+                    )
+                    try:
+                        summary_text = run_llm(summary_prompt).strip()
+                        
+                        # 번역 로직 추가
+                        lang_name_target = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(target_lang, "Korean")
+                        translated_summary, is_success = translate_text_with_llm(
+                            summary_text,
+                            target_lang,
+                            current_lang_at_start
+                        )
+                        
+                        # 이관 요약 저장
+                        st.session_state.transfer_summary_text = translated_summary
+                        st.session_state.translation_success = is_success
+                        st.session_state.language_at_transfer_start = current_lang_at_start
+                        
+                        # 언어 변경
+                        st.session_state.language = target_lang
+                        L = LANG.get(target_lang, LANG["ko"])
+                        
+                        # 시스템 메시지 추가
+                        system_msg = L["transfer_system_msg"].format(target_lang=lang_name_target)
+                        st.session_state.simulator_messages.append(
+                            {"role": "system_transfer", "content": system_msg}
+                        )
+                        
+                        # 이관 요약을 supervisor 메시지로 추가
+                        summary_msg = f"### {L['transfer_summary_header']}\n\n{translated_summary}"
+                        st.session_state.simulator_messages.append(
+                            {"role": "supervisor", "content": summary_msg}
+                        )
+                        
+                        # AGENT_TURN으로 이동
+                        st.session_state.sim_stage = "AGENT_TURN"
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"이관 처리 중 오류 발생: {e}")
+                        st.session_state.transfer_summary_text = f"요약 생성 오류: {e}"
+                        st.session_state.translation_success = False
+        
         # =========================
         # AI 요약 버튼 및 표시 로직 (추가된 기능)
         # =========================
@@ -5436,53 +5472,52 @@ elif feature_selection == L["sim_tab_phone"]:
                         
                         if not history_text.strip():
                             st.warning("번역할 대화 내용이 없습니다.")
-                            return
+                        else:
+                            # 먼저 요약 생성
+                            source_lang = st.session_state.language_at_transfer_start
+                            target_lang = st.session_state.language
+                            
+                            if not source_lang or not target_lang:
+                                st.error("언어 정보가 올바르지 않습니다.")
+                            else:
                         
-                        # 먼저 요약 생성
-                        source_lang = st.session_state.language_at_transfer_start
-                        target_lang = st.session_state.language
-                        
-                        if not source_lang or not target_lang:
-                            st.error("언어 정보가 올바르지 않습니다.")
-                            return
-                        
-                        lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(source_lang, "Korean")
-                        summary_prompt = (
-                            f"You are an AI assistant that summarizes customer service conversations. "
-                            f"Extract ONLY the key points from the conversation below. Keep it concise and focused on: "
-                            f"1. Customer's main inquiry/question "
-                            f"2. Key information provided by the agent "
-                            f"3. Important decisions or outcomes "
-                            f"4. Any unresolved issues\n\n"
-                            f"Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.\n\n"
-                            f"--- Conversation ---\n{history_text}\n---\n\nKey Points Summary:"
-                        )
-                        
-                        with st.spinner(L["transfer_loading"]):
-                            summary_text = run_llm(summary_prompt).strip()
-                            
-                            if not summary_text:
-                                st.warning("요약 생성에 실패했습니다. 원본 텍스트로 번역을 시도합니다.")
-                                summary_text = history_text
-                            
-                            # 번역 로직 실행
-                            translated_summary, is_success = translate_text_with_llm(
-                                summary_text,
-                                target_lang,
-                                source_lang
-                            )
-                            
-                            if not translated_summary:
-                                st.warning("번역 결과가 비어있습니다. 원본 텍스트를 사용합니다.")
-                                translated_summary = summary_text
-                                is_success = False
-                            
-                            # 번역 결과 저장
-                            st.session_state.transfer_summary_text = translated_summary
-                            st.session_state.translation_success = is_success
-                            
-                            # 화면 갱신
-                            st.rerun()
+                                lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(source_lang, "Korean")
+                                summary_prompt = (
+                                    f"You are an AI assistant that summarizes customer service conversations. "
+                                    f"Extract ONLY the key points from the conversation below. Keep it concise and focused on: "
+                                    f"1. Customer's main inquiry/question "
+                                    f"2. Key information provided by the agent "
+                                    f"3. Important decisions or outcomes "
+                                    f"4. Any unresolved issues\n\n"
+                                    f"Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.\n\n"
+                                    f"--- Conversation ---\n{history_text}\n---\n\nKey Points Summary:"
+                                )
+                                
+                                with st.spinner(L["transfer_loading"]):
+                                    summary_text = run_llm(summary_prompt).strip()
+                                    
+                                    if not summary_text:
+                                        st.warning("요약 생성에 실패했습니다. 원본 텍스트로 번역을 시도합니다.")
+                                        summary_text = history_text
+                                    
+                                    # 번역 로직 실행
+                                    translated_summary, is_success = translate_text_with_llm(
+                                        summary_text,
+                                        target_lang,
+                                        source_lang
+                                    )
+                                    
+                                    if not translated_summary:
+                                        st.warning("번역 결과가 비어있습니다. 원본 텍스트를 사용합니다.")
+                                        translated_summary = summary_text
+                                        is_success = False
+                                    
+                                    # 번역 결과 저장
+                                    st.session_state.transfer_summary_text = translated_summary
+                                    st.session_state.translation_success = is_success
+                                    
+                                    # 화면 갱신
+                                    st.rerun()
                     except Exception as e:
                         import traceback
                         error_details = traceback.format_exc()
