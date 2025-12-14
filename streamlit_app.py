@@ -175,7 +175,9 @@ from simulation_handler import (
     detect_text_language, analyze_customer_profile, find_similar_cases,
     generate_guideline_from_past_cases, _generate_initial_advice,
     mask_email, verify_customer_info, check_if_login_related_inquiry,
-    check_if_customer_provided_verification_info, delete_all_history_local
+    check_if_customer_provided_verification_info, delete_all_history_local,
+    generate_daily_customer_guide, save_daily_customer_guide,
+    recommend_guideline_for_customer, get_daily_data_statistics
 )
 from visualization import (
     visualize_customer_profile_scores, visualize_similarity_cases,
@@ -2048,6 +2050,25 @@ Response Hints:""",
 # ========================================
 if feature_selection == L["sim_tab_chat_email"]:
     # =========================
+    # 0-1. 일일 데이터 수집 통계 표시
+    # =========================
+    daily_stats = get_daily_data_statistics(st.session_state.language)
+    col_stat1, col_stat2, col_stat3, col_stat4 = st.columns(4)
+    with col_stat1:
+        st.metric("오늘 수집된 케이스", daily_stats["total_cases"])
+    with col_stat2:
+        st.metric("고유 고객 수", daily_stats["unique_customers"], 
+                 delta="목표: 5인 이상" if daily_stats["target_met"] else "목표 미달")
+    with col_stat3:
+        st.metric("요약 완료 케이스", daily_stats["cases_with_summary"])
+    with col_stat4:
+        status_icon = "✅" if daily_stats["target_met"] else "⚠️"
+        st.metric("목표 달성", status_icon, 
+                 delta="달성" if daily_stats["target_met"] else "미달성")
+    
+    st.markdown("---")
+    
+    # =========================
     # 0. 전체 이력 삭제
     # =========================
     col_del, _ = st.columns([1, 4])
@@ -2756,51 +2777,157 @@ if feature_selection == L["sim_tab_chat_email"]:
                 st.session_state.simulator_messages[index]["feedback"] = feedback_value
     
     # 채팅/이메일 탭에서만 메시지 표시
-    # 메시지가 있을 때만 표시
+    # ⭐ app.py 스타일로 간소화: 깔끔한 채팅 UI
     if st.session_state.simulator_messages:
-            for idx, msg in enumerate(st.session_state.simulator_messages):
-                role = msg["role"]
-                content = msg["content"]
-                avatar = {"customer": "🙋", "supervisor": "🤖", "agent_response": "🧑‍💻", "customer_rebuttal": "✨",
-                          "system_end": "📌", "system_transfer": "📌"}.get(role, "💬")
+        for idx, msg in enumerate(st.session_state.simulator_messages):
+            role = msg["role"]
+            content = msg["content"]
+            
+            # 역할에 따른 표시 이름 및 아바타 설정
+            if role == "customer" or role == "customer_rebuttal" or role == "initial_query":
+                display_role = "user"
+                avatar = "🙋"
+            elif role == "agent_response":
+                display_role = "assistant"
+                avatar = "🧑‍💻"
+            elif role == "supervisor":
+                display_role = "assistant"
+                avatar = "🤖"
+            else:
+                display_role = "assistant"
+                avatar = "💬"
+            
+            with st.chat_message(display_role, avatar=avatar):
+                st.write(content)
+                
+                # ⭐ 메시지 말풍선 안에 버튼들 추가 (영상 스타일)
+                # 버튼 레이아웃: 역할에 따라 다른 버튼 표시
+                
+                # 1. 음성으로 듣기 버튼 (모든 메시지에)
                 tts_role = "customer" if role.startswith("customer") or role == "customer_rebuttal" else (
                     "agent" if role == "agent_response" else "supervisor")
-
-                with st.chat_message(role, avatar=avatar):
-                    st.markdown(content)
-                    # 인덱스를 render_tts_button에 전달하여 고유 키 생성에 사용
-                    render_tts_button(content, st.session_state.language, role=tts_role, prefix=f"{role}_", index=idx)
+                render_tts_button(content, st.session_state.language, role=tts_role, prefix=f"{role}_", index=idx)
+                
+                # 2. 에이전트 응답에 피드백 버튼만 표시 (응대 힌트, 전화 버튼은 입력 칸으로 이동)
+                if role == "agent_response":
+                    # 피드백 버튼 (기존 유지)
+                    feedback_key = f"feedback_{st.session_state.sim_instance_id}_{idx}"
+                    existing_feedback = msg.get("feedback", None)
+                    if existing_feedback is not None:
+                        st.session_state[feedback_key] = existing_feedback
                     
-                    # ⭐ 에이전트 응답에 대한 피드백 위젯 추가
-                    if role == "agent_response":
-                        feedback_key = f"feedback_{st.session_state.sim_instance_id}_{idx}"
-                        # 기존 피드백 값 가져오기
-                        existing_feedback = msg.get("feedback", None)
-                        if existing_feedback is not None:
-                            st.session_state[feedback_key] = existing_feedback
-                        
-                        # 피드백 위젯 표시
-                        st.feedback(
-                            "thumbs",
-                            key=feedback_key,
-                            disabled=existing_feedback is not None,
-                            on_change=save_feedback,
-                            args=[idx],
-                        )
+                    st.feedback(
+                        "thumbs",
+                        key=feedback_key,
+                        disabled=existing_feedback is not None,
+                        on_change=save_feedback,
+                        args=[idx],
+                    )
+                
+                # 3. 고객 메시지에 응대 힌트, 전화 버튼 및 추가 문의 여부 확인 버튼
+                if role == "customer" or role == "customer_rebuttal":
+                    # 응대 힌트, 전화 버튼들 (고객 회신/문의 섹션 내)
+                    button_cols_customer = st.columns([1, 1, 1])
+                    
+                    # 응대 힌트 버튼
+                    with button_cols_customer[0]:
+                        if st.button("💡 응대 힌트", key=f"hint_btn_customer_{idx}_{st.session_state.sim_instance_id}", use_container_width=True):
+                            if st.session_state.is_llm_ready:
+                                with st.spinner(L.get("response_generating", "생성 중...")):
+                                    hint = generate_realtime_hint(current_lang, is_call=False)
+                                    st.session_state.realtime_hint_text = hint
+                                    # 힌트를 supervisor 메시지로 추가하여 표시
+                                    st.session_state.simulator_messages.append({
+                                        "role": "supervisor",
+                                        "content": f"💡 **응대 힌트**: {hint}"
+                                    })
+                                    st.rerun()
+                            else:
+                                st.warning(L.get("simulation_no_key_warning", "LLM이 준비되지 않았습니다."))
+                    
+                    # 업체에 전화 버튼
+                    with button_cols_customer[1]:
+                        if st.button("📞 업체에 전화", key=f"call_provider_customer_{idx}_{st.session_state.sim_instance_id}", use_container_width=True):
+                            st.session_state.sim_call_outbound_target = "현지 업체/파트너"
+                            st.session_state.sim_stage = "OUTBOUND_CALL_IN_PROGRESS"
+                            st.rerun()
+                    
+                    # 고객에게 전화 버튼
+                    with button_cols_customer[2]:
+                        if st.button("📞 고객에게 전화", key=f"call_customer_customer_{idx}_{st.session_state.sim_instance_id}", use_container_width=True):
+                            st.session_state.sim_call_outbound_target = "고객"
+                            st.session_state.sim_stage = "OUTBOUND_CALL_IN_PROGRESS"
+                            st.rerun()
+                    
+                    # 마지막 에이전트 응답에서 솔루션이 제공되었는지 확인
+                    last_agent_response_idx = None
+                    for i in range(idx - 1, -1, -1):
+                        if i < len(st.session_state.simulator_messages) and st.session_state.simulator_messages[i].get("role") == "agent_response":
+                            last_agent_response_idx = i
+                            break
+                    
+                    # 솔루션 제공 여부 확인
+                    solution_provided = False
+                    if last_agent_response_idx is not None:
+                        agent_msg_content = st.session_state.simulator_messages[last_agent_response_idx].get("content", "")
+                        solution_keywords = ["해결", "도움", "안내", "제공", "solution", "help", "assist", "guide", "안내해드리", "도와드리"]
+                        solution_provided = any(keyword in agent_msg_content.lower() for keyword in solution_keywords)
+                    
+                    # "알겠습니다" 또는 "감사합니다"가 포함된 경우 추가 문의 여부 확인 버튼 표시
+                    if solution_provided or st.session_state.is_solution_provided:
+                        if "알겠습니다" in content or "감사합니다" in content or "ok" in content.lower() or "thank" in content.lower():
+                            if st.button("✅ 추가 문의 있나요?", key=f"additional_inquiry_{idx}_{st.session_state.sim_instance_id}", use_container_width=True):
+                                st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
+                                st.rerun()
+                    
+                    # 4. 고객이 "없습니다. 감사합니다" 답변 시 설문 조사 버튼
+                    no_more_keywords = [
+                        "없습니다", "감사합니다", "No, that will be all", "no more",
+                        "추가 문의 사항 없습니다", "추가 문의사항 없습니다", "no additional", "結構です"
+                    ]
+                    # 키워드가 모두 포함되어 있거나 "없습니다"와 "감사합니다"가 함께 있는 경우
+                    has_no_more = (
+                        any(keyword in content for keyword in no_more_keywords) or
+                        ("없습니다" in content and "감사합니다" in content) or
+                        ("no" in content.lower() and "more" in content.lower() and "thank" in content.lower())
+                    )
+                    
+                    if has_no_more:
+                        if st.button("📋 설문 조사 전송 및 종료", key=f"survey_end_{idx}_{st.session_state.sim_instance_id}", use_container_width=True, type="primary"):
+                            # AHT 타이머 정지
+                            st.session_state.start_time = None
+                            
+                            # 설문 조사 링크 전송 메시지 추가
+                            end_msg = L.get("prompt_survey", "설문 조사 링크를 전송했습니다.")
+                            st.session_state.simulator_messages.append(
+                                {"role": "system_end", "content": end_msg}
+                            )
+                            
+                            # 채팅 종료 처리
+                            customer_type_display = st.session_state.get("customer_type_sim_select", "")
+                            st.session_state.is_chat_ended = True
+                            st.session_state.sim_stage = "CLOSING"
+                            
+                            # 이력 저장
+                            save_simulation_history_local(
+                                st.session_state.customer_query_text_area, customer_type_display,
+                                st.session_state.simulator_messages, is_chat_ended=True,
+                                attachment_context=st.session_state.sim_attachment_context_for_llm,
+                            )
+                            
+                            st.rerun()
 
-                    # ⭐ [새로운 로직] 고객 첨부 파일 렌더링 (첫 번째 메시지인 경우)
-                    if idx == 0 and role == "customer" and st.session_state.customer_attachment_b64:
-                        mime = st.session_state.customer_attachment_mime or "image/png"
-                        data_url = f"data:{mime};base64,{st.session_state.customer_attachment_b64}"
+                # 고객 첨부 파일 표시 (기능 유지)
+                if idx == 0 and role == "customer" and st.session_state.customer_attachment_b64:
+                    mime = st.session_state.customer_attachment_mime or "image/png"
+                    data_url = f"data:{mime};base64,{st.session_state.customer_attachment_b64}"
 
-                        # 이미지 파일만 표시 (PDF 등은 아직 처리하지 않음)
-                        if mime.startswith("image/"):
-                            st.image(data_url, caption=f"첨부된 증거물 ({st.session_state.customer_attachment_file.name})",
-                                     use_column_width=True)
-                        elif mime == "application/pdf":
-                            # PDF 파일일 경우, 파일 이름과 함께 다운로드 링크 또는 경고 표시
-                            st.warning(
-                                f"첨부된 PDF 파일 ({st.session_state.customer_attachment_file.name})은 현재 인라인 미리보기가 지원되지 않습니다.")
+                    if mime.startswith("image/"):
+                        st.image(data_url, caption=f"첨부된 증거물 ({st.session_state.customer_attachment_file.name})",
+                                 use_column_width=True)
+                    elif mime == "application/pdf":
+                        st.warning(
+                            f"첨부된 PDF 파일 ({st.session_state.customer_attachment_file.name})은 현재 인라인 미리보기가 지원되지 않습니다.")
 
     # 이관 요약 표시 (이관 후에만) - 루프 밖으로 이동하여 한 번만 표시
     if st.session_state.transfer_summary_text or (st.session_state.language != st.session_state.language_at_transfer_start and st.session_state.language_at_transfer_start):
@@ -2891,18 +3018,39 @@ if feature_selection == L["sim_tab_chat_email"]:
     if st.session_state.sim_stage == "AGENT_TURN":
         st.markdown(f"### {L['agent_response_header']}")
 
-        # --- 실시간 응대 힌트 영역 ---
-        hint_cols = st.columns([4, 1])
-        with hint_cols[0]:
-            st.info(L["hint_placeholder"] + st.session_state.realtime_hint_text)
-
-        with hint_cols[1]:
-            # 힌트 요청 버튼
-            if st.button(L["button_request_hint"], key=f"btn_request_hint_{st.session_state.sim_instance_id}"):
-                with st.spinner(L["response_generating"]):
-                    # 채팅/이메일 탭이므로 is_call=False
-                    hint = generate_realtime_hint(current_lang, is_call=False)
-                    st.session_state.realtime_hint_text = hint
+        # ⭐ 실시간 응대 힌트 영역 제거 (메시지 말풍선에 버튼으로 이동)
+        # 힌트는 에이전트 응답 메시지 말풍선의 '응대 힌트' 버튼을 통해 사용할 수 있습니다.
+        
+        # ⭐ 추가: 고객 성향 기반 가이드라인 추천 (신규 고객 문의 시)
+        if st.session_state.simulator_messages and len(st.session_state.simulator_messages) >= 2:
+            # 고객 메시지가 있고 요약이 생성 가능한 경우
+            try:
+                # 현재 대화를 임시 요약하여 고객 성향 분석
+                temp_summary = generate_chat_summary(
+                    st.session_state.simulator_messages,
+                    st.session_state.customer_query_text_area,
+                    st.session_state.get("customer_type_sim_select", ""),
+                    st.session_state.language
+                )
+                
+                if temp_summary and temp_summary.get("customer_sentiment_score"):
+                    # 과거 이력 로드
+                    all_histories = load_simulation_histories_local(st.session_state.language)
+                    
+                    # 가이드라인 추천 생성
+                    recommended_guideline = recommend_guideline_for_customer(
+                        temp_summary,
+                        all_histories,
+                        st.session_state.language
+                    )
+                    
+                    if recommended_guideline:
+                        with st.expander("💡 고객 성향 기반 응대 가이드라인 추천", expanded=False):
+                            st.markdown(recommended_guideline)
+                            st.caption("💡 이 가이드는 유사한 과거 고객 사례를 분석하여 자동 생성되었습니다.")
+            except Exception as e:
+                # 가이드라인 추천 실패 시 무시 (비차단)
+                pass
 
         # --- 언어 이관 요청 강조 표시 ---
         if st.session_state.language_transfer_requested:
@@ -3512,196 +3660,195 @@ if feature_selection == L["sim_tab_chat_email"]:
         elif is_login_inquiry and st.session_state.is_customer_verified:
             st.success(L['verification_completed'])
 
-        # --- AI 응답 초안 생성 버튼 (요청 1 반영) ---
-        if st.button(L["button_generate_draft"], key=f"btn_generate_ai_draft_{st.session_state.sim_instance_id}"):
-            if not st.session_state.is_llm_ready:
-                st.warning(L["simulation_no_key_warning"])
+        # ⭐ AI 응답 초안 생성 기능 제거 (회사 정보 & FAQ 탭에 이미 있음)
+        # 이 기능은 '회사 정보 & FAQ' > '고객 문의 재확인' 탭에서 사용할 수 있습니다.
+
+        # ⭐ 전화 발신 버튼 제거 (메시지 말풍선에 버튼으로 이동)
+        # 전화 발신 기능은 에이전트 응답 메시지 말풍선의 '업체에 전화' / '고객에게 전화' 버튼을 통해 사용할 수 있습니다.
+
+        # Supervisor 정책 업로더 제거됨
+
+        # --- 에이전트 첨부 파일 업로더는 숨김 처리 (버튼으로 대체) ---
+        # 파일 업로더는 버튼 클릭 시에만 표시되도록 처리
+        agent_attachment_files = None
+        if st.session_state.get("show_agent_file_uploader", False):
+            agent_attachment_files = st.file_uploader(
+                L["agent_attachment_label"],
+                type=["png", "jpg", "jpeg", "pdf"],
+                key="agent_attachment_file_uploader",
+                help=L["agent_attachment_placeholder"],
+                accept_multiple_files=True
+            )
+            if agent_attachment_files:
+                st.session_state.agent_attachment_file = [
+                    {"name": f.name, "type": f.type, "size": f.size} for f in agent_attachment_files
+                ]
+                file_names = ", ".join([f["name"] for f in
+                                        st.session_state.agent_attachment_file])
+                st.info(f"✅ {len(agent_attachment_files)}개 에이전트 첨부 파일 준비 완료: {file_names}")
+                st.session_state.show_agent_file_uploader = False  # 파일 선택 후 숨김
             else:
-                with st.spinner(L["draft_generating"]):
-                    # 초안 생성 함수 호출
-                    ai_draft = generate_agent_response_draft(current_lang)
-                    if ai_draft and not ai_draft.startswith("❌"):
-                        st.session_state.agent_response_area_text = ai_draft
-                        st.success(L["draft_success"])
-                    else:
-                        st.error(ai_draft if ai_draft else L.get("draft_error", "응답 초안 생성에 실패했습니다."))
-
-        # --- 전화 발신 버튼 추가 (요청 2 반영) ---
-        st.markdown("---")
-        st.subheader(L["button_call_outbound"])
-        call_cols = st.columns(2)
-
-        with call_cols[0]:
-            if st.button(L["button_call_outbound_to_provider"], key="btn_call_outbound_partner", use_container_width=True):
-                # 전화 발신 시뮬레이션: 현지 업체
-                st.session_state.sim_call_outbound_target = "현지 업체/파트너"
-                st.session_state.sim_stage = "OUTBOUND_CALL_IN_PROGRESS"
-
-        with call_cols[1]:
-            if st.button(L["button_call_outbound_to_customer"], key="btn_call_outbound_customer", use_container_width=True):
-                # 전화 발신 시뮬레이션: 고객
-                st.session_state.sim_call_outbound_target = "고객"
-                st.session_state.sim_stage = "OUTBOUND_CALL_IN_PROGRESS"
-
-        st.markdown("---")
-        # --- 전화 발신 버튼 추가 끝 ---
-
-        st.markdown("### 🚨 Supervisor 정책/지시 사항 업로드 (예외 처리 방침)")
-
-        # --- Supervisor 정책 업로더 추가 ---
-        supervisor_attachment_widget = st.file_uploader(
-            "Supervisor 지시 사항/스크린샷 업로드 (예외 정책 포함)",
-            type=["png", "jpg", "jpeg", "pdf", "txt"],
-            key="supervisor_policy_uploader",
-            help="비행기 지연, 질병 등 예외적 상황에 대한 Supervisor의 최신 지시 사항을 업로드하세요。",
-            accept_multiple_files=False
-        )
-
-        # 파일 정보 저장 및 LLM 컨텍스트 생성
-        if supervisor_attachment_widget:
-            # 텍스트 파일 또는 PDF/이미지 파일의 텍스트 컨텐츠를 추출하여 policy_context에 저장해야 함
-            # 여기서는 파일 이름과 타입만 컨텍스트로 전달하고, LLM이 이것이 '예외 정책'임을 알도록 유도
-            file_name = supervisor_attachment_widget.name
-            st.session_state.supervisor_policy_context = f"[Supervisor Policy Attached] Filename: {file_name}, Filetype: {supervisor_attachment_widget.type}. This file contains a CRITICAL, temporary policy update regarding exceptions (e.g., flight delays, illness, natural disasters). Analyze and prioritize this policy in the response."
-            st.success(f"✅ Supervisor 정책 파일: **{file_name}**이(가) 응대 가이드에 반영됩니다.")
-        elif st.session_state.supervisor_policy_context:
-            st.info("⭐ 현재 적용 중인 Supervisor 정책이 있습니다.")
-        else:
-            st.session_state.supervisor_policy_context = ""
-
-        # --- 에이전트 첨부 파일 업로더 (다중 파일 허용) ---
-        agent_attachment_files = st.file_uploader(
-            L["agent_attachment_label"],
-            type=["png", "jpg", "jpeg", "pdf"],
-            key="agent_attachment_file_uploader",
-            help=L["agent_attachment_placeholder"],
-            accept_multiple_files=True
-        )
-
-        if agent_attachment_files:
-            st.session_state.agent_attachment_file = [
-                {"name": f.name, "type": f.type, "size": f.size} for f in agent_attachment_files
-            ]
-            file_names = ", ".join([f["name"] for f in
-                                    st.session_state.agent_attachment_file])  # 수정: file_infos 대신 st.session_state.agent_attachment_file 사용
-            st.info(f"✅ {len(agent_attachment_files)}개 에이전트 첨부 파일 준비 완료: {file_names}")
+                st.session_state.agent_attachment_file = []
         else:
             st.session_state.agent_attachment_file = []
 
-        # --- 입력 필드 및 버튼 ---
-        col_mic, col_text = st.columns([1, 2])
-
-        # --- 마이크 녹음 ---
-        with col_mic:
-            mic_audio = mic_recorder(
-                start_prompt=L["button_mic_input"],
-                stop_prompt=L["button_mic_stop"],
-                just_once=False,
-                format="wav",
-                use_container_width=True,
-                key="sim_mic_recorder",
-            )
-
-        if mic_audio and mic_audio.get("bytes"):
-            st.session_state.sim_audio_bytes = mic_audio["bytes"]
-            # 언어 키 안전하게 가져오기
-            current_lang = st.session_state.get("language", "ko")
-            if current_lang not in ["ko", "en", "ja"]:
-                current_lang = "ko"
-            L = LANG.get(current_lang, LANG["ko"])
-            st.info(L["recording_complete_press_transcribe"])
-
-        if st.session_state.sim_audio_bytes:
-            col_audio, col_transcribe, col_del = st.columns([3, 1, 1])
-
-            # 1. 오디오 플레이어
-            # Streamlit 문서: bytes 데이터를 직접 전달 가능
-            with col_audio:
-                try:
-                    st.audio(st.session_state.sim_audio_bytes, format="audio/wav", autoplay=False)
-                except Exception as e:
-                    st.error(f"오디오 재생 오류: {e}")
-
-            # 2. 녹음 삭제 버튼 (추가 요청 반영)
-            with col_del:
-                st.markdown("<br>", unsafe_allow_html=True)  # 버튼 수직 정렬
-                if st.button(L["delete_mic_record"], key="btn_delete_sim_audio_call"):
-                    # 오디오 및 관련 상태 초기화
-                    st.session_state.sim_audio_bytes = None
-                    st.session_state.last_transcript = ""
-                    # ⭐ 수정: 위젯이 생성된 후에는 session_state를 직접 수정할 수 없으므로 플래그 사용
-                    st.session_state.reset_agent_response_area = True
-                    st.success("녹음이 삭제되었습니다. 다시 녹음해 주세요.")
-
-            # 3. 전사(Whisper) 버튼 (기존 로직 대체)
-            col_tr, _ = st.columns([1, 2])
-            if col_tr.button(L["transcribe_btn"], key="sim_transcribe_btn"):
-                if st.session_state.sim_audio_bytes is None:
-                    st.warning("먼저 마이크로 녹음을 완료하세요.")
-                else:
-                    # ⭐ 수정: OpenAI 또는 Gemini API 키 체크
-                    has_openai = st.session_state.openai_client is not None
-                    has_gemini = bool(get_api_key("gemini"))
-                    
-                    if not has_openai and not has_gemini:
-                        st.error(L["whisper_client_error"] + " (OpenAI 또는 Gemini API Key 필요)")
-                    else:
-                        with st.spinner(L["whisper_processing"]):
-                            # transcribe_bytes_with_whisper 함수를 사용하도록 수정
-                            # 자동 언어 감지 사용 (입력 언어와 관계없이 정확한 전사)
-                            transcribed_text = transcribe_bytes_with_whisper(
-                                st.session_state.sim_audio_bytes,
-                                "audio/wav",
-                                lang_code=None,
-                                auto_detect=True,
-                            )
-                            if transcribed_text.startswith("❌"):
-                                st.error(transcribed_text)
-                                st.session_state.last_transcript = ""
-                            else:
-                                st.session_state.last_transcript = transcribed_text.strip()
-                                # ⭐ 수정: 전사된 텍스트를 입력창의 세션 상태 변수에 반영
-                                st.session_state.agent_response_area_text = transcribed_text.strip()
-                                st.session_state.agent_response_input_box_widget = transcribed_text.strip()
-
-                                snippet = transcribed_text[:50].replace("\n", " ")
-                                if len(transcribed_text) > 50:
-                                    snippet += "..."
-                                st.success(L["whisper_success"] + f"\n\n**인식 내용:** *{snippet}*")
-
-        col_text, col_button = st.columns([4, 1])
-
-        # --- 입력 필드 및 버튼 ---
-        with col_text:
-            # ⭐ 수정: 위젯 생성 전에 초기화 플래그를 확인하여 값을 초기화합니다.
-            if st.session_state.get("reset_agent_response_area", False):
-                st.session_state.agent_response_area_text = ""
-                st.session_state.reset_agent_response_area = False
+        # 마이크 녹음 처리 (전화 부분과 동일한 패턴: 종료 시 자동 전사)
+        # 전사 로직: bytes_to_process에 데이터가 있을 때만 실행 (전화 부분과 동일)
+        if "bytes_to_process" in st.session_state and st.session_state.bytes_to_process is not None:
+            # ⭐ 수정: OpenAI 또는 Gemini API 키가 있는지 확인
+            has_openai = st.session_state.openai_client is not None
+            has_gemini = bool(get_api_key("gemini"))
             
-            # st.text_area의 값을 읽어 세션 상태를 직접 업데이트하는 on_change를 제거하고
-            # st.text_area 위젯 자체의 키를 사용하여 send_clicked 시 최신 값을 읽도록 합니다.
-            # (Streamlit 기본 동작: 버튼 클릭 시 위젯의 최종 값이 세션 상태에 반영됨)
-            # ⭐ 수정: key를 agent_response_area_text로 통일하여 세션 상태와 동기화
+            if not has_openai and not has_gemini:
+                st.error(L.get("whisper_client_error", "Whisper 클라이언트 오류") + " (OpenAI 또는 Gemini API Key 필요)")
+                st.session_state.bytes_to_process = None
+            else:
+                # ⭐ 전사 결과를 저장할 변수 초기화
+                agent_response_transcript = None
+
+                # 전사 후 바이트 데이터 백업 (전사 전에 백업)
+                audio_bytes_backup = st.session_state.bytes_to_process
+                
+                # 전사 후 바이트 데이터 즉시 삭제 (조건문 재평가 방지)
+                st.session_state.bytes_to_process = None
+                
+                with st.spinner(L.get("whisper_processing", "전사 중...")):
+                    try:
+                        # Whisper 전사 (자동 언어 감지 사용)
+                        agent_response_transcript = transcribe_bytes_with_whisper(
+                            audio_bytes_backup,
+                            "audio/wav",
+                            lang_code=None,
+                            auto_detect=True
+                        )
+                    except Exception as e:
+                        agent_response_transcript = f"❌ 전사 오류: {e}"
+
+                # 전사 실패 처리
+                if not agent_response_transcript or agent_response_transcript.startswith("❌"):
+                    error_msg = agent_response_transcript if agent_response_transcript else L.get("transcription_no_result", "전사 결과가 없습니다.")
+                    st.error(error_msg)
+                    st.session_state.last_transcript = ""
+                    st.session_state.agent_response_area_text = ""
+                elif not agent_response_transcript.strip():
+                    st.warning(L.get("transcription_empty_warning", "전사 결과가 비어 있습니다."))
+                    st.session_state.last_transcript = ""
+                    st.session_state.agent_response_area_text = ""
+                elif agent_response_transcript.strip():
+                    # 전사 성공 - 입력창에 반영
+                    agent_response_transcript = agent_response_transcript.strip()
+                    st.session_state.last_transcript = agent_response_transcript
+                    st.session_state.agent_response_area_text = agent_response_transcript
+                    
+                    # 성공 메시지 표시
+                    snippet = agent_response_transcript[:50].replace("\n", " ")
+                    if len(agent_response_transcript) > 50:
+                        snippet += "..."
+                    st.success(L.get("whisper_success", "전사 완료") + f" **인식 내용:** *{snippet}*")
+                    st.info("💡 전사된 텍스트가 입력창에 자동으로 입력되었습니다. 확인 후 전송하세요.")
+
+        # ⭐ app.py 스타일로 간소화: st.chat_input 사용
+        # 기타 기능들(검증, 파일첨부 등)은 위에 유지하고, 입력 부분만 간소화
+        
+        # 솔루션 제공 체크박스 (기능 유지)
+        st.session_state.is_solution_provided = st.checkbox(
+            L["solution_check_label"],
+            value=st.session_state.is_solution_provided,
+            key="solution_checkbox_widget",
+        )
+        
+        # 위젯 생성 전에 초기화 플래그 확인 및 처리
+        if st.session_state.get("reset_agent_response_area", False):
+            st.session_state.agent_response_area_text = ""
+            st.session_state.reset_agent_response_area = False
+        
+        # ⭐ 마이크 전사 결과가 있으면 text_area에 표시 (호환성 유지)
+        # 위젯 생성 전에만 값을 설정할 수 있으므로 여기서 처리
+        if st.session_state.get("last_transcript") and st.session_state.last_transcript:
+            # 전사 결과를 text_area에 표시 (위젯 생성 전이므로 안전)
+            st.session_state.agent_response_area_text = st.session_state.last_transcript
+        
+        # ⭐ 하이브리드 방식: 마이크 전사가 있으면 text_area, 없으면 chat_input 사용
+        use_text_area = bool(st.session_state.get("last_transcript") or st.session_state.agent_response_area_text)
+        
+        if use_text_area:
+            # 마이크 전사가 있는 경우 text_area 사용 (기존 방식 유지)
             agent_response_input = st.text_area(
-                L["agent_response_placeholder"],
+                L.get("agent_response_placeholder", "고객에게 응답하세요..."),
                 value=st.session_state.agent_response_area_text,
-                key="agent_response_area_text",  # 세션 상태 키와 동일하게 설정하여 동기화 보장
+                key="agent_response_area_text",
                 height=150,
             )
-
-            # 솔루션 제공 체크박스
-            st.session_state.is_solution_provided = st.checkbox(
-                L["solution_check_label"],
-                value=st.session_state.is_solution_provided,
-                key="solution_checkbox_widget",
-            )
-
-        with col_button:
-            send_clicked = st.button(L["send_response_button"], key="send_agent_response_btn")
-
-        if send_clicked:
-            # ⭐ 수정: st.session_state.agent_response_area_text에서 최신 입력값을 가져옴 (key와 동일)
-            agent_response = st.session_state.agent_response_area_text.strip()
+            # 전송 버튼과 함께 배치
+            col_send = st.columns([5, 1])
+            with col_send[1]:
+                send_clicked = st.button(L.get("send_response_button", "전송"), key="send_agent_response_btn", use_container_width=True)
+            
+            if send_clicked and agent_response_input:
+                agent_response = agent_response_input.strip()
+            else:
+                agent_response = None
+        else:
+            # 일반적인 경우: 입력 필드와 버튼을 같은 줄에 배치 (app.py 스타일 참고)
+            # 입력 칸 원형 안에 아이콘 버튼들을 배치
+            st.markdown("""
+            <style>
+            .stTextInput > div > div > input {
+                border-radius: 25px !important;
+                padding-right: 120px !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            
+            col_input_container, col_mic_btn = st.columns([8, 2])
+            
+            with col_input_container:
+                # 입력 필드와 파일 첨부, 전송 버튼을 같은 컬럼에 배치 (app.py 스타일)
+                col_text_input, col_add_btn, col_send_btn = st.columns([6, 1, 1])
+                
+                with col_text_input:
+                    agent_response_input = st.text_input(
+                        L.get("agent_response_placeholder", "고객에게 응답하세요..."),
+                        key="agent_chat_input",
+                        label_visibility="collapsed"
+                    )
+                
+                with col_add_btn:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    # 파일 첨부 버튼 (app.py 스타일: 간단한 로직)
+                    if st.button("➕", key="btn_add_attachment", use_container_width=True, help="파일 첨부"):
+                        st.session_state.show_agent_file_uploader = True
+                
+                with col_send_btn:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    # 전송 버튼 (app.py 스타일: 간단한 로직)
+                    send_clicked = st.button("✈️", key="send_agent_response_btn", use_container_width=True, help="전송")
+            
+            with col_mic_btn:
+                # 마이크 버튼 (app.py 스타일: 간단한 로직)
+                mic_audio = mic_recorder(
+                    start_prompt=L.get("button_mic_input", "🎤"),
+                    stop_prompt=L.get("button_mic_stop", "⏹️"),
+                    just_once=True,
+                    format="wav",
+                    use_container_width=True,
+                    key="sim_mic_recorder_inline",
+                )
+                
+                # 녹음 완료 시 처리 (app.py 스타일: 간단한 로직)
+                if mic_audio and mic_audio.get("bytes"):
+                    if "bytes_to_process" not in st.session_state or st.session_state.bytes_to_process is None:
+                        st.session_state.bytes_to_process = mic_audio["bytes"]
+                        st.session_state.sim_audio_bytes = mic_audio["bytes"]
+                        st.rerun()
+            
+            # 전송 처리 (app.py 스타일: 간단한 로직)
+            if send_clicked and agent_response_input:
+                agent_response = agent_response_input.strip()
+            else:
+                agent_response = None
+        
+        if agent_response:
 
             if not agent_response:
                 st.warning(L["empty_response_warning"])
@@ -3755,9 +3902,11 @@ if feature_selection == L["sim_tab_chat_email"]:
             st.session_state.language_transfer_requested = False
             st.session_state.realtime_hint_text = ""  # 힌트 초기화
             st.session_state.sim_call_outbound_summary = ""  # 전화 발신 요약 초기화
+            st.session_state.last_transcript = ""  # 전사 결과 초기화
 
             # ⭐ 수정: agent_response_area_text는 rerun 후 위젯이 다시 생성될 때 초기화되도록
-            # 플래그를 설정합니다. 위젯 생성 전에 이 플래그를 확인하여 값을 초기화합니다.
+            # 플래그만 설정합니다. 위젯 생성 전에 이 플래그를 확인하여 값을 초기화합니다.
+            # 위젯이 생성된 후에는 직접 수정할 수 없으므로 플래그만 사용합니다.
             st.session_state.reset_agent_response_area = True
             
             # ⭐ 수정: 응답 전송 시 바로 고객 반응 자동 생성
@@ -3784,14 +3933,13 @@ if feature_selection == L["sim_tab_chat_email"]:
                     if is_positive or L.get('customer_no_more_inquiries', '') in customer_response:
                         # 설문 조사 버튼 활성화를 위해 WAIT_CUSTOMER_CLOSING_RESPONSE 단계로 이동
                         st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
-                        st.rerun()
             else:
                 # LLM이 없는 경우 플래그 설정하여 CUSTOMER_TURN 단계에서 수동 생성 가능하도록
                 st.session_state.need_customer_response = True
             
-            # ⭐ 수정: 고객 반응 생성 후 CUSTOMER_TURN 단계로 이동하고 UI 업데이트
+            # ⭐ app.py 스타일: 메시지 추가 후 자동으로 화면 업데이트
             st.session_state.sim_stage = "CUSTOMER_TURN"
-            st.rerun()
+            st.rerun()  # 메시지가 추가되었으므로 화면 업데이트
             
 
         # --- 언어 이관 버튼 ---
@@ -4173,24 +4321,27 @@ if feature_selection == L["sim_tab_chat_email"]:
         if current_lang not in ["ko", "en", "ja"]:
             current_lang = "ko"
         L = LANG.get(current_lang, LANG["ko"])
-        st.success(L["customer_positive_solution_reaction"])
+        st.success(L.get("customer_positive_solution_reaction", "고객이 솔루션에 만족했습니다."))
 
+        # ⭐ 버튼들을 메시지 말풍선 스타일로 표시 (간소화)
+        st.info("💡 아래 버튼을 사용하여 추가 문의 여부를 확인하거나 상담을 종료하세요.")
+        
         col_chat_end, col_email_end = st.columns(2)  # 버튼을 나란히 배치
 
         # [1] 채팅 - 추가 문의 확인 메시지 보내기 버튼
         with col_chat_end:
             # [수정 1] 다국어 레이블 사용
-            if st.button(L["send_closing_confirm_button"],
-                         key=f"btn_send_closing_confirm_{st.session_state.sim_instance_id}"):
+            if st.button(L.get("send_closing_confirm_button", "✅ 추가 문의 있나요?"),
+                         key=f"btn_send_closing_confirm_{st.session_state.sim_instance_id}", use_container_width=True):
                 # ⭐ 수정: 에이전트가 감사 인사를 포함한 종료 메시지 전송
                 # 언어별 감사 인사 메시지 생성
                 agent_name = st.session_state.get("agent_name", "000")
                 if current_lang == "ko":
-                    closing_msg = f"연락 주셔서 감사드립니다. 지금까지 상담원 {agent_name}였습니다. {L['customer_closing_confirm']} 즐거운 하루 되세요."
+                    closing_msg = f"연락 주셔서 감사드립니다. 지금까지 상담원 {agent_name}였습니다. {L.get('customer_closing_confirm', '추가 문의사항이 있으시면 언제든지 연락 주세요.')} 즐거운 하루 되세요."
                 elif current_lang == "en":
-                    closing_msg = f"Thank you for contacting us. This was {agent_name}. {L['customer_closing_confirm']} Have a great day!"
+                    closing_msg = f"Thank you for contacting us. This was {agent_name}. {L.get('customer_closing_confirm', 'Please feel free to contact us if you have any additional questions.')} Have a great day!"
                 else:  # ja
-                    closing_msg = f"お問い合わせいただき、ありがとうございました。担当は{agent_name}でした。{L['customer_closing_confirm']} 良い一日をお過ごしください。"
+                    closing_msg = f"お問い合わせいただき、ありがとうございました。担当は{agent_name}でした。{L.get('customer_closing_confirm', '追加のご質問がございましたら、お気軽にお問い合わせください。')} 良い一日をお過ごしください。"
 
                 # 에이전트 응답으로 로그 기록
                 st.session_state.simulator_messages.append(
@@ -4205,12 +4356,13 @@ if feature_selection == L["sim_tab_chat_email"]:
         # [2] 이메일 - 상담 종료 버튼 (즉시 종료)
         with col_email_end:
             # [수정 1] 다국어 레이블 사용
-            if st.button(L["button_email_end_chat"], key=f"btn_email_end_chat_{st.session_state.sim_instance_id}"):
+            if st.button(L.get("button_email_end_chat", "📋 설문 조사 전송 및 종료"), 
+                        key=f"btn_email_end_chat_{st.session_state.sim_instance_id}", use_container_width=True, type="primary"):
                 # AHT 타이머 정지
                 st.session_state.start_time = None
 
                 # [수정 1] 다국어 레이블 사용
-                end_msg = L["prompt_survey"]
+                end_msg = L.get("prompt_survey", "설문 조사 링크를 전송했습니다.")
                 st.session_state.simulator_messages.append(
                     {"role": "system_end", "content": "(시스템: 이메일 상담 종료) " + end_msg}
                 )
@@ -4219,6 +4371,15 @@ if feature_selection == L["sim_tab_chat_email"]:
                 time.sleep(0.1)
                 st.session_state.is_chat_ended = True
                 st.session_state.sim_stage = "CLOSING"  # 바로 CLOSING으로 전환
+                
+                # 이력 저장
+                customer_type_display = st.session_state.get("customer_type_sim_select", "")
+                save_simulation_history_local(
+                    st.session_state.customer_query_text_area, customer_type_display,
+                    st.session_state.simulator_messages, is_chat_ended=True,
+                    attachment_context=st.session_state.sim_attachment_context_for_llm,
+                )
+                st.rerun()
 
     # =========================
     # 8. 고객 최종 응답 생성 및 처리 (WAIT_CUSTOMER_CLOSING_RESPONSE)
@@ -6338,58 +6499,137 @@ elif feature_selection == L["rag_tab"]:
     st.markdown("---")
 
     # ⭐ RAG 데이터 학습 기능 추가 - AI 고객 응대 시뮬레이터 데이터를 일일 파일로 학습
-    st.subheader("📚 고객 가이드 자동 생성 (일일 학습)")
+    st.subheader("📚 고객 가이드 자동 생성 및 관리 (일일 학습)")
     
-    if st.button("오늘 날짜 고객 가이드 생성", key="generate_daily_guide"):
-        # 오늘 날짜로 파일명 생성 (예: 251130_고객가이드.TXT)
-        today_str = datetime.now().strftime("%y%m%d")
-        guide_filename = f"{today_str}_고객가이드.TXT"
-        guide_filepath = os.path.join(DATA_DIR, guide_filename)
-        
-        # 최근 이력 로드
-        all_histories = load_simulation_histories_local(st.session_state.language)
-        recent_histories = all_histories[:50]  # 최근 50개 이력 사용
-        
-        if recent_histories:
-            # LLM을 사용하여 고객 가이드 생성
-            history_data = json.dumps([h.get('summary', {}) for h in recent_histories if h.get('summary')], ensure_ascii=False, indent=2)
-            guide_prompt = (
-                f"당신은 CS 센터 교육 전문가입니다. 다음 고객 응대 이력 데이터를 분석하여 종합적인 고객 응대 가이드라인을 작성하세요.\n\n"
-                f"분석할 이력 데이터:\n{history_data}\n\n"
-                f"다음 내용을 포함하여 가이드라인을 작성하세요:\n"
-                f"1. 고객 유형별 응대 전략 (일반/까다로운/매우 불만족)\n"
-                f"2. 문화권별 응대 가이드 (언어, 문화적 배경 고려)\n"
-                f"3. 주요 문의 유형별 해결 방법\n"
-                f"4. 고객 감정 점수에 따른 응대 전략\n"
-                f"5. 개인정보 처리 가이드\n"
-                f"6. 효과적인 소통 스타일 권장사항\n\n"
-                f"가이드라인을 한국어로 작성하세요."
-            )
+    # 오늘 날짜의 가이드 파일 확인
+    today_str = datetime.now().strftime("%y%m%d")
+    guide_filename = f"{today_str}_고객가이드.TXT"
+    guide_filepath = os.path.join(DATA_DIR, guide_filename)
+    
+    # 기존 가이드 파일 표시
+    if os.path.exists(guide_filepath):
+        st.info(f"✅ 오늘의 고객 가이드가 이미 생성되어 있습니다: {guide_filename}")
+        with st.expander("📄 생성된 가이드 미리보기"):
+            try:
+                with open(guide_filepath, "r", encoding="utf-8") as f:
+                    guide_preview = f.read()
+                st.text_area("가이드 내용", guide_preview[:2000] + "..." if len(guide_preview) > 2000 else guide_preview, height=300, disabled=True)
+            except Exception as e:
+                st.error(f"가이드 파일 읽기 오류: {e}")
+    else:
+        st.info("💡 고객 응대 시뮬레이션을 실행하면 자동으로 가이드가 생성됩니다.")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("🔄 오늘 날짜 고객 가이드 수동 생성/업데이트", key="generate_daily_guide", use_container_width=True):
+            # 최근 이력 로드
+            all_histories = load_simulation_histories_local(st.session_state.language)
             
-            if st.session_state.is_llm_ready:
-                with st.spinner("고객 가이드 생성 중..."):
-                    guide_content = run_llm(guide_prompt)
-                    
-                    # 파일 저장
-                    with open(guide_filepath, "w", encoding="utf-8") as f:
-                        f.write(f"고객 응대 가이드라인\n")
-                        f.write(f"생성일: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                        f.write(f"분석 이력 수: {len(recent_histories)}\n")
-                        f.write("=" * 80 + "\n\n")
-                        f.write(guide_content)
-                    
-                    st.success(f"✅ 고객 가이드가 생성되었습니다: {guide_filename}")
-                    st.info(f"파일 위치: {guide_filepath}")
-                    
-                    # 생성된 파일을 자동으로 RAG에 추가할지 선택
-                    if st.button("생성된 가이드를 RAG에 추가", key="add_guide_to_rag"):
-                        # 파일을 업로드된 파일처럼 처리하여 RAG에 추가
-                        st.info("RAG 인덱스 업데이트 중...")
-                        # 실제로는 파일을 읽어서 RAG 인덱스에 추가하는 로직 필요
+            if all_histories:
+                if st.session_state.is_llm_ready:
+                    # simulation_handler의 함수 사용 (이미 import됨)
+                    with st.spinner("고객 가이드 생성 중..."):
+                        guide_content = generate_daily_customer_guide(all_histories, st.session_state.language)
+                        
+                        if guide_content:
+                            saved_path = save_daily_customer_guide(guide_content, st.session_state.language)
+                            
+                            if saved_path:
+                                st.success(f"✅ 고객 가이드가 생성/업데이트되었습니다: {guide_filename}")
+                                st.info(f"파일 위치: {saved_path}")
+                                st.rerun()
+                            else:
+                                st.error("가이드 저장에 실패했습니다.")
+                        else:
+                            st.warning("가이드 생성에 실패했습니다. LLM API Key를 확인해주세요.")
+                else:
+                    st.error("LLM이 준비되지 않았습니다. API Key를 설정해주세요.")
             else:
-                st.error("LLM이 준비되지 않았습니다. API Key를 설정해주세요.")
+                st.warning("분석할 이력이 없습니다. 먼저 고객 응대 시뮬레이션을 실행하세요.")
+    
+    with col2:
+        # 생성된 가이드를 RAG에 자동 추가하는 기능
+        if os.path.exists(guide_filepath):
+            if st.button("📚 생성된 가이드를 RAG 인덱스에 추가", key="add_guide_to_rag", use_container_width=True):
+                if not st.session_state.is_llm_ready:
+                    st.error("LLM이 준비되지 않았습니다. API Key를 설정해주세요.")
+                else:
+                    try:
+                        # 가이드 파일을 RAG 인덱스에 추가
+                        from rag_handler import build_rag_index, get_embedding_function, load_documents, split_documents
+                        from langchain_core.documents import Document
+                        from langchain_community.vectorstores import FAISS
+                        
+                        with st.spinner("RAG 인덱스 업데이트 중..."):
+                            # 가이드 파일 읽기
+                            with open(guide_filepath, "r", encoding="utf-8") as f:
+                                guide_text = f.read()
+                            
+                            # 문서 생성
+                            new_doc = Document(
+                                page_content=guide_text,
+                                metadata={"source": guide_filepath, "type": "customer_guide", "date": today_str}
+                            )
+                            
+                            # 기존 RAG 인덱스가 있으면 로드하여 병합
+                            if st.session_state.rag_vectorstore:
+                                # 임베딩 함수 가져오기
+                                embedding_func = get_embedding_function()
+                                
+                                if embedding_func:
+                                    # 문서를 청크로 분할
+                                    from rag_handler import split_documents
+                                    chunks = split_documents([new_doc])
+                                    
+                                    # 기존 벡터스토어에 추가
+                                    st.session_state.rag_vectorstore.add_documents(chunks)
+                                    
+                                    # 인덱스 저장
+                                    st.session_state.rag_vectorstore.save_local(RAG_INDEX_DIR)
+                                    
+                                    st.success(f"✅ 고객 가이드가 RAG 인덱스에 추가되었습니다! (추가된 청크 수: {len(chunks)})")
+                                else:
+                                    st.error("임베딩 함수를 초기화할 수 없습니다.")
+                            else:
+                                # 새 인덱스 생성 (가이드 파일을 파일 객체로 변환)
+                                # build_rag_index는 파일 객체 리스트를 받으므로, 파일을 읽어서 객체 생성
+                                import tempfile
+                                
+                                # 파일을 읽어서 임시 파일 객체 생성
+                                with open(guide_filepath, "rb") as f:
+                                    file_content = f.read()
+                                
+                                # 임시 파일 객체 생성 (load_documents가 기대하는 형식)
+                                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="wb")
+                                temp_file.write(file_content)
+                                temp_file.flush()
+                                temp_file.seek(0)
+                                temp_file.name = guide_filepath  # 원본 파일명 사용
+                                
+                                try:
+                                    vectorstore, count = build_rag_index([temp_file])
+                                    
+                                    if vectorstore:
+                                        st.session_state.rag_vectorstore = vectorstore
+                                        st.session_state.is_rag_ready = True
+                                        st.success(f"✅ RAG 인덱스가 생성되었습니다. (문서 수: {count})")
+                                    else:
+                                        st.error("RAG 인덱스 생성에 실패했습니다.")
+                                finally:
+                                    temp_file.close()
+                                    if os.path.exists(temp_file.name) and temp_file.name != guide_filepath:
+                                        try:
+                                            os.remove(temp_file.name)
+                                        except:
+                                            pass
+                                
+                    except Exception as e:
+                        st.error(f"RAG 인덱스 업데이트 중 오류 발생: {e}")
+                        import traceback
+                        st.code(traceback.format_exc())
         else:
-            st.warning("분석할 이력이 없습니다. 먼저 고객 응대 시뮬레이션을 실행하세요.")
+            st.info("먼저 고객 가이드를 생성해주세요.")
     
     st.markdown("---")
 
@@ -6435,32 +6675,38 @@ elif feature_selection == L["rag_tab"]:
 
     st.markdown("---")
 
-    # --- 챗봇 섹션 ---
+    # --- 챗봇 섹션 (app.py 스타일로 간소화) ---
     if st.session_state.is_rag_ready and st.session_state.rag_vectorstore:
         if "rag_messages" not in st.session_state:
             st.session_state.rag_messages = [{"role": "assistant", "content": "분석된 자료에 대해 질문해 주세요."}]
 
+        # 메시지 표시 (app.py 스타일)
         for message in st.session_state.rag_messages:
             with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+                st.write(message["content"])
 
-        if prompt := st.chat_input(L["rag_input_placeholder"]):
+        # 입력 (app.py 스타일: st.chat_input 사용)
+        if prompt := st.chat_input(L.get("rag_input_placeholder", "질문을 입력하세요...")):
+            # 사용자 메시지 추가 및 표시
             st.session_state.rag_messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
-                st.markdown(prompt)
+                st.write(prompt)
 
+            # AI 응답 생성 및 표시
             with st.chat_message("assistant"):
-                with st.spinner(L["response_generating"]):
+                with st.spinner(L.get("response_generating", "답변 생성 중...")):
                     response = rag_answer(
                         prompt,
                         st.session_state.rag_vectorstore,
                         st.session_state.language
                     )
-                    st.markdown(response)
+                    st.write(response)
 
+            # 응답을 메시지에 추가
             st.session_state.rag_messages.append({"role": "assistant", "content": response})
+            st.rerun()  # 메시지 업데이트를 위해 rerun
     else:
-        st.warning(L["warning_rag_not_ready"])
+        st.warning(L.get("warning_rag_not_ready", "RAG가 준비되지 않았습니다. 파일을 업로드하고 분석을 시작하세요."))
 
 # -------------------- Content Tab --------------------
 elif feature_selection == L["content_tab"]:
