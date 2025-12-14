@@ -3399,23 +3399,64 @@ if feature_selection == L["sim_tab_chat_email"]:
                             st.session_state.verification_info["verification_attempts"] += 1
                             failed_fields = [k for k, v in verification_results.items() if not v]
                             
-                            # 검증 실패 필드에 대한 상세 정보 제공
+                            # 검증 실패 필드에 대한 상세 정보 제공 (보안: 시스템 저장값은 노출하지 않음)
                             failed_details = []
                             for field in failed_fields:
                                 provided_value = provided_info.get(field, "")
-                                stored_value = stored_verification_info_with_file.get(field, "")
+                                
+                                # 보안: 민감한 정보 마스킹 및 시스템 저장값은 노출하지 않음
                                 if field == "file_uploaded":
-                                    failed_details.append(f"{field}: 제공됨={provided_info.get('file_uploaded', False)}, 필요={stored_verification_info_with_file.get('file_uploaded', False)}")
+                                    failed_details.append(f"{field}: 제공됨={provided_info.get('file_uploaded', False)}")
                                 elif field == "file_info":
                                     provided_file = provided_info.get('file_info', {})
-                                    stored_file = stored_verification_info_with_file.get('file_info', {})
-                                    failed_details.append(f"{field}: 제공된 파일={provided_file.get('filename', '없음')}, 필요 파일={stored_file.get('filename', '없음')}")
+                                    failed_details.append(f"{field}: 제공된 파일={provided_file.get('filename', '없음')}")
+                                elif field == "customer_email":
+                                    # 이메일 마스킹
+                                    masked_email = mask_email(provided_value) if provided_value else "없음"
+                                    failed_details.append(f"{field}: 제공값='{masked_email}' (시스템 저장값은 보안상 표시하지 않음)")
+                                elif field == "customer_phone":
+                                    # 전화번호 마스킹 (뒷자리만 표시)
+                                    if provided_value and len(provided_value) > 4:
+                                        masked_phone = "***-" + provided_value[-4:]
+                                    else:
+                                        masked_phone = provided_value if provided_value else "없음"
+                                    failed_details.append(f"{field}: 제공값='{masked_phone}' (시스템 저장값은 보안상 표시하지 않음)")
+                                elif field == "card_last4":
+                                    # 카드 번호는 이미 뒷자리 4자리만 있으므로 마스킹
+                                    if provided_value:
+                                        masked_card = "****" if len(provided_value) == 4 else provided_value
+                                    else:
+                                        masked_card = "없음"
+                                    failed_details.append(f"{field}: 제공값='{masked_card}' (시스템 저장값은 보안상 표시하지 않음)")
+                                elif field == "account_number":
+                                    # 계좌번호 마스킹
+                                    if provided_value and len(provided_value) > 4:
+                                        masked_account = "***-" + provided_value[-4:]
+                                    else:
+                                        masked_account = provided_value if provided_value else "없음"
+                                    failed_details.append(f"{field}: 제공값='{masked_account}' (시스템 저장값은 보안상 표시하지 않음)")
+                                elif field == "customer_name":
+                                    # 이름은 부분 마스킹
+                                    if provided_value and len(provided_value) > 1:
+                                        masked_name = provided_value[0] + "*" * (len(provided_value) - 1)
+                                    else:
+                                        masked_name = provided_value if provided_value else "없음"
+                                    failed_details.append(f"{field}: 제공값='{masked_name}' (시스템 저장값은 보안상 표시하지 않음)")
                                 else:
-                                    failed_details.append(f"{field}: 제공값='{provided_value}', 필요값='{stored_value}'")
+                                    # 기타 필드는 값의 일부만 표시 (보안)
+                                    if provided_value:
+                                        if len(provided_value) > 8:
+                                            masked_value = provided_value[:4] + "***" + provided_value[-2:]
+                                        else:
+                                            masked_value = "*" * len(provided_value)
+                                    else:
+                                        masked_value = "없음"
+                                    failed_details.append(f"{field}: 제공값='{masked_value}' (시스템 저장값은 보안상 표시하지 않음)")
                             
                             error_message = L['verification_failed'].format(failed_fields=', '.join(failed_fields))
+                            error_message += "\n\n⚠️ **보안 정책**: 시스템에 저장된 실제 검증 정보는 보안상 표시하지 않습니다."
                             if failed_details:
-                                error_message += f"\n\n**상세 정보:**\n" + "\n".join(f"- {detail}" for detail in failed_details)
+                                error_message += f"\n\n**제공된 정보 (일부 마스킹):**\n" + "\n".join(f"- {detail}" for detail in failed_details)
                             
                             st.error(error_message)
                 
