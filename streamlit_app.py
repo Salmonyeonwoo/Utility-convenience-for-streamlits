@@ -2847,9 +2847,25 @@ if feature_selection == L["sim_tab_chat_email"]:
                             )
                             try:
                                 summary_text = run_llm(summary_prompt).strip()
-                                # 번역 로직은 여기에 추가
+                                
+                                # 번역 로직 추가
+                                lang_name_target = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(target_lang, "Korean")
+                                translated_summary, is_success = translate_text_with_llm(
+                                    summary_text,
+                                    target_lang,
+                                    source_lang
+                                )
+                                
+                                # 번역 결과 저장
+                                st.session_state.transfer_summary_text = translated_summary
+                                st.session_state.translation_success = is_success
+                                
+                                # 화면 갱신
+                                st.rerun()
                             except Exception as e:
-                                summary_text = f"요약 생성 오류: {e}"
+                                st.error(f"번역 재시도 중 오류 발생: {e}")
+                                st.session_state.transfer_summary_text = f"번역 오류: {e}"
+                                st.session_state.translation_success = False
     
     # =========================
     # 5. 에이전트 입력 단계 (AGENT_TURN)
@@ -5381,21 +5397,56 @@ elif feature_selection == L["sim_tab_phone"]:
                 # 요약 함수 호출
                 st.session_state.customer_history_summary = summarize_history_with_ai(st.session_state.language)
 
-        # 2. 이관 번역 재시도 버튼 (이관 후 번역이 실패했을 경우)
-        if st.session_state.language != st.session_state.language_at_transfer_start and not st.session_state.transfer_summary_text:
+        # 2. 이관 번역 재시도 버튼 (이관 후 번역이 실패했거나 없는 경우)
+        if (st.session_state.language != st.session_state.language_at_transfer_start and 
+            (not st.session_state.transfer_summary_text or not st.session_state.get("translation_success", True))):
             with col_trans_btn:
                 # ⭐ [수정 FIX] 키 중복 오류 해결: 세션 ID와 언어 코드를 조합하여 고유 키 생성
                 retry_key = f"btn_retry_translation_{st.session_state.language_at_transfer_start}_{st.session_state.language}_{st.session_state.sim_instance_id}"
                 if st.button(L["button_retry_translation"], key=retry_key):
                     with st.spinner(L["transfer_loading"]):
-                        # 이관 번역 로직 재실행 (기존 로직 유지)
-                        translated_summary, is_success = translate_text_with_llm(
-                            get_chat_history_for_prompt(include_attachment=False),
-                            st.session_state.language,
-                            st.session_state.language_at_transfer_start
-                        )
-                        st.session_state.transfer_summary_text = translated_summary
-                        st.session_state.translation_success = is_success
+                        try:
+                            # 대화 기록을 번역할 텍스트로 가공
+                            history_text = ""
+                            for msg in st.session_state.simulator_messages:
+                                role = "Customer" if msg["role"].startswith("customer") or msg["role"] == "initial_query" else "Agent"
+                                if msg["role"] in ["initial_query", "customer_rebuttal", "agent_response", "customer_closing_response", "phone_exchange"]:
+                                    history_text += f"{role}: {msg['content']}\n"
+                            
+                            # 먼저 요약 생성
+                            source_lang = st.session_state.language_at_transfer_start
+                            target_lang = st.session_state.language
+                            lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(source_lang, "Korean")
+                            summary_prompt = (
+                                f"You are an AI assistant that summarizes customer service conversations. "
+                                f"Extract ONLY the key points from the conversation below. Keep it concise and focused on: "
+                                f"1. Customer's main inquiry/question "
+                                f"2. Key information provided by the agent "
+                                f"3. Important decisions or outcomes "
+                                f"4. Any unresolved issues\n\n"
+                                f"Write the summary in {lang_name_source}. Maximum 200 words. Be brief and to the point.\n\n"
+                                f"--- Conversation ---\n{history_text}\n---\n\nKey Points Summary:"
+                            )
+                            
+                            summary_text = run_llm(summary_prompt).strip()
+                            
+                            # 번역 로직 실행
+                            translated_summary, is_success = translate_text_with_llm(
+                                summary_text,
+                                target_lang,
+                                source_lang
+                            )
+                            
+                            # 번역 결과 저장
+                            st.session_state.transfer_summary_text = translated_summary
+                            st.session_state.translation_success = is_success
+                            
+                            # 화면 갱신
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"번역 재시도 중 오류 발생: {e}")
+                            st.session_state.transfer_summary_text = f"번역 오류: {e}"
+                            st.session_state.translation_success = False
 
         # 3. 요약 내용 표시
         if st.session_state.transfer_summary_text:
