@@ -3772,13 +3772,15 @@ if feature_selection == L["sim_tab_chat_email"]:
         def transfer_session(target_lang: str, current_messages: List[Dict[str, str]]):
             # 언어 이관 시스템 메시지를 추가하고 세션 언어를 변경합니다.
 
+            # 현재 언어 확인 및 L 변수 정의
+            current_lang_at_start = st.session_state.language  # Source language
+            L = LANG.get(current_lang_at_start, LANG["ko"])  # L 변수 정의 추가
+
             # API 키 체크는 run_llm 내부에서 처리되지만, 명시적으로 Gemini 키를 요구함
             if not get_api_key("gemini"):
-                st.error(LANG[current_lang]["simulation_no_key_warning"].replace('API Key', 'Gemini API Key'))
+                st.error(L["simulation_no_key_warning"].replace('API Key', 'Gemini API Key'))
                 # st.stop()
                 return
-
-            current_lang_at_start = st.session_state.language  # Source language
 
             # AHT 타이머 중지
             st.session_state.start_time = None
@@ -5411,6 +5413,28 @@ elif feature_selection == L["sim_tab_phone"]:
             st.subheader("💡 AI 요약")
             st.info(st.session_state.customer_history_summary)
 
+        st.markdown("---")
+        
+        # --- 언어 이관 버튼 (전화 탭) ---
+        st.markdown(f"**{L['transfer_header']}**")
+        transfer_cols_call = st.columns(len(LANG) - 1)
+        
+        languages_call = list(LANG.keys())
+        languages_call.remove(current_lang)
+        
+        # 이관 버튼 렌더링
+        for idx, lang_code in enumerate(languages_call):
+            lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(lang_code, lang_code)
+            transfer_label = L.get(f"transfer_to_{lang_code}", f"Transfer to {lang_name} Team")
+            
+            with transfer_cols_call[idx]:
+                if st.button(
+                    transfer_label,
+                    key=f"btn_transfer_call_{lang_code}_{st.session_state.sim_instance_id}",
+                    use_container_width=True
+                ):
+                    transfer_session(lang_code, st.session_state.simulator_messages)
+        
         st.markdown("---")
 
         # --- 실시간 응대 힌트 영역 ---
