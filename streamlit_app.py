@@ -23,6 +23,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 # 표준 라이브러리
 import io
 import json
+import re
 import time
 import uuid
 import base64
@@ -2600,12 +2601,25 @@ if feature_selection == L["sim_tab_chat_email"]:
                 # 실제로는 DB에서 가져와야 하지만, 시뮬레이션에서는 고객이 제공한 정보를 저장
                 st.session_state.is_customer_verified = False
                 st.session_state.verification_stage = "WAIT_VERIFICATION"
+                
+                # 고객 첨부 파일 정보 확인
+                file_info_for_storage = None
+                if st.session_state.customer_attachment_file:
+                    attachment_file = st.session_state.customer_attachment_file
+                    file_info_for_storage = {
+                        "filename": attachment_file.name,
+                        "size": attachment_file.size if hasattr(attachment_file, 'size') else 0,
+                        "type": attachment_file.type if hasattr(attachment_file, 'type') else "unknown"
+                    }
+                
                 st.session_state.verification_info = {
                     "receipt_number": "",  # 실제로는 DB에서 가져와야 함
                     "card_last4": "",  # 실제로는 DB에서 가져와야 함
                     "customer_name": "",  # 실제로는 DB에서 가져와야 함
                     "customer_email": st.session_state.customer_email,  # 고객이 제공한 정보
                     "customer_phone": st.session_state.customer_phone,  # 고객이 제공한 정보
+                    "file_uploaded": file_info_for_storage is not None,  # 고객이 첨부 파일을 제공했는지
+                    "file_info": file_info_for_storage,  # 첨부 파일 상세 정보
                     "verification_attempts": 0
                 }
             else:
@@ -2864,24 +2878,90 @@ if feature_selection == L["sim_tab_chat_email"]:
         if st.session_state.sim_attachment_context_for_llm:
             st.info(
                 f"📎 최초 문의 시 첨부된 파일 정보:\n\n{st.session_state.sim_attachment_context_for_llm.replace('[ATTACHMENT STATUS]', '').strip()}")
+        
+        # 고객 첨부 파일이 있는지 확인 (검증 프로세스에서 사용)
+        customer_has_attachment = (
+            st.session_state.customer_attachment_file is not None or 
+            (st.session_state.sim_attachment_context_for_llm and 
+             st.session_state.sim_attachment_context_for_llm.strip())
+        )
 
         # --- 고객 검증 프로세스 (로그인/계정 관련 문의이고 고객이 정보를 제공한 경우) ---
+        # 개선: 초기 쿼리뿐만 아니라 모든 고객 메시지에서 로그인 관련 문의 확인
         initial_query = st.session_state.get('customer_query_text_area', '')
-        is_login_inquiry = check_if_login_related_inquiry(initial_query)
         
-        # 고객이 검증 정보를 제공했는지 확인
-        customer_provided_info = False
+        # 모든 고객 메시지 수집 (초기 쿼리 포함)
+        all_customer_texts = []
+        if initial_query:
+            all_customer_texts.append(initial_query)
+        
         if st.session_state.simulator_messages:
             # 디버깅: 메시지 확인
             all_roles = [msg.get("role") for msg in st.session_state.simulator_messages]
             customer_messages = [msg for msg in st.session_state.simulator_messages if msg.get("role") in ["customer", "customer_rebuttal", "initial_query"]]
             
+            # 모든 고객 메시지의 내용 수집
+            for msg in customer_messages:
+                content = msg.get("content", "")
+                if content and content not in all_customer_texts:
+                    all_customer_texts.append(content)
+            
+            # 모든 고객 메시지를 합쳐서 로그인 관련 문의 확인
+            combined_customer_text = " ".join(all_customer_texts)
+            is_login_inquiry = check_if_login_related_inquiry(combined_customer_text)
+            
+            # 고객이 검증 정보를 제공했는지 확인
             customer_provided_info = check_if_customer_provided_verification_info(st.session_state.simulator_messages)
+            
+            # 고객이 첨부 파일을 제공한 경우 검증 정보 제공으로 간주
+            if customer_has_attachment and is_login_inquiry:
+                customer_provided_info = True
+                st.session_state.debug_attachment_detected = True
+            
+            # 보조 검증: 함수 결과가 False인 경우에도 직접 패턴 확인 (디버깅 및 보완)
+            if not customer_provided_info and is_login_inquiry:
+                # 고객 메시지에서 검증 정보 패턴 직접 확인
+                verification_keywords = [
+                    "영수증", "receipt", "예약번호", "reservation", "결제", "payment",
+                    "카드", "card", "계좌", "account", "이메일", "email", "전화", "phone",
+                    "성함", "이름", "name", "주문번호", "order", "주문", "결제내역",
+                    "스크린샷", "screenshot", "사진", "photo", "첨부", "attachment", "파일", "file"
+                ]
+                combined_text_lower = combined_customer_text.lower()
+                manual_check = any(keyword.lower() in combined_text_lower for keyword in verification_keywords)
+                
+                # 이메일이나 전화번호 패턴 확인
+                email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+                phone_pattern = r'\b\d{2,4}[-.\s]?\d{3,4}[-.\s]?\d{4}\b'
+                has_email = bool(re.search(email_pattern, combined_customer_text))
+                has_phone = bool(re.search(phone_pattern, combined_customer_text))
+                
+                # 고객이 첨부 파일을 제공한 경우도 검증 정보 제공으로 간주
+                if customer_has_attachment:
+                    customer_provided_info = True
+                    st.session_state.debug_manual_verification_detected = True
+                    st.session_state.debug_attachment_detected = True
+                # 수동 확인 결과도 고려 (더 관대한 검증)
+                elif manual_check or has_email or has_phone:
+                    customer_provided_info = True
+                    st.session_state.debug_manual_verification_detected = True
+                    st.session_state.debug_attachment_detected = False
+                else:
+                    st.session_state.debug_manual_verification_detected = False
+                    st.session_state.debug_attachment_detected = False
+            
             # 디버깅용: 정보 제공 여부 확인
             if is_login_inquiry:
                 st.session_state.debug_verification_info = customer_provided_info
                 st.session_state.debug_all_roles = all_roles
                 st.session_state.debug_customer_messages_count = len(customer_messages)
+                st.session_state.debug_combined_customer_text = combined_customer_text[:200]  # 처음 200자만 저장
+        else:
+            # 메시지가 없는 경우 초기 쿼리만 확인
+            is_login_inquiry = check_if_login_related_inquiry(initial_query)
+            customer_provided_info = False
+            all_roles = []
+            customer_messages = []
         
         # 로그인 관련 문의이고, 고객이 정보를 제공했으며, 아직 검증되지 않은 경우에만 검증 UI 표시
         # 디버깅: 조건 확인
@@ -2891,8 +2971,20 @@ if feature_selection == L["sim_tab_chat_email"]:
                 st.write(f"**조건 확인:**")
                 st.write(f"- 로그인 관련 문의: ✅ {is_login_inquiry}")
                 st.write(f"- 고객 정보 제공 감지: {'✅' if customer_provided_info else '❌'} {customer_provided_info}")
+                st.write(f"- 고객 첨부 파일 존재: {'✅' if customer_has_attachment else '❌'} {customer_has_attachment}")
+                if 'debug_manual_verification_detected' in st.session_state:
+                    st.write(f"- 수동 검증 패턴 감지: {'✅' if st.session_state.debug_manual_verification_detected else '❌'} {st.session_state.debug_manual_verification_detected}")
+                if 'debug_attachment_detected' in st.session_state:
+                    st.write(f"- 첨부 파일로 인한 검증 정보 감지: {'✅' if st.session_state.debug_attachment_detected else '❌'} {st.session_state.debug_attachment_detected}")
                 st.write(f"- 검증 완료 여부: {'✅' if st.session_state.is_customer_verified else '❌'} {st.session_state.is_customer_verified}")
                 st.write(f"- 검증 UI 표시 조건: {is_login_inquiry and customer_provided_info and not st.session_state.is_customer_verified}")
+                
+                # 확인한 텍스트 정보 표시
+                if 'debug_combined_customer_text' in st.session_state and st.session_state.debug_combined_customer_text:
+                    st.write(f"**확인한 고객 텍스트 (처음 200자):** {st.session_state.debug_combined_customer_text}")
+                elif all_customer_texts:
+                    combined_preview = " ".join(all_customer_texts)[:200]
+                    st.write(f"**확인한 고객 텍스트 (처음 200자):** {combined_preview}")
                 
                 if st.session_state.simulator_messages:
                     st.write(f"**전체 메시지 수:** {len(st.session_state.simulator_messages)}")
@@ -2931,30 +3023,207 @@ if feature_selection == L["sim_tab_chat_email"]:
             st.warning(L['verification_warning'])
             
             with st.expander(L.get("verification_info_input", "고객 검증 정보 입력"), expanded=True):
-                # 파일 업로더 (스크린샷/사진 스캔용)
+                # 고객이 처음에 첨부한 파일 표시
+                if customer_has_attachment:
+                    if st.session_state.customer_attachment_file:
+                        attachment_file = st.session_state.customer_attachment_file
+                        st.success(f"📎 고객이 처음에 첨부한 파일: **{attachment_file.name}** ({attachment_file.size} bytes, {attachment_file.type})")
+                        # 고객 첨부 파일을 검증 파일로도 사용 가능하도록 설정
+                        if 'verification_file_info' not in st.session_state or not st.session_state.verification_file_info:
+                            st.session_state.verification_file_info = {
+                                "filename": attachment_file.name,
+                                "size": attachment_file.size,
+                                "type": attachment_file.type,
+                                "source": "customer_initial_attachment"
+                            }
+                    elif st.session_state.sim_attachment_context_for_llm:
+                        st.info(f"📎 고객이 첨부한 파일 정보: {st.session_state.sim_attachment_context_for_llm.replace('[ATTACHMENT STATUS]', '').strip()}")
+                
+                st.markdown("---")
+                st.write("**추가 검증 파일 업로드 (선택사항)**")
+                # 파일 업로더 (스크린샷/사진 스캔용) - 추가 파일 업로드 가능
                 verification_file = st.file_uploader(
                     L.get("verification_file_upload_label", "검증 파일 업로드 (스크린샷/사진)"),
                     type=["png", "jpg", "jpeg", "pdf"],
                     key="verification_file_uploader",
-                    help="고객이 제공한 영수증, 예약 확인서, 결제 내역 등의 스크린샷/사진을 업로드하세요."
+                    help="고객이 제공한 영수증, 예약 확인서, 결제 내역 등의 스크린샷/사진을 추가로 업로드하세요. (고객이 처음에 첨부한 파일이 있으면 자동으로 포함됩니다.)"
                 )
                 
-                if verification_file:
+                # 검증에 사용할 파일 결정 (고객 첨부 파일 우선, 없으면 새로 업로드한 파일)
+                file_to_verify = None
+                file_verified = False
+                ocr_extracted_info = {}  # OCR로 추출된 정보 저장
+                
+                if customer_has_attachment and st.session_state.customer_attachment_file:
+                    file_to_verify = st.session_state.customer_attachment_file
+                    file_verified = True
+                    st.info(f"✅ 검증에 사용할 파일: **{file_to_verify.name}** (고객이 처음에 첨부한 파일)")
+                elif verification_file:
+                    file_to_verify = verification_file
+                    file_verified = True
                     st.info(f"✅ 파일 업로드 완료: {verification_file.name} ({verification_file.size} bytes)")
                     # 파일 정보를 세션 상태에 저장
                     st.session_state.verification_file_info = {
                         "filename": verification_file.name,
                         "size": verification_file.size,
-                        "type": verification_file.type
+                        "type": verification_file.type,
+                        "source": "verification_uploader"
                     }
+                elif customer_has_attachment:
+                    # 첨부 파일 정보만 있고 파일 객체는 없는 경우 (이전 세션에서 업로드)
+                    file_verified = True  # 파일이 있었다는 정보만으로도 검증 가능
+                    st.info("✅ 고객이 첨부한 파일 정보가 확인되었습니다.")
+                
+                # OCR 기능: 파일이 업로드되면 자동으로 정보 추출
+                if file_to_verify and file_to_verify.name.lower().endswith(('.png', '.jpg', '.jpeg', '.pdf')):
+                    if 'ocr_extracted_info' not in st.session_state or st.session_state.get('ocr_file_name') != file_to_verify.name:
+                        with st.spinner("🔍 스크린샷에서 정보 추출 중 (OCR)..."):
+                            try:
+                                # 파일 읽기
+                                file_to_verify.seek(0)
+                                file_bytes = file_to_verify.getvalue()
+                                file_type = file_to_verify.type
+                                
+                                # Gemini Vision API를 사용한 OCR
+                                gemini_key = get_api_key("gemini")
+                                if gemini_key:
+                                    import google.generativeai as genai
+                                    genai.configure(api_key=gemini_key)
+                                    model = genai.GenerativeModel('gemini-2.0-flash-exp')
+                                    
+                                    # 검증 정보 추출을 위한 특화 프롬프트
+                                    ocr_verification_prompt = """이 이미지는 고객 검증을 위한 스크린샷입니다. 다음 정보를 추출해주세요:
+
+1. 영수증 번호 또는 예약 번호 (Receipt/Reservation Number)
+2. 고객 성함 (Customer Name)
+3. 고객 이메일 (Customer Email)
+4. 고객 전화번호 (Customer Phone)
+5. 결제 수단 (Payment Method: 신용카드, 체크카드, 카카오페이, 네이버페이, 온라인뱅킹 등)
+6. 카드 뒷자리 4자리 (Card Last 4 Digits) - 있는 경우
+7. 계좌번호 (Account Number) - 있는 경우
+
+각 정보를 JSON 형식으로 반환해주세요:
+{
+  "receipt_number": "추출된 영수증/예약 번호 또는 빈 문자열",
+  "customer_name": "추출된 고객 성함 또는 빈 문자열",
+  "customer_email": "추출된 이메일 주소 또는 빈 문자열",
+  "customer_phone": "추출된 전화번호 또는 빈 문자열",
+  "payment_method": "추출된 결제 수단 또는 빈 문자열",
+  "card_last4": "추출된 카드 뒷자리 4자리 또는 빈 문자열",
+  "account_number": "추출된 계좌번호 또는 빈 문자열"
+}
+
+정보가 없으면 빈 문자열("")로 반환하세요. JSON 형식만 반환하고 다른 설명은 추가하지 마세요."""
+                                    
+                                    if file_to_verify.name.lower().endswith('.pdf'):
+                                        # PDF는 텍스트 추출 후 OCR
+                                        import tempfile
+                                        import os
+                                        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+                                        tmp.write(file_bytes)
+                                        tmp.flush()
+                                        tmp.close()
+                                        try:
+                                            loader = PyPDFLoader(tmp.name)
+                                            file_docs = loader.load()
+                                            pdf_text = "\n".join([doc.page_content for doc in file_docs])
+                                            # PDF 텍스트가 있으면 그대로 사용, 없으면 이미지로 처리
+                                            if pdf_text.strip():
+                                                response = model.generate_content(f"{ocr_verification_prompt}\n\n추출된 텍스트:\n{pdf_text}")
+                                            else:
+                                                # PDF를 이미지로 변환하여 처리 (간단한 경우 텍스트만 사용)
+                                                response = model.generate_content([
+                                                    {"mime_type": "application/pdf", "data": file_bytes},
+                                                    ocr_verification_prompt
+                                                ])
+                                        finally:
+                                            try:
+                                                os.remove(tmp.name)
+                                            except:
+                                                pass
+                                    else:
+                                        # 이미지 파일
+                                        response = model.generate_content([
+                                            {"mime_type": file_type, "data": file_bytes},
+                                            ocr_verification_prompt
+                                        ])
+                                    
+                                    ocr_result = response.text if response.text else ""
+                                    
+                                    # JSON 파싱 시도
+                                    try:
+                                        # JSON 부분만 추출 (코드 블록 제거)
+                                        import json
+                                        ocr_result_clean = ocr_result.strip()
+                                        if ocr_result_clean.startswith("```"):
+                                            # 코드 블록 제거
+                                            lines = ocr_result_clean.split("\n")
+                                            json_lines = [l for l in lines if not l.strip().startswith("```")]
+                                            ocr_result_clean = "\n".join(json_lines)
+                                        
+                                        ocr_extracted_info = json.loads(ocr_result_clean)
+                                        st.session_state.ocr_extracted_info = ocr_extracted_info
+                                        st.session_state.ocr_file_name = file_to_verify.name
+                                        
+                                        # 추출된 정보 표시
+                                        extracted_fields = []
+                                        if ocr_extracted_info.get("receipt_number"):
+                                            extracted_fields.append(f"영수증/예약 번호: {ocr_extracted_info['receipt_number']}")
+                                        if ocr_extracted_info.get("customer_name"):
+                                            extracted_fields.append(f"고객 성함: {ocr_extracted_info['customer_name']}")
+                                        if ocr_extracted_info.get("customer_email"):
+                                            extracted_fields.append(f"이메일: {ocr_extracted_info['customer_email']}")
+                                        if ocr_extracted_info.get("customer_phone"):
+                                            extracted_fields.append(f"전화번호: {ocr_extracted_info['customer_phone']}")
+                                        if ocr_extracted_info.get("payment_method"):
+                                            extracted_fields.append(f"결제 수단: {ocr_extracted_info['payment_method']}")
+                                        if ocr_extracted_info.get("card_last4"):
+                                            extracted_fields.append(f"카드 뒷자리: {ocr_extracted_info['card_last4']}")
+                                        
+                                        if extracted_fields:
+                                            st.success("✅ OCR로 다음 정보를 추출했습니다:\n" + "\n".join(f"- {field}" for field in extracted_fields))
+                                        else:
+                                            st.info("ℹ️ OCR로 정보를 추출했지만 검증에 필요한 정보를 찾지 못했습니다.")
+                                    except json.JSONDecodeError:
+                                        # JSON 파싱 실패 시 텍스트에서 직접 추출 시도
+                                        st.warning("⚠️ OCR 결과를 JSON으로 파싱하지 못했습니다. 수동으로 입력해주세요.")
+                                        st.text_area("OCR 원본 결과:", ocr_result, height=100, key="ocr_raw_result")
+                                        ocr_extracted_info = {}
+                                else:
+                                    st.warning("⚠️ OCR 기능을 사용하려면 Gemini API 키가 필요합니다. 수동으로 정보를 입력해주세요.")
+                            except Exception as ocr_error:
+                                st.warning(f"⚠️ OCR 처리 중 오류가 발생했습니다: {str(ocr_error)}")
+                                ocr_extracted_info = {}
+                    else:
+                        # 이전에 추출한 정보 재사용
+                        ocr_extracted_info = st.session_state.get('ocr_extracted_info', {})
+                        if ocr_extracted_info:
+                            extracted_fields = []
+                            if ocr_extracted_info.get("receipt_number"):
+                                extracted_fields.append(f"영수증/예약 번호: {ocr_extracted_info['receipt_number']}")
+                            if ocr_extracted_info.get("customer_name"):
+                                extracted_fields.append(f"고객 성함: {ocr_extracted_info['customer_name']}")
+                            if ocr_extracted_info.get("customer_email"):
+                                extracted_fields.append(f"이메일: {ocr_extracted_info['customer_email']}")
+                            if ocr_extracted_info.get("customer_phone"):
+                                extracted_fields.append(f"전화번호: {ocr_extracted_info['customer_phone']}")
+                            if extracted_fields:
+                                st.info("ℹ️ 이전에 추출한 정보: " + ", ".join(extracted_fields))
+                
+                # OCR로 추출된 정보가 있으면 세션 상태에서 가져오기
+                if 'ocr_extracted_info' in st.session_state and st.session_state.ocr_extracted_info:
+                    ocr_extracted_info = st.session_state.ocr_extracted_info
                 
                 verification_cols = st.columns(2)
                 
                 with verification_cols[0]:
+                    # OCR로 추출한 정보가 있으면 기본값으로 사용
+                    receipt_default = ocr_extracted_info.get("receipt_number", "") if ocr_extracted_info else ""
                     verification_receipt = st.text_input(
                         L['verification_receipt_label'],
+                        value=receipt_default,
                         key="verification_receipt_input",
-                        help=L.get("verification_receipt_help", "고객이 제공한 영수증 번호 또는 예약 번호를 입력하세요.")
+                        help=L.get("verification_receipt_help", "고객이 제공한 영수증 번호 또는 예약 번호를 입력하세요. (OCR로 자동 추출됨)")
                     )
                     
                     # 결제 수단 선택
@@ -2967,27 +3236,57 @@ if feature_selection == L["sim_tab_chat_email"]:
                         L.get("payment_method_tng", "Touch N Go"),
                         L.get("payment_method_other", "기타")
                     ]
+                    
+                    # OCR로 추출한 결제 수단이 있으면 매칭 시도
+                    ocr_payment_method = ocr_extracted_info.get("payment_method", "") if ocr_extracted_info else ""
+                    payment_method_index = 0
+                    if ocr_payment_method:
+                        # OCR 추출값과 옵션 매칭
+                        ocr_payment_lower = ocr_payment_method.lower()
+                        for idx, option in enumerate(payment_method_options):
+                            if any(keyword in ocr_payment_lower for keyword in ["카드", "card", "신용", "credit", "체크", "check"]):
+                                if "신용" in option or "체크" in option or "card" in option.lower():
+                                    payment_method_index = idx
+                                    break
+                            elif any(keyword in ocr_payment_lower for keyword in ["카카오", "kakao"]):
+                                if "카카오" in option:
+                                    payment_method_index = idx
+                                    break
+                            elif any(keyword in ocr_payment_lower for keyword in ["네이버", "naver"]):
+                                if "네이버" in option:
+                                    payment_method_index = idx
+                                    break
+                            elif any(keyword in ocr_payment_lower for keyword in ["계좌", "account", "뱅킹", "banking"]):
+                                if "뱅킹" in option or "banking" in option.lower():
+                                    payment_method_index = idx
+                                    break
+                    
                     verification_payment_method = st.selectbox(
                         L['verification_payment_method_label'],
                         options=payment_method_options,
+                        index=payment_method_index,
                         key="verification_payment_method_input",
-                        help="고객이 사용한 결제 수단을 선택하세요."
+                        help="고객이 사용한 결제 수단을 선택하세요. (OCR로 자동 추출됨)"
                     )
                     
                     # 결제 정보 입력 (카드 뒷자리 또는 계좌번호)
                     if verification_payment_method == L.get("payment_method_card", "신용/체크카드"):
+                        card_default = ocr_extracted_info.get("card_last4", "") if ocr_extracted_info else ""
                         verification_card = st.text_input(
                             L['verification_card_label'],
+                            value=card_default,
                             key="verification_card_input",
                             max_chars=4,
-                            help=L.get("verification_card_help", "고객이 제공한 카드 뒷자리 4자리를 입력하세요.")
+                            help=L.get("verification_card_help", "고객이 제공한 카드 뒷자리 4자리를 입력하세요. (OCR로 자동 추출됨)")
                         )
                         verification_account = ""
                     elif verification_payment_method == L.get("payment_method_online_banking", "온라인뱅킹"):
+                        account_default = ocr_extracted_info.get("account_number", "") if ocr_extracted_info else ""
                         verification_account = st.text_input(
                             L['verification_account_label'],
+                            value=account_default,
                             key="verification_account_input",
-                            help="고객이 제공한 계좌번호를 입력하세요."
+                            help="고객이 제공한 계좌번호를 입력하세요. (OCR로 자동 추출됨)"
                         )
                         verification_card = ""
                     else:
@@ -2995,22 +3294,28 @@ if feature_selection == L["sim_tab_chat_email"]:
                         verification_card = ""
                         verification_account = ""
                     
+                    name_default = ocr_extracted_info.get("customer_name", "") if ocr_extracted_info else ""
                     verification_name = st.text_input(
                         L['verification_name_label'],
+                        value=name_default,
                         key="verification_name_input",
-                        help=L.get("verification_name_help", "고객이 제공한 성함을 입력하세요.")
+                        help=L.get("verification_name_help", "고객이 제공한 성함을 입력하세요. (OCR로 자동 추출됨)")
                     )
                 
                 with verification_cols[1]:
+                    email_default = ocr_extracted_info.get("customer_email", "") if ocr_extracted_info else ""
                     verification_email = st.text_input(
                         L['verification_email_label'],
+                        value=email_default,
                         key="verification_email_input",
-                        help=L.get("verification_email_help", "고객이 제공한 이메일 주소를 입력하세요.")
+                        help=L.get("verification_email_help", "고객이 제공한 이메일 주소를 입력하세요. (OCR로 자동 추출됨)")
                     )
+                    phone_default = ocr_extracted_info.get("customer_phone", "") if ocr_extracted_info else ""
                     verification_phone = st.text_input(
                         L['verification_phone_label'],
+                        value=phone_default,
                         key="verification_phone_input",
-                        help=L.get("verification_phone_help", "고객이 제공한 연락처를 입력하세요.")
+                        help=L.get("verification_phone_help", "고객이 제공한 연락처를 입력하세요. (OCR로 자동 추출됨)")
                     )
                 
                 # 시스템에 저장된 검증 정보 (시뮬레이션용 - 실제로는 DB에서 가져옴)
@@ -3021,27 +3326,66 @@ if feature_selection == L["sim_tab_chat_email"]:
                 verify_cols = st.columns([1, 1])
                 with verify_cols[0]:
                     if st.button(L['button_verify'], key="btn_verify_customer", use_container_width=True, type="primary"):
-                        # 파일이 업로드된 경우 파일 정보도 포함
-                        file_verified = False
-                        if verification_file:
-                            # 파일이 업로드되었으면 검증 성공으로 간주 (실제로는 OCR/이미지 분석 필요)
-                            file_verified = True
+                        # 파일 검증 정보 확인 (고객 첨부 파일 또는 새로 업로드한 파일)
+                        final_file_verified = False
+                        file_info_for_verification = None
+                        
+                        if file_to_verify:
+                            final_file_verified = True
+                            file_info_for_verification = {
+                                "filename": file_to_verify.name,
+                                "size": file_to_verify.size if hasattr(file_to_verify, 'size') else 0,
+                                "type": file_to_verify.type if hasattr(file_to_verify, 'type') else "unknown"
+                            }
                             st.session_state.verification_file_verified = True
+                        elif file_verified:  # 파일 정보만 있는 경우
+                            final_file_verified = True
+                            file_info_for_verification = st.session_state.verification_file_info if 'verification_file_info' in st.session_state else None
+                        
+                        # 결제 정보 구성 (payment_info 필드 추가)
+                        payment_info = ""
+                        if verification_payment_method == L.get("payment_method_card", "신용/체크카드"):
+                            payment_info = f"{verification_payment_method} {verification_card}" if verification_card else verification_payment_method
+                        elif verification_payment_method == L.get("payment_method_online_banking", "온라인뱅킹"):
+                            payment_info = f"{verification_payment_method} {verification_account}" if verification_account else verification_payment_method
+                        else:
+                            payment_info = verification_payment_method
+                        
+                        # OCR로 추출한 정보가 있으면 우선 사용 (수동 입력값이 있으면 수동 입력값 우선)
+                        final_receipt = verification_receipt if verification_receipt else (ocr_extracted_info.get("receipt_number", "") if ocr_extracted_info else "")
+                        final_name = verification_name if verification_name else (ocr_extracted_info.get("customer_name", "") if ocr_extracted_info else "")
+                        final_email = verification_email if verification_email else (ocr_extracted_info.get("customer_email", "") if ocr_extracted_info else "")
+                        final_phone = verification_phone if verification_phone else (ocr_extracted_info.get("customer_phone", "") if ocr_extracted_info else "")
+                        final_card = verification_card if verification_card else (ocr_extracted_info.get("card_last4", "") if ocr_extracted_info else "")
+                        final_account = verification_account if verification_account else (ocr_extracted_info.get("account_number", "") if ocr_extracted_info else "")
                         
                         provided_info = {
-                            "receipt_number": verification_receipt,
-                            "card_last4": verification_card if verification_payment_method == L.get("payment_method_card", "신용/체크카드") else "",
-                            "account_number": verification_account if verification_payment_method == L.get("payment_method_online_banking", "온라인뱅킹") else "",
+                            "receipt_number": final_receipt,
+                            "card_last4": final_card if verification_payment_method == L.get("payment_method_card", "신용/체크카드") else "",
+                            "account_number": final_account if verification_payment_method == L.get("payment_method_online_banking", "온라인뱅킹") else "",
                             "payment_method": verification_payment_method,
-                            "customer_name": verification_name,
-                            "customer_email": verification_email,
-                            "customer_phone": verification_phone,
-                            "file_uploaded": file_verified
+                            "payment_info": payment_info,  # 결제 정보 통합 필드 추가
+                            "customer_name": final_name,
+                            "customer_email": final_email,
+                            "customer_phone": final_phone,
+                            "file_uploaded": final_file_verified,
+                            "file_info": file_info_for_verification,  # 파일 상세 정보 추가
+                            "ocr_extracted": ocr_extracted_info if ocr_extracted_info else {}  # OCR 추출 정보도 포함
                         }
+                        
+                        # 시스템에 저장된 검증 정보에도 파일 정보 추가 (시뮬레이션용)
+                        stored_verification_info_with_file = stored_verification_info.copy()
+                        if customer_has_attachment and st.session_state.customer_attachment_file:
+                            stored_verification_info_with_file["file_uploaded"] = True
+                            stored_verification_info_with_file["file_info"] = {
+                                "filename": st.session_state.customer_attachment_file.name,
+                                "size": st.session_state.customer_attachment_file.size if hasattr(st.session_state.customer_attachment_file, 'size') else 0,
+                                "type": st.session_state.customer_attachment_file.type if hasattr(st.session_state.customer_attachment_file, 'type') else "unknown"
+                            }
                         
                         # 검증 실행 (시스템 내부에서만 실행)
                         is_verified, verification_results = verify_customer_info(
-                            provided_info, stored_verification_info
+                            provided_info, stored_verification_info_with_file
                         )
                         
                         if is_verified:
@@ -3054,7 +3398,26 @@ if feature_selection == L["sim_tab_chat_email"]:
                             st.session_state.verification_stage = "VERIFICATION_FAILED"
                             st.session_state.verification_info["verification_attempts"] += 1
                             failed_fields = [k for k, v in verification_results.items() if not v]
-                            st.error(L['verification_failed'].format(failed_fields=', '.join(failed_fields)))
+                            
+                            # 검증 실패 필드에 대한 상세 정보 제공
+                            failed_details = []
+                            for field in failed_fields:
+                                provided_value = provided_info.get(field, "")
+                                stored_value = stored_verification_info_with_file.get(field, "")
+                                if field == "file_uploaded":
+                                    failed_details.append(f"{field}: 제공됨={provided_info.get('file_uploaded', False)}, 필요={stored_verification_info_with_file.get('file_uploaded', False)}")
+                                elif field == "file_info":
+                                    provided_file = provided_info.get('file_info', {})
+                                    stored_file = stored_verification_info_with_file.get('file_info', {})
+                                    failed_details.append(f"{field}: 제공된 파일={provided_file.get('filename', '없음')}, 필요 파일={stored_file.get('filename', '없음')}")
+                                else:
+                                    failed_details.append(f"{field}: 제공값='{provided_value}', 필요값='{stored_value}'")
+                            
+                            error_message = L['verification_failed'].format(failed_fields=', '.join(failed_fields))
+                            if failed_details:
+                                error_message += f"\n\n**상세 정보:**\n" + "\n".join(f"- {detail}" for detail in failed_details)
+                            
+                            st.error(error_message)
                 
                 with verify_cols[1]:
                     if st.button(L['button_retry_verification'], key="btn_retry_verification", use_container_width=True):
