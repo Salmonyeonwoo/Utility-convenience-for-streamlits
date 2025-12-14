@@ -3870,30 +3870,29 @@ if feature_selection == L["sim_tab_chat_email"]:
                         st.session_state.simulator_messages.append(
                             {"role": "system_transfer", "content": system_msg}
                         )
-                    
-                    # 이관 요약을 supervisor 메시지로 추가
-                    summary_msg = f"### {L['transfer_summary_header']}\n\n{translated_summary}"
-                    st.session_state.simulator_messages.append(
-                        {"role": "supervisor", "content": summary_msg}
-                    )
-                    
-                    # 이력 저장
-                    customer_type_display = st.session_state.get("customer_type_sim_select", "")
-                    save_simulation_history_local(
-                        st.session_state.customer_query_text_area,
-                        customer_type_display,
-                        st.session_state.simulator_messages,
-                        is_chat_ended=False,
-                        attachment_context=st.session_state.sim_attachment_context_for_llm,
-                    )
-                    
-                    # AGENT_TURN으로 이동
-                    st.session_state.sim_stage = "AGENT_TURN"
-                    st.rerun()
-                    
-                except Exception as e:
-                    st.error(f"이관 처리 중 오류 발생: {e}")
-                    summary_text = f"요약 생성 오류: {e}"
+                        
+                        # 이관 요약을 supervisor 메시지로 추가
+                        summary_msg = f"### {L['transfer_summary_header']}\n\n{translated_summary}"
+                        st.session_state.simulator_messages.append(
+                            {"role": "supervisor", "content": summary_msg}
+                        )
+                        
+                        # 이력 저장
+                        customer_type_display = st.session_state.get("customer_type_sim_select", "")
+                        save_simulation_history_local(
+                            st.session_state.customer_query_text_area,
+                            customer_type_display,
+                            st.session_state.simulator_messages,
+                            is_chat_ended=False,
+                            attachment_context=st.session_state.sim_attachment_context_for_llm,
+                        )
+                        
+                        # AGENT_TURN으로 이동
+                        st.session_state.sim_stage = "AGENT_TURN"
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"이관 처리 중 오류 발생: {e}")
+                        summary_text = f"요약 생성 오류: {e}"
         
         # 이관 버튼 렌더링
         for idx, lang_code in enumerate(languages):
