@@ -22,6 +22,7 @@ import json
 import uuid
 import tempfile
 import random
+import hashlib
 from datetime import datetime
 from typing import List, Dict, Any, Tuple, Optional
 import streamlit as st
@@ -1705,7 +1706,7 @@ def generate_chat_summary(messages: List[Dict[str, Any]], initial_query: str, cu
     # 여기서는 범용 채팅 요약 로직을 따르도록 메시지를 정제합니다.
 
     summary_prompt = f"""
-You are an AI analyst summarizing a customer support conversation.
+You are an AI analyst summarizing a customer support conversation. Your task is to extract comprehensive customer profile data and score various aspects numerically.
 
 Analyze the conversation and provide a structured summary in JSON format (ONLY JSON, no markdown).
 
@@ -1714,13 +1715,24 @@ Extract and score:
 2. Key responses provided by the agent (list of max 3 core actions/solutions)
 3. Customer sentiment score (0-100, where 0=very negative, 50=neutral, 100=very positive)
 4. Customer satisfaction score (0-100, based on final response)
-5. Customer characteristics:
-   - Language preference (if mentioned)
-   - Cultural background hints (if any)
-   - Location/region (if mentioned, but anonymize specific addresses)
-   - Communication style (formal/casual, brief/detailed)
+5. Customer characteristics with detailed scoring:
+   - Language preference (detected language code: ko/en/ja)
+   - Cultural background hints (score 0-100, where higher = more cultural context detected)
+   - Location/region (general region only, anonymize specific addresses)
+   - Communication style (formal/casual, brief/detailed) with scores:
+     * Formality score (0-100, 0=casual, 100=very formal)
+     * Detail level score (0-100, 0=brief, 100=very detailed)
+   - Customer personality traits (score each 0-100):
+     * Patience level (0-100)
+     * Assertiveness (0-100)
+     * Politeness level (0-100)
+     * Technical proficiency (0-100, if technical inquiry)
 6. Privacy-sensitive information (anonymize: names, emails, phone numbers, specific addresses)
    - Extract patterns only (e.g., "email provided", "phone number provided", "resides in Asia region")
+7. Customer behavior patterns:
+   - Response time pattern (fast/moderate/slow based on message frequency)
+   - Question complexity (simple/moderate/complex)
+   - Escalation tendency (0-100, likelihood to escalate)
 
 Output format (JSON only):
 {{
@@ -1731,14 +1743,28 @@ Output format (JSON only):
   "customer_characteristics": {{
     "language": "ko/en/ja or unknown",
     "cultural_hints": "brief description or unknown",
+    "cultural_score": 60,
     "region": "general region or unknown",
-    "communication_style": "formal/casual/brief/detailed"
+    "communication_style": "formal/casual/brief/detailed",
+    "formality_score": 70,
+    "detail_level_score": 65,
+    "personality_traits": {{
+      "patience_level": 60,
+      "assertiveness": 70,
+      "politeness_level": 80,
+      "technical_proficiency": 50
+    }}
   }},
   "privacy_info": {{
     "has_email": true/false,
     "has_phone": true/false,
     "has_address": true/false,
     "region_hint": "general region or unknown"
+  }},
+  "behavior_patterns": {{
+    "response_time": "fast/moderate/slow",
+    "question_complexity": "simple/moderate/complex",
+    "escalation_tendency": 30
   }},
   "summary": "overall conversation summary in {lang_name}"
 }}
@@ -1750,7 +1776,7 @@ JSON Output:
 """
 
     if not st.session_state.is_llm_ready:
-        # Fallback summary
+        # Fallback summary with enhanced structure
         return {
             "main_inquiry": initial_query[:100],
             "key_responses": [],
@@ -1759,14 +1785,28 @@ JSON Output:
             "customer_characteristics": {
                 "language": current_lang_key,
                 "cultural_hints": "unknown",
+                "cultural_score": 0,
                 "region": "unknown",
-                "communication_style": "unknown"
+                "communication_style": "unknown",
+                "formality_score": 50,
+                "detail_level_score": 50,
+                "personality_traits": {
+                    "patience_level": 50,
+                    "assertiveness": 50,
+                    "politeness_level": 50,
+                    "technical_proficiency": 50
+                }
             },
             "privacy_info": {
                 "has_email": False,
                 "has_phone": False,
                 "has_address": False,
                 "region_hint": "unknown"
+            },
+            "behavior_patterns": {
+                "response_time": "moderate",
+                "question_complexity": "moderate",
+                "escalation_tendency": 50
             },
             "summary": f"Customer inquiry about: {initial_query[:100]}"
         }
@@ -1783,7 +1823,7 @@ JSON Output:
         summary_data = json.loads(summary_text)
         return summary_data
     except Exception as e:
-        # JSON 파싱 실패 시 fallback
+        # JSON 파싱 실패 시 fallback with enhanced structure
         st.warning(f"요약 생성 중 오류 발생: {e}")
         return {
             "main_inquiry": initial_query[:100],
@@ -1793,8 +1833,17 @@ JSON Output:
             "customer_characteristics": {
                 "language": current_lang_key,
                 "cultural_hints": "unknown",
+                "cultural_score": 0,
                 "region": "unknown",
-                "communication_style": "unknown"
+                "communication_style": "unknown",
+                "formality_score": 50,
+                "detail_level_score": 50,
+                "personality_traits": {
+                    "patience_level": 50,
+                    "assertiveness": 50,
+                    "politeness_level": 50,
+                    "technical_proficiency": 50
+                }
             },
             "privacy_info": {
                 "has_email": False,
@@ -1802,29 +1851,279 @@ JSON Output:
                 "has_address": False,
                 "region_hint": "unknown"
             },
-            "summary": f"Customer inquiry about: {initial_query[:100]}"
-        }
-        # Fallback on error
-        return {
-            "main_inquiry": initial_query[:100],
-            "key_responses": [],
-            "customer_sentiment_score": 50,
-            "customer_satisfaction_score": 50,
-            "customer_characteristics": {
-                "language": current_lang_key,
-                "cultural_hints": "unknown",
-                "region": "unknown",
-                "communication_style": "unknown"
-            },
-            "privacy_info": {
-                "has_email": False,
-                "has_phone": False,
-                "has_address": False,
-                "region_hint": "unknown"
+            "behavior_patterns": {
+                "response_time": "moderate",
+                "question_complexity": "moderate",
+                "escalation_tendency": 50
             },
             "summary": f"Error generating summary: {str(e)}"
         }
 
+
+
+def recommend_guideline_for_customer(new_customer_summary: Dict[str, Any], histories: List[Dict[str, Any]], language: str = "ko") -> Optional[str]:
+    """
+    신규 고객의 문의사항과 말투 등을 종합하여 고객 성향 점수를 수치화하고,
+    저장된 데이터를 바탕으로 최적의 가이드라인을 추천합니다.
+    
+    Args:
+        new_customer_summary: 신규 고객의 요약 데이터 (성향 점수 포함)
+        histories: 과거 고객 응대 이력 리스트
+        language: 언어 코드
+    
+    Returns:
+        추천 가이드라인 텍스트 또는 None
+    """
+    if not histories or not get_api_key("gemini") and not get_api_key("openai"):
+        return None
+    
+    try:
+        # 유사한 고객 프로필 찾기
+        similar_customers = []
+        new_scores = {
+            "sentiment": new_customer_summary.get("customer_sentiment_score", 50),
+            "satisfaction": new_customer_summary.get("customer_satisfaction_score", 50),
+            "formality": new_customer_summary.get("customer_characteristics", {}).get("formality_score", 50),
+            "patience": new_customer_summary.get("customer_characteristics", {}).get("personality_traits", {}).get("patience_level", 50),
+            "assertiveness": new_customer_summary.get("customer_characteristics", {}).get("personality_traits", {}).get("assertiveness", 50),
+        }
+        
+        for h in histories:
+            if not h.get("summary") or not isinstance(h.get("summary"), dict):
+                continue
+            
+            summary = h["summary"]
+            old_scores = {
+                "sentiment": summary.get("customer_sentiment_score", 50),
+                "satisfaction": summary.get("customer_satisfaction_score", 50),
+                "formality": summary.get("customer_characteristics", {}).get("formality_score", 50),
+                "patience": summary.get("customer_characteristics", {}).get("personality_traits", {}).get("patience_level", 50),
+                "assertiveness": summary.get("customer_characteristics", {}).get("personality_traits", {}).get("assertiveness", 50),
+            }
+            
+            # 유사도 계산 (점수 차이의 절대값 합)
+            similarity = sum(abs(new_scores[k] - old_scores[k]) for k in new_scores.keys())
+            
+            if similarity < 100:  # 임계값 이하인 경우 유사 고객으로 간주
+                similar_customers.append({
+                    "history": h,
+                    "similarity": similarity,
+                    "scores": old_scores
+                })
+        
+        # 유사도 순으로 정렬
+        similar_customers.sort(key=lambda x: x["similarity"])
+        
+        # 상위 5개 유사 고객의 성공 사례 분석
+        if similar_customers:
+            lang_name = {"ko": "한국어", "en": "English", "ja": "日本語"}.get(language, "한국어")
+            
+            similar_cases_text = json.dumps([
+                {
+                    "initial_query": c["history"].get("initial_query", ""),
+                    "key_responses": c["history"].get("summary", {}).get("key_responses", []),
+                    "scores": c["scores"],
+                    "satisfaction": c["history"].get("summary", {}).get("customer_satisfaction_score", 50)
+                }
+                for c in similar_customers[:5]
+            ], ensure_ascii=False, indent=2)
+            
+            recommendation_prompt = (
+                f"당신은 CS 센터 전문가입니다. 신규 고객의 성향 점수를 분석하고, 유사한 과거 고객들의 성공 사례를 바탕으로 최적의 응대 가이드라인을 추천하세요.\n\n"
+                f"신규 고객 프로필:\n{json.dumps(new_customer_summary, ensure_ascii=False, indent=2)}\n\n"
+                f"유사한 과거 고객 사례 (상위 5개):\n{similar_cases_text}\n\n"
+                f"다음 내용을 포함하여 {lang_name}로 가이드라인을 작성하세요:\n"
+                f"1. 고객 성향 분석 (점수 기반)\n"
+                f"2. 예상되는 고객 반응 패턴\n"
+                f"3. 효과적인 응대 전략 (유사 사례 기반)\n"
+                f"4. 주의해야 할 사항\n"
+                f"5. 권장 응대 톤 및 스타일\n\n"
+                f"실용적이고 구체적인 가이드라인을 제공하세요."
+            )
+            
+            recommendation = run_llm(recommendation_prompt)
+            return recommendation if recommendation and not recommendation.startswith("❌") else None
+        
+        return None
+        
+    except Exception as e:
+        print(f"가이드라인 추천 중 오류 발생: {e}")
+        return None
+
+
+def generate_daily_customer_guide(histories: List[Dict[str, Any]], language: str = "ko") -> Optional[str]:
+    """
+    일일 고객 가이드 생성 함수
+    고객 응대 시뮬레이터 데이터를 분석하여 고객 가이드라인을 생성합니다.
+    
+    Args:
+        histories: 고객 응대 이력 리스트
+        language: 언어 코드 (ko, en, ja)
+    
+    Returns:
+        생성된 가이드 내용 (문자열) 또는 None (실패 시)
+    """
+    if not histories or not get_api_key("gemini") and not get_api_key("openai"):
+        return None
+    
+    try:
+        # 요약 데이터가 있는 이력만 필터링
+        histories_with_summary = [h for h in histories if h.get("summary") and isinstance(h.get("summary"), dict)]
+        
+        if not histories_with_summary:
+            return None
+        
+        # 최근 50개 이력 사용 (동일 고객 데이터 누적을 위해 전체 이력 사용)
+        recent_histories = histories_with_summary[:50]
+        
+        # 고객별로 데이터 그룹화 (동일 고객의 상황에 따라 데이터 누적)
+        customer_data_map = {}
+        for h in recent_histories:
+            customer_id = h.get("id", "")
+            customer_type = h.get("customer_type", "")
+            summary = h.get("summary", {})
+            
+            if customer_id not in customer_data_map:
+                customer_data_map[customer_id] = {
+                    "customer_type": customer_type,
+                    "histories": [],
+                    "total_interactions": 0
+                }
+            
+            customer_data_map[customer_id]["histories"].append({
+                "initial_query": h.get("initial_query", ""),
+                "summary": summary,
+                "timestamp": h.get("timestamp", ""),
+                "language": h.get("language_key", language)
+            })
+            customer_data_map[customer_id]["total_interactions"] += 1
+        
+        # LLM을 사용하여 고객 가이드 생성
+        lang_name = {"ko": "한국어", "en": "English", "ja": "日本語"}.get(language, "한국어")
+        
+        guide_prompt = (
+            f"당신은 CS 센터 교육 전문가입니다. 다음 고객 응대 이력 데이터를 분석하여 종합적인 고객 응대 가이드라인을 작성하세요.\n\n"
+            f"분석할 이력 데이터 (고객별 누적 데이터 포함):\n{json.dumps(list(customer_data_map.values())[:20], ensure_ascii=False, indent=2)}\n\n"
+            f"다음 내용을 포함하여 가이드라인을 {lang_name}로 작성하세요:\n"
+            f"1. 고객 유형별 응대 전략 (일반/까다로운/매우 불만족)\n"
+            f"2. 문화권별 응대 가이드 (언어, 문화적 배경 고려)\n"
+            f"3. 주요 문의 유형별 해결 방법\n"
+            f"4. 고객 감정 점수에 따른 응대 전략\n"
+            f"5. 개인정보 처리 가이드\n"
+            f"6. 효과적인 소통 스타일 권장사항\n"
+            f"7. 동일 고객의 반복 문의에 대한 대응 전략\n"
+            f"8. 강성 고객 가이드라인 (까다로운 고객, 매우 불만족 고객)\n\n"
+            f"가이드라인을 {lang_name}로 작성하세요. 실제 사례를 바탕으로 구체적이고 실용적인 내용으로 작성해주세요."
+        )
+        
+        guide_content = run_llm(guide_prompt)
+        
+        if not guide_content or guide_content.startswith("❌"):
+            return None
+        
+        # 가이드 내용 포맷팅
+        today_str = datetime.now().strftime("%y%m%d")
+        formatted_guide = (
+            f"고객 응대 가이드라인\n"
+            f"생성일: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"분석 이력 수: {len(recent_histories)}\n"
+            f"고객 수: {len(customer_data_map)}\n"
+            f"=" * 80 + "\n\n"
+            f"{guide_content}\n\n"
+            f"=" * 80 + "\n"
+            f"이 가이드는 AI 고객 응대 시뮬레이터 데이터를 기반으로 자동 생성되었습니다.\n"
+            f"고객 데이터가 추가될 때마다 업데이트됩니다."
+        )
+        
+        return formatted_guide
+        
+    except Exception as e:
+        print(f"고객 가이드 생성 중 오류 발생: {e}")
+        return None
+
+
+def save_daily_customer_guide(guide_content: str, language: str = "ko") -> Optional[str]:
+    """
+    일일 고객 가이드를 파일로 저장합니다.
+    
+    Args:
+        guide_content: 가이드 내용
+        language: 언어 코드
+    
+    Returns:
+        저장된 파일 경로 또는 None
+    """
+    try:
+        today_str = datetime.now().strftime("%y%m%d")
+        guide_filename = f"{today_str}_고객가이드.TXT"
+        guide_filepath = os.path.join(DATA_DIR, guide_filename)
+        
+        # 기존 파일이 있으면 추가 (동일 고객 데이터 누적)
+        if os.path.exists(guide_filepath):
+            with open(guide_filepath, "r", encoding="utf-8") as f:
+                existing_content = f.read()
+            
+            # 새 내용을 기존 내용에 추가
+            updated_content = (
+                f"{existing_content}\n\n"
+                f"{'=' * 80}\n"
+                f"업데이트: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                f"{'=' * 80}\n\n"
+                f"{guide_content}"
+            )
+            
+            with open(guide_filepath, "w", encoding="utf-8") as f:
+                f.write(updated_content)
+        else:
+            # 새 파일 생성
+            with open(guide_filepath, "w", encoding="utf-8") as f:
+                f.write(guide_content)
+        
+        return guide_filepath
+        
+    except Exception as e:
+        print(f"고객 가이드 저장 중 오류 발생: {e}")
+        return None
+
+
+def get_daily_data_statistics(language: str = "ko") -> Dict[str, Any]:
+    """
+    일일 데이터 수집 통계를 반환합니다.
+    하루에 최소 1개 이상씩 최소 5인의 데이터 확보를 추적합니다.
+    
+    Returns:
+        통계 딕셔너리
+    """
+    histories = _load_json(SIM_META_FILE, [])
+    today = datetime.now().date()
+    
+    # 오늘 날짜의 이력 필터링
+    today_histories = []
+    for h in histories:
+        try:
+            ts = datetime.fromisoformat(h.get("timestamp", "")).date()
+            if ts == today and h.get("summary") and isinstance(h.get("summary"), dict):
+                today_histories.append(h)
+        except:
+            continue
+    
+    # 고유 고객 수 계산 (이메일/전화번호 기반 또는 ID 기반)
+    unique_customers = set()
+    for h in today_histories:
+        # 고객 ID 또는 초기 문의를 기반으로 고유 고객 식별
+        customer_id = h.get("id", "")
+        initial_query = h.get("initial_query", "")
+        # 간단한 해시 기반 고유 고객 식별
+        customer_hash = hashlib.md5(f"{customer_id}_{initial_query[:50]}".encode()).hexdigest()
+        unique_customers.add(customer_hash)
+    
+    return {
+        "date": today.isoformat(),
+        "total_cases": len(today_histories),
+        "unique_customers": len(unique_customers),
+        "target_met": len(unique_customers) >= 5,  # 최소 5인 목표 달성 여부
+        "cases_with_summary": len([h for h in today_histories if h.get("summary")])
+    }
 
 
 def save_simulation_history_local(initial_query: str, customer_type: str, messages: List[Dict[str, Any]],
@@ -1873,6 +2172,28 @@ def save_simulation_history_local(initial_query: str, customer_type: str, messag
     histories.insert(0, data)
     # 너무 많은 이력 방지 (예: 100개로 증가 - 요약만 저장하므로 용량 부담 적음)
     _save_json(SIM_META_FILE, histories[:100])
+    
+    # ⭐ 추가: 고객 데이터가 저장될 때마다 자동으로 일일 고객 가이드 생성
+    if summary_data and is_chat_ended:  # 채팅이 종료되고 요약이 생성된 경우에만 가이드 생성
+        try:
+            # 전체 이력 로드 (동일 고객 데이터 누적을 위해)
+            all_histories = _load_json(SIM_META_FILE, [])
+            
+            # 오늘 날짜의 가이드가 이미 생성되었는지 확인
+            today_str = datetime.now().strftime("%y%m%d")
+            guide_filename = f"{today_str}_고객가이드.TXT"
+            guide_filepath = os.path.join(DATA_DIR, guide_filename)
+            
+            # 가이드 생성 (기존 파일이 있으면 업데이트, 없으면 새로 생성)
+            guide_content = generate_daily_customer_guide(all_histories, st.session_state.language)
+            
+            if guide_content:
+                saved_path = save_daily_customer_guide(guide_content, st.session_state.language)
+                if saved_path:
+                    print(f"✅ 고객 가이드가 자동 생성/업데이트되었습니다: {saved_path}")
+        except Exception as e:
+            print(f"고객 가이드 자동 생성 중 오류 발생 (무시됨): {e}")
+    
     return doc_id
 
 
