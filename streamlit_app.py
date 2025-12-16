@@ -184,6 +184,161 @@ from visualization import (
     visualize_case_trends, visualize_customer_characteristics
 )
 
+# 전화 통화 처리 클래스 (app.py 스타일)
+try:
+    from call_handler import CallHandler
+    CALL_HANDLER_AVAILABLE = True
+except ImportError:
+    CALL_HANDLER_AVAILABLE = False
+    # CallHandler가 없으면 app.py 스타일로 생성
+    class CallHandler:
+        """전화 통화 처리 클래스"""
+        
+        def __init__(self):
+            import os
+            self.call_dir = "call_logs"
+            os.makedirs(self.call_dir, exist_ok=True)
+            self.is_call_active = False
+            self.call_start_time = None
+            self.call_audio_chunks = []
+        
+        def start_call(self, user_id, call_type="audio"):
+            """통화 시작"""
+            from datetime import datetime
+            self.is_call_active = True
+            self.call_start_time = datetime.now()
+            self.call_audio_chunks = []
+            self.current_call_id = f"{user_id}_{self.call_start_time.strftime('%Y%m%d_%H%M%S')}"
+            return self.current_call_id
+        
+        def end_call(self, user_id, call_id):
+            """통화 종료"""
+            from datetime import datetime
+            import json
+            import os
+            self.is_call_active = False
+            call_duration = 0
+            if self.call_start_time:
+                call_duration = (datetime.now() - self.call_start_time).total_seconds()
+            
+            # 통화 로그 저장
+            call_log = {
+                "call_id": call_id,
+                "user_id": user_id,
+                "start_time": self.call_start_time.isoformat() if self.call_start_time else None,
+                "end_time": datetime.now().isoformat(),
+                "duration": call_duration,
+                "audio_chunks": len(self.call_audio_chunks)
+            }
+            
+            log_file = os.path.join(self.call_dir, f"{call_id}.json")
+            with open(log_file, 'w', encoding='utf-8') as f:
+                json.dump(call_log, f, ensure_ascii=False, indent=2)
+            
+            self.call_start_time = None
+            self.call_audio_chunks = []
+            
+            return call_duration
+        
+        def add_audio_chunk(self, audio_bytes, sender="user"):
+            """오디오 청크 추가"""
+            from datetime import datetime
+            if self.is_call_active:
+                size = 0
+                if audio_bytes:
+                    try:
+                        if hasattr(audio_bytes, 'getvalue'):
+                            try:
+                                audio_data = audio_bytes.getvalue()
+                                size = len(audio_data) if audio_data else 0
+                            except:
+                                pass
+                        if size == 0 and hasattr(audio_bytes, 'size'):
+                            try:
+                                size = audio_bytes.size
+                            except:
+                                pass
+                        if size == 0 and hasattr(audio_bytes, 'read'):
+                            try:
+                                if hasattr(audio_bytes, 'tell'):
+                                    current_pos = audio_bytes.tell()
+                                else:
+                                    current_pos = 0
+                                if hasattr(audio_bytes, 'seek'):
+                                    audio_bytes.seek(0)
+                                data = audio_bytes.read()
+                                size = len(data) if data else 0
+                                if hasattr(audio_bytes, 'seek'):
+                                    audio_bytes.seek(current_pos)
+                            except:
+                                pass
+                        if size == 0 and isinstance(audio_bytes, bytes):
+                            size = len(audio_bytes)
+                    except Exception:
+                        size = 0
+                
+                chunk_info = {
+                    "timestamp": datetime.now().isoformat(),
+                    "sender": sender,
+                    "size": size
+                }
+                self.call_audio_chunks.append(chunk_info)
+                return True
+            return False
+        
+        def get_call_status(self):
+            """통화 상태 반환"""
+            from datetime import datetime
+            if not self.is_call_active:
+                return None
+            
+            duration = 0
+            if self.call_start_time:
+                duration = (datetime.now() - self.call_start_time).total_seconds()
+            
+            return {
+                "is_active": self.is_call_active,
+                "duration": duration,
+                "chunks_count": len(self.call_audio_chunks)
+            }
+        
+        def simulate_response(self, user_audio_bytes=None):
+            """상대방 응답 시뮬레이션"""
+            import time
+            time.sleep(0.3)
+            return {
+                "text": "네, 잘 들립니다. 말씀해주세요.",
+                "audio_available": False
+            }
+
+# 오디오 처리 클래스 (app.py 스타일)
+try:
+    from audio_handler import AudioHandler as AppAudioHandler
+    APP_AUDIO_HANDLER_AVAILABLE = True
+except ImportError:
+    APP_AUDIO_HANDLER_AVAILABLE = False
+    # AudioHandler가 없으면 app.py 스타일로 생성
+    class AppAudioHandler:
+        """오디오 처리 클래스"""
+        
+        def __init__(self):
+            import os
+            self.audio_dir = "audio_files"
+            os.makedirs(self.audio_dir, exist_ok=True)
+        
+        def save_audio(self, audio_bytes, user_id):
+            """오디오 바이트를 파일로 저장"""
+            from datetime import datetime
+            import os
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{user_id}_{timestamp}.wav"
+            filepath = os.path.join(self.audio_dir, filename)
+            
+            with open(filepath, "wb") as f:
+                f.write(audio_bytes)
+            
+            return filepath
+
 # 고객 데이터 관리 (app.py 스타일)
 try:
     from customer_data import CustomerDataManager
@@ -396,6 +551,22 @@ if "sim_call_outbound_summary" not in st.session_state:
 if "sim_call_outbound_target" not in st.session_state:
     st.session_state.sim_call_outbound_target = None
 # ----------------------------------------------------------------------
+# ⭐ 전화 기능 관련 상태 추가 (app.py 스타일)
+if "call_handler" not in st.session_state:
+    st.session_state.call_handler = CallHandler()
+if "audio_handler" not in st.session_state:
+    st.session_state.audio_handler = AppAudioHandler()
+if "call_active" not in st.session_state:
+    st.session_state.call_active = False
+if "current_call_id" not in st.session_state:
+    st.session_state.current_call_id = None
+if "video_enabled" not in st.session_state:
+    st.session_state.video_enabled = False
+if "opponent_video_frames" not in st.session_state:
+    st.session_state.opponent_video_frames = []  # 상대방 비디오 프레임 저장
+if "last_camera_frame" not in st.session_state:
+    st.session_state.last_camera_frame = None
+
 # ⭐ 전화 기능 관련 상태 추가
 if "call_sim_stage" not in st.session_state:
     st.session_state.call_sim_stage = "WAITING_CALL"  # WAITING_CALL, RINGING, IN_CALL, CALL_ENDED
@@ -424,6 +595,14 @@ if "call_summary_text" not in st.session_state:
     st.session_state.call_summary_text = ""
 if "customer_initial_audio_bytes" not in st.session_state:  # 고객의 첫 음성 (TTS 결과) 저장
     st.session_state.customer_initial_audio_bytes = None
+if "last_recorded_audio_bytes" not in st.session_state:  # 마지막 녹음된 오디오 (재생용)
+    st.session_state.last_recorded_audio_bytes = None
+if "last_customer_audio_bytes" not in st.session_state:  # 마지막 고객 응답 오디오 (재생용)
+    st.session_state.last_customer_audio_bytes = None
+if "keep_customer_audio_display" not in st.session_state:  # 고객 오디오 재생 표시 플래그
+    st.session_state.keep_customer_audio_display = False
+if "customer_audio_played_once" not in st.session_state:  # 고객 오디오 재생 상태 플래그
+    st.session_state.customer_audio_played_once = False
 if "supervisor_policy_context" not in st.session_state:
     # Supervisor가 업로드한 예외 정책 텍스트를 저장합니다.
     st.session_state.supervisor_policy_context = ""
@@ -4225,8 +4404,8 @@ if feature_selection == L["sim_tab_chat_email"]:
         # st.chat_input으로 입력 받기 (app.py 스타일)
         agent_response_input = st.chat_input(L.get("agent_response_placeholder", "고객에게 응답하세요..."))
         
-        # 추가 기능 버튼들 (파일 첨부, 음성 입력) - 입력 영역 아래에 배치
-        col_extra_features = st.columns([1, 1, 1])
+        # 추가 기능 버튼들 (파일 첨부만) - 입력 영역 아래에 배치
+        col_extra_features = st.columns([1, 1])
         
         with col_extra_features[0]:
             # (+) 파일 첨부 버튼
@@ -4234,23 +4413,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                 st.session_state.show_agent_file_uploader = True
         
         with col_extra_features[1]:
-            # (🎤) 마이크 버튼
-            mic_audio = mic_recorder(
-                start_prompt=L.get("button_voice_input", "🎤 음성 입력"),
-                stop_prompt=L.get("button_stop", "⏹️ 중지"),
-                just_once=True,
-                format="wav",
-                use_container_width=True,
-                key="sim_mic_recorder_inline_unified",
-            )
-            
-            # 녹음 완료 시 처리
-            if mic_audio and mic_audio.get("bytes"):
-                if "bytes_to_process" not in st.session_state or st.session_state.bytes_to_process is None:
-                    st.session_state.bytes_to_process = mic_audio["bytes"]
-                    st.session_state.sim_audio_bytes = mic_audio["bytes"]
-        
-        with col_extra_features[2]:
             # 전사 결과 표시 (있는 경우)
             if st.session_state.get("agent_response_area_text") and st.session_state.agent_response_area_text:
                 transcript_preview = st.session_state.agent_response_area_text[:30]
@@ -5234,11 +5396,24 @@ elif feature_selection == L["sim_tab_phone"]:
         # ========================================
         # 화면 구분 (애니메이션 / CC)
         # ========================================
-    col_video, col_cc = st.columns([1, 2])
+    # ⭐ 수정: 왼쪽 비디오 업로드 섹션 제거, col_cc만 사용
+    col_cc = st.columns([1])[0]
 
-    with col_video:
-        st.subheader(f"📺 {L['customer_video_simulation']}")
+    with col_cc:
+        # ⭐ 수정: "전화 수신 중" 메시지를 더 깔끔한 위치로 이동
+        if st.session_state.call_sim_stage == "IN_CALL":
+            if st.session_state.call_sim_mode == "INBOUND":
+                st.markdown(
+                    f"## {L['call_status_ringing'].format(number=st.session_state.incoming_phone_number)}"
+                )
+            else:
+                st.markdown(
+                    f"## {L['button_call_outbound']} ({st.session_state.incoming_phone_number})"
+                )
+        st.markdown("---")
 
+    # ⭐ 왼쪽 비디오 섹션 제거 (비디오 업로드 내용은 상대방 화면 밑으로 이동)
+    if False:  # 기존 비디오 업로드 섹션 비활성화
         if st.session_state.call_sim_stage == "WAITING_CALL":
             st.info(L.get("waiting_call", "통화 수신 대기 중..."))
 
@@ -5305,7 +5480,6 @@ elif feature_selection == L["sim_tab_phone"]:
                     # 새 파일이거나 이전과 다른 파일인 경우에만 저장
                     if current_upload_name != last_upload_name:
                         try:
-                            # 업로드된 비디오를 즉시 읽기 (rerun 전에 처리)
                             video_bytes = uploaded_video.read()
                             current_upload_size = len(video_bytes)
                             
@@ -5603,18 +5777,7 @@ elif feature_selection == L["sim_tab_phone"]:
                         if len(uploaded_videos) > 5:
                             st.caption(L.get("video_more_files", f"... 외 {len(uploaded_videos) - 5}개").format(count=len(uploaded_videos) - 5))
 
-    with col_cc:
-        # ⭐ 수정: "전화 수신 중" 메시지는 통화 중일 때만 표시
-        if st.session_state.call_sim_stage == "IN_CALL":
-            if st.session_state.call_sim_mode == "INBOUND":
-                st.markdown(
-                    f"## {L['call_status_ringing'].format(number=st.session_state.incoming_phone_number)}"
-                )
-            else:
-                st.markdown(
-                    f"## {L['button_call_outbound']} ({st.session_state.incoming_phone_number})"
-                )
-        st.markdown("---")
+    # ⭐ col_cc는 위에서 이미 처리됨
 
     # ========================================
     # WAITING / RINGING 상태
@@ -5762,6 +5925,11 @@ elif feature_selection == L["sim_tab_phone"]:
                 st.session_state.customer_initial_audio_bytes = None  # 오디오 초기화
                 st.session_state.customer_history_summary = ""  # AI 요약 초기화 (추가)
                 st.session_state.sim_audio_bytes = None  # 녹음 파일 초기화 (추가)
+                
+                # ⭐ app.py 스타일: call_handler 통화 시작
+                call_id = st.session_state.call_handler.start_call(st.session_state.sim_instance_id)
+                st.session_state.call_active = True
+                st.session_state.current_call_id = call_id
 
                 # ⭐ 수정: 자동 인사말 생성 제거 - 에이전트가 직접 녹음하도록 변경
                 st.session_state.just_entered_call = False
@@ -5840,6 +6008,11 @@ elif feature_selection == L["sim_tab_phone"]:
                 st.session_state.hold_start_time = None
                 st.session_state.start_time = datetime.now()  # 통화 시작 시간 (AHT 시작)
                 st.session_state.simulator_messages = []
+                
+                # ⭐ app.py 스타일: call_handler 통화 시작
+                call_id = st.session_state.call_handler.start_call(st.session_state.sim_instance_id)
+                st.session_state.call_active = True
+                st.session_state.current_call_id = call_id
 
                 # ⭐ 수정: 자동 인사말 생성 제거 - 에이전트가 직접 녹음하도록 변경
                 st.session_state.just_entered_call = False
@@ -5863,6 +6036,20 @@ elif feature_selection == L["sim_tab_phone"]:
                 st.session_state.sim_audio_bytes = None
 
                 st.success(L.get("outbound_call_started", "'{target}'에게 전화 발신 시뮬레이션이 시작되었습니다. 아래 마이크 버튼을 눌러 인사말을 녹음하세요.").format(target=call_target_selection))
+        
+        # app.py 스타일: 통화 시작 전 안내
+        if not st.session_state.call_active:
+            st.info("""
+            ### 📞 전화 통화 기능 사용 방법
+            
+            1. **통화 시작** 버튼을 클릭하여 통화를 시작합니다
+            2. **비디오 활성화** 토글을 켜면 비디오 통화가 가능합니다
+            3. 오디오 입력을 통해 실시간으로 음성을 전송할 수 있습니다
+            4. 통화가 진행되는 동안 자동으로 상대방 응답이 시뮬레이션됩니다
+            5. **통화 종료** 버튼을 클릭하여 통화를 종료합니다
+            
+            **참고**: 이 기능은 시뮬레이션입니다. 실제 양방향 통화를 위해서는 WebRTC 등의 기술이 필요합니다.
+            """)
 
         # ------------------
         # IN_CALL 상태 (통화 중)
@@ -5871,14 +6058,498 @@ elif feature_selection == L["sim_tab_phone"]:
         # ⭐ 수정: 자동 인사말 생성 로직 제거 - 에이전트가 직접 녹음하도록 변경
         
         # ------------------------------
-        # 전화 통화 제목 (통화 중일 때만 표시)
+        # app.py 스타일: 통화 제어 영역
         # ------------------------------
-        # ⭐ 수정: 제목은 이미 위에서 표시되므로 여기서는 제거
-        # st.markdown(f"## {title}")
-        # st.markdown("---")
+        # 통화 상태 표시
+        call_status = st.session_state.call_handler.get_call_status()
+        
+        # 통화 제어 영역 (app.py 스타일)
+        col1, col2, col3 = st.columns([1, 1, 1])
+        
+        with col1:
+            if not st.session_state.call_active:
+                if st.button("📞 통화 시작", type="primary", use_container_width=True):
+                    call_id = st.session_state.call_handler.start_call(st.session_state.sim_instance_id)
+                    st.session_state.call_active = True
+                    st.session_state.current_call_id = call_id
+                    # ⭐ 통화 시작 시 자동으로 비디오 활성화
+                    st.session_state.video_enabled = True
+                    st.success("통화가 시작되었습니다! 비디오가 자동으로 활성화되었습니다.")
+                    st.rerun()
+            else:
+                if st.button("📴 통화 종료", type="secondary", use_container_width=True):
+                    duration = st.session_state.call_handler.end_call(
+                        st.session_state.sim_instance_id,
+                        st.session_state.current_call_id
+                    )
+                    st.session_state.call_active = False
+                    st.session_state.current_call_id = None
+                    # ⭐ 통화 종료 시 비디오 비활성화
+                    st.session_state.video_enabled = False
+                    st.session_state.opponent_video_frames = []
+                    st.session_state.last_camera_frame = None
+                    st.success(f"통화가 종료되었습니다. (통화 시간: {duration:.1f}초)")
+                    st.rerun()
+        
+        with col2:
+            if st.session_state.call_active:
+                st.session_state.video_enabled = st.toggle(
+                    "📹 비디오 활성화",
+                    value=st.session_state.video_enabled,
+                    help="비디오 통화를 활성화합니다"
+                )
+        
+        with col3:
+            if call_status:
+                minutes = int(call_status['duration'] // 60)
+                seconds = int(call_status['duration'] % 60)
+                st.metric("통화 시간", f"{minutes:02d}:{seconds:02d}")
+        
+        st.divider()
+        
+        # 통화 중인 경우 app.py 스타일 UI 표시
+        if st.session_state.call_active:
+            # ⭐ 비디오 영역 (2열 레이아웃) - 통화 시작 시 자동으로 표시
+            # 통화가 시작되면 자연스럽게 비디오 영역이 나타나도록
+            if st.session_state.video_enabled:
+                video_col1, video_col2 = st.columns(2)
+                
+                with video_col1:
+                    st.subheader("📹 내 화면")
+                    camera_image = st.camera_input(
+                        "웹캠",
+                        key="my_camera",
+                        help="내 웹캠 영상"
+                    )
+                    if camera_image:
+                        st.image(camera_image, use_container_width=True)
+                        # 내 화면을 상대방 비디오로 시뮬레이션하기 위해 저장
+                        st.session_state.last_camera_frame = camera_image
+                        # 최근 프레임들을 큐에 저장 (최대 3개)
+                        if len(st.session_state.opponent_video_frames) >= 3:
+                            st.session_state.opponent_video_frames.pop(0)
+                        st.session_state.opponent_video_frames.append({
+                            'image': camera_image,
+                            'timestamp': time.time()
+                        })
+                
+                with video_col2:
+                    st.subheader("📹 상대방 화면")
+                    # 가상 상대방 비디오 표시 (API 키 없이 시뮬레이션)
+                    if st.session_state.opponent_video_frames:
+                        # 가장 최근 프레임을 약간 지연시켜 표시 (실제 통화 지연 시뮬레이션)
+                        display_frame_idx = max(0, len(st.session_state.opponent_video_frames) - 2)
+                        if display_frame_idx < len(st.session_state.opponent_video_frames):
+                            opponent_frame = st.session_state.opponent_video_frames[display_frame_idx]['image']
+                            
+                            # 이미지를 약간 변형하여 상대방 화면처럼 보이게
+                            try:
+                                from PIL import Image
+                                img = Image.open(io.BytesIO(opponent_frame.getvalue()))
+                                # 이미지를 좌우 반전 (미러링 효과)
+                                mirrored_img = img.transpose(Image.FLIP_LEFT_RIGHT)
+                                
+                                # 이미지를 약간 어둡게 (통화 화질 시뮬레이션)
+                                img_array = np.array(mirrored_img)
+                                img_array = (img_array * 0.9).astype(np.uint8)  # 약간 어둡게
+                                processed_img = Image.fromarray(img_array)
+                                
+                                st.image(processed_img, use_container_width=True, caption="상대방 화면 (시뮬레이션)")
+                            except Exception as e:
+                                # 이미지 처리 실패 시 원본 표시
+                                st.image(opponent_frame, use_container_width=True, caption="상대방 화면 (시뮬레이션)")
+                        else:
+                            st.info("상대방 비디오를 준비하는 중...")
+                    elif st.session_state.last_camera_frame:
+                        # 카메라 프레임이 있으면 그것을 상대방 화면으로 표시
+                        try:
+                            from PIL import Image
+                            img = Image.open(io.BytesIO(st.session_state.last_camera_frame.getvalue()))
+                            mirrored_img = img.transpose(Image.FLIP_LEFT_RIGHT)
+                            img_array = np.array(mirrored_img)
+                            img_array = (img_array * 0.9).astype(np.uint8)
+                            processed_img = Image.fromarray(img_array)
+                            st.image(processed_img, use_container_width=True, caption="상대방 화면 (시뮬레이션)")
+                        except:
+                            st.image(st.session_state.last_camera_frame, use_container_width=True, caption="상대방 화면 (시뮬레이션)")
+                    else:
+                        st.info("상대방 비디오 스트림을 기다리는 중...")
+                        st.caption("💡 팁: 내 화면이 상대방 화면으로 시뮬레이션됩니다")
+                    
+                    # 비디오 품질 표시
+                    if st.session_state.opponent_video_frames:
+                        st.caption("📹 가상 상대방 비디오 (API 키 불필요)")
+                    
+                    # ⭐ 비디오 파일 업로드 옵션을 상대방 화면 밑으로 이동
+                    st.markdown("---")
+                    with st.expander(L["video_upload_expander"], expanded=False):
+                        # 비디오 동기화 활성화 여부
+                        st.session_state.is_video_sync_enabled = st.checkbox(
+                            L["video_sync_enable"],
+                            value=st.session_state.is_video_sync_enabled,
+                            key="video_sync_checkbox_call"
+                        )
+                        
+                        # OpenAI/Gemini 기반 영상 RAG 설명
+                        st.markdown("---")
+                        st.markdown(f"**{L['video_rag_title']}**")
+                        st.success(L["video_rag_desc"])
+                        
+                        # 가상 휴먼 기술은 현재 비활성화 (OpenAI/Gemini 기반 영상 RAG 사용)
+                        st.session_state.virtual_human_enabled = False
+                        
+                        # 성별 및 감정 상태별 비디오 업로드
+                        st.markdown(f"**{L['video_gender_emotion_setting']}**")
+                        col_gender_video, col_emotion_video = st.columns(2)
+                        
+                        with col_gender_video:
+                            video_gender = st.radio(L["video_gender_label"], [L["video_gender_male"], L["video_gender_female"]], key="video_gender_select_call", horizontal=True)
+                            gender_key = "male" if video_gender == L["video_gender_male"] else "female"
+                        
+                        with col_emotion_video:
+                            video_emotion = st.selectbox(
+                                L["video_emotion_label"],
+                                ["NEUTRAL", "HAPPY", "ANGRY", "ASKING", "SAD"],
+                                key="video_emotion_select_call"
+                            )
+                            emotion_key = video_emotion.lower()
+                        
+                        # 해당 조합의 비디오 업로드
+                        video_key = f"video_{gender_key}_{emotion_key}"
+                        uploaded_video = st.file_uploader(
+                            L["video_upload_label"].format(gender=video_gender, emotion=video_emotion),
+                            type=["mp4", "webm", "ogg"],
+                            key=f"customer_video_uploader_call_{gender_key}_{emotion_key}"
+                        )
+                        
+                        # ⭐ 비디오 업로드 처리 로직 (간소화)
+                        if uploaded_video is not None:
+                            try:
+                                video_bytes = uploaded_video.read()
+                                if video_bytes and len(video_bytes) > 0:
+                                    upload_key = f"last_uploaded_video_{gender_key}_{emotion_key}"
+                                    video_bytes_key = f"video_bytes_{gender_key}_{emotion_key}"
+                                    st.session_state[video_bytes_key] = video_bytes
+                                    st.session_state[video_key] = video_bytes_key
+                                    st.success(f"✅ 비디오 업로드 완료: {uploaded_video.name}")
+                            except Exception as e:
+                                st.error(f"비디오 업로드 오류: {e}")
+            
+            # --- 실시간 응대 힌트 영역 (오디오 통화 위로 이동) ---
+            hint_cols = st.columns([4, 1])
+            with hint_cols[0]:
+                st.info(L["hint_placeholder"] + st.session_state.realtime_hint_text)
+
+            with hint_cols[1]:
+                # 힌트 요청 버튼
+                if st.button(L["button_request_hint"], key=f"btn_request_hint_call_{st.session_state.sim_instance_id}"):
+                    with st.spinner(L["response_generating"]):
+                        # 전화 탭이므로 is_call=True
+                        hint = generate_realtime_hint(current_lang, is_call=True)
+                        st.session_state.realtime_hint_text = hint
+            
+            # 오디오 통화 영역 - 통합된 버전 (녹음, 전사, 전송, 고객 응답 생성 통합)
+            st.subheader("🎤 오디오 통화")
+            
+            # 실시간 오디오 녹음 및 재생
+            audio_col1, audio_col2 = st.columns(2)
+            
+            with audio_col1:
+                st.markdown("**에이전트 응답**")
+                # ⭐ app.py 방식: st.audio_input 사용
+                my_audio = st.audio_input(
+                    "말씀하세요",
+                    key="call_audio_input",
+                    help="통화 중 음성을 녹음합니다"
+                )
+                
+                # ⭐ 녹음 완료 시 오디오 재생기로 재생
+                if my_audio:
+                    # 오디오 청크 추가
+                    st.session_state.call_handler.add_audio_chunk(my_audio, "user")
+                    
+                    # 오디오 재생
+                    st.audio(my_audio, format="audio/wav", autoplay=False)
+                    
+                    # 전사 처리를 위한 세션 상태 저장
+                    if "bytes_to_process_call_audio" not in st.session_state or st.session_state.bytes_to_process_call_audio is None:
+                        st.session_state.bytes_to_process_call_audio = my_audio
+                        st.rerun()
+                
+                # 전사 처리 (오디오가 있을 때만 실행)
+                if "bytes_to_process_call_audio" in st.session_state and st.session_state.bytes_to_process_call_audio is not None:
+                    audio_input = st.session_state.bytes_to_process_call_audio
+                    st.session_state.bytes_to_process_call_audio = None
+                    
+                    # ⭐ UploadedFile 객체를 바이트로 변환
+                    if hasattr(audio_input, 'read'):
+                        audio_input.seek(0)  # 파일 포인터를 처음으로 이동
+                        audio_bytes_backup = audio_input.read()
+                    elif hasattr(audio_input, 'getvalue'):
+                        audio_bytes_backup = audio_input.getvalue()
+                    elif isinstance(audio_input, bytes):
+                        audio_bytes_backup = audio_input
+                    else:
+                        audio_bytes_backup = audio_input
+                    
+                    with st.spinner("전사 중..."):
+                        try:
+                            transcript_result = transcribe_bytes_with_whisper(
+                                audio_bytes_backup,
+                                "audio/wav",
+                                lang_code=None,
+                                auto_detect=True
+                            )
+                            if transcript_result and transcript_result.strip():
+                                transcript_result = transcript_result.strip()
+                                # ⭐ 전사 결과를 입력 칸에 반영
+                                st.session_state.agent_response_input_box_widget_call = transcript_result
+                                st.session_state.current_agent_audio_text = transcript_result
+                                st.session_state.last_transcript = transcript_result
+                                
+                                # ⭐ 첫 인사말인지 확인
+                                is_first_greeting = not any(
+                                    msg.get("role") == "phone_exchange" or msg.get("role") == "agent"
+                                    for msg in st.session_state.simulator_messages
+                                )
+                                
+                                # ⭐ 전화 발신 모드 확인
+                                is_outbound_call = st.session_state.get("call_sim_mode", "INBOUND") == "OUTBOUND"
+                                
+                                # ⭐ 전사 결과를 메시지에 추가하고 고객 반응 생성 트리거
+                                if is_first_greeting:
+                                    # 첫 인사말인 경우
+                                    st.session_state.simulator_messages.append(
+                                        {"role": "agent", "content": transcript_result}
+                                    )
+                                    st.session_state.customer_avatar["state"] = "NEUTRAL"
+                                    
+                                    if is_outbound_call and not st.session_state.get("customer_initial_audio_bytes"):
+                                        st.session_state.process_customer_reaction = True
+                                        st.session_state.pending_agent_transcript = transcript_result
+                                    else:
+                                        if st.session_state.call_initial_query:
+                                            st.session_state.current_customer_audio_text = st.session_state.call_initial_query
+                                        st.session_state.customer_turn_start = True
+                                else:
+                                    # 이후 응답인 경우: 고객 반응 생성
+                                    st.session_state.simulator_messages.append(
+                                        {"role": "agent_response", "content": transcript_result}
+                                    )
+                                    st.session_state.process_customer_reaction = True
+                                    st.session_state.pending_agent_transcript = transcript_result
+                                
+                                st.success(f"✅ 전사 완료: {transcript_result[:50]}...")
+                                # ⭐ rerun 제거: 오디오 영역의 전사 응답 칸에서 처리됨
+                        except Exception as e:
+                            st.error(f"전사 오류: {e}")
+                
+                # 전사 결과 표시 (읽기 전용)
+                if st.session_state.get("agent_response_input_box_widget_call"):
+                    st.text_area(
+                        "전사된 응답",
+                        value=st.session_state.get("agent_response_input_box_widget_call", ""),
+                        key="transcript_display_call",
+                        height=100,
+                        disabled=True,
+                        help="전사된 내용이 여기에 표시됩니다"
+                    )
+            
+            with audio_col2:
+                st.markdown("**고객의 응답**")
+                
+                # 통화 상태 표시
+                if call_status:
+                    st.metric("오디오 청크 수", call_status['chunks_count'])
+                
+                # ⭐ 고객 응답 생성 및 재생 (고객의 응답 부분 내부에서 처리)
+                # 1. 고객 초기 문의 오디오 재생
+                if st.session_state.get("customer_initial_audio_bytes") and st.session_state.get("customer_turn_start"):
+                    customer_initial_audio = st.session_state.customer_initial_audio_bytes
+                    # ⭐ 오디오 재생기로 재생 (자동 재생 활성화)
+                    if customer_initial_audio:
+                        st.audio(customer_initial_audio, format="audio/mp3", autoplay=True, loop=False)
+                    if st.session_state.call_initial_query:
+                        st.info(f"💬 고객: {st.session_state.call_initial_query}")
+                    # 재생 후 플래그 초기화 (다음 렌더링에서 제거)
+                    st.session_state.customer_turn_start = False
+                
+                # 2. 고객 반응이 생성된 경우 오디오 재생
+                elif st.session_state.get("customer_reaction_audio_bytes"):
+                    customer_audio = st.session_state.customer_reaction_audio_bytes
+                    # ⭐ 오디오 재생기로 재생 (자동 재생 활성화)
+                    if customer_audio:
+                        st.audio(customer_audio, format="audio/mp3", autoplay=True, loop=False)
+                    st.session_state.current_customer_audio_text = st.session_state.get("customer_reaction_text", "")
+                    
+                    # 고객 응답 텍스트 표시
+                    if st.session_state.get("current_customer_audio_text"):
+                        st.info(f"💬 고객: {st.session_state.current_customer_audio_text}")
+                    
+                    # 재생 후 세션 상태에 저장하여 다음 렌더링에서도 표시
+                    st.session_state.last_customer_audio_bytes = customer_audio
+                    # 플래그로 재생 상태 관리
+                    if not st.session_state.get("customer_audio_played_once", False):
+                        st.session_state.customer_audio_played_once = True
+                    else:
+                        # 이미 한 번 재생했으면 초기화 (다음 응답을 위해)
+                        st.session_state.customer_reaction_audio_bytes = None
+                        st.session_state.customer_reaction_text = None
+                        st.session_state.customer_audio_played_once = False
+                
+                # 2-1. 이전 고객 반응 오디오 재생
+                elif st.session_state.get("last_customer_audio_bytes"):
+                    st.audio(st.session_state.last_customer_audio_bytes, format="audio/mp3", autoplay=False, loop=False)
+                    # 텍스트도 표시
+                    if st.session_state.get("current_customer_audio_text"):
+                        st.info(f"💬 고객: {st.session_state.current_customer_audio_text}")
+                
+                # 3. 고객 응답 텍스트만 있는 경우 표시
+                elif st.session_state.get("current_customer_audio_text"):
+                    st.info(f"💬 고객: {st.session_state.current_customer_audio_text}")
+                
+                # 4. 고객 응답이 없는 경우 기본 메시지 표시
+                else:
+                    st.info("고객의 음성이 여기에 재생됩니다")
+                
+                # ⭐ 고객 응답 생성 로직 (고객의 응답 부분 내부에서 처리)
+                # 전사 후 고객 반응 생성 처리
+                if st.session_state.get("process_customer_reaction") and st.session_state.get("pending_agent_transcript"):
+                    # ⭐ 중복 실행 방지: 이미 이번 사이클에서 생성했으면 스킵하고 플래그 초기화
+                    if st.session_state.get("customer_reaction_generated_this_cycle", False):
+                        st.session_state.process_customer_reaction = False
+                        if "pending_agent_transcript" in st.session_state:
+                            del st.session_state.pending_agent_transcript
+                        # 플래그 초기화 (다음 고객 반응 생성을 위해)
+                        st.session_state.customer_reaction_generated_this_cycle = False
+                    else:
+                        pending_transcript = st.session_state.pending_agent_transcript
+                        # 플래그 초기화 (고객 반응 생성 시작)
+                        st.session_state.process_customer_reaction = False
+                        del st.session_state.pending_agent_transcript
+
+                    # 에이전트 응답을 먼저 반영
+                    if hasattr(st.session_state, 'current_agent_audio_text'):
+                        st.session_state.current_agent_audio_text = pending_transcript
+                    else:
+                        st.session_state.current_agent_audio_text = pending_transcript
+
+                    # 고객 반응 생성
+                    with st.spinner(L["generating_customer_response"]):
+                        customer_reaction = generate_customer_reaction_for_call(
+                            st.session_state.language,
+                            pending_transcript
+                        )
+
+                        # 고객 반응을 TTS로 재생 및 반영
+                        if not customer_reaction.startswith("❌"):
+                            audio_bytes, msg = synthesize_tts(customer_reaction, st.session_state.language, role="customer")
+                            if audio_bytes:
+                                # 고객 반응 오디오 저장
+                                st.session_state.customer_reaction_audio_bytes = audio_bytes
+                                st.session_state.customer_reaction_text = customer_reaction
+                                st.session_state.current_customer_audio_text = customer_reaction
+                                # 재생 플래그 초기화 (새로운 오디오이므로 재생 필요)
+                                st.session_state.customer_audio_played_once = False
+                                
+                                # 이력 저장
+                                agent_response_text = st.session_state.get("current_agent_audio_text", pending_transcript)
+                                log_entry = f"Agent: {agent_response_text} | Customer: {customer_reaction.strip()}"
+                                st.session_state.simulator_messages.append(
+                                    {"role": "phone_exchange", "content": log_entry}
+                                )
+                                
+                                # ⭐ "없습니다. 감사합니다" 응답 처리 - 에이전트가 감사 인사 후 종료
+                                if L['customer_no_more_inquiries'] in customer_reaction:
+                                    # 에이전트가 감사 인사 메시지 전송
+                                    agent_name = st.session_state.get("agent_name", "000")
+                                    current_lang_call = st.session_state.get("language", "ko")
+                                    if current_lang_call == "ko":
+                                        agent_closing_msg = f"연락 주셔서 감사드립니다. 지금까지 상담원 {agent_name}였습니다. 즐거운 하루 되세요."
+                                    elif current_lang_call == "en":
+                                        agent_closing_msg = f"Thank you for contacting us. This was {agent_name}. Have a great day!"
+                                    else:  # ja
+                                        agent_closing_msg = f"お問い合わせいただき、ありがとうございました。担当は{agent_name}でした。良い一日をお過ごしください。"
+                                    
+                                    st.session_state.simulator_messages.append(
+                                        {"role": "phone_exchange", "content": f"Agent: {agent_closing_msg}"}
+                                    )
+                                    
+                                    # 통화 요약 생성
+                                    with st.spinner(L.get("generating_summary", "AI 요약 생성 중...")):
+                                        summary = summarize_history_for_call(
+                                            st.session_state.simulator_messages,
+                                            st.session_state.call_initial_query,
+                                            st.session_state.language
+                                        )
+                                        st.session_state.call_summary_text = summary
+                                    
+                                    # 통화 종료
+                                    st.session_state.call_sim_stage = "CALL_ENDED"
+                                    st.session_state.is_call_ended = True
+                                    
+                                    # 에이전트 입력 영역 초기화
+                                    st.session_state.current_agent_audio_text = ""
+                                    st.session_state.realtime_hint_text = ""
+                                    if "bytes_to_process" in st.session_state:
+                                        st.session_state.bytes_to_process = None
+                                    
+                                    st.success(L.get("call_ended_no_additional_inquiry", "✅ 고객이 추가 문의 사항이 없다고 확인했습니다. 에이전트가 감사 인사를 전송한 후 통화가 종료되었습니다."))
+                                # ⭐ "추가 문의 사항도 있습니다" 응답 처리 (통화 계속)
+                                elif L['customer_has_additional_inquiries'] in customer_reaction:
+                                    # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
+                                    st.session_state.current_agent_audio_text = ""
+                                    st.session_state.realtime_hint_text = ""
+                                    if "bytes_to_process" in st.session_state:
+                                        st.session_state.bytes_to_process = None
+                                    
+                                    st.info(L.get("customer_has_additional_inquiry_info", "💡 고객이 추가 문의 사항이 있다고 했습니다. 다음 응답을 녹음하세요."))
+                                else:
+                                    # 일반 고객 반응 처리
+                                    # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
+                                    st.session_state.current_agent_audio_text = ""
+                                    st.session_state.realtime_hint_text = ""
+                                    if "bytes_to_process" in st.session_state:
+                                        st.session_state.bytes_to_process = None
+                                
+                                # ⭐ 고객 반응 생성 완료 플래그 설정 및 UI 업데이트를 위한 rerun (한 번만)
+                                st.session_state.customer_reaction_generated_this_cycle = True
+                                st.rerun()
+                        else:
+                            st.error(customer_reaction)
+                            # 에러 발생 시에도 플래그 초기화
+                            st.session_state.process_customer_reaction = False
+                            if "pending_agent_transcript" in st.session_state:
+                                del st.session_state.pending_agent_transcript
+                            st.session_state.customer_reaction_generated_this_cycle = False
+                
+                # ⭐ 고객 응답 생성 후 다음 녹음을 위한 안내
+                if st.session_state.get("process_customer_reaction") or st.session_state.get("customer_turn_start"):
+                    st.caption("💡 고객 응답이 생성되었습니다. 위의 '에이전트 응답'에서 다시 녹음하세요.")
+            
+            # 통화 로그
+            with st.expander("📋 통화 로그", expanded=False):
+                if call_status:
+                    st.json({
+                        "통화 ID": st.session_state.current_call_id,
+                        "통화 시간": f"{int(call_status['duration'] // 60):02d}:{int(call_status['duration'] % 60):02d}",
+                        "오디오 청크": call_status['chunks_count'],
+                        "비디오 활성화": st.session_state.video_enabled
+                    })
+            
+            # 통화 시간 업데이트를 위한 자동 새로고침 (5초마다) - 주석 처리
+            # if 'last_refresh' not in st.session_state:
+            #     st.session_state.last_refresh = time.time()
+            # 
+            # current_time = time.time()
+            # if current_time - st.session_state.last_refresh > 5:
+            #     st.session_state.last_refresh = current_time
+            #     st.rerun()
+        
+        st.divider()
 
         # ------------------------------
-        # Hangup / Hold 버튼
+        # 기존 기능 유지: Hangup / Hold 버튼
         # ------------------------------
         col_hangup, col_hold = st.columns(2)
 
@@ -5902,6 +6573,15 @@ elif feature_selection == L["sim_tab_phone"]:
                 # 종료
                 st.session_state.call_sim_stage = "CALL_ENDED"
                 st.session_state.is_call_ended = True
+                
+                # ⭐ app.py 스타일: call_handler 통화 종료
+                if st.session_state.call_active and st.session_state.current_call_id:
+                    duration = st.session_state.call_handler.end_call(
+                        st.session_state.sim_instance_id,
+                        st.session_state.current_call_id
+                    )
+                    st.session_state.call_active = False
+                    st.session_state.current_call_id = None
 
                 st.rerun()
 
@@ -6187,46 +6867,13 @@ elif feature_selection == L["sim_tab_phone"]:
         
         st.markdown("---")
 
-        # --- 실시간 응대 힌트 영역 ---
-        hint_cols = st.columns([4, 1])
-        with hint_cols[0]:
-            st.info(L["hint_placeholder"] + st.session_state.realtime_hint_text)
-
-        with hint_cols[1]:
-            # 힌트 요청 버튼
-            if st.button(L["button_request_hint"], key=f"btn_request_hint_call_{st.session_state.sim_instance_id}"):
-                with st.spinner(L["response_generating"]):
-                    # 전화 탭이므로 is_call=True
-                    hint = generate_realtime_hint(current_lang, is_call=True)
-                    st.session_state.realtime_hint_text = hint
-
+        # ⭐ 실시간 CC 자막과 에이전트 응답 입력 부분 제거 (오디오 기능 사용)
         # =========================
-        # CC 자막 / 음성 입력 및 제어 로직 (기존 로직)
+        # CC 자막 / 음성 입력 및 제어 로직 제거됨 (오디오 기능으로 대체)
         # =========================================
 
-        # ⭐ [핵심 수정: CC 자막 반영] 전사 로직을 CC 자막 영역 렌더링 전에 실행하여 반영되도록 보장
-        # --- 에이전트 음성 입력 / 녹음 (전사 로직 전에 처리) ---
-        mic_audio = None
-        if not st.session_state.is_on_hold:
-            # ✅ 마이크 위젯을 항상 렌더링하여 활성화 상태를 유지
-            mic_audio = mic_recorder(
-                start_prompt=L["agent_response_prompt"],
-                stop_prompt=L["agent_response_stop_and_send"],
-                just_once=True,
-                format="wav",
-                use_container_width=True,
-                key="call_sim_mic_recorder",
-            )
-
-            # 녹음 완료 (mic_audio.get("bytes")가 채워짐) 시, 바이트를 저장하고 재실행
-            if mic_audio and mic_audio.get("bytes"):
-                # ⭐ 수정: 이미 처리 중인 경우 중복 처리 방지
-                if "bytes_to_process" not in st.session_state or st.session_state.bytes_to_process is None:
-                    st.session_state.bytes_to_process = mic_audio["bytes"]
-                    st.session_state.current_agent_audio_text = L["recording_complete_transcribing"]
-                    st.rerun()
-
-        # 전사 로직: bytes_to_process에 데이터가 있을 때만 실행 (CC 자막 렌더링 전에 실행)
+        # ⭐ 전사 로직은 오디오 영역의 전사 응답 칸에서 처리됨
+        # 전사 로직: bytes_to_process에 데이터가 있을 때만 실행
         if "bytes_to_process" in st.session_state and st.session_state.bytes_to_process is not None:
             # ⭐ 수정: OpenAI 또는 Gemini API 키가 있는지 확인
             has_openai = st.session_state.openai_client is not None
@@ -6266,14 +6913,12 @@ elif feature_selection == L["sim_tab_phone"]:
                     if "agent_response_input_box_widget_call" in st.session_state:
                         st.session_state.agent_response_input_box_widget_call = ""
                     st.session_state.last_transcript = ""
-                    st.rerun()
                 elif not agent_response_transcript.strip():
                     st.warning(L["transcription_empty_warning"])
                     st.session_state.current_agent_audio_text = ""
                     if "agent_response_input_box_widget_call" in st.session_state:
                         st.session_state.agent_response_input_box_widget_call = ""
                     st.session_state.last_transcript = ""
-                    st.rerun()
                 elif agent_response_transcript.strip():
                     # 3) 전사 성공 - CC에 반영 (전사 결과를 먼저 CC 영역에 표시)
                     agent_response_transcript = agent_response_transcript.strip()
@@ -6303,38 +6948,12 @@ elif feature_selection == L["sim_tab_phone"]:
                     st.session_state.pending_transcript_for_greeting_check = agent_response_transcript
                     st.session_state.is_first_greeting_flag = is_first_greeting
                     st.session_state.is_outbound_call_flag = is_outbound_call
-                    st.rerun()
+                    # ⭐ rerun 제거: 첫 인사말 처리 로직이 바로 실행됨
 
-        # --- 실시간 CC 자막 / 전사 영역 ---
-        st.subheader(L["cc_live_transcript"])
+        # ⭐ 실시간 CC 자막 영역 제거 (오디오 기능 사용)
+        # --- 실시간 CC 자막 / 전사 영역 제거됨 ---
 
-        if st.session_state.is_on_hold:
-            st.text_area("Customer", value=L["customer_waiting_hold"], height=50, disabled=True, key="customer_live_cc_area")
-            st.text_area("Agent", value=L["agent_hold_message"], height=50, disabled=True,
-                         key="agent_live_cc_area")
-        else:
-            # 고객 CC (LLM 생성 텍스트 또는 초기 문의)
-            customer_cc_text = st.session_state.current_customer_audio_text
-            if not customer_cc_text and st.session_state.call_initial_query:
-                customer_cc_text = st.session_state.call_initial_query
-            st.text_area(
-                "Customer",
-                value=customer_cc_text,
-                height=50,
-                disabled=True,
-                key="customer_live_cc_area",
-            )
-
-            # 에이전트 CC (마이크 전사)
-            st.text_area(
-                "Agent",
-                value=st.session_state.current_agent_audio_text,
-                height=50,
-                disabled=True,
-                key="agent_live_cc_area",
-            )
-
-        # CC 자막이 먼저 렌더링된 후에 첫 인사말 처리 로직이 실행되도록 보장
+        # ⭐ CC 자막이 먼저 렌더링된 후에 첫 인사말 처리 로직이 실행되도록 보장
         if st.session_state.get("pending_transcript_for_greeting_check"):
             agent_response_transcript = st.session_state.pending_transcript_for_greeting_check
             is_first_greeting = st.session_state.get("is_first_greeting_flag", False)
@@ -6358,52 +6977,28 @@ elif feature_selection == L["sim_tab_phone"]:
                     st.session_state.current_agent_audio_text = agent_response_transcript
                     st.session_state.process_customer_reaction = True
                     st.session_state.pending_agent_transcript = agent_response_transcript
-                    st.rerun()
+                    # ⭐ rerun 제거: 고객 반응 생성 로직이 바로 실행됨
                 else:
                     # ⭐ 수정: 고객 문의를 CC 자막에 미리 반영 (재생 전에 반영)
                     if st.session_state.call_initial_query:
                         st.session_state.current_customer_audio_text = st.session_state.call_initial_query
                     st.session_state.customer_turn_start = True
-                    st.rerun()
+                    # ⭐ rerun 제거: 고객 문의 재생 로직이 바로 실행됨
             else:
                 # 이후 응답인 경우: 기존 로직대로 고객 반응 생성
                 st.session_state.process_customer_reaction = True
                 st.session_state.pending_agent_transcript = agent_response_transcript
-                st.rerun()
+                # ⭐ rerun 제거: 고객 반응 생성 로직이 바로 실행됨
 
         st.markdown("---")
 
-        # ⭐ [핵심 수정] 전화 탭 입력 칸: 전사 결과가 입력 칸에 반영되도록 보장
-        # 전사 결과가 있으면 입력 칸에 반영
-        if st.session_state.get("last_transcript") and st.session_state.last_transcript:
-            if "agent_response_input_box_widget_call" in st.session_state:
-                st.session_state.agent_response_input_box_widget_call = st.session_state.last_transcript
-        # ⭐ [추가 수정] agent_response_input_box_widget_call가 비어있고 last_transcript가 있으면 반영
-        elif not st.session_state.get("agent_response_input_box_widget_call") and st.session_state.get("last_transcript") and st.session_state.last_transcript:
-            st.session_state.agent_response_input_box_widget_call = st.session_state.last_transcript
+        # ⭐ 에이전트 응답 입력 칸 제거 (오디오 영역의 전사 응답 칸 사용)
+        # --- 에이전트 응답 입력 칸 (전화 탭) 제거됨 ---
+        # --- 에이전트 음성 입력 / 녹음 제거됨 (오디오 영역에서 처리) ---
 
-        # --- 에이전트 응답 입력 칸 (전화 탭) ---
-        st.subheader(L.get("agent_response_label", "에이전트 응답 입력"))
-        agent_response_input_call = st.text_area(
-            L.get("agent_response_placeholder", "고객에게 응답하세요..."),
-            value=st.session_state.get("agent_response_input_box_widget_call", ""),
-            key="agent_response_input_box_widget_call",
-            height=100,
-            label_visibility="collapsed",
-            disabled=st.session_state.is_on_hold
-        )
-
-        st.markdown("---")
-
-        # --- 에이전트 음성 입력 / 녹음 ---
-        st.subheader(L["mic_input_status"])
-
-        # 음성 입력: 짧은 청크로 끊어서 전사해야 실시간 CC 모방 가능
+        # Hold 상태 표시만 유지
         if st.session_state.is_on_hold:
             st.info(L["call_on_hold_message"])
-        else:
-            # 마이크 위젯은 위에서 이미 렌더링됨
-            pass
 
         # ⭐ 수정: 첫 인사말 후 고객 문의 재생 처리
         # customer_turn_start 플래그가 True일 때 고객 문의를 재생
@@ -6450,15 +7045,17 @@ elif feature_selection == L["sim_tab_phone"]:
                     if video_path and os.path.exists(video_path):
                         with open(video_path, "rb") as f:
                             video_bytes = f.read()
-                        # 비디오와 오디오를 함께 재생
+                        # 비디오 재생 (오디오는 상대방 음성 영역에서 재생)
                         st.video(video_bytes, format="video/mp4", autoplay=True, loop=False, muted=False)
-                        st.audio(st.session_state.customer_initial_audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                        # ⭐ 오디오는 상대방 음성 영역에서 재생 (customer_turn_start 플래그로 트리거)
                     else:
-                        # 비디오가 없으면 오디오만 재생
-                        st.audio(st.session_state.customer_initial_audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                        # 비디오가 없으면 오디오는 상대방 음성 영역에서 재생
+                        # ⭐ 오디오는 상대방 음성 영역에서 재생 (customer_turn_start 플래그로 트리거)
+                        pass
                 else:
-                    # 비디오 동기화가 비활성화되어 있으면 오디오만 재생
-                    st.audio(st.session_state.customer_initial_audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                    # 비디오 동기화가 비활성화되어 있으면 오디오는 상대방 음성 영역에서 재생
+                    # ⭐ 오디오는 상대방 음성 영역에서 재생 (customer_turn_start 플래그로 트리거)
+                    pass
                 
                 st.success(L["customer_query_playing"])
                 st.info(f"{L['query_content_label']} {st.session_state.call_initial_query}")
@@ -6466,10 +7063,11 @@ elif feature_selection == L["sim_tab_phone"]:
                 # ⭐ 수정: 재생 완료 대기 로직 완전 제거
                 # 브라우저에서 자동으로 재생되므로 서버에서 기다릴 필요 없음
                 # 재생은 백그라운드에서 계속 진행되며, CC 자막은 이미 반영됨
+                # ⭐ 오디오는 상대방 음성 영역에서 재생됨
                 
             except Exception as e:
                 st.warning(L["auto_play_failed"].format(error=str(e)))
-                st.audio(st.session_state.customer_initial_audio_bytes, format="audio/mp3", autoplay=False)
+                # ⭐ 오디오는 상대방 음성 영역에서 재생 (customer_turn_start 플래그로 트리거)
                 st.info(f"{L['query_content_label']} {st.session_state.call_initial_query}")
             
             # 플래그 초기화
@@ -6528,9 +7126,9 @@ elif feature_selection == L["sim_tab_phone"]:
                                     if video_path and os.path.exists(video_path):
                                         with open(video_path, "rb") as f:
                                             video_bytes = f.read()
-                                        # 비디오와 오디오를 함께 재생
+                                        # 비디오 재생 (오디오는 상대방 음성 영역에서 재생)
                                         st.video(video_bytes, format="video/mp4", autoplay=True, loop=False, muted=False)
-                                        st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                                        # ⭐ 오디오는 상대방 음성 영역에서 재생되도록 저장 (위에서 이미 customer_reaction_audio_bytes에 저장됨)
                                         
                                         # ⭐ Gemini 제안: 사용자 피드백 평가 UI 추가
                                         st.markdown("---")
@@ -6570,17 +7168,17 @@ elif feature_selection == L["sim_tab_phone"]:
                                             )
                                             st.success(L.get("feedback_saved", "✅ 피드백이 저장되었습니다! (점수: {rating}/5)").format(rating=rating))
                                             st.info(L.get("feedback_usage_info", "💡 이 피드백은 향후 비디오 선택 정확도를 개선하는 데 사용됩니다."))
+                                    # ⭐ 비디오가 없거나 비디오 동기화가 비활성화되어 있으면 오디오는 상대방 음성 영역에서 재생
+                                    # (오디오는 위에서 이미 customer_reaction_audio_bytes에 저장됨)
                                     else:
-                                        # 비디오가 없으면 오디오만 재생
-                                        st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
-                                else:
-                                    # 비디오 동기화가 비활성화되어 있으면 오디오만 재생
-                                    st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
+                                        # 비디오 동기화가 비활성화되어 있으면 오디오는 상대방 음성 영역에서 재생
+                                        # (오디오는 위에서 이미 customer_reaction_audio_bytes에 저장됨)
+                                        pass
                                 
                                 st.success(L["customer_responded"].format(reaction=customer_reaction.strip()[:50] + "..."))
                             except Exception as e:
                                 st.warning(L["auto_play_failed"].format(error=str(e)))
-                                st.audio(audio_bytes, format="audio/mp3", autoplay=False)
+                                # ⭐ 오디오는 상대방 음성 영역에서 재생 (customer_reaction_audio_bytes에 저장됨)
                                 st.success(L["customer_responded"].format(reaction=customer_reaction.strip()[:50] + "..."))
                         else:
                             st.error(L["customer_voice_generation_error"].format(error=msg))
@@ -6601,193 +7199,7 @@ elif feature_selection == L["sim_tab_phone"]:
                     else:
                         st.error(customer_reaction)
 
-        # ⭐ 수정: 전사 후 고객 반응 생성 처리 (마이크 위젯 렌더링 이후에 위치)
-        # 전사 결과가 CC에 먼저 표시된 후 고객 반응을 생성하도록 분리
-        if st.session_state.get("process_customer_reaction") and st.session_state.get("pending_agent_transcript"):
-            pending_transcript = st.session_state.pending_agent_transcript
-            # 플래그 초기화
-            st.session_state.process_customer_reaction = False
-            del st.session_state.pending_agent_transcript
-
-            # ⭐ 수정: 에이전트 응답을 먼저 CC에 반영
-            if hasattr(st.session_state, 'current_agent_audio_text'):
-                st.session_state.current_agent_audio_text = pending_transcript
-            else:
-                st.session_state.current_agent_audio_text = pending_transcript
-
-            # 고객 반응 생성
-            with st.spinner(L["generating_customer_response"]):
-                customer_reaction = generate_customer_reaction_for_call(
-                    st.session_state.language,
-                    pending_transcript
-                )
-
-                # 고객 반응을 TTS로 재생 및 CC에 반영 (비디오와 동기화) - LLM 기반 영상 RAG
-                if not customer_reaction.startswith("❌"):
-                    audio_bytes, msg = synthesize_tts(customer_reaction, st.session_state.language, role="customer")
-                    if audio_bytes:
-                        # Streamlit 문서: autoplay는 브라우저 정책상 제한될 수 있음
-                        try:
-                            # 비디오 동기화가 활성화되어 있으면 비디오와 함께 재생
-                            if st.session_state.is_video_sync_enabled:
-                                customer_gender = st.session_state.customer_avatar.get("gender", "male")
-                                # ⭐ LLM 기반 텍스트 분석으로 감정/제스처 판단
-                                # ⭐ Gemini 제안: 에이전트 답변과 대화 컨텍스트 전달
-                                agent_last_msg = st.session_state.current_agent_audio_text if hasattr(st.session_state, 'current_agent_audio_text') else None
-                                analysis_result = analyze_text_for_video_selection(
-                                    customer_reaction,
-                                    st.session_state.language,
-                                    agent_last_response=agent_last_msg,
-                                    conversation_context=st.session_state.simulator_messages[-5:] if st.session_state.simulator_messages else None
-                                )
-                                avatar_state = analysis_result.get("emotion", st.session_state.customer_avatar.get("state", "NEUTRAL"))
-                                gesture = analysis_result.get("gesture", "NONE")
-                                context_keywords = analysis_result.get("context_keywords", [])  # ⭐ Gemini 제안
-                                
-                                # 분석 결과를 아바타 상태에 반영
-                                st.session_state.customer_avatar["state"] = avatar_state
-                                
-                                # ⭐ Gemini 제안: 상황별 키워드를 고려한 비디오 선택
-                                video_path = get_video_path_by_avatar(
-                                    customer_gender, 
-                                    avatar_state, 
-                                    is_speaking=True,
-                                    gesture=gesture,
-                                    context_keywords=context_keywords
-                                )
-                                
-                                if video_path and os.path.exists(video_path):
-                                    with open(video_path, "rb") as f:
-                                        video_bytes = f.read()
-                                    # 비디오와 오디오를 함께 재생
-                                    st.video(video_bytes, format="video/mp4", autoplay=True, loop=False, muted=False)
-                                    st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
-                                    
-                                    # ⭐ Gemini 제안: 사용자 피드백 평가 UI 추가
-                                    st.markdown("---")
-                                    st.markdown("**💬 비디오 매칭 평가**")
-                                    st.caption("이 비디오가 고객의 텍스트와 감정에 자연스럽게 매칭되었습니까?")
-                                    
-                                    feedback_key = f"video_feedback_{st.session_state.sim_instance_id}_{len(st.session_state.simulator_messages)}"
-                                    
-                                    col_rating, col_comment = st.columns([2, 3])
-                                    with col_rating:
-                                        rating = st.slider(
-                                            "평가 점수 (1-5점)",
-                                            min_value=1,
-                                            max_value=5,
-                                            value=3,
-                                            key=f"{feedback_key}_rating",
-                                            help="1점: 매우 부자연스러움, 5점: 매우 자연스러움"
-                                        )
-                                    
-                                    with col_comment:
-                                            comment = st.text_input(
-                                                L.get("feedback_comment_label", "의견 (선택사항)"),
-                                                key=f"{feedback_key}_comment",
-                                                placeholder=L.get("feedback_comment_placeholder", "예: 비디오가 텍스트와 잘 맞았습니다")
-                                            )
-                                    
-                                    if st.button(L.get("button_submit_feedback", "피드백 제출"), key=f"{feedback_key}_submit"):
-                                        # 피드백을 데이터베이스에 저장
-                                        add_video_mapping_feedback(
-                                            customer_text=customer_reaction,
-                                            selected_video_path=video_path,
-                                            emotion=avatar_state,
-                                            gesture=gesture,
-                                            context_keywords=context_keywords,
-                                            user_rating=rating,
-                                            user_comment=comment
-                                        )
-                                        st.success(L.get("feedback_saved", "✅ 피드백이 저장되었습니다! (점수: {rating}/5)").format(rating=rating))
-                                        st.info(L.get("feedback_usage_info", "💡 이 피드백은 향후 비디오 선택 정확도를 개선하는 데 사용됩니다."))
-                                else:
-                                    # 비디오가 없으면 오디오만 재생
-                                    st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
-                            else:
-                                # 비디오 동기화가 비활성화되어 있으면 오디오만 재생
-                                st.audio(audio_bytes, format="audio/mp3", autoplay=True, loop=False)
-                            
-                            st.success(L["customer_responded"].format(reaction=customer_reaction.strip()[:50] + "..."))
-                            # ⭐ 수정: 고객 반응 재생 시간 확보를 위해 짧은 대기
-                            time.sleep(0.5)
-                        except Exception as e:
-                            st.warning(L["auto_play_failed"].format(error=str(e)))
-                            st.audio(audio_bytes, format="audio/mp3", autoplay=False)
-                            st.success(L["customer_responded"].format(reaction=customer_reaction.strip()[:50] + "..."))
-                    else:
-                        st.error(L["customer_voice_generation_error"].format(error=msg))
-
-                    # 고객 반응 텍스트를 CC 영역에 반영
-                    st.session_state.current_customer_audio_text = customer_reaction.strip()
-                    
-                    # ⭐ 수정: 고객 반응을 이력에 저장 (전화 발신 모드에서도 작동)
-                    agent_response_text = st.session_state.get("current_agent_audio_text", pending_transcript)
-                    log_entry = f"Agent: {agent_response_text} | Customer: {customer_reaction.strip()}"
-                    st.session_state.simulator_messages.append(
-                        {"role": "phone_exchange", "content": log_entry}
-                    )
-
-                    # ⭐ 수정: "없습니다. 감사합니다" 응답 처리 - 에이전트가 감사 인사 후 종료
-                    if L['customer_no_more_inquiries'] in customer_reaction:
-                        # ⭐ 수정: 이력 저장은 이미 위에서 처리되었으므로 중복 저장 방지
-                        
-                        # ⭐ 추가: 에이전트가 감사 인사 메시지 전송
-                        agent_name = st.session_state.get("agent_name", "000")
-                        current_lang_call = st.session_state.get("language", "ko")
-                        if current_lang_call == "ko":
-                            agent_closing_msg = f"연락 주셔서 감사드립니다. 지금까지 상담원 {agent_name}였습니다. 즐거운 하루 되세요."
-                        elif current_lang_call == "en":
-                            agent_closing_msg = f"Thank you for contacting us. This was {agent_name}. Have a great day!"
-                        else:  # ja
-                            agent_closing_msg = f"お問い合わせいただき、ありがとうございました。担当は{agent_name}でした。良い一日をお過ごしください。"
-                        
-                        st.session_state.simulator_messages.append(
-                            {"role": "phone_exchange", "content": f"Agent: {agent_closing_msg}"}
-                        )
-                        
-                        # 통화 요약 생성
-                        with st.spinner(L.get("generating_summary", "AI 요약 생성 중...")):
-                            summary = summarize_history_for_call(
-                                st.session_state.simulator_messages,
-                                st.session_state.call_initial_query,
-                                st.session_state.language
-                            )
-                            st.session_state.call_summary_text = summary
-                        
-                        # 통화 종료
-                        st.session_state.call_sim_stage = "CALL_ENDED"
-                        st.session_state.is_call_ended = True
-                        
-                        # 에이전트 입력 영역 초기화
-                        st.session_state.current_agent_audio_text = ""
-                        st.session_state.realtime_hint_text = ""
-                        if "bytes_to_process" in st.session_state:
-                            st.session_state.bytes_to_process = None
-                        
-                        st.success(L.get("call_ended_no_additional_inquiry", "✅ 고객이 추가 문의 사항이 없다고 확인했습니다. 에이전트가 감사 인사를 전송한 후 통화가 종료되었습니다."))
-                        st.rerun()
-                    # ⭐ 추가: "추가 문의 사항도 있습니다" 응답 처리 (통화 계속)
-                    elif L['customer_has_additional_inquiries'] in customer_reaction:
-                        # ⭐ 수정: 이력 저장은 이미 위에서 처리되었으므로 중복 저장 방지
-                        
-                        # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
-                        st.session_state.current_agent_audio_text = ""
-                        st.session_state.realtime_hint_text = ""
-                        if "bytes_to_process" in st.session_state:
-                            st.session_state.bytes_to_process = None
-                        
-                        st.info(L.get("customer_has_additional_inquiry_info", "💡 고객이 추가 문의 사항이 있다고 했습니다. 다음 응답을 녹음하세요."))
-                    else:
-                        # 일반 고객 반응 처리
-                        # ⭐ 수정: 이력 저장은 이미 위에서 처리되었으므로 중복 저장 방지
-
-                        # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
-                        st.session_state.current_agent_audio_text = ""
-                        st.session_state.realtime_hint_text = ""
-                        # ⭐ 최적화: bytes_to_process도 초기화하여 다음 녹음을 준비
-                        if "bytes_to_process" in st.session_state:
-                            st.session_state.bytes_to_process = None
+        # ⭐ 고객 반응 생성 로직은 '고객의 응답' 부분 내부로 이동됨 (위에서 처리)
 
     # ========================================
     # CALL_ENDED 상태
@@ -7520,7 +7932,7 @@ elif feature_selection == L["content_tab"]:
                 st.session_state.quiz_score = 0
                 st.session_state.quiz_answers = [1] * len(quiz_data)  # 기본값으로 초기화
                 st.session_state.show_explanation = False
-                st.rerun()  # 페이지 새로고침하여 첫 번째 문제로 이동
+                st.rerun()
             # st.stop() 제거: 퀴즈 완료 후에도 UI는 계속 표시
         else:
             # 퀴즈 진행 (현재 문항)
