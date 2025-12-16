@@ -1104,6 +1104,44 @@ with st.sidebar:
     st.title(L["sidebar_title"])
     st.markdown("---")
 
+    # ⭐ 기능 선택 - 기본값을 AI 챗 시뮬레이터로 설정 (먼저 배치)
+    if "feature_selection" not in st.session_state:
+        st.session_state.feature_selection = L["sim_tab_chat_email"]
+
+    # ⭐ 핵심 기능과 더보기 기능 분리 (회사 정보 및 FAQ 추가)
+    core_features = [L["sim_tab_chat_email"], L["sim_tab_phone"], L["company_info_tab"]]
+    other_features = [L["rag_tab"], L["content_tab"], L["lstm_tab"], L["voice_rec_header"]]
+    
+    # 모든 기능을 하나의 리스트로 통합 (하나만 선택 가능하도록)
+    all_features = core_features + other_features
+    
+    # 현재 선택된 기능
+    current_selection = st.session_state.get("feature_selection", L["sim_tab_chat_email"])
+    
+    # 현재 선택의 인덱스 찾기
+    try:
+        current_index = all_features.index(current_selection) if current_selection in all_features else 0
+    except (ValueError, AttributeError):
+        current_index = 0
+    
+    # ⭐ 기능 선택 섹션
+    st.subheader("📋 기능 선택")
+    selected_feature = st.radio(
+        "기능 선택",
+        all_features,
+        index=current_index,
+        key="unified_feature_selection",
+        label_visibility="visible"
+    )
+    
+    # 선택된 기능 업데이트
+    if selected_feature != current_selection:
+        st.session_state.feature_selection = selected_feature
+    
+    feature_selection = st.session_state.get("feature_selection", L["sim_tab_chat_email"])
+    
+    st.markdown("---")
+
     # ⭐ API Key 설정 섹션 추가
     st.subheader("🔑 API Key 설정")
     
@@ -1160,43 +1198,6 @@ with st.sidebar:
                 st.session_state[session_key] = manual_key
         else:
             st.success(f"✅ {api_config.get('label', 'API Key')} 설정됨")
-    
-    st.markdown("---")
-
-    # ⭐ 기능 선택 - 기본값을 AI 챗 시뮬레이터로 설정
-    if "feature_selection" not in st.session_state:
-        st.session_state.feature_selection = L["sim_tab_chat_email"]
-
-    # ⭐ 핵심 기능과 더보기 기능 분리 (회사 정보 및 FAQ 추가)
-    core_features = [L["sim_tab_chat_email"], L["sim_tab_phone"], L["company_info_tab"]]
-    other_features = [L["rag_tab"], L["content_tab"], L["lstm_tab"], L["voice_rec_header"]]
-    
-    # 모든 기능을 하나의 리스트로 통합 (하나만 선택 가능하도록)
-    all_features = core_features + other_features
-    
-    # 현재 선택된 기능
-    current_selection = st.session_state.get("feature_selection", L["sim_tab_chat_email"])
-    
-    # 현재 선택의 인덱스 찾기
-    try:
-        current_index = all_features.index(current_selection) if current_selection in all_features else 0
-    except (ValueError, AttributeError):
-        current_index = 0
-    
-    # ⭐ 하나의 통합된 선택 로직 (하나만 선택 가능) - 설명 제거
-    selected_feature = st.radio(
-        "기능 선택",
-        all_features,
-        index=current_index,
-        key="unified_feature_selection",
-        label_visibility="hidden"
-    )
-    
-    # 선택된 기능 업데이트
-    if selected_feature != current_selection:
-        st.session_state.feature_selection = selected_feature
-    
-    feature_selection = st.session_state.get("feature_selection", L["sim_tab_chat_email"])
 
 # 메인 타이틀
 # ⭐ L 변수가 정의되어 있는지 확인 (사이드바에서 이미 정의됨)
