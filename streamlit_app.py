@@ -2917,7 +2917,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                                         "role": "supervisor",
                                         "content": f"💡 **{L.get('hint_label', '응대 힌트')}**: {hint}"
                                     })
-                                    # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
                             else:
                                 st.warning(L.get("simulation_no_key_warning", "LLM이 준비되지 않았습니다."))
                     
@@ -3001,7 +3000,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                                     
                                     # AGENT_TURN 단계로 변경하여 에이전트 응답 UI 표시 (항상 표시됨)
                                     st.session_state.sim_stage = "AGENT_TURN"
-                                    # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
                             else:
                                 st.warning(L.get("simulation_no_key_warning", "LLM이 준비되지 않았습니다."))
                     
@@ -3071,7 +3069,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                                     "role": "supervisor",
                                     "content": info_message
                                 })
-                                # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
                             else:
                                 # 고객 데이터가 없으면 안내 메시지 (누적 데이터 수 포함)
                                 info_message = f"📋 **{L.get('customer_data_label', '고객 데이터')}**: {L.get('no_customer_data', '저장된 고객 데이터가 없습니다.')}\n\n"
@@ -3080,7 +3077,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                                     "role": "supervisor",
                                     "content": info_message
                                 })
-                                # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
                     
                     # 응대 초안 버튼
                     with button_cols_customer_row2[2]:
@@ -3132,7 +3128,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                                         "role": "supervisor",
                                         "content": f"✍️ **{L.get('draft_label', '응대 초안')}**:\n\n{draft_text}"
                                     })
-                                    # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
                             else:
                                 st.warning(L.get("simulation_no_key_warning", "LLM이 준비되지 않았습니다."))
                     
@@ -3163,7 +3158,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                             ]
                             
                             st.session_state.sim_stage = "AGENT_TURN"  # 검증 UI를 표시하기 위해 AGENT_TURN으로 변경
-                            # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
                     
                     # 마지막 에이전트 응답에서 솔루션이 제공되었는지 확인
                     last_agent_response_idx = None
@@ -3184,7 +3178,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                         if "알겠습니다" in content or "감사합니다" in content or "ok" in content.lower() or "thank" in content.lower():
                             if st.button(L.get("button_additional_inquiry", "✅ 추가 문의 있나요?"), key=f"additional_inquiry_{idx}_{st.session_state.sim_instance_id}", use_container_width=True, type="secondary"):
                                 st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
-                                # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
                     
                     # 4. 고객이 "없습니다. 감사합니다" 답변 시 설문 조사 버튼 (admin.py 스타일)
                     no_more_keywords = [
@@ -3968,7 +3961,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                             st.session_state.verification_stage = "VERIFIED"
                             st.session_state.verification_info["verification_attempts"] += 1
                             st.success(L['verification_success'])
-                            # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
                         else:
                             st.session_state.verification_stage = "VERIFICATION_FAILED"
                             st.session_state.verification_info["verification_attempts"] += 1
@@ -4134,9 +4126,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                         if "agent_response_input_box_widget_call" in st.session_state:
                             st.session_state.agent_response_input_box_widget_call = "" # 전화 탭 입력 필드도 초기화
                         st.session_state.last_transcript = "" # 전사 실패 시 last_transcript 초기화
-                    
-                    # ⭐ 최적화: 에러 발생 시 UI 갱신을 위해 rerun
-                    # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
 
                 elif not agent_response_transcript.strip(): # ⭐ 수정: 전사 결과가 비어 있거나 (공백만 있는 경우) 다음 단계로 진행하지 못하는 문제 해결
                     st.warning(L.get("transcription_empty_warning", "전사 결과가 비어 있습니다."))
@@ -4174,9 +4163,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                         snippet += "..."
                     st.success(L.get("whisper_success", "전사 완료") + f" **{L.get('recognized_content', '인식 내용')}:** *{snippet}*")
                     st.info(L.get("transcription_auto_filled", "💡 전사된 텍스트가 CC 자막 및 입력창에 자동으로 입력되었습니다."))
-                    
-                    # ⭐ [핵심 수정 6] 전사 완료 후 즉시 rerun하여 UI 갱신 보장
-                    # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
 
         # ⭐ 검증 UI나 응대 초안 UI가 표시되지 않을 때만 솔루션 체크박스 표시
         show_draft_ui = st.session_state.get("show_draft_ui", False)
@@ -4202,7 +4188,6 @@ if feature_selection == L["sim_tab_chat_email"]:
         # ⭐ 마이크 전사 결과가 있으면 text_area에 표시 (호환성 유지)
         # 위젯 생성 전에만 값을 설정할 수 있으므로 여기서 처리
         # ⭐ [수정 1] 전사 결과가 입력 칸에 확실히 반영되도록 보장 (최우선 처리)
-        # ⭐ [핵심 수정] rerun 후에도 전사 결과가 입력 칸에 반영되도록 보장
         if st.session_state.get("last_transcript") and st.session_state.last_transcript:
             # 전사 결과를 text_area의 value로 사용되는 세션 상태 변수에 반영
             st.session_state.agent_response_area_text = st.session_state.last_transcript
@@ -4236,7 +4221,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                             "role": "customer",
                             "content": customer_response
                         })
-                # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
         
         # st.chat_input으로 입력 받기 (app.py 스타일)
         agent_response_input = st.chat_input(L.get("agent_response_placeholder", "고객에게 응답하세요..."))
@@ -4248,7 +4232,6 @@ if feature_selection == L["sim_tab_chat_email"]:
             # (+) 파일 첨부 버튼
             if st.button(L.get("button_add_attachment", "➕ 파일 첨부"), key="btn_add_attachment_unified", use_container_width=True, type="secondary"):
                 st.session_state.show_agent_file_uploader = True
-                # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
         
         with col_extra_features[1]:
             # (🎤) 마이크 버튼
@@ -4266,7 +4249,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                 if "bytes_to_process" not in st.session_state or st.session_state.bytes_to_process is None:
                     st.session_state.bytes_to_process = mic_audio["bytes"]
                     st.session_state.sim_audio_bytes = mic_audio["bytes"]
-                    # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
         
         with col_extra_features[2]:
             # 전사 결과 표시 (있는 경우)
@@ -4328,7 +4310,7 @@ if feature_selection == L["sim_tab_chat_email"]:
 
                 # 입력창/오디오/첨부 파일 초기화
                 # ⭐ 수정: 위젯이 생성된 후에는 session_state를 직접 수정할 수 없으므로,
-                # rerun 후 위젯이 다시 생성될 때 초기값이 적용되도록 플래그를 사용합니다.
+                # 플래그를 사용하여 위젯이 다시 생성될 때 초기값이 적용되도록 합니다.
                 st.session_state.sim_audio_bytes = None
                 st.session_state.agent_attachment_file = []  # 첨부 파일 초기화
                 st.session_state.language_transfer_requested = False
@@ -4336,7 +4318,7 @@ if feature_selection == L["sim_tab_chat_email"]:
                 st.session_state.sim_call_outbound_summary = ""  # 전화 발신 요약 초기화
                 st.session_state.last_transcript = ""  # 전사 결과 초기화
 
-                # ⭐ 수정: agent_response_area_text는 rerun 후 위젯이 다시 생성될 때 초기화되도록
+                # ⭐ 수정: agent_response_area_text는 위젯이 다시 생성될 때 초기화되도록
                 # 플래그만 설정합니다. 위젯 생성 전에 이 플래그를 확인하여 값을 초기화합니다.
                 # 위젯이 생성된 후에는 직접 수정할 수 없으므로 플래그만 사용합니다.
                 st.session_state.reset_agent_response_area = True
@@ -4371,7 +4353,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                 
                 # ⭐ app.py 스타일: 메시지 추가 후 자동으로 화면 업데이트
                 st.session_state.sim_stage = "CUSTOMER_TURN"
-                # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
             
 
         # --- 언어 이관 버튼 ---
@@ -4543,13 +4524,11 @@ if feature_selection == L["sim_tab_chat_email"]:
                 
                 # 종료 단계로 이동
                 st.session_state.sim_stage = "CLOSING"
-                # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
         
         with col_continue:
             if st.button(L.get("button_continue", "계속 응대"), key=f"btn_continue_{st.session_state.sim_instance_id}"):
                 # 계속 응대하는 경우 AGENT_TURN으로 이동
                 st.session_state.sim_stage = "AGENT_TURN"
-                # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
     
     # =========================
     # 6. 고객 반응 생성 단계 (CUSTOMER_TURN)
@@ -4604,9 +4583,6 @@ if feature_selection == L["sim_tab_chat_email"]:
             else:
                 # 고객이 추가 질문하거나 정보 제공한 경우 -> 에이전트 턴으로 이동
                 st.session_state.sim_stage = "AGENT_TURN"
-            
-            # UI 업데이트를 위해 rerun
-            # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
         else:
             customer_response = last_customer_message
 
@@ -4712,11 +4688,9 @@ if feature_selection == L["sim_tab_chat_email"]:
                 # 설문 조사 링크 전송 버튼 활성화를 위해 WAIT_CUSTOMER_CLOSING_RESPONSE 단계로 이동
                 # (실제로는 고객 응답이 이미 있으므로 바로 설문 조사 버튼 표시)
                 st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
-                # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
             else:
                 # 메일 끝인사가 있지만 고객이 추가 질문을 한 경우
                 st.session_state.sim_stage = "AGENT_TURN"
-                # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
         # ⭐ 수정: 고객이 "알겠습니다. 감사합니다"라고 답변했을 때, 솔루션이 제공된 경우에만 추가 문의 여부 확인 단계로 이동
         # 정확한 문자열 비교가 아닌 포함 여부로 확인 (LLM 응답이 약간 다를 수 있음)
         # "알겠습니다"와 "감사합니다"가 함께 있는 경우를 더 명확하게 인식
@@ -4761,7 +4735,6 @@ if feature_selection == L["sim_tab_chat_email"]:
 
         st.session_state.realtime_hint_text = ""  # 힌트 초기화
         
-        # 다음 단계로 이동했으므로 UI 업데이트를 위해 rerun
         st.rerun()
 
 
@@ -4801,7 +4774,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                     {"role": "agent_response", "content": closing_msg}
                 )
 
-                # [추가] TTS 버튼 렌더링을 위해 sleep/rerun 강제
                 time.sleep(0.1)
                 st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
                 st.rerun()
@@ -4820,7 +4792,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                     {"role": "system_end", "content": "(시스템: 이메일 상담 종료) " + end_msg}
                 )
 
-                # [추가] TTS 버튼 렌더링을 위해 sleep/rerun 강제
                 time.sleep(0.1)
                 st.session_state.is_chat_ended = True
                 st.session_state.sim_stage = "CLOSING"  # 바로 CLOSING으로 전환
@@ -5009,7 +4980,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                     )
                     
                     st.session_state.realtime_hint_text = ""  # 힌트 초기화
-                    # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
             # 메일 끝인사가 포함된 경우 여기서 처리 완료, 다른 로직은 실행하지 않음
             elif L['customer_no_more_inquiries'] in final_customer_reaction or has_no_more_inquiry:
                 # ⭐ 수정: 에이전트 감사 인사가 아직 추가되지 않은 경우에만 추가
@@ -5076,7 +5046,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                     )
                     
                     st.session_state.realtime_hint_text = ""  # 힌트 초기화
-                    # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
             # (B) "추가 문의 사항도 있습니다" 경로 -> AGENT_TURN으로 복귀
             elif L['customer_has_additional_inquiries'] in final_customer_reaction:
                 st.session_state.sim_stage = "AGENT_TURN"
@@ -5086,7 +5055,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                     attachment_context=st.session_state.sim_attachment_context_for_llm,
                 )
                 st.session_state.realtime_hint_text = ""
-                # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
             else:
                 # 고객 응답이 생성되었지만 조건에 맞지 않는 경우에도 버튼 표시
                 # (기본적으로 "없습니다. 감사합니다"로 간주)
@@ -5152,7 +5120,6 @@ if feature_selection == L["sim_tab_chat_email"]:
                     )
                     
                     st.session_state.realtime_hint_text = ""  # 힌트 초기화
-                    # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
 
     # =========================
     # 9. 최종 종료 행동 (FINAL_CLOSING_ACTION)
@@ -5936,7 +5903,6 @@ elif feature_selection == L["sim_tab_phone"]:
                 st.session_state.call_sim_stage = "CALL_ENDED"
                 st.session_state.is_call_ended = True
 
-                # ⭐ [수정 10] Hangup 후 UI 갱신을 위해 rerun 추가
                 st.rerun()
 
         # ------------------------------
@@ -6316,7 +6282,6 @@ elif feature_selection == L["sim_tab_phone"]:
                     # ⭐ [수정 3: 핵심 수정] 전화 탭 입력 칸에도 전사 결과 전달
                     if "agent_response_input_box_widget_call" in st.session_state:
                         st.session_state.agent_response_input_box_widget_call = agent_response_transcript
-                    # ⭐ 수정: 전사 결과를 last_transcript에도 저장하여 rerun 후에도 유지되도록 보장
                     st.session_state.last_transcript = agent_response_transcript
                     
                     # 성공 메시지 표시 (채팅/이메일과 유사)
@@ -6335,12 +6300,9 @@ elif feature_selection == L["sim_tab_phone"]:
                     # ⭐ 수정: 전화 발신 모드 확인
                     is_outbound_call = st.session_state.get("call_sim_mode", "INBOUND") == "OUTBOUND"
 
-                    # ⭐ [핵심 수정: CC 자막 반영] 전사 완료 후 즉시 rerun하여 CC 자막에 반영되도록 보장
-                    # 전사 결과를 설정한 후 즉시 rerun하여 다음 실행 주기에서 CC 자막에 반영
                     st.session_state.pending_transcript_for_greeting_check = agent_response_transcript
                     st.session_state.is_first_greeting_flag = is_first_greeting
                     st.session_state.is_outbound_call_flag = is_outbound_call
-                    # ⭐ 수정: 전사 완료 후 즉시 rerun하여 CC 자막에 반영
                     st.rerun()
 
         # --- 실시간 CC 자막 / 전사 영역 ---
@@ -6372,7 +6334,6 @@ elif feature_selection == L["sim_tab_phone"]:
                 key="agent_live_cc_area",
             )
 
-        # ⭐ [핵심 수정: CC 자막 반영] rerun 후 첫 인사말 처리 로직을 CC 자막 렌더링 후에 실행
         # CC 자막이 먼저 렌더링된 후에 첫 인사말 처리 로직이 실행되도록 보장
         if st.session_state.get("pending_transcript_for_greeting_check"):
             agent_response_transcript = st.session_state.pending_transcript_for_greeting_check
@@ -6639,8 +6600,6 @@ elif feature_selection == L["sim_tab_phone"]:
                             {"role": "phone_exchange", "content": log_entry})
                     else:
                         st.error(customer_reaction)
-            
-            # ⭐ 수정: rerun 완전 제거 - 재생은 브라우저에서 자동으로 진행되므로 서버에서 기다릴 필요 없음
 
         # ⭐ 수정: 전사 후 고객 반응 생성 처리 (마이크 위젯 렌더링 이후에 위치)
         # 전사 결과가 CC에 먼저 표시된 후 고객 반응을 생성하도록 분리
@@ -6829,10 +6788,6 @@ elif feature_selection == L["sim_tab_phone"]:
                         # ⭐ 최적화: bytes_to_process도 초기화하여 다음 녹음을 준비
                         if "bytes_to_process" in st.session_state:
                             st.session_state.bytes_to_process = None
-
-                    # ⭐ 수정: rerun 제거 - 재생은 브라우저에서 자동으로 진행되므로 서버에서 기다릴 필요 없음
-                    # 첫 문의와 동일하게 rerun을 제거하여 재생이 끝까지 진행되도록 함
-
 
     # ========================================
     # CALL_ENDED 상태
@@ -7209,7 +7164,6 @@ elif feature_selection == L["rag_tab"]:
 
             # 응답을 메시지에 추가
             st.session_state.rag_messages.append({"role": "assistant", "content": response})
-            # st.rerun()  # ⭐ 제거: Streamlit이 자동으로 업데이트
     else:
         st.warning(L.get("warning_rag_not_ready", "RAG가 준비되지 않았습니다. 파일을 업로드하고 분석을 시작하세요."))
 
