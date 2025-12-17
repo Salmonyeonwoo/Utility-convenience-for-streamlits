@@ -19,6 +19,8 @@
 
 import os
 import json
+import time
+import requests
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 import streamlit as st
@@ -598,7 +600,50 @@ def render_synchronized_video(text: str, audio_bytes: bytes, gender: str, emotio
                     st.audio(audio_bytes, format="audio/mp3", autoplay=autoplay, loop=False)
                 return False
         else:
-            # 비디오가 없으면 오디오만 재생
+            # ⭐ 비디오가 없으면 Lottie 애니메이션 fallback (듀오링고 스타일)
+            # 비디오 파일이 없거나 로드에 실패할 경우, Lottie 캐릭터 애니메이션으로 전환
+            try:
+                # Lottie 라이브러리 시도 (streamlit-lottie 사용)
+                try:
+                    from streamlit_lottie import st_lottie
+                    import requests
+                    
+                    # 말하는 캐릭터 Lottie 애니메이션 URL (예시 - 실제 URL로 교체 필요)
+                    # 또는 로컬 Lottie JSON 파일 경로 사용 가능
+                    lottie_url = "https://assets5.lottiefiles.com/packages/lf20_jcikwtux.json"  # 말하는 애니메이션 예시
+                    
+                    # Lottie JSON 로드
+                    try:
+                        lottie_json = requests.get(lottie_url, timeout=2).json()
+                    except:
+                        # 로컬 파일 시도 (있는 경우)
+                        lottie_file_path = os.path.join(os.path.dirname(__file__), "assets", "speaking_character.json")
+                        if os.path.exists(lottie_file_path):
+                            with open(lottie_file_path, "r", encoding="utf-8") as f:
+                                import json
+                                lottie_json = json.load(f)
+                        else:
+                            raise Exception("Lottie 파일을 찾을 수 없습니다")
+                    
+                    # Lottie 애니메이션 표시
+                    st_lottie(lottie_json, height=300, key=f"lottie_fallback_{hash(text) % 10000}")
+                    st.caption("💬 캐릭터가 말하고 있습니다...")
+                    
+                except ImportError:
+                    # streamlit-lottie가 설치되지 않은 경우 간단한 대체 표시
+                    st.info("🎤 캐릭터가 말하고 있습니다...")
+                    # 간단한 텍스트 기반 애니메이션 효과
+                    import time
+                    speaking_indicator = "●" * (len(text) % 10 + 1)
+                    st.markdown(f"<div style='text-align: center; font-size: 24px;'>{speaking_indicator}</div>", unsafe_allow_html=True)
+                except Exception as lottie_error:
+                    # Lottie 로드 실패 시 간단한 메시지
+                    st.info("🎤 캐릭터가 말하고 있습니다...")
+            except Exception as fallback_error:
+                # 모든 fallback 실패 시 기본 메시지
+                st.info("🎤 음성이 재생되고 있습니다...")
+            
+            # 오디오 재생
             if audio_bytes:
                 st.audio(audio_bytes, format="audio/mp3", autoplay=autoplay, loop=False)
             return False

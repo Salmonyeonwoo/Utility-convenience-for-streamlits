@@ -3168,7 +3168,8 @@ def generate_customer_reaction_for_call(current_lang_key: str, last_agent_respon
             recent_exchanges.insert(0, content)  # 앞에 삽입하여 순서 유지
             if len(recent_exchanges) >= 3:  # 최근 3개만
                 break
-        elif role == "agent":
+        elif role == "agent" or role == "agent_response":
+            # agent와 agent_response 역할 모두 처리
             recent_exchanges.insert(0, f"Agent: {content}")
             if len(recent_exchanges) >= 3:
                 break
@@ -3232,14 +3233,16 @@ Your response tone should be: {emotion_tone}
 {history_text}
 
 RULES:
-1. Respond ONLY to what the agent JUST SAID: "{last_agent_text}"
-2. If agent asked a question → Answer it
-3. If agent requested information → Provide it
-4. If agent gave a solution → Acknowledge based on your emotional state ({customer_emotion})
-5. Keep your response short (1-2 sentences max)
-6. DO NOT repeat your initial query
-7. DO NOT mention old conversation
-8. IMPORTANT: Match your tone to your emotional state ({customer_emotion}) - be {emotion_tone}
+1. **CRITICAL**: Respond DIRECTLY and ACCURATELY to what the agent JUST SAID: "{last_agent_text}"
+2. **If agent asked a question** → Answer it SPECIFICALLY and DIRECTLY. Do not give vague or unrelated answers.
+3. **If agent requested information** → Provide the EXACT information requested. Be precise and relevant.
+4. **If agent gave a solution or instruction** → Acknowledge it clearly and indicate if you understand or need clarification, based on your emotional state ({customer_emotion})
+5. **If agent asked for confirmation** → Confirm or clarify based on what was asked
+6. Keep your response short (1-2 sentences max) and focused ONLY on what the agent just said
+7. DO NOT repeat your initial query unless the agent specifically asks about it
+8. DO NOT mention old conversation unless the agent refers to it
+9. IMPORTANT: Match your tone to your emotional state ({customer_emotion}) - be {emotion_tone}
+10. **Your response must be a direct answer to the agent's last message above. Read it carefully and respond accordingly.**
 
 Your response (respond ONLY to the agent's message above, with {emotion_tone} tone):
 """

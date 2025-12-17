@@ -334,6 +334,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "transfer_loading": "이관 처리 중: 이전 대화 이력 번역 및 검토 (고객님께 3~10분 양해 요청)",
         "transfer_summary_header": "🔍 이관된 상담원을 위한 요약 (번역됨)",
         "transfer_summary_intro": "고객님과의 이전 대화 이력입니다. 이 내용을 바탕으로 응대를 이어나가세요。",
+        "language_transfer_requested_msg": "🚨 고객이 언어 전환(이관)을 요청했습니다. 즉시 응대하거나 이관을 진행하세요。",
+        "invalid_language_info": "언어 정보가 올바르지 않습니다.",
+        "ai_summary_header": "💡 AI 요약",
+        "summary_label": "요약",
         "escalation_required_msg": "🚨 고객이 에스컬레이션을 요청했습니다. 상급자나 전문 팀으로 이관이 필요합니다.",
         "escalation_system_msg": "📌 시스템 메시지: 고객 요청에 따라 상급자/전문 팀으로 이관되었습니다.",
         "button_escalate": "에스컬레이션 처리",
@@ -493,6 +497,32 @@ LANG: Dict[str, Dict[str, str]] = {
         "call_status_ringing": "전화 수신 중: {number}",
         "button_answer": "📞 전화 응답",
         "button_hangup": "🔴 전화 끊기",
+        "button_start_call": "📞 통화 시작",
+        "call_started_success": "통화가 시작되었습니다! 비디오가 자동으로 활성화되었습니다.",
+        "my_screen": "📹 내 화면",
+        "opponent_screen": "📹 상대방 화면",
+        "webcam_label": "웹캠",
+        "webcam_help": "내 웹캠 영상",
+        "opponent_screen_simulation": "상대방 화면 (시뮬레이션)",
+        "video_tip": "💡 팁: 내 화면이 상대방 화면으로 시뮬레이션됩니다",
+        "virtual_opponent_video": "📹 가상 상대방 비디오 (API 키 불필요)",
+        "call_log": "📋 통화 로그",
+        "call_id_label": "통화 ID",
+        "button_end_call": "📴 통화 종료",
+        "button_video_enable": "📹 비디오 활성화",
+        "video_enable_help": "비디오 통화를 활성화합니다",
+        "call_ended_message": "통화가 종료되었습니다. (통화 시간: {duration:.1f}초)",
+        "phone_call_instructions": """
+            ### 📞 전화 통화 기능 사용 방법
+            
+            1. **통화 시작** 버튼을 클릭하여 통화를 시작합니다
+            2. **비디오 활성화** 토글을 켜면 비디오 통화가 가능합니다
+            3. 오디오 입력을 통해 실시간으로 음성을 전송할 수 있습니다
+            4. 통화가 진행되는 동안 자동으로 상대방 응답이 시뮬레이션됩니다
+            5. **통화 종료** 버튼을 클릭하여 통화를 종료합니다
+            
+            **참고**: 이 기능은 시뮬레이션입니다. 실제 양방향 통화를 위해서는 WebRTC 등의 기술이 필요합니다.
+            """,
         "button_hold": "⏸️ Hold (소음 차단)",
         "button_resume": "▶️ 통화 재개",
         "hold_status": "통화 Hold 중 (누적 Hold 시간: {duration})",
@@ -872,6 +902,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "transfer_loading": "Transferring: Translating and reviewing chat history (3-10 minute wait requested from customer)",
         "transfer_summary_header": "🔍 Summary for Transferred Agent (Translated)",
         "transfer_summary_intro": "This is the previous chat history. Please continue the support based on this summary。",
+        "language_transfer_requested_msg": "🚨 Customer has requested language transfer. Please respond immediately or proceed with the transfer。",
+        "invalid_language_info": "Language information is incorrect.",
+        "ai_summary_header": "💡 AI Summary",
+        "summary_label": "Summary",
         "escalation_required_msg": "🚨 Customer has requested escalation. Transfer to supervisor or specialist team is required.",
         "escalation_system_msg": "📌 System Message: The session has been transferred to supervisor/specialist team per customer request.",
         "button_escalate": "Process Escalation",
@@ -1030,6 +1064,32 @@ LANG: Dict[str, Dict[str, str]] = {
         "call_status_ringing": "Incoming Call from: {number}",
         "button_answer": "📞 Answer Call",
         "button_hangup": "🔴 Hang Up",
+        "button_start_call": "📞 Start Call",
+        "call_started_success": "Call started! Video has been automatically enabled.",
+        "my_screen": "📹 My Screen",
+        "opponent_screen": "📹 Opponent Screen",
+        "webcam_label": "Webcam",
+        "webcam_help": "My webcam video",
+        "opponent_screen_simulation": "Opponent Screen (Simulation)",
+        "video_tip": "💡 Tip: My screen is simulated as the opponent screen",
+        "virtual_opponent_video": "📹 Virtual Opponent Video (No API Key Required)",
+        "call_log": "📋 Call Log",
+        "call_id_label": "Call ID",
+        "button_end_call": "📴 End Call",
+        "button_video_enable": "📹 Enable Video",
+        "video_enable_help": "Enable video call",
+        "call_ended_message": "Call ended. (Call duration: {duration:.1f} seconds)",
+        "phone_call_instructions": """
+            ### 📞 Phone Call Feature Usage Guide
+            
+            1. Click the **Start Call** button to begin a call
+            2. Turn on the **Enable Video** toggle to enable video calls
+            3. You can send audio in real-time through audio input
+            4. The opponent's response is automatically simulated during the call
+            5. Click the **End Call** button to end the call
+            
+            **Note**: This is a simulation. WebRTC or similar technology is required for actual two-way calls.
+            """,
         "button_hold": "⏸️ Hold (Mute)",
         "button_resume": "▶️ Resume Call",
         "hold_status": "On Hold (Total Hold Time: {duration})",
@@ -1437,6 +1497,10 @@ LANG: Dict[str, Dict[str, str]] = {
         "transfer_loading": "転送中: 過去のチャット履歴を翻訳およびレビューしています (お客様には3〜10分のお時間をいただいています)",
         "transfer_summary_header": "🔍 転送された担当者向けの要約 (翻訳済み)",
         "transfer_summary_intro": "これが顧客との過去のチャット履歴です。この要約に基づいてサポートを続けてください。",
+        "language_transfer_requested_msg": "🚨 顧客が言語切り替え（転送）を要求しました。すぐに対応するか、転送を進めてください。",
+        "invalid_language_info": "言語情報が正しくありません。",
+        "ai_summary_header": "💡 AI要約",
+        "summary_label": "要約",
         "escalation_required_msg": "🚨 顧客がエスカレーションを要求しました。上級者または専門チームへの転送が必要です。",
         "escalation_system_msg": "📌 システムメッセージ: 顧客の要請により、上級者/専門チームへ転送されました。",
         "button_escalate": "エスカレーション処理",
@@ -1568,6 +1632,32 @@ LANG: Dict[str, Dict[str, str]] = {
         "call_status_ringing": "着信中: {number}",
         "button_answer": "📞 電話に出る",
         "button_hangup": "🔴 電話を切る",
+        "button_start_call": "📞 通話開始",
+        "call_started_success": "通話が開始されました！ビデオが自動的に有効化されました。",
+        "my_screen": "📹 自分の画面",
+        "opponent_screen": "📹 相手の画面",
+        "webcam_label": "ウェブカメラ",
+        "webcam_help": "自分のウェブカメラ映像",
+        "opponent_screen_simulation": "相手の画面（シミュレーション）",
+        "video_tip": "💡 ヒント: 自分の画面が相手の画面としてシミュレートされます",
+        "virtual_opponent_video": "📹 仮想相手ビデオ（APIキー不要）",
+        "call_log": "📋 通話ログ",
+        "call_id_label": "通話ID",
+        "button_end_call": "📴 通話終了",
+        "button_video_enable": "📹 ビデオ有効化",
+        "video_enable_help": "ビデオ通話を有効にします",
+        "call_ended_message": "通話が終了しました。 (通話時間: {duration:.1f}秒)",
+        "phone_call_instructions": """
+            ### 📞 電話通話機能の使用方法
+            
+            1. **通話開始**ボタンをクリックして通話を開始します
+            2. **ビデオ有効化**トグルをオンにするとビデオ通話が可能です
+            3. オーディオ入力を通じてリアルタイムで音声を送信できます
+            4. 通話が進行している間、自動的に相手の応答がシミュレートされます
+            5. **通話終了**ボタンをクリックして通話を終了します
+            
+            **注意**: この機能はシミュレーションです。実際の双方向通話にはWebRTCなどの技術が必要です。
+            """,
         "button_hold": "⏸️ 保留 (ノイズ遮断)",
         "button_resume": "▶️ 通話再開",
         "hold_status": "保留中 (累計保留時間: {duration})",
