@@ -80,10 +80,55 @@ except ImportError:
 def translate_text_with_llm(text_content: str, target_lang_code: str, source_lang_code: str) -> Tuple[str, bool]:
     """
     주어진 텍스트를 LLM을 사용하여 대상 언어로 번역합니다. (안정화된 텍스트 출력)
-    **수정 사항:** LLM Fallback 순서를 OpenAI 우선으로 조정하고, 응답이 비어있을 경우 원본 텍스트를 반환
+    **수정 사항:** 
+    - LLM Fallback 순서를 OpenAI 우선으로 조정하고, 응답이 비어있을 경우 원본 텍스트를 반환
+    - 토큰 제한을 고려하여 긴 텍스트는 청크로 나누어 번역
+    - 번역 실패 시 원본 텍스트 반환하여 프로세스 계속 진행
     
     Returns:
         tuple: (translated_text, is_success) - 번역된 텍스트와 성공 여부
+    """
+    # ⭐ 수정: 빈 텍스트 처리
+    if not text_content or not text_content.strip():
+        return text_content, True
+    
+    target_lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(target_lang_code, "English")
+    source_lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(source_lang_code, "English")
+
+    # ⭐ 수정: 토큰 제한 고려 (대략적인 문자 수 기준: 1 토큰 ≈ 4 문자)
+    # 안전한 토큰 제한: 100K 토큰 모델 기준 약 300K 문자, 보수적으로 200K 문자로 설정
+    MAX_CHARS_PER_CHUNK = 200000
+    CHUNK_OVERLAP = 1000  # 청크 간 겹치는 부분
+    
+    # 텍스트가 긴 경우 청크로 나누어 번역
+    if len(text_content) > MAX_CHARS_PER_CHUNK:
+        translated_chunks = []
+        start_idx = 0
+        
+        while start_idx < len(text_content):
+            end_idx = min(start_idx + MAX_CHARS_PER_CHUNK, len(text_content))
+            chunk = text_content[start_idx:end_idx]
+            
+            # 청크 번역 시도
+            translated_chunk, success = translate_text_with_llm_chunk(chunk, target_lang_code, source_lang_code)
+            if success:
+                translated_chunks.append(translated_chunk)
+            else:
+                # 번역 실패 시 원본 청크 사용
+                translated_chunks.append(chunk)
+            
+            # 다음 청크 시작 위치 (겹치는 부분 고려)
+            start_idx = end_idx - CHUNK_OVERLAP if end_idx < len(text_content) else end_idx
+        
+        return "".join(translated_chunks), True
+    else:
+        # 짧은 텍스트는 직접 번역
+        return translate_text_with_llm_chunk(text_content, target_lang_code, source_lang_code)
+
+
+def translate_text_with_llm_chunk(text_content: str, target_lang_code: str, source_lang_code: str) -> Tuple[str, bool]:
+    """
+    단일 청크를 번역하는 내부 함수
     """
     target_lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(target_lang_code, "English")
     source_lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(source_lang_code, "English")

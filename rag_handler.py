@@ -18,6 +18,7 @@ RAG 처리 모듈
 """
 
 import os
+import io
 import tempfile
 import numpy as np
 import streamlit as st
@@ -49,28 +50,90 @@ except ImportError:
 def load_documents(files) -> List[Document]:
     docs: List[Document] = []
     for f in files:
-        name = f.name
-        lower = name.lower()
-        if lower.endswith(".pdf"):
-            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-            tmp.write(f.read())
-            tmp.flush()
-            tmp.close()
-            loader = PyPDFLoader(tmp.name)
-            file_docs = loader.load()
-            for d in file_docs:
-                d.metadata["source"] = name
-            docs.extend(file_docs)
-            try:
-                os.remove(tmp.name)
-            except OSError:
-                pass
-        elif lower.endswith(".txt"):
-            text = f.read().decode("utf-8", errors="ignore")
-            docs.append(Document(page_content=text, metadata={"source": name}))
-        elif lower.endswith(".html") or lower.endswith(".htm"):
-            text = f.read().decode("utf-8", errors="ignore")
-            docs.append(Document(page_content=text, metadata={"source": name}))
+        # ⭐ 수정: 파일 객체가 이미 닫혔거나 읽을 수 없는 경우 처리
+        try:
+            # 파일이 파일 경로인 경우
+            if isinstance(f, str):
+                file_path = f
+                name = os.path.basename(file_path)
+                lower = name.lower()
+                if lower.endswith(".pdf"):
+                    loader = PyPDFLoader(file_path)
+                    file_docs = loader.load()
+                    for d in file_docs:
+                        d.metadata["source"] = name
+                    docs.extend(file_docs)
+                elif lower.endswith(".txt") or lower.endswith(".html") or lower.endswith(".htm"):
+                    with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
+                        text = file.read()
+                    docs.append(Document(page_content=text, metadata={"source": name}))
+            else:
+                # 파일 객체인 경우
+                name = getattr(f, 'name', 'unknown')
+                lower = name.lower()
+                
+                # 파일이 이미 읽혔는지 확인하고, 읽기 가능한지 확인
+                try:
+                    # 파일 포인터를 처음으로 이동 시도
+                    if hasattr(f, 'seek'):
+                        f.seek(0)
+                    # 파일이 읽기 모드인지 확인
+                    if hasattr(f, 'read'):
+                        file_content = f.read()
+                    else:
+                        # 읽을 수 없는 경우 파일 경로로 처리
+                        if hasattr(f, 'name') and os.path.exists(f.name):
+                            with open(f.name, "r", encoding="utf-8", errors="ignore") as file:
+                                file_content = file.read()
+                        else:
+                            continue
+                except (io.UnsupportedOperation, AttributeError, OSError) as e:
+                    # 파일을 읽을 수 없는 경우 파일 경로로 처리 시도
+                    if hasattr(f, 'name') and os.path.exists(f.name):
+                        try:
+                            with open(f.name, "r", encoding="utf-8", errors="ignore") as file:
+                                file_content = file.read()
+                        except Exception:
+                            continue
+                    else:
+                        continue
+                
+                if lower.endswith(".pdf"):
+                    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+                    try:
+                        if isinstance(file_content, bytes):
+                            tmp.write(file_content)
+                        else:
+                            tmp.write(file_content.encode('utf-8'))
+                        tmp.flush()
+                        tmp.close()
+                        loader = PyPDFLoader(tmp.name)
+                        file_docs = loader.load()
+                        for d in file_docs:
+                            d.metadata["source"] = name
+                        docs.extend(file_docs)
+                    finally:
+                        try:
+                            os.remove(tmp.name)
+                        except OSError:
+                            pass
+                elif lower.endswith(".txt"):
+                    if isinstance(file_content, bytes):
+                        text = file_content.decode("utf-8", errors="ignore")
+                    else:
+                        text = file_content
+                    docs.append(Document(page_content=text, metadata={"source": name}))
+                elif lower.endswith(".html") or lower.endswith(".htm"):
+                    if isinstance(file_content, bytes):
+                        text = file_content.decode("utf-8", errors="ignore")
+                    else:
+                        text = file_content
+                    docs.append(Document(page_content=text, metadata={"source": name}))
+        except Exception as e:
+            # 개별 파일 처리 오류는 무시하고 계속 진행
+            import traceback
+            st.warning(f"파일 로드 오류 ({name if 'name' in locals() else 'unknown'}): {e}")
+            continue
     return docs
 
 

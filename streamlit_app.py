@@ -4607,29 +4607,62 @@ if feature_selection == L["sim_tab_chat_email"]:
                             is_success = True if translated_summary and not translated_summary.startswith("❌") else False
                         
                         # ⭐ [핵심 수정] 모든 메시지를 이관된 언어로 번역
+                        # ⭐ 최적화: 배치 번역으로 변경하여 API 호출 횟수 감소 및 타이밍 문제 해결
                         translated_messages = []
-                        for msg in current_messages:
+                        messages_to_translate = []
+                        message_indices = []
+                        
+                        # 번역할 메시지 수집
+                        for idx, msg in enumerate(current_messages):
                             translated_msg = msg.copy()
-                            # 번역할 메시지 역할 필터링 (시스템 메시지 등은 제외)
                             if msg["role"] in ["initial_query", "customer", "customer_rebuttal", "agent_response", 
                                               "customer_closing_response", "supervisor"]:
                                 if msg.get("content"):
-                                    # 각 메시지 내용을 이관된 언어로 번역
+                                    messages_to_translate.append((idx, msg))
+                            translated_messages.append(translated_msg)
+                        
+                        # 배치 번역: 모든 메시지를 하나의 텍스트로 합쳐서 번역
+                        if messages_to_translate:
+                            try:
+                                # 번역할 메시지들을 하나의 텍스트로 합치기
+                                combined_text = "\n\n".join([
+                                    f"[{msg['role']}]: {msg['content']}" 
+                                    for _, msg in messages_to_translate
+                                ])
+                                
+                                # 전체 텍스트를 한 번에 번역 (토큰 제한 고려하여 내부에서 청크 처리)
+                                translated_combined, trans_success = translate_text_with_llm(
+                                    combined_text,
+                                    target_lang,
+                                    current_lang_at_start
+                                )
+                                
+                                if trans_success and translated_combined:
+                                    # 번역된 텍스트를 다시 메시지로 분리
+                                    translated_lines = translated_combined.split("\n\n")
+                                    for i, (idx, original_msg) in enumerate(messages_to_translate):
+                                        if i < len(translated_lines):
+                                            # 번역된 라인에서 역할 제거
+                                            translated_line = translated_lines[i]
+                                            if "]: " in translated_line:
+                                                translated_content = translated_line.split("]: ", 1)[1]
+                                            else:
+                                                translated_content = translated_line
+                                            translated_messages[idx]["content"] = translated_content
+                            except Exception as e:
+                                # 배치 번역 실패 시 개별 번역으로 폴백
+                                for idx, msg in messages_to_translate:
                                     try:
                                         translated_content, trans_success = translate_text_with_llm(
                                             msg["content"],
-                                            target_lang,  # 이관된 언어로 번역
-                                            current_lang_at_start  # 원본 언어
+                                            target_lang,
+                                            current_lang_at_start
                                         )
                                         if trans_success:
-                                            translated_msg["content"] = translated_content
-                                        else:
-                                            # 번역 실패 시 원본 유지
-                                            pass
-                                    except Exception as e:
-                                        # 번역 오류 시 원본 유지
+                                            translated_messages[idx]["content"] = translated_content
+                                    except Exception:
+                                        # 개별 번역도 실패하면 원본 유지
                                         pass
-                            translated_messages.append(translated_msg)
                         
                         # 번역된 메시지로 업데이트
                         st.session_state.simulator_messages = translated_messages
@@ -6906,71 +6939,77 @@ elif feature_selection == L["sim_tab_phone"]:
                             is_success = True if translated_summary and not translated_summary.startswith("❌") else False
                         
                         # ⭐ [핵심 수정] 모든 메시지를 이관된 언어로 번역 (전화 탭)
+                        # ⭐ 최적화: 배치 번역으로 변경하여 API 호출 횟수 감소 및 타이밍 문제 해결
                         translated_messages = []
-                        for msg in current_messages:
+                        messages_to_translate = []
+                        message_indices = []
+                        
+                        # 번역할 메시지 수집
+                        for idx, msg in enumerate(current_messages):
                             translated_msg = msg.copy()
-                            # 번역할 메시지 역할 필터링 (시스템 메시지 등은 제외)
                             if msg["role"] in ["initial_query", "customer", "customer_rebuttal", "agent_response", 
                                               "customer_closing_response", "supervisor", "phone_exchange"]:
                                 if msg.get("content"):
-                                    # phone_exchange 메시지는 "Agent: ... | Customer: ..." 형식이므로 특별 처리
-                                    if msg["role"] == "phone_exchange" and "Agent:" in msg["content"] and "Customer:" in msg["content"]:
-                                        try:
-                                            # Agent와 Customer 부분을 분리하여 각각 번역
-                                            parts = msg["content"].split(" | ")
-                                            translated_parts = []
-                                            for part in parts:
-                                                if part.startswith("Agent:"):
-                                                    agent_text = part.replace("Agent:", "").strip()
-                                                    if agent_text:
-                                                        translated_agent, agent_success = translate_text_with_llm(
-                                                            agent_text,
-                                                            target_lang,
-                                                            current_lang_at_start
-                                                        )
-                                                        if agent_success:
-                                                            translated_parts.append(f"Agent: {translated_agent}")
-                                                        else:
-                                                            translated_parts.append(part)
-                                                    else:
-                                                        translated_parts.append(part)
-                                                elif part.startswith("Customer:"):
-                                                    customer_text = part.replace("Customer:", "").strip()
-                                                    if customer_text:
-                                                        translated_customer, customer_success = translate_text_with_llm(
-                                                            customer_text,
-                                                            target_lang,
-                                                            current_lang_at_start
-                                                        )
-                                                        if customer_success:
-                                                            translated_parts.append(f"Customer: {translated_customer}")
-                                                        else:
-                                                            translated_parts.append(part)
-                                                    else:
-                                                        translated_parts.append(part)
-                                                else:
-                                                    translated_parts.append(part)
-                                            translated_msg["content"] = " | ".join(translated_parts)
-                                        except Exception as e:
-                                            # 번역 오류 시 원본 유지
-                                            pass
-                                    else:
-                                        # 일반 메시지 번역
-                                        try:
-                                            translated_content, trans_success = translate_text_with_llm(
-                                                msg["content"],
-                                                target_lang,  # 이관된 언어로 번역
-                                                current_lang_at_start  # 원본 언어
-                                            )
-                                            if trans_success:
-                                                translated_msg["content"] = translated_content
-                                            else:
-                                                # 번역 실패 시 원본 유지
-                                                pass
-                                        except Exception as e:
-                                            # 번역 오류 시 원본 유지
-                                            pass
+                                    messages_to_translate.append((idx, msg))
                             translated_messages.append(translated_msg)
+                        
+                        # 배치 번역: 모든 메시지를 하나의 텍스트로 합쳐서 번역
+                        if messages_to_translate:
+                            try:
+                                # 번역할 메시지들을 하나의 텍스트로 합치기
+                                combined_text = "\n\n".join([
+                                    f"[{msg['role']}]: {msg['content']}" 
+                                    for _, msg in messages_to_translate
+                                ])
+                                
+                                # 전체 텍스트를 한 번에 번역 (토큰 제한 고려하여 내부에서 청크 처리)
+                                translated_combined, trans_success = translate_text_with_llm(
+                                    combined_text,
+                                    target_lang,
+                                    current_lang_at_start
+                                )
+                                
+                                if trans_success and translated_combined:
+                                    # 번역된 텍스트를 다시 메시지로 분리
+                                    translated_lines = translated_combined.split("\n\n")
+                                    for i, (idx, original_msg) in enumerate(messages_to_translate):
+                                        if i < len(translated_lines):
+                                            # 번역된 라인에서 역할 제거
+                                            translated_line = translated_lines[i]
+                                            if "]: " in translated_line:
+                                                translated_content = translated_line.split("]: ", 1)[1]
+                                            else:
+                                                translated_content = translated_line
+                                            
+                                            # phone_exchange 메시지의 경우 특별 처리
+                                            if original_msg["role"] == "phone_exchange" and "Agent:" in original_msg["content"] and "Customer:" in original_msg["content"]:
+                                                # 원본 형식 유지하면서 번역된 내용 적용
+                                                parts = original_msg["content"].split(" | ")
+                                                if len(parts) >= 2:
+                                                    # Agent와 Customer 부분을 번역된 내용에서 추출 시도
+                                                    if "Agent:" in translated_content and "Customer:" in translated_content:
+                                                        translated_messages[idx]["content"] = translated_content
+                                                    else:
+                                                        # 번역 실패 시 원본 유지
+                                                        pass
+                                                else:
+                                                    translated_messages[idx]["content"] = translated_content
+                                            else:
+                                                translated_messages[idx]["content"] = translated_content
+                            except Exception as e:
+                                # 배치 번역 실패 시 개별 번역으로 폴백
+                                for idx, msg in messages_to_translate:
+                                    try:
+                                        translated_content, trans_success = translate_text_with_llm(
+                                            msg["content"],
+                                            target_lang,
+                                            current_lang_at_start
+                                        )
+                                        if trans_success:
+                                            translated_messages[idx]["content"] = translated_content
+                                    except Exception:
+                                        # 개별 번역도 실패하면 원본 유지
+                                        pass
                         
                         # 번역된 메시지로 업데이트
                         st.session_state.simulator_messages = translated_messages
@@ -7559,19 +7598,10 @@ elif feature_selection == L["rag_tab"]:
                                 # build_rag_index는 파일 객체 리스트를 받으므로, 파일을 읽어서 객체 생성
                                 import tempfile
                                 
-                                # 파일을 읽어서 임시 파일 객체 생성
-                                with open(guide_filepath, "rb") as f:
-                                    file_content = f.read()
-                                
-                                # 임시 파일 객체 생성 (load_documents가 기대하는 형식)
-                                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="wb")
-                                temp_file.write(file_content)
-                                temp_file.flush()
-                                temp_file.seek(0)
-                                temp_file.name = guide_filepath  # 원본 파일명 사용
-                                
+                                # ⭐ 수정: 파일 경로를 직접 전달하도록 변경 (파일 객체 대신)
+                                # load_documents 함수가 파일 경로도 처리할 수 있도록 수정됨
                                 try:
-                                    vectorstore, count = build_rag_index([temp_file])
+                                    vectorstore, count = build_rag_index([guide_filepath])
                                     
                                     if vectorstore:
                                         st.session_state.rag_vectorstore = vectorstore
@@ -7579,13 +7609,10 @@ elif feature_selection == L["rag_tab"]:
                                         st.success(f"✅ RAG 인덱스가 생성되었습니다. (문서 수: {count})")
                                     else:
                                         st.error("RAG 인덱스 생성에 실패했습니다.")
-                                finally:
-                                    temp_file.close()
-                                    if os.path.exists(temp_file.name) and temp_file.name != guide_filepath:
-                                        try:
-                                            os.remove(temp_file.name)
-                                        except:
-                                            pass
+                                except Exception as e:
+                                    st.error(f"RAG 인덱스 생성 중 오류: {e}")
+                                    import traceback
+                                    st.code(traceback.format_exc())
                                 
                     except Exception as e:
                         st.error(f"RAG 인덱스 업데이트 중 오류 발생: {e}")
