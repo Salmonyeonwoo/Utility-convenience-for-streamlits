@@ -3433,12 +3433,16 @@ if feature_selection == L["sim_tab_chat_email"]:
                 elif st.session_state.transfer_summary_text:
                     # 번역 실패 시에도 원본 텍스트 표시
                     st.info(st.session_state.transfer_summary_text)
-                
-                # ⭐ 수정: 언어가 이관되었을 때 항상 번역 재시도 버튼 표시
-                # (번역이 자동으로 안 되었거나 실패한 경우에도 버튼이 보이도록)
-                if st.session_state.language_at_transfer_start and st.session_state.language != st.session_state.language_at_transfer_start:
-                    if st.button(L.get("button_retry_translation", "번역 다시 시도"),
-                                 key=f"btn_retry_translation_chat_{st.session_state.language_at_transfer_start}_{st.session_state.language}_{st.session_state.sim_instance_id}"):
+    
+    # ⭐ 번역 재시도 버튼 (언어 이관 시 항상 표시 - should_show_transfer_summary 조건 밖으로 이동)
+    # 채팅/이메일 탭에서 언어가 이관되었을 때 항상 번역 재시도 버튼 표시
+    if (st.session_state.language_at_transfer_start and 
+        st.session_state.language != st.session_state.language_at_transfer_start and
+        st.session_state.get("feature_selection") == L["sim_tab_chat_email"]):
+        st.markdown("---")
+        st.markdown("**번역 재시도**")
+        if st.button(L.get("button_retry_translation", "번역 다시 시도"),
+                     key=f"btn_retry_translation_chat_{st.session_state.language_at_transfer_start}_{st.session_state.language}_{st.session_state.sim_instance_id}"):
                         # 재시도 로직 실행
                         try:
                             source_lang = st.session_state.language_at_transfer_start
@@ -3550,7 +3554,7 @@ if feature_selection == L["sim_tab_chat_email"]:
                             st.code(error_details)
                             st.session_state.transfer_summary_text = L.get("translation_error", "번역 오류: {error}").format(error=str(e))
                             st.session_state.translation_success = False
-    
+
     # =========================
     # 5. 에이전트 입력 단계 (AGENT_TURN) - ⭐ 수정: 원위치 복원 - 항상 입력 칸 표시
     # =========================
