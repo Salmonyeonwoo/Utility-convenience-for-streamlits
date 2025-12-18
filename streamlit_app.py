@@ -3443,117 +3443,116 @@ if feature_selection == L["sim_tab_chat_email"]:
         st.markdown("**번역 재시도**")
         if st.button(L.get("button_retry_translation", "번역 다시 시도"),
                      key=f"btn_retry_translation_chat_{st.session_state.language_at_transfer_start}_{st.session_state.language}_{st.session_state.sim_instance_id}"):
-                        # 재시도 로직 실행
-                        try:
-                            source_lang = st.session_state.language_at_transfer_start
-                            target_lang = st.session_state.language
+            # 재시도 로직 실행
+            try:
+                source_lang = st.session_state.language_at_transfer_start
+                target_lang = st.session_state.language
+                
+                if not source_lang or not target_lang:
+                    st.error(L.get("invalid_language_info", "언어 정보가 올바르지 않습니다."))
+                else:
+                    # 이전 대화 내용 재가공
+                    history_text = ""
+                    for msg in st.session_state.simulator_messages:
+                        role = "Customer" if msg["role"].startswith("customer") or msg["role"] == "initial_query" else "Agent"
+                        if msg["role"] in ["initial_query", "customer_rebuttal", "agent_response", "customer_closing_response"]:
+                            content = msg.get("content", "").strip()
+                            if content:
+                                history_text += f"{role}: {content}\n"
+                    
+                    if not history_text.strip():
+                        st.warning(L.get("no_content_to_translate", "번역할 대화 내용이 없습니다."))
+                    else:
+                        # ⭐ 수정: 원본 대화 내용을 그대로 번역 (요약하지 않고 원문 그대로 번역)
+                        lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(source_lang, "Korean")
+                        lang_name_target = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(target_lang, "Korean")
+                        
+                        # 원본 대화 내용을 그대로 번역
+                        with st.spinner(L.get("transfer_loading", "번역 중...")):
+                            # 번역 로직 실행 (요약 없이 원본 그대로 번역)
+                            translated_summary, is_success = translate_text_with_llm(
+                                history_text,
+                                target_lang,
+                                source_lang
+                            )
                             
-                            if not source_lang or not target_lang:
-                                st.error(L.get("invalid_language_info", "언어 정보가 올바르지 않습니다."))
-                            else:
-                                # 이전 대화 내용 재가공
-                                history_text = ""
-                                for msg in st.session_state.simulator_messages:
-                                    role = "Customer" if msg["role"].startswith("customer") or msg["role"] == "initial_query" else "Agent"
-                                    if msg["role"] in ["initial_query", "customer_rebuttal", "agent_response", "customer_closing_response"]:
-                                        content = msg.get("content", "").strip()
-                                        if content:
-                                            history_text += f"{role}: {content}\n"
-                                
-                                if not history_text.strip():
-                                    st.warning(L.get("no_content_to_translate", "번역할 대화 내용이 없습니다."))
-                                else:
-                                    # ⭐ 수정: 원본 대화 내용을 그대로 번역 (요약하지 않고 원문 그대로 번역)
-                                    lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(source_lang, "Korean")
-                                    lang_name_target = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(target_lang, "Korean")
+                            if not translated_summary:
+                                st.warning(L.get("translation_empty", "번역 결과가 비어있습니다. 원본 텍스트를 사용합니다."))
+                                translated_summary = history_text
+                                is_success = False
+                            
+                            # ⭐ [수정] 번역 재시도 시에도 배치 번역 사용
+                            translated_messages = []
+                            messages_to_translate = []
+                            
+                            # 번역할 메시지 수집
+                            for idx, msg in enumerate(st.session_state.simulator_messages):
+                                translated_msg = msg.copy()
+                                if msg["role"] in ["initial_query", "customer", "customer_rebuttal", "agent_response", 
+                                                  "customer_closing_response", "supervisor"]:
+                                    if msg.get("content"):
+                                        messages_to_translate.append((idx, msg))
+                                translated_messages.append(translated_msg)
+                            
+                            # 배치 번역: 모든 메시지를 하나의 텍스트로 합쳐서 번역
+                            if messages_to_translate:
+                                try:
+                                    # 번역할 메시지들을 하나의 텍스트로 합치기
+                                    combined_text = "\n\n".join([
+                                        f"[{msg['role']}]: {msg['content']}" 
+                                        for _, msg in messages_to_translate
+                                    ])
                                     
-                                    # 원본 대화 내용을 그대로 번역
-                                    with st.spinner(L.get("transfer_loading", "번역 중...")):
-                                        # 번역 로직 실행 (요약 없이 원본 그대로 번역)
-                                        translated_summary, is_success = translate_text_with_llm(
-                                            history_text,
-                                            target_lang,
-                                            source_lang
-                                        )
-                                        
-                                        if not translated_summary:
-                                            st.warning(L.get("translation_empty", "번역 결과가 비어있습니다. 원본 텍스트를 사용합니다."))
-                                            translated_summary = summary_text
-                                            is_success = False
-                                        
-                                        # ⭐ [수정] 번역 재시도 시에도 배치 번역 사용
-                                        translated_messages = []
-                                        messages_to_translate = []
-                                        message_indices = []
-                                        
-                                        # 번역할 메시지 수집
-                                        for idx, msg in enumerate(st.session_state.simulator_messages):
-                                            translated_msg = msg.copy()
-                                            if msg["role"] in ["initial_query", "customer", "customer_rebuttal", "agent_response", 
-                                                              "customer_closing_response", "supervisor"]:
-                                                if msg.get("content"):
-                                                    messages_to_translate.append((idx, msg))
-                                            translated_messages.append(translated_msg)
-                                        
-                                        # 배치 번역: 모든 메시지를 하나의 텍스트로 합쳐서 번역
-                                        if messages_to_translate:
-                                            try:
-                                                # 번역할 메시지들을 하나의 텍스트로 합치기
-                                                combined_text = "\n\n".join([
-                                                    f"[{msg['role']}]: {msg['content']}" 
-                                                    for _, msg in messages_to_translate
-                                                ])
-                                                
-                                                # 전체 텍스트를 한 번에 번역 (토큰 제한 고려하여 내부에서 청크 처리)
-                                                translated_combined, trans_success_batch = translate_text_with_llm(
-                                                    combined_text,
-                                                    target_lang,
-                                                    source_lang
-                                                )
-                                                
-                                                if trans_success_batch and translated_combined:
-                                                    # 번역된 텍스트를 다시 메시지로 분리
-                                                    translated_lines = translated_combined.split("\n\n")
-                                                    for i, (idx, original_msg) in enumerate(messages_to_translate):
-                                                        if i < len(translated_lines):
-                                                            # 번역된 라인에서 역할 제거
-                                                            translated_line = translated_lines[i]
-                                                            if "]: " in translated_line:
-                                                                translated_content = translated_line.split("]: ", 1)[1]
-                                                            else:
-                                                                translated_content = translated_line
-                                                            translated_messages[idx]["content"] = translated_content
-                                            except Exception as e:
-                                                # 배치 번역 실패 시 개별 번역으로 폴백
-                                                for idx, msg in messages_to_translate:
-                                                    try:
-                                                        translated_content, trans_success = translate_text_with_llm(
-                                                            msg["content"],
-                                                            target_lang,
-                                                            source_lang
-                                                        )
-                                                        if trans_success:
-                                                            translated_messages[idx]["content"] = translated_content
-                                                    except Exception:
-                                                        # 개별 번역도 실패하면 원본 유지
-                                                        pass
-                                        
-                                        # 번역된 메시지로 업데이트
-                                        st.session_state.simulator_messages = translated_messages
-                                        
-                                        # 번역 결과 저장
-                                        st.session_state.transfer_summary_text = translated_summary
-                                        st.session_state.translation_success = is_success
-                                        
-                                        # ⭐ 재실행 불필요: 결과는 이미 세션 상태에 저장되어 자동 표시됨
-                                        # st.rerun()
-                        except Exception as e:
-                            import traceback
-                            error_details = traceback.format_exc()
-                            st.error(L.get("translation_retry_error", "번역 재시도 중 오류 발생: {error}").format(error=str(e)))
-                            st.code(error_details)
-                            st.session_state.transfer_summary_text = L.get("translation_error", "번역 오류: {error}").format(error=str(e))
-                            st.session_state.translation_success = False
+                                    # 전체 텍스트를 한 번에 번역 (토큰 제한 고려하여 내부에서 청크 처리)
+                                    translated_combined, trans_success_batch = translate_text_with_llm(
+                                        combined_text,
+                                        target_lang,
+                                        source_lang
+                                    )
+                                    
+                                    if trans_success_batch and translated_combined:
+                                        # 번역된 텍스트를 다시 메시지로 분리
+                                        translated_lines = translated_combined.split("\n\n")
+                                        for i, (idx, original_msg) in enumerate(messages_to_translate):
+                                            if i < len(translated_lines):
+                                                # 번역된 라인에서 역할 제거
+                                                translated_line = translated_lines[i]
+                                                if "]: " in translated_line:
+                                                    translated_content = translated_line.split("]: ", 1)[1]
+                                                else:
+                                                    translated_content = translated_line
+                                                translated_messages[idx]["content"] = translated_content
+                                except Exception as e:
+                                    # 배치 번역 실패 시 개별 번역으로 폴백
+                                    for idx, msg in messages_to_translate:
+                                        try:
+                                            translated_content, trans_success = translate_text_with_llm(
+                                                msg["content"],
+                                                target_lang,
+                                                source_lang
+                                            )
+                                            if trans_success:
+                                                translated_messages[idx]["content"] = translated_content
+                                        except Exception:
+                                            # 개별 번역도 실패하면 원본 유지
+                                            pass
+                            
+                            # 번역된 메시지로 업데이트
+                            st.session_state.simulator_messages = translated_messages
+                            
+                            # 번역 결과 저장
+                            st.session_state.transfer_summary_text = translated_summary
+                            st.session_state.translation_success = is_success
+                            
+                            # ⭐ 재실행 불필요: 결과는 이미 세션 상태에 저장되어 자동 표시됨
+                            # st.rerun()
+            except Exception as e:
+                import traceback
+                error_details = traceback.format_exc()
+                st.error(L.get("translation_retry_error", "번역 재시도 중 오류 발생: {error}").format(error=str(e)))
+                st.code(error_details)
+                st.session_state.transfer_summary_text = L.get("translation_error", "번역 오류: {error}").format(error=str(e))
+                st.session_state.translation_success = False
 
     # =========================
     # 5. 에이전트 입력 단계 (AGENT_TURN) - ⭐ 수정: 원위치 복원 - 항상 입력 칸 표시
