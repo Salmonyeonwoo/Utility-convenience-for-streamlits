@@ -15,6 +15,21 @@
 """
 RAG 처리 모듈
 문서 로드, 임베딩, 벡터 스토어 구축 및 질문 답변 기능을 제공합니다.
+
+임베딩 Quota 설정:
+- chunk_size: 1200 (기본 800에서 증가하여 청크 수 감소, quota 절약)
+- chunk_overlap: 200 (기본 150에서 증가하여 문맥 유지)
+- MAX_CHUNKS: 1000 (최대 청크 수 제한, quota 초과 방지)
+
+OpenAI Embeddings API Quota (참고):
+- Free tier: 제한적 (정확한 수치는 OpenAI 문서 참조)
+- Paid tier: 더 높은 제한
+- Rate limit: 분당/일당 요청 수 제한
+- 큰 파일의 경우 청크 수가 많아지면 quota 초과 가능
+
+Quota 초과 시 자동 Fallback:
+1. OpenAI → Gemini → NVIDIA → HuggingFace (Local)
+2. 각 단계에서 실패 시 다음 모델로 자동 전환
 """
 
 import os
@@ -157,12 +172,24 @@ def load_documents(files) -> List[Document]:
 
 
 def split_documents(docs: List[Document]) -> List[Document]:
+    # ⭐ 수정: chunk_size를 1200으로 증가하여 청크 수 감소 (quota 절약)
+    # chunk_size=800 → 1200: 더 큰 청크로 분할하여 API 호출 횟수 감소
+    # chunk_overlap=150 → 200: 겹치는 부분도 약간 증가하여 문맥 유지
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=800,
-        chunk_overlap=150,
+        chunk_size=1200,  # 800에서 1200으로 증가 (quota 절약)
+        chunk_overlap=200,  # 150에서 200으로 증가 (문맥 유지)
         separators=["\n\n", "\n", ".", " ", ""],
     )
-    return splitter.split_documents(docs)
+    chunks = splitter.split_documents(docs)
+    
+    # ⭐ 추가: 최대 청크 수 제한 (quota 초과 방지)
+    # 큰 파일의 경우 청크가 너무 많아지면 quota 초과 가능
+    MAX_CHUNKS = 1000  # 최대 1000개 청크로 제한
+    if len(chunks) > MAX_CHUNKS:
+        st.warning(f"⚠️ 문서가 너무 큽니다. 처음 {MAX_CHUNKS}개 청크만 사용합니다. (전체: {len(chunks)}개)")
+        chunks = chunks[:MAX_CHUNKS]
+    
+    return chunks
 
 
 
@@ -275,6 +302,11 @@ def build_rag_index(files):
     if not chunks: return None, 0
 
     try:
+        # ⭐ 수정: 큰 파일의 경우 청크 수가 많아 quota 초과 가능성 증가
+        # 청크 수가 너무 많으면 경고 메시지 표시
+        if len(chunks) > 500:
+            st.warning(f"⚠️ 청크 수가 많습니다 ({len(chunks)}개). 임베딩 처리에 시간이 걸릴 수 있으며, quota 초과 가능성이 있습니다.")
+        
         vectorstore = FAISS.from_documents(chunks, embeddings)
         # 저장
         vectorstore.save_local(RAG_INDEX_DIR)
@@ -283,6 +315,10 @@ def build_rag_index(files):
         error_msg = str(e).lower()
         if "quota" in error_msg or "rate limit" in error_msg:
             st.error(f"RAG 인덱스 생성 중 오류 (할당량 초과): {e}")
+            st.info("💡 **Quota 초과 해결 방법:**\n"
+                   "- 청크 크기를 더 크게 설정하거나 (현재: 1200)\n"
+                   "- 파일을 더 작은 단위로 나누어 업로드하거나\n"
+                   "- 다른 임베딩 모델(Gemini, HuggingFace)로 자동 전환됩니다.")
         elif "network" in error_msg or "connection" in error_msg or "timeout" in error_msg:
             st.error(f"RAG 인덱스 생성 중 오류 (네트워크 문제): {e}")
         else:
