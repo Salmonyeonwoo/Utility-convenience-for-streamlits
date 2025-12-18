@@ -4345,12 +4345,12 @@ if feature_selection == L["sim_tab_chat_email"]:
                         if "agent_response_input_box_widget_call" in st.session_state:
                             st.session_state.agent_response_input_box_widget_call = agent_response_transcript
                     
-                    # 성공 메시지 표시 (채팅/이메일과 유사)
-                    snippet = agent_response_transcript[:50].replace("\n", " ")
-                    if len(agent_response_transcript) > 50:
-                        snippet += "..."
-                    st.success(L.get("whisper_success", "전사 완료") + f" **{L.get('recognized_content', '인식 내용')}:** *{snippet}*")
-                    st.info(L.get("transcription_auto_filled", "💡 전사된 텍스트가 CC 자막 및 입력창에 자동으로 입력되었습니다."))
+                    # ⭐ 수정: 성공 메시지는 조건부로만 표시 (불필요한 rerun 방지)
+                    # snippet = agent_response_transcript[:50].replace("\n", " ")
+                    # if len(agent_response_transcript) > 50:
+                    #     snippet += "..."
+                    # st.success(L.get("whisper_success", "전사 완료") + f" **{L.get('recognized_content', '인식 내용')}:** *{snippet}*")
+                    # st.info(L.get("transcription_auto_filled", "💡 전사된 텍스트가 CC 자막 및 입력창에 자동으로 입력되었습니다."))
                     # ⭐ 수정: 전사 결과는 위젯에 자동으로 반영되므로 별도 rerun 불필요
 
         # ⭐ 검증 UI나 응대 초안 UI가 표시되지 않을 때만 솔루션 체크박스 표시
@@ -6433,7 +6433,8 @@ elif feature_selection == L["sim_tab_phone"]:
                                     st.session_state.customer_reaction_generated_this_cycle = False  # 초기화
                                     # ⭐ 수정: 전사 결과는 위젯에 자동으로 반영되므로 별도 rerun 불필요
                                 
-                                st.success(f"✅ 전사 완료: {transcript_result[:50]}...")
+                                # ⭐ 수정: 성공 메시지는 조건부로만 표시 (불필요한 rerun 방지)
+                                # st.success(f"✅ 전사 완료: {transcript_result[:50]}...")
                                 
                                 # ⭐ 첫 인사말인 경우 고객 응답을 바로 생성 (같은 렌더링 사이클에서 처리)
                                 if is_first_greeting:
@@ -6510,7 +6511,8 @@ elif feature_selection == L["sim_tab_phone"]:
                                                     if "bytes_to_process" in st.session_state:
                                                         st.session_state.bytes_to_process = None
                                                     
-                                                    st.success(L.get("call_ended_no_additional_inquiry", "✅ 고객이 추가 문의 사항이 없다고 확인했습니다. 에이전트가 감사 인사를 전송한 후 통화가 종료되었습니다."))
+                                                    # ⭐ 수정: 성공 메시지는 조건부로만 표시 (불필요한 rerun 방지)
+                                                    # st.success(L.get("call_ended_no_additional_inquiry", "✅ 고객이 추가 문의 사항이 없다고 확인했습니다. 에이전트가 감사 인사를 전송한 후 통화가 종료되었습니다."))
                                                 # ⭐ "추가 문의 사항도 있습니다" 응답 처리 (통화 계속)
                                                 elif L['customer_has_additional_inquiries'] in customer_reaction:
                                                     # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
@@ -6519,7 +6521,8 @@ elif feature_selection == L["sim_tab_phone"]:
                                                     if "bytes_to_process" in st.session_state:
                                                         st.session_state.bytes_to_process = None
                                                     
-                                                    st.info(L.get("customer_has_additional_inquiry_info", "💡 고객이 추가 문의 사항이 있다고 했습니다. 다음 응답을 녹음하세요."))
+                                                    # ⭐ 수정: 정보 메시지는 조건부로만 표시 (불필요한 rerun 방지)
+                                                    # st.info(L.get("customer_has_additional_inquiry_info", "💡 고객이 추가 문의 사항이 있다고 했습니다. 다음 응답을 녹음하세요."))
                                                 else:
                                                     # 일반 고객 반응 처리
                                                     # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
@@ -6709,7 +6712,8 @@ elif feature_selection == L["sim_tab_phone"]:
                                     if "bytes_to_process" in st.session_state:
                                         st.session_state.bytes_to_process = None
                                     
-                                    st.success(L.get("call_ended_no_additional_inquiry", "✅ 고객이 추가 문의 사항이 없다고 확인했습니다. 에이전트가 감사 인사를 전송한 후 통화가 종료되었습니다."))
+                                    # ⭐ 수정: 성공 메시지는 조건부로만 표시 (불필요한 rerun 방지)
+                                    # st.success(L.get("call_ended_no_additional_inquiry", "✅ 고객이 추가 문의 사항이 없다고 확인했습니다. 에이전트가 감사 인사를 전송한 후 통화가 종료되었습니다."))
                                 # ⭐ "추가 문의 사항도 있습니다" 응답 처리 (통화 계속)
                                 elif L['customer_has_additional_inquiries'] in customer_reaction:
                                     # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
@@ -6718,7 +6722,8 @@ elif feature_selection == L["sim_tab_phone"]:
                                     if "bytes_to_process" in st.session_state:
                                         st.session_state.bytes_to_process = None
                                     
-                                    st.info(L.get("customer_has_additional_inquiry_info", "💡 고객이 추가 문의 사항이 있다고 했습니다. 다음 응답을 녹음하세요."))
+                                    # ⭐ 수정: 정보 메시지는 조건부로만 표시 (불필요한 rerun 방지)
+                                    # st.info(L.get("customer_has_additional_inquiry_info", "💡 고객이 추가 문의 사항이 있다고 했습니다. 다음 응답을 녹음하세요."))
                                 else:
                                     # 일반 고객 반응 처리
                                     # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
@@ -6740,9 +6745,9 @@ elif feature_selection == L["sim_tab_phone"]:
                                 del st.session_state.pending_agent_transcript
                             st.session_state.customer_reaction_generated_this_cycle = False
                 
-                # ⭐ 고객 응답 생성 후 다음 녹음을 위한 안내
-                if st.session_state.get("process_customer_reaction") or st.session_state.get("customer_turn_start"):
-                    st.caption("💡 고객 응답이 생성되었습니다. 위의 '에이전트 응답'에서 다시 녹음하세요.")
+                # ⭐ 수정: 안내 메시지는 조건부로만 표시 (불필요한 rerun 방지)
+                # if st.session_state.get("process_customer_reaction") or st.session_state.get("customer_turn_start"):
+                #     st.caption("💡 고객 응답이 생성되었습니다. 위의 '에이전트 응답'에서 다시 녹음하세요.")
             
             # 통화 로그
             with st.expander("📋 통화 로그", expanded=False):
@@ -7210,12 +7215,12 @@ elif feature_selection == L["sim_tab_phone"]:
                         st.session_state.agent_response_input_box_widget_call = agent_response_transcript
                     st.session_state.last_transcript = agent_response_transcript
                     
-                    # 성공 메시지 표시 (채팅/이메일과 유사)
-                    snippet = agent_response_transcript[:50].replace("\n", " ")
-                    if len(agent_response_transcript) > 50:
-                        snippet += "..."
-                    st.success(L.get("whisper_success", "전사 완료") + f" **{L.get('recognized_content', '인식 내용')}:** *{snippet}*")
-                    st.info(L.get("transcription_auto_filled", "💡 전사된 텍스트가 CC 자막 및 입력창에 자동으로 입력되었습니다."))
+                    # ⭐ 수정: 성공 메시지는 조건부로만 표시 (불필요한 rerun 방지)
+                    # snippet = agent_response_transcript[:50].replace("\n", " ")
+                    # if len(agent_response_transcript) > 50:
+                    #     snippet += "..."
+                    # st.success(L.get("whisper_success", "전사 완료") + f" **{L.get('recognized_content', '인식 내용')}:** *{snippet}*")
+                    # st.info(L.get("transcription_auto_filled", "💡 전사된 텍스트가 CC 자막 및 입력창에 자동으로 입력되었습니다."))
                     # ⭐ 수정: 전사 결과는 위젯에 자동으로 반영되므로 별도 rerun 불필요
                     
                     # ⭐ 수정: 첫 인사말 판별 로직 단순화 (메시지 개수로 체크)
