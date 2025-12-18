@@ -58,11 +58,21 @@ def load_documents(files) -> List[Document]:
                 name = os.path.basename(file_path)
                 lower = name.lower()
                 if lower.endswith(".pdf"):
-                    loader = PyPDFLoader(file_path)
-                    file_docs = loader.load()
-                    for d in file_docs:
-                        d.metadata["source"] = name
-                    docs.extend(file_docs)
+                    # ⭐ 수정: pypdf 패키지 없을 때 처리
+                    try:
+                        loader = PyPDFLoader(file_path)
+                        file_docs = loader.load()
+                        for d in file_docs:
+                            d.metadata["source"] = name
+                        docs.extend(file_docs)
+                    except ImportError as e:
+                        error_msg = f"pypdf package not found, please install it with pip install pypdf"
+                        st.warning(f"파일 로드 오류 ({name}): {error_msg}")
+                        continue
+                    except Exception as e:
+                        error_msg = f"PDF 로드 오류: {e}"
+                        st.warning(f"파일 로드 오류 ({name}): {error_msg}")
+                        continue
                 elif lower.endswith(".txt") or lower.endswith(".html") or lower.endswith(".htm"):
                     with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
                         text = file.read()
@@ -99,6 +109,7 @@ def load_documents(files) -> List[Document]:
                         continue
                 
                 if lower.endswith(".pdf"):
+                    # ⭐ 수정: pypdf 패키지 없을 때 처리
                     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
                     try:
                         if isinstance(file_content, bytes):
@@ -107,11 +118,18 @@ def load_documents(files) -> List[Document]:
                             tmp.write(file_content.encode('utf-8'))
                         tmp.flush()
                         tmp.close()
-                        loader = PyPDFLoader(tmp.name)
-                        file_docs = loader.load()
-                        for d in file_docs:
-                            d.metadata["source"] = name
-                        docs.extend(file_docs)
+                        try:
+                            loader = PyPDFLoader(tmp.name)
+                            file_docs = loader.load()
+                            for d in file_docs:
+                                d.metadata["source"] = name
+                            docs.extend(file_docs)
+                        except ImportError as e:
+                            error_msg = f"pypdf package not found, please install it with pip install pypdf"
+                            st.warning(f"파일 로드 오류 ({name}): {error_msg}")
+                    except Exception as e:
+                        error_msg = f"PDF 로드 오류: {e}"
+                        st.warning(f"파일 로드 오류 ({name}): {error_msg}")
                     finally:
                         try:
                             os.remove(tmp.name)
@@ -177,7 +195,14 @@ def get_embedding_function():
             st.info("🔹 RAG: OpenAI Embedding 사용 중")
             return OpenAIEmbeddings(openai_api_key=openai_key)
         except Exception as e:
-            st.warning(f"OpenAI 임베딩 실패 → Gemini로 Fallback: {e}")
+            error_msg = str(e).lower()
+            # ⭐ 수정: quota exceeded, network issue 등 구체적인 오류 메시지 처리
+            if "quota" in error_msg or "rate limit" in error_msg:
+                st.warning(f"OpenAI 임베딩 실패 (할당량 초과) → Gemini로 Fallback: {e}")
+            elif "network" in error_msg or "connection" in error_msg or "timeout" in error_msg:
+                st.warning(f"OpenAI 임베딩 실패 (네트워크 오류) → Gemini로 Fallback: {e}")
+            else:
+                st.warning(f"OpenAI 임베딩 실패 → Gemini로 Fallback: {e}")
 
     # 2. Gemini 임베딩 시도
     gemini_key = get_api_key("gemini")
@@ -254,8 +279,14 @@ def build_rag_index(files):
         # 저장
         vectorstore.save_local(RAG_INDEX_DIR)
     except Exception as e:
-        # API 인증 실패 등 실제 API 호출 오류 처리
-        st.error(f"RAG 인덱스 생성 중 오류: {e}")
+        # ⭐ 수정: quota exceeded, network issue 등 구체적인 오류 메시지 처리
+        error_msg = str(e).lower()
+        if "quota" in error_msg or "rate limit" in error_msg:
+            st.error(f"RAG 인덱스 생성 중 오류 (할당량 초과): {e}")
+        elif "network" in error_msg or "connection" in error_msg or "timeout" in error_msg:
+            st.error(f"RAG 인덱스 생성 중 오류 (네트워크 문제): {e}")
+        else:
+            st.error(f"RAG 인덱스 생성 중 오류: {e}")
         return None, 0
 
     return vectorstore, len(chunks)

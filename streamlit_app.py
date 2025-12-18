@@ -3430,16 +3430,15 @@ if feature_selection == L["sim_tab_chat_email"]:
                 # 번역 성공 시 요약 표시
                 if st.session_state.transfer_summary_text and st.session_state.get("translation_success", True):
                     st.markdown(st.session_state.transfer_summary_text)
+                elif st.session_state.transfer_summary_text:
+                    # 번역 실패 시에도 원본 텍스트 표시
+                    st.info(st.session_state.transfer_summary_text)
                 
-                # 번역 실패 시 처리
-                if is_translation_failed:
-                    # 번역 실패 시에도 원본 텍스트가 표시되므로 오류 메시지 없이 원본 텍스트만 표시
-                    # (오류 메시지를 표시하지 않아도 원본 텍스트로 계속 진행 가능)
-                    if st.session_state.transfer_summary_text:
-                        st.info(st.session_state.transfer_summary_text)
-                    # 번역 재시도 버튼 추가 (선택적)
+                # ⭐ 수정: 언어가 이관되었을 때 항상 번역 재시도 버튼 표시
+                # (번역이 자동으로 안 되었거나 실패한 경우에도 버튼이 보이도록)
+                if st.session_state.language_at_transfer_start and st.session_state.language != st.session_state.language_at_transfer_start:
                     if st.button(L.get("button_retry_translation", "번역 다시 시도"),
-                                 key=f"btn_retry_translation_{st.session_state.sim_instance_id}"):  # 고유 키 사용
+                                 key=f"btn_retry_translation_chat_{st.session_state.language_at_transfer_start}_{st.session_state.language}_{st.session_state.sim_instance_id}"):
                         # 재시도 로직 실행
                         try:
                             source_lang = st.session_state.language_at_transfer_start
@@ -3478,15 +3477,51 @@ if feature_selection == L["sim_tab_chat_email"]:
                                             translated_summary = summary_text
                                             is_success = False
                                         
-                                        # ⭐ [수정] 번역 재시도 시에도 모든 메시지 번역
+                                        # ⭐ [수정] 번역 재시도 시에도 배치 번역 사용
                                         translated_messages = []
-                                        for msg in st.session_state.simulator_messages:
+                                        messages_to_translate = []
+                                        message_indices = []
+                                        
+                                        # 번역할 메시지 수집
+                                        for idx, msg in enumerate(st.session_state.simulator_messages):
                                             translated_msg = msg.copy()
-                                            # 번역할 메시지 역할 필터링 (시스템 메시지 등은 제외)
                                             if msg["role"] in ["initial_query", "customer", "customer_rebuttal", "agent_response", 
                                                               "customer_closing_response", "supervisor"]:
                                                 if msg.get("content"):
-                                                    # 각 메시지 내용을 번역
+                                                    messages_to_translate.append((idx, msg))
+                                            translated_messages.append(translated_msg)
+                                        
+                                        # 배치 번역: 모든 메시지를 하나의 텍스트로 합쳐서 번역
+                                        if messages_to_translate:
+                                            try:
+                                                # 번역할 메시지들을 하나의 텍스트로 합치기
+                                                combined_text = "\n\n".join([
+                                                    f"[{msg['role']}]: {msg['content']}" 
+                                                    for _, msg in messages_to_translate
+                                                ])
+                                                
+                                                # 전체 텍스트를 한 번에 번역 (토큰 제한 고려하여 내부에서 청크 처리)
+                                                translated_combined, trans_success_batch = translate_text_with_llm(
+                                                    combined_text,
+                                                    target_lang,
+                                                    source_lang
+                                                )
+                                                
+                                                if trans_success_batch and translated_combined:
+                                                    # 번역된 텍스트를 다시 메시지로 분리
+                                                    translated_lines = translated_combined.split("\n\n")
+                                                    for i, (idx, original_msg) in enumerate(messages_to_translate):
+                                                        if i < len(translated_lines):
+                                                            # 번역된 라인에서 역할 제거
+                                                            translated_line = translated_lines[i]
+                                                            if "]: " in translated_line:
+                                                                translated_content = translated_line.split("]: ", 1)[1]
+                                                            else:
+                                                                translated_content = translated_line
+                                                            translated_messages[idx]["content"] = translated_content
+                                            except Exception as e:
+                                                # 배치 번역 실패 시 개별 번역으로 폴백
+                                                for idx, msg in messages_to_translate:
                                                     try:
                                                         translated_content, trans_success = translate_text_with_llm(
                                                             msg["content"],
@@ -3494,11 +3529,10 @@ if feature_selection == L["sim_tab_chat_email"]:
                                                             source_lang
                                                         )
                                                         if trans_success:
-                                                            translated_msg["content"] = translated_content
-                                                    except Exception as e:
-                                                        # 번역 오류 시 원본 유지
+                                                            translated_messages[idx]["content"] = translated_content
+                                                    except Exception:
+                                                        # 개별 번역도 실패하면 원본 유지
                                                         pass
-                                            translated_messages.append(translated_msg)
                                         
                                         # 번역된 메시지로 업데이트
                                         st.session_state.simulator_messages = translated_messages
