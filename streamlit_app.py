@@ -2561,12 +2561,12 @@ if feature_selection == L["sim_tab_chat_email"]:
                     st.session_state.sim_stage = "CLOSING"
                 else:
                     messages = st.session_state.simulator_messages
-                    last_role = messages[-1]["role"] if messages else None
+                    last_role = messages[-1].get("role", "") if messages and len(messages) > 0 else None
                     if last_role == "agent_response":
                         st.session_state.sim_stage = "CUSTOMER_TURN"
                     elif last_role == "customer_rebuttal":
                         st.session_state.sim_stage = "AGENT_TURN"
-                    elif last_role == "supervisor" and messages and messages[-1]["content"] == L[
+                    elif last_role == "supervisor" and messages and len(messages) > 0 and messages[-1].get("content", "") == L[
                         "customer_closing_confirm"]:
                         st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
                     else:
@@ -3016,8 +3016,11 @@ if feature_selection == L["sim_tab_chat_email"]:
     # ⭐ app.py 스타일로 간소화: 깔끔한 채팅 UI
     if st.session_state.simulator_messages:
         for idx, msg in enumerate(st.session_state.simulator_messages):
-            role = msg["role"]
-            content = msg["content"]
+            # ⭐ 수정: 안전한 딕셔너리 접근
+            role = msg.get("role", "")
+            content = msg.get("content", "")
+            if not role or not content:
+                continue
             
             # 역할에 따른 표시 이름 및 아바타 설정
             if role == "customer" or role == "customer_rebuttal" or role == "initial_query":
@@ -3454,8 +3457,11 @@ if feature_selection == L["sim_tab_chat_email"]:
                     # 이전 대화 내용 재가공
                     history_text = ""
                     for msg in st.session_state.simulator_messages:
-                        role = "Customer" if msg["role"].startswith("customer") or msg["role"] == "initial_query" else "Agent"
-                        if msg["role"] in ["initial_query", "customer_rebuttal", "agent_response", "customer_closing_response"]:
+                        msg_role = msg.get("role", "")
+                        if not msg_role:
+                            continue
+                        role = "Customer" if msg_role.startswith("customer") or msg_role == "initial_query" else "Agent"
+                        if msg_role in ["initial_query", "customer_rebuttal", "agent_response", "customer_closing_response"]:
                             content = msg.get("content", "").strip()
                             if content:
                                 history_text += f"{role}: {content}\n"
@@ -3487,8 +3493,11 @@ if feature_selection == L["sim_tab_chat_email"]:
                             
                             # 번역할 메시지 수집
                             for idx, msg in enumerate(st.session_state.simulator_messages):
+                                if not isinstance(msg, dict):
+                                    continue
                                 translated_msg = msg.copy()
-                                if msg["role"] in ["initial_query", "customer", "customer_rebuttal", "agent_response", 
+                                msg_role = msg.get("role", "")
+                                if msg_role in ["initial_query", "customer", "customer_rebuttal", "agent_response", 
                                                   "customer_closing_response", "supervisor"]:
                                     if msg.get("content"):
                                         messages_to_translate.append((idx, msg))
@@ -3499,8 +3508,9 @@ if feature_selection == L["sim_tab_chat_email"]:
                                 try:
                                     # 번역할 메시지들을 하나의 텍스트로 합치기
                                     combined_text = "\n\n".join([
-                                        f"[{msg['role']}]: {msg['content']}" 
+                                        f"[{msg.get('role', 'unknown')}]: {msg.get('content', '')}" 
                                         for _, msg in messages_to_translate
+                                        if msg.get('content')
                                     ])
                                     
                                     # 전체 텍스트를 한 번에 번역 (토큰 제한 고려하여 내부에서 청크 처리)
@@ -4228,7 +4238,7 @@ if feature_selection == L["sim_tab_chat_email"]:
                                 elif field == "customer_name":
                                     # 이름은 부분 마스킹
                                     if provided_value and len(provided_value) > 1:
-                                        masked_name = provided_value[0] + "*" * (len(provided_value) - 1)
+                                        masked_name = (provided_value[0] if len(provided_value) > 0 else "*") + "*" * (len(provided_value) - 1) if len(provided_value) > 1 else "*"
                                     else:
                                         masked_name = provided_value if provided_value else "없음"
                                     failed_details.append(f"{field}: 제공값='{masked_name}' (시스템 저장값은 보안상 표시하지 않음)")

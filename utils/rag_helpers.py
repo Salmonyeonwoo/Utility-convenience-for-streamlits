@@ -196,7 +196,17 @@ def rag_answer(question: str, vectorstore: FAISS, lang_key: str) -> str:
 
     # Langchain ChatOpenAI 대신 run_llm을 사용하기 위해 prompt를 직접 구성
     retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
-    docs = retriever.get_relevant_documents(question)
+    # ⭐ 수정: LangChain 버전 호환성 - get_relevant_documents 대신 invoke 사용
+    try:
+        # 최신 LangChain 버전 (invoke 사용)
+        docs = retriever.invoke(question)
+    except AttributeError:
+        # 구버전 LangChain (get_relevant_documents 사용)
+        try:
+            docs = retriever.get_relevant_documents(question)
+        except AttributeError:
+            # 대체 방법: vectorstore에서 직접 검색
+            docs = vectorstore.similarity_search(question, k=4)
     context = "\n\n".join(d.page_content[:1500] for d in docs)
 
     # RAG 다국어 인식 오류 해결: 답변 생성 모델에게 질문 언어로 일관되게 답하도록 강력히 지시
