@@ -3728,29 +3728,29 @@ if feature_selection == L["sim_tab_chat_email"]:
         # 디버깅: 조건 확인 (기존 유지하되, 자동 표시는 제거)
         if is_login_inquiry and show_verification_from_button:
             # 디버깅 정보 표시 (항상 표시)
-            with st.expander("🔍 검증 감지 디버깅 정보", expanded=True):
-                st.write(f"**조건 확인:**")
-                st.write(f"- 로그인 관련 문의: ✅ {is_login_inquiry}")
-                st.write(f"- 고객 정보 제공 감지: {'✅' if customer_provided_info else '❌'} {customer_provided_info}")
-                st.write(f"- 고객 첨부 파일 존재: {'✅' if customer_has_attachment else '❌'} {customer_has_attachment}")
+            with st.expander(L.get("verification_debug_header", "🔍 검증 감지 디버깅 정보"), expanded=True):
+                st.write(f"**{L.get('verification_debug_condition_check', '조건 확인')}:**")
+                st.write(f"- {L.get('verification_debug_login_inquiry', '로그인 관련 문의')}: ✅ {is_login_inquiry}")
+                st.write(f"- {L.get('verification_debug_customer_info_provided', '고객 정보 제공 감지')}: {'✅' if customer_provided_info else '❌'} {customer_provided_info}")
+                st.write(f"- {L.get('verification_debug_customer_attachment_exists', '고객 첨부 파일 존재')}: {'✅' if customer_has_attachment else '❌'} {customer_has_attachment}")
                 if 'debug_manual_verification_detected' in st.session_state:
-                    st.write(f"- 수동 검증 패턴 감지: {'✅' if st.session_state.debug_manual_verification_detected else '❌'} {st.session_state.debug_manual_verification_detected}")
+                    st.write(f"- {L.get('verification_debug_manual_pattern_detected', '수동 검증 패턴 감지')}: {'✅' if st.session_state.debug_manual_verification_detected else '❌'} {st.session_state.debug_manual_verification_detected}")
                 if 'debug_attachment_detected' in st.session_state:
-                    st.write(f"- 첨부 파일로 인한 검증 정보 감지: {'✅' if st.session_state.debug_attachment_detected else '❌'} {st.session_state.debug_attachment_detected}")
-                st.write(f"- 검증 완료 여부: {'✅' if st.session_state.is_customer_verified else '❌'} {st.session_state.is_customer_verified}")
-                st.write(f"- 검증 UI 표시 조건: {is_login_inquiry and customer_provided_info and not st.session_state.is_customer_verified}")
+                    st.write(f"- {L.get('verification_debug_attachment_detected', '첨부 파일로 인한 검증 정보 감지')}: {'✅' if st.session_state.debug_attachment_detected else '❌'} {st.session_state.debug_attachment_detected}")
+                st.write(f"- {L.get('verification_debug_verification_completed', '검증 완료 여부')}: {'✅' if st.session_state.is_customer_verified else '❌'} {st.session_state.is_customer_verified}")
+                st.write(f"- {L.get('verification_debug_ui_display_condition', '검증 UI 표시 조건')}: {is_login_inquiry and customer_provided_info and not st.session_state.is_customer_verified}")
                 
                 # 확인한 텍스트 정보 표시
                 if 'debug_combined_customer_text' in st.session_state and st.session_state.debug_combined_customer_text:
-                    st.write(f"**확인한 고객 텍스트 (처음 200자):** {st.session_state.debug_combined_customer_text}")
+                    st.write(f"**{L.get('verification_debug_customer_text_preview', '확인한 고객 텍스트 (처음 200자)')}:** {st.session_state.debug_combined_customer_text}")
                 elif all_customer_texts:
                     combined_preview = " ".join(all_customer_texts)[:200]
-                    st.write(f"**확인한 고객 텍스트 (처음 200자):** {combined_preview}")
+                    st.write(f"**{L.get('verification_debug_customer_text_preview', '확인한 고객 텍스트 (처음 200자)')}:** {combined_preview}")
                 
                 if st.session_state.simulator_messages:
-                    st.write(f"**전체 메시지 수:** {len(st.session_state.simulator_messages)}")
-                    st.write(f"**모든 role 목록:** {st.session_state.debug_all_roles if 'debug_all_roles' in st.session_state else [msg.get('role') for msg in st.session_state.simulator_messages]}")
-                    st.write(f"**고객 메시지 수:** {st.session_state.debug_customer_messages_count if 'debug_customer_messages_count' in st.session_state else len([m for m in st.session_state.simulator_messages if m.get('role') in ['customer', 'customer_rebuttal', 'initial_query']])}")
+                    st.write(f"**{L.get('verification_debug_total_messages', '전체 메시지 수')}:** {len(st.session_state.simulator_messages)}")
+                    st.write(f"**{L.get('verification_debug_all_roles', '모든 role 목록')}:** {st.session_state.debug_all_roles if 'debug_all_roles' in st.session_state else [msg.get('role') for msg in st.session_state.simulator_messages]}")
+                    st.write(f"**{L.get('verification_debug_customer_messages_count', '고객 메시지 수')}:** {st.session_state.debug_customer_messages_count if 'debug_customer_messages_count' in st.session_state else len([m for m in st.session_state.simulator_messages if m.get('role') in ['customer', 'customer_rebuttal', 'initial_query']])}")
                     
                     # ⭐ 추가: 고객 데이터 정보 표시 (app.py 스타일)
                     if st.session_state.customer_data:
@@ -3772,7 +3772,7 @@ if feature_selection == L["sim_tab_chat_email"]:
                         st.write(f"**{L.get('accumulated_customer_data_label', '누적 고객 데이터 수')}:** {L.get('unavailable', '확인 불가')}")
                     
                     # 모든 메시지 표시 (최근 10개)
-                    st.write(f"**최근 모든 메시지 (최근 10개):**")
+                    st.write(f"**{L.get('verification_debug_recent_messages', '최근 모든 메시지 (최근 10개)')}:**")
                     for i, msg in enumerate(st.session_state.simulator_messages[-10:], 1):
                         role = msg.get("role", "unknown")
                         content = msg.get("content", "")[:300]
@@ -3784,25 +3784,27 @@ if feature_selection == L["sim_tab_chat_email"]:
                         for msg in st.session_state.simulator_messages[-10:] 
                         if msg.get("role") in ["customer", "customer_rebuttal", "initial_query"]
                     ]
-                    st.write(f"**고객 메시지만 (최근 10개):**")
+                    st.write(f"**{L.get('verification_debug_customer_messages_only', '고객 메시지만 (최근 10개)')}:**")
                     if customer_messages:
                         for i, msg in enumerate(customer_messages, 1):
                             st.write(f"{i}. [{msg['role']}] {msg['content']}")
                     else:
-                        st.write(L.get("no_customer_messages", "고객 메시지 없음"))
+                        st.write(L.get("verification_debug_no_customer_messages", "고객 메시지 없음"))
                 else:
-                    st.write(f"**{L.get('no_messages', '메시지 없음')}**")
+                    st.write(f"**{L.get('verification_debug_no_messages', '메시지 없음')}**")
             
             if not customer_provided_info:
                 # 정보가 아직 제공되지 않은 경우 안내 메시지 표시
-                st.warning("⚠️ 고객이 검증 정보를 제공하면 검증 UI가 표시됩니다. 위의 디버깅 정보를 확인하세요.")
+                st.warning(L.get("verification_info_provided_warning", "⚠️ 고객이 검증 정보를 제공하면 검증 UI가 표시됩니다. 위의 디버깅 정보를 확인하세요."))
         
         # ⭐ 수정: 검증 UI는 고객 메시지 버튼 클릭 시에만 표시
         # 고객 데이터 정보를 디버깅 정보에 포함
         # 다른 기능이 표시되지 않을 때만 검증 UI 표시
+        # ⭐ 개선: 버튼 클릭 시 항상 검증 UI 표시 (customer_provided_info 조건 완화)
         show_draft_ui_check2 = st.session_state.get("show_draft_ui", False)
         show_customer_data_ui_check2 = st.session_state.get("show_customer_data_ui", False)
-        if is_login_inquiry and customer_provided_info and not st.session_state.is_customer_verified and show_verification_from_button and not show_draft_ui_check2 and not show_customer_data_ui_check2:
+        # 검증 버튼을 클릭했고, 아직 검증되지 않았으며, 다른 UI가 표시되지 않을 때 검증 UI 표시
+        if show_verification_from_button and not st.session_state.is_customer_verified and not show_draft_ui_check2 and not show_customer_data_ui_check2:
             # 헤더는 위에서 이미 표시했으므로 중복 제거
             
             # 고객 데이터 표시 (있는 경우)

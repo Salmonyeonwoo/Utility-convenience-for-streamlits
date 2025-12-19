@@ -2434,10 +2434,84 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None,
                             return True
                     except Exception:
                         continue
+            elif font_path.endswith('.otf'):
+                # OTF 파일 등록 (Noto Sans CJK 등)
+                try:
+                    font = TTFont(font_name, font_path)
+                    pdfmetrics.registerFont(font)
+                    if font_name in pdfmetrics.getRegisteredFontNames():
+                        return True
+                except Exception as e:
+                    print(f"⚠️ OTF 폰트 등록 시도 실패: {e}")
             return False
         except Exception as e:
             print(f"⚠️ 폰트 등록 실패 ({font_name}, {font_path}): {e}")
             return False
+    
+    def download_font_if_needed(font_dir: str = None) -> str:
+        """폰트가 없을 경우 Noto Sans CJK 폰트를 자동 다운로드 (GitHub/Linux 환경 대응)"""
+        if font_dir is None:
+            font_dir = os.path.join(DATA_DIR, "fonts")
+        
+        os.makedirs(font_dir, exist_ok=True)
+        
+        # 여러 폰트 파일 시도 (TTF, OTF 등)
+        font_files = [
+            ("NotoSansCJK-Regular.ttf", "https://github.com/googlefonts/noto-cjk/raw/main/Sans/Subset/TTF/NotoSansCJK-Regular.ttf"),
+            ("NotoSansCJK-Regular.otf", "https://github.com/googlefonts/noto-cjk/raw/main/Sans/Subset/OTF/NotoSansCJK-Regular.otf"),
+        ]
+        
+        for font_filename, font_url in font_files:
+            font_path = os.path.join(font_dir, font_filename)
+            
+            # 이미 다운로드된 폰트가 있으면 사용
+            if os.path.exists(font_path) and os.path.getsize(font_path) > 1000:  # 최소 크기 확인
+                return font_path
+        
+        # 폰트 다운로드 시도
+        try:
+            import requests
+            print("📥 한글/일본어 폰트가 없어 자동 다운로드를 시도합니다...")
+            
+            for font_filename, font_url in font_files:
+                font_path = os.path.join(font_dir, font_filename)
+                try:
+                    print(f"   다운로드 시도: {font_url}")
+                    response = requests.get(font_url, timeout=30, stream=True)
+                    response.raise_for_status()
+                    
+                    # 파일 저장
+                    with open(font_path, 'wb') as f:
+                        for chunk in response.iter_content(chunk_size=8192):
+                            f.write(chunk)
+                    
+                    # 파일 크기 확인
+                    if os.path.exists(font_path) and os.path.getsize(font_path) > 1000:
+                        print(f"✅ 폰트 다운로드 성공: {font_path}")
+                        return font_path
+                    else:
+                        os.remove(font_path)  # 너무 작은 파일 삭제
+                except Exception as e:
+                    print(f"   다운로드 실패 ({font_filename}): {e}")
+                    if os.path.exists(font_path):
+                        try:
+                            os.remove(font_path)
+                        except:
+                            pass
+                    continue
+            
+            print("⚠️ 모든 폰트 다운로드 시도 실패")
+            print("   시스템 폰트 설치를 권장합니다:")
+            print("   Linux: sudo apt-get install -y fonts-noto-cjk")
+            return None
+            
+        except ImportError:
+            print("⚠️ requests 모듈이 없어 폰트를 다운로드할 수 없습니다.")
+            print("   requirements.txt에 requests>=2.31.0이 포함되어 있는지 확인하세요.")
+            return None
+        except Exception as e:
+            print(f"⚠️ 폰트 다운로드 중 오류 발생: {e}")
+            return None
     
     try:
         # 운영체제별 폰트 경로 설정
@@ -2482,9 +2556,13 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None,
                 "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
                 "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
                 "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+                "/usr/share/fonts/opentype/noto-cjk/NotoSansCJK-Regular.ttc",
+                "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
             ]
             japanese_font_paths = [
                 "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",  # 한중일 통합
+                "/usr/share/fonts/opentype/noto-cjk/NotoSansCJK-Regular.ttc",
+                "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
                 "/usr/share/fonts/truetype/takao/TakaoGothic.ttf",
             ]
         
@@ -2504,17 +2582,32 @@ def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None,
                     print(f"✅ 일본어 폰트 등록 성공: {font_path}")
                     break
         
-        # 폰트 등록 실패 시 경고
+        # ⭐ GitHub/Linux 환경 대응: 폰트가 없을 경우 자동 다운로드 시도
         if not korean_font_registered and not japanese_font_registered:
-            print("⚠️ 경고: 한글/일본어 폰트를 찾을 수 없습니다. PDF에서 한글이 깨질 수 있습니다.")
+            print("⚠️ 경고: 시스템에서 한글/일본어 폰트를 찾을 수 없습니다.")
             print(f"   시스템: {system}")
-            print("   등록된 폰트 목록:", pdfmetrics.getRegisteredFontNames())
-            if system == 'Windows':
-                print("   폰트 경로 확인 필요: C:/Windows/Fonts/")
-            elif system == 'Darwin':
-                print("   폰트 경로 확인 필요: /System/Library/Fonts/")
-            else:
-                print("   폰트 경로 확인 필요: /usr/share/fonts/")
+            
+            # Linux 환경에서 폰트 다운로드 시도
+            if system == 'Linux':
+                downloaded_font = download_font_if_needed()
+                if downloaded_font and os.path.exists(downloaded_font):
+                    if register_font(korean_font_name, downloaded_font):
+                        korean_font_registered = True
+                        japanese_font_registered = True
+                        print(f"✅ 다운로드한 폰트 등록 성공: {downloaded_font}")
+            
+            if not korean_font_registered and not japanese_font_registered:
+                print("   등록된 폰트 목록:", pdfmetrics.getRegisteredFontNames())
+                print("   ⚠️ PDF에서 한글/일본어가 깨질 수 있습니다.")
+                print("   해결 방법:")
+                if system == 'Linux':
+                    print("   1. 시스템 폰트 설치: sudo apt-get install -y fonts-noto-cjk")
+                    print("   2. 또는 Dockerfile에 다음 추가:")
+                    print("      RUN apt-get update && apt-get install -y fonts-noto-cjk")
+                elif system == 'Windows':
+                    print("   폰트 경로 확인 필요: C:/Windows/Fonts/")
+                elif system == 'Darwin':
+                    print("   폰트 경로 확인 필요: /System/Library/Fonts/")
             
     except Exception as e:
         error_msg = str(e)
