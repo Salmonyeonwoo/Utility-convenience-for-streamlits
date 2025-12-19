@@ -3454,108 +3454,102 @@ if feature_selection == L["sim_tab_chat_email"]:
                 if not source_lang or not target_lang:
                     st.error(L.get("invalid_language_info", "언어 정보가 올바르지 않습니다."))
                 else:
-                    # 이전 대화 내용 재가공
-                    history_text = ""
-                    for msg in st.session_state.simulator_messages:
-                        msg_role = msg.get("role", "")
-                        if not msg_role:
-                            continue
-                        role = "Customer" if msg_role.startswith("customer") or msg_role == "initial_query" else "Agent"
-                        if msg_role in ["initial_query", "customer_rebuttal", "agent_response", "customer_closing_response"]:
-                            content = msg.get("content", "").strip()
-                            if content:
-                                history_text += f"{role}: {content}\n"
-                    
-                    if not history_text.strip():
-                        st.warning(L.get("no_content_to_translate", "번역할 대화 내용이 없습니다."))
-                    else:
-                        # ⭐ 수정: 원본 대화 내용을 그대로 번역 (요약하지 않고 원문 그대로 번역)
-                        lang_name_source = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(source_lang, "Korean")
-                        lang_name_target = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(target_lang, "Korean")
+                    # ⭐ 수정: 원본 언어로 요약을 먼저 생성한 후 번역 (전화 탭과 동일한 로직)
+                    with st.spinner(L.get("transfer_loading", "번역 중...")):
+                        # 원본 언어로 요약 생성
+                        original_summary = summarize_history_with_ai(source_lang)
                         
-                        # 원본 대화 내용을 그대로 번역
-                        with st.spinner(L.get("transfer_loading", "번역 중...")):
-                            # 번역 로직 실행 (요약 없이 원본 그대로 번역)
+                        if original_summary and not original_summary.startswith("❌"):
+                            # 원본 핵심 요약을 번역 대상 언어로 번역
                             translated_summary, is_success = translate_text_with_llm(
-                                history_text,
+                                original_summary,
                                 target_lang,
                                 source_lang
                             )
                             
-                            if not translated_summary:
-                                st.warning(L.get("translation_empty", "번역 결과가 비어있습니다. 원본 텍스트를 사용합니다."))
-                                translated_summary = history_text
-                                is_success = False
-                            
-                            # ⭐ [수정] 번역 재시도 시에도 배치 번역 사용
-                            translated_messages = []
-                            messages_to_translate = []
-                            
-                            # 번역할 메시지 수집
-                            for idx, msg in enumerate(st.session_state.simulator_messages):
-                                if not isinstance(msg, dict):
-                                    continue
-                                translated_msg = msg.copy()
-                                msg_role = msg.get("role", "")
-                                if msg_role in ["initial_query", "customer", "customer_rebuttal", "agent_response", 
-                                                  "customer_closing_response", "supervisor"]:
-                                    if msg.get("content"):
-                                        messages_to_translate.append((idx, msg))
-                                translated_messages.append(translated_msg)
-                            
-                            # 배치 번역: 모든 메시지를 하나의 텍스트로 합쳐서 번역
-                            if messages_to_translate:
-                                try:
-                                    # 번역할 메시지들을 하나의 텍스트로 합치기
-                                    combined_text = "\n\n".join([
-                                        f"[{msg.get('role', 'unknown')}]: {msg.get('content', '')}" 
-                                        for _, msg in messages_to_translate
-                                        if msg.get('content')
-                                    ])
-                                    
-                                    # 전체 텍스트를 한 번에 번역 (토큰 제한 고려하여 내부에서 청크 처리)
-                                    translated_combined, trans_success_batch = translate_text_with_llm(
-                                        combined_text,
-                                        target_lang,
-                                        source_lang
-                                    )
-                                    
-                                    if trans_success_batch and translated_combined:
-                                        # 번역된 텍스트를 다시 메시지로 분리
-                                        translated_lines = translated_combined.split("\n\n")
-                                        for i, (idx, original_msg) in enumerate(messages_to_translate):
-                                            if i < len(translated_lines):
-                                                # 번역된 라인에서 역할 제거
-                                                translated_line = translated_lines[i]
-                                                if "]: " in translated_line:
-                                                    translated_content = translated_line.split("]: ", 1)[1]
-                                                else:
-                                                    translated_content = translated_line
-                                                translated_messages[idx]["content"] = translated_content
-                                except Exception as e:
-                                    # 배치 번역 실패 시 개별 번역으로 폴백
-                                    for idx, msg in messages_to_translate:
-                                        try:
-                                            translated_content, trans_success = translate_text_with_llm(
-                                                msg["content"],
-                                                target_lang,
-                                                source_lang
-                                            )
-                                            if trans_success:
-                                                translated_messages[idx]["content"] = translated_content
-                                        except Exception:
-                                            # 개별 번역도 실패하면 원본 유지
-                                            pass
-                            
-                            # 번역된 메시지로 업데이트
-                            st.session_state.simulator_messages = translated_messages
-                            
-                            # 번역 결과 저장
-                            st.session_state.transfer_summary_text = translated_summary
-                            st.session_state.translation_success = is_success
-                            
-                            # ⭐ 재실행 불필요: 결과는 이미 세션 상태에 저장되어 자동 표시됨
-                            # st.rerun()
+                            if not translated_summary or not is_success:
+                                # 번역 실패 시 현재 언어로 요약 재생성
+                                translated_summary = summarize_history_with_ai(target_lang)
+                                is_success = True if translated_summary and not translated_summary.startswith("❌") else False
+                        else:
+                            # 원본 요약 생성 실패 시 현재 언어로 요약 생성
+                            translated_summary = summarize_history_with_ai(target_lang)
+                            is_success = True if translated_summary and not translated_summary.startswith("❌") else False
+                        
+                        if not translated_summary:
+                            st.warning(L.get("translation_empty", "번역 결과가 비어있습니다. 원본 텍스트를 사용합니다."))
+                            translated_summary = original_summary if original_summary else ""
+                            is_success = False
+                        
+                        # ⭐ [수정] 번역 재시도 시에도 배치 번역 사용 (요약 번역과 별도로 메시지 번역)
+                        translated_messages = []
+                        messages_to_translate = []
+                        
+                        # 번역할 메시지 수집
+                        for idx, msg in enumerate(st.session_state.simulator_messages):
+                            if not isinstance(msg, dict):
+                                continue
+                            translated_msg = msg.copy()
+                            msg_role = msg.get("role", "")
+                            if msg_role in ["initial_query", "customer", "customer_rebuttal", "agent_response", 
+                                              "customer_closing_response", "supervisor"]:
+                                if msg.get("content"):
+                                    messages_to_translate.append((idx, msg))
+                            translated_messages.append(translated_msg)
+                        
+                        # 배치 번역: 모든 메시지를 하나의 텍스트로 합쳐서 번역
+                        if messages_to_translate:
+                            try:
+                                # 번역할 메시지들을 하나의 텍스트로 합치기
+                                combined_text = "\n\n".join([
+                                    f"[{msg.get('role', 'unknown')}]: {msg.get('content', '')}" 
+                                    for _, msg in messages_to_translate
+                                    if msg.get('content')
+                                ])
+                                
+                                # 전체 텍스트를 한 번에 번역 (토큰 제한 고려하여 내부에서 청크 처리)
+                                translated_combined, trans_success_batch = translate_text_with_llm(
+                                    combined_text,
+                                    target_lang,
+                                    source_lang
+                                )
+                                
+                                if trans_success_batch and translated_combined:
+                                    # 번역된 텍스트를 다시 메시지로 분리
+                                    translated_lines = translated_combined.split("\n\n")
+                                    for i, (idx, original_msg) in enumerate(messages_to_translate):
+                                        if i < len(translated_lines):
+                                            # 번역된 라인에서 역할 제거
+                                            translated_line = translated_lines[i]
+                                            if "]: " in translated_line:
+                                                translated_content = translated_line.split("]: ", 1)[1]
+                                            else:
+                                                translated_content = translated_line
+                                            translated_messages[idx]["content"] = translated_content
+                            except Exception as e:
+                                # 배치 번역 실패 시 개별 번역으로 폴백
+                                for idx, msg in messages_to_translate:
+                                    try:
+                                        translated_content, trans_success = translate_text_with_llm(
+                                            msg["content"],
+                                            target_lang,
+                                            source_lang
+                                        )
+                                        if trans_success:
+                                            translated_messages[idx]["content"] = translated_content
+                                    except Exception:
+                                        # 개별 번역도 실패하면 원본 유지
+                                        pass
+                        
+                        # 번역된 메시지로 업데이트
+                        st.session_state.simulator_messages = translated_messages
+                        
+                        # 번역 결과 저장 (요약)
+                        st.session_state.transfer_summary_text = translated_summary
+                        st.session_state.translation_success = is_success
+                    
+                    # ⭐ 재실행 불필요: 버튼 클릭 시 자동으로 rerun됨
+                    # st.rerun()
             except Exception as e:
                 import traceback
                 error_details = traceback.format_exc()
@@ -4591,8 +4585,7 @@ if feature_selection == L["sim_tab_chat_email"]:
                     # LLM이 없는 경우 CUSTOMER_TURN 단계로 이동
                     st.session_state.sim_stage = "CUSTOMER_TURN"
                 
-                # ⭐ app.py 스타일: 메시지 추가 후 rerun하여 UI 업데이트
-                # ⭐ 수정: Streamlit이 자동으로 rerun하므로 명시적 rerun 불필요
+                # ⭐ 재실행 불필요: 상태 변경 시 자동으로 rerun됨
                 # st.rerun()
             
 
@@ -6281,7 +6274,7 @@ elif feature_selection == L["sim_tab_phone"]:
             if call_status:
                 minutes = int(call_status['duration'] // 60)
                 seconds = int(call_status['duration'] % 60)
-                st.metric("통화 시간", f"{minutes:02d}:{seconds:02d}")
+                st.metric(L.get("call_duration_label", "통화 시간"), f"{minutes:02d}:{seconds:02d}")
         
         st.divider()
         
@@ -6427,18 +6420,18 @@ elif feature_selection == L["sim_tab_phone"]:
                         st.session_state.realtime_hint_text = hint
             
             # 오디오 통화 영역 - 통합된 버전 (녹음, 전사, 전송, 고객 응답 생성 통합)
-            st.subheader("🎤 오디오 통화")
+            st.subheader(f"🎤 {L.get('audio_call_header', '오디오 통화')}")
             
             # 실시간 오디오 녹음 및 재생
             audio_col1, audio_col2 = st.columns(2)
             
             with audio_col1:
-                st.markdown("**에이전트 응답**")
+                st.markdown(f"**{L.get('agent_response_label', '에이전트 응답')}**")
                 # ⭐ app.py 방식: st.audio_input 사용
                 my_audio = st.audio_input(
-                    "말씀하세요",
+                    L.get("audio_input_placeholder", "말씀하세요"),
                     key="call_audio_input",
-                    help="통화 중 음성을 녹음합니다"
+                    help=L.get("audio_input_help", "통화 중 음성을 녹음합니다")
                 )
                 
                 # ⭐ 녹음 완료 시 오디오 재생기로 재생
@@ -6471,7 +6464,7 @@ elif feature_selection == L["sim_tab_phone"]:
                     else:
                         audio_bytes_backup = audio_input
                     
-                    with st.spinner("전사 중..."):
+                    with st.spinner(L.get("transcribing", "전사 중...")):
                         try:
                             transcript_result = transcribe_bytes_with_whisper(
                                 audio_bytes_backup,
@@ -6504,14 +6497,101 @@ elif feature_selection == L["sim_tab_phone"]:
                                     # ⭐ 수정: 첫 인사말인 경우 플래그 설정하지 않음 (아래에서 바로 처리하므로)
                                     # 플래그는 이후 응답인 경우에만 설정
                                 else:
-                                    # 이후 응답인 경우: 고객 반응 생성
+                                    # 이후 응답인 경우: 고객 반응 생성 (app.py 스타일: 바로 처리)
                                     st.session_state.simulator_messages.append(
                                         {"role": "agent_response", "content": transcript_result}
                                     )
-                                    st.session_state.process_customer_reaction = True
-                                    st.session_state.pending_agent_transcript = transcript_result
-                                    st.session_state.customer_reaction_generated_this_cycle = False  # 초기화
-                                    # ⭐ 수정: 전사 결과는 위젯에 자동으로 반영되므로 별도 rerun 불필요
+                                    
+                                    # ⭐ app.py 스타일: 이후 응답도 바로 고객 반응 생성 (같은 렌더링 사이클에서 처리)
+                                    try:
+                                        # 고객 반응 생성
+                                        with st.spinner(L["generating_customer_response"]):
+                                            customer_reaction = generate_customer_reaction_for_call(
+                                                st.session_state.language,
+                                                transcript_result
+                                            )
+
+                                        # 고객 반응을 TTS로 재생 및 반영
+                                        if not customer_reaction.startswith("❌"):
+                                            audio_bytes, msg = synthesize_tts(customer_reaction, st.session_state.language, role="customer")
+                                            if audio_bytes:
+                                                # ⭐ TTS와 비디오 동기화: 오디오 생성 완료 신호를 세션 상태에 저장
+                                                st.session_state.audio_ready_for_playback = True
+                                                st.session_state.audio_ready_time = time.time()
+                                                # 고객 반응 오디오 저장
+                                                st.session_state.customer_reaction_audio_bytes = audio_bytes
+                                                st.session_state.customer_reaction_text = customer_reaction
+                                                st.session_state.current_customer_audio_text = customer_reaction
+                                                # 재생 플래그 초기화 (새로운 오디오이므로 재생 필요)
+                                                st.session_state.customer_audio_played_once = False
+                                                
+                                                # 이력 저장
+                                                agent_response_text = transcript_result
+                                                log_entry = f"Agent: {agent_response_text} | Customer: {customer_reaction.strip()}"
+                                                st.session_state.simulator_messages.append(
+                                                    {"role": "phone_exchange", "content": log_entry}
+                                                )
+                                                
+                                                # ⭐ "없습니다. 감사합니다" 응답 처리
+                                                import re
+                                                escaped = re.escape(L['customer_no_more_inquiries'])
+                                                no_more_pattern = escaped.replace(r'\.', r'[.\\s]*').replace(r'\ ', r'[.\\s]*')
+                                                no_more_regex = re.compile(no_more_pattern, re.IGNORECASE)
+                                                if no_more_regex.search(customer_reaction):
+                                                    # 에이전트가 감사 인사 메시지 전송
+                                                    agent_name = st.session_state.get("agent_name", "000")
+                                                    current_lang_call = st.session_state.get("language", "ko")
+                                                    if current_lang_call == "ko":
+                                                        agent_closing_msg = f"연락 주셔서 감사드립니다. 지금까지 상담원 {agent_name}였습니다. 즐거운 하루 되세요."
+                                                    elif current_lang_call == "en":
+                                                        agent_closing_msg = f"Thank you for contacting us. This was {agent_name}. Have a great day!"
+                                                    else:  # ja
+                                                        agent_closing_msg = f"お問い合わせいただき、ありがとうございました。担当は{agent_name}でした。良い一日をお過ごしください。"
+                                                    
+                                                    st.session_state.simulator_messages.append(
+                                                        {"role": "phone_exchange", "content": f"Agent: {agent_closing_msg}"}
+                                                    )
+                                                    
+                                                    # 통화 요약 생성
+                                                    with st.spinner(L.get("generating_summary", "AI 요약 생성 중...")):
+                                                        initial_query = st.session_state.get("call_initial_query", "")
+                                                        summary = summarize_history_for_call(
+                                                            st.session_state.simulator_messages,
+                                                            initial_query,
+                                                            st.session_state.language
+                                                        )
+                                                        st.session_state.call_summary_text = summary
+                                                    
+                                                    # 통화 종료
+                                                    st.session_state.call_sim_stage = "CALL_ENDED"
+                                                    st.session_state.is_call_ended = True
+                                                    
+                                                    # 에이전트 입력 영역 초기화
+                                                    st.session_state.current_agent_audio_text = ""
+                                                    st.session_state.realtime_hint_text = ""
+                                                    if "bytes_to_process" in st.session_state:
+                                                        st.session_state.bytes_to_process = None
+                                                # ⭐ "추가 문의 사항도 있습니다" 응답 처리 (통화 계속)
+                                                elif L['customer_has_additional_inquiries'] in customer_reaction:
+                                                    # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
+                                                    st.session_state.current_agent_audio_text = ""
+                                                    st.session_state.realtime_hint_text = ""
+                                                    if "bytes_to_process" in st.session_state:
+                                                        st.session_state.bytes_to_process = None
+                                                else:
+                                                    # 일반 고객 반응 처리
+                                                    # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
+                                                    st.session_state.current_agent_audio_text = ""
+                                                    st.session_state.realtime_hint_text = ""
+                                                    if "bytes_to_process" in st.session_state:
+                                                        st.session_state.bytes_to_process = None
+                                                
+                                                # ⭐ 재실행 불필요: 상태 변경 시 자동으로 rerun됨
+                                                # st.rerun()
+                                        else:
+                                            st.error(customer_reaction)
+                                    except Exception as e:
+                                        st.error(f"고객 응답 생성 오류: {e}")
                                 
                                 # ⭐ 수정: 성공 메시지는 조건부로만 표시 (불필요한 rerun 방지)
                                 # st.success(f"✅ 전사 완료: {transcript_result[:50]}...")
@@ -6618,8 +6698,7 @@ elif feature_selection == L["sim_tab_phone"]:
                                                 if "pending_agent_transcript" in st.session_state:
                                                     del st.session_state.pending_agent_transcript
                                                 
-                                                # ⭐ app.py 스타일: 첫 인사말 후 고객 반응 생성 완료 시 rerun하여 UI 업데이트
-                                                # ⭐ 수정: Streamlit이 자동으로 rerun하므로 명시적 rerun 불필요
+                                                # ⭐ 재실행 불필요: 상태 변경 시 자동으로 rerun됨
                                                 # st.rerun()
                                         else:
                                             st.error(customer_reaction)
@@ -6641,20 +6720,20 @@ elif feature_selection == L["sim_tab_phone"]:
                 # 전사 결과 표시 (읽기 전용)
                 if st.session_state.get("agent_response_input_box_widget_call"):
                     st.text_area(
-                        "전사된 응답",
+                        L.get("transcript_label", "전사된 응답"),
                         value=st.session_state.get("agent_response_input_box_widget_call", ""),
                         key="transcript_display_call",
                         height=100,
                         disabled=True,
-                        help="전사된 내용이 여기에 표시됩니다"
+                        help=L.get("transcript_help", "전사된 내용이 여기에 표시됩니다")
                     )
             
             with audio_col2:
-                st.markdown("**고객의 응답**")
+                st.markdown(f"**{L.get('customer_response_label', '고객의 응답')}**")
                 
                 # 통화 상태 표시
                 if call_status:
-                    st.metric("오디오 청크 수", call_status['chunks_count'])
+                    st.metric(L.get("audio_chunks_count", "오디오 청크 수"), call_status['chunks_count'])
                 
                 # ⭐ 고객 응답 생성 및 재생 (고객의 응답 부분 내부에서 처리)
                 # ⭐ 수정: 초기 문의 자동 재생 로직 제거 - 고객이 직접 녹음하도록 변경
@@ -6669,7 +6748,7 @@ elif feature_selection == L["sim_tab_phone"]:
                     
                     # 고객 응답 텍스트 표시
                     if st.session_state.get("current_customer_audio_text"):
-                        st.info(f"💬 고객: {st.session_state.current_customer_audio_text}")
+                        st.info(f"💬 {L.get('customer_label', '고객')}: {st.session_state.current_customer_audio_text}")
                     
                     # 재생 후 세션 상태에 저장하여 다음 렌더링에서도 표시
                     st.session_state.last_customer_audio_bytes = customer_audio
@@ -6695,148 +6774,23 @@ elif feature_selection == L["sim_tab_phone"]:
                 
                 # 4. 고객 응답이 없는 경우 기본 메시지 표시
                 else:
-                    st.info("고객의 음성이 여기에 재생됩니다")
+                    st.info(L.get("customer_audio_placeholder", "고객의 음성이 여기에 재생됩니다"))
                 
-                # ⭐ 고객 응답 생성 로직 (고객의 응답 부분 내부에서 처리)
-                # ⭐ 수정: 첫 인사말이 아닌 경우에만 여기서 처리 (첫 인사말은 위에서 이미 처리됨)
-                
-                # 전사 후 고객 반응 생성 처리 (첫 인사말이 아닌 경우)
-                if st.session_state.get("process_customer_reaction") and st.session_state.get("pending_agent_transcript"):
-                    # ⭐ 중복 실행 방지: 이미 이번 사이클에서 생성했으면 스킵하고 플래그 초기화
-                    if st.session_state.get("customer_reaction_generated_this_cycle", False):
-                        st.session_state.process_customer_reaction = False
-                        if "pending_agent_transcript" in st.session_state:
-                            del st.session_state.pending_agent_transcript
-                        # 플래그 초기화 (다음 고객 반응 생성을 위해)
-                        st.session_state.customer_reaction_generated_this_cycle = False
-                    else:
-                        pending_transcript = st.session_state.pending_agent_transcript
-                        # 플래그 초기화 (고객 반응 생성 시작)
-                        st.session_state.process_customer_reaction = False
-                        del st.session_state.pending_agent_transcript
-
-                        # 에이전트 응답을 먼저 반영
-                        if hasattr(st.session_state, 'current_agent_audio_text'):
-                            st.session_state.current_agent_audio_text = pending_transcript
-                        else:
-                            st.session_state.current_agent_audio_text = pending_transcript
-
-                        # 고객 반응 생성
-                        with st.spinner(L["generating_customer_response"]):
-                            customer_reaction = generate_customer_reaction_for_call(
-                                st.session_state.language,
-                                pending_transcript
-                            )
-
-                        # 고객 반응을 TTS로 재생 및 반영
-                        if not customer_reaction.startswith("❌"):
-                            audio_bytes, msg = synthesize_tts(customer_reaction, st.session_state.language, role="customer")
-                            if audio_bytes:
-                                # ⭐ TTS와 비디오 동기화: 오디오 생성 완료 신호를 세션 상태에 저장
-                                st.session_state.audio_ready_for_playback = True
-                                st.session_state.audio_ready_time = time.time()
-                                # 고객 반응 오디오 저장
-                                st.session_state.customer_reaction_audio_bytes = audio_bytes
-                                st.session_state.customer_reaction_text = customer_reaction
-                                st.session_state.current_customer_audio_text = customer_reaction
-                                # 재생 플래그 초기화 (새로운 오디오이므로 재생 필요)
-                                st.session_state.customer_audio_played_once = False
-                                
-                                # 이력 저장
-                                agent_response_text = st.session_state.get("current_agent_audio_text", pending_transcript)
-                                log_entry = f"Agent: {agent_response_text} | Customer: {customer_reaction.strip()}"
-                                st.session_state.simulator_messages.append(
-                                    {"role": "phone_exchange", "content": log_entry}
-                                )
-                                
-                                # ⭐ "없습니다. 감사합니다" 응답 처리 - 에이전트가 감사 인사 후 종료
-                                # ⭐ 정규표현식으로 종료 키워드 인식 (띄어쓰기, 마침표 무시)
-                                import re
-                                escaped = re.escape(L['customer_no_more_inquiries'])
-                                # . 와 공백을 [.\s]* 로 변환
-                                no_more_pattern = escaped.replace(r'\.', r'[.\\s]*').replace(r'\ ', r'[.\\s]*')
-                                no_more_regex = re.compile(no_more_pattern, re.IGNORECASE)
-                                if no_more_regex.search(customer_reaction):
-                                    # 에이전트가 감사 인사 메시지 전송
-                                    agent_name = st.session_state.get("agent_name", "000")
-                                    current_lang_call = st.session_state.get("language", "ko")
-                                    if current_lang_call == "ko":
-                                        agent_closing_msg = f"연락 주셔서 감사드립니다. 지금까지 상담원 {agent_name}였습니다. 즐거운 하루 되세요."
-                                    elif current_lang_call == "en":
-                                        agent_closing_msg = f"Thank you for contacting us. This was {agent_name}. Have a great day!"
-                                    else:  # ja
-                                        agent_closing_msg = f"お問い合わせいただき、ありがとうございました。担当は{agent_name}でした。良い一日をお過ごしください。"
-                                    
-                                    st.session_state.simulator_messages.append(
-                                        {"role": "phone_exchange", "content": f"Agent: {agent_closing_msg}"}
-                                    )
-                                    
-                                    # 통화 요약 생성
-                                    with st.spinner(L.get("generating_summary", "AI 요약 생성 중...")):
-                                        # ⭐ call_initial_query가 없을 수 있으므로 빈 문자열로 처리
-                                        initial_query = st.session_state.get("call_initial_query", "")
-                                        summary = summarize_history_for_call(
-                                            st.session_state.simulator_messages,
-                                            initial_query,
-                                            st.session_state.language
-                                        )
-                                        st.session_state.call_summary_text = summary
-                                    
-                                    # 통화 종료
-                                    st.session_state.call_sim_stage = "CALL_ENDED"
-                                    st.session_state.is_call_ended = True
-                                    
-                                    # 에이전트 입력 영역 초기화
-                                    st.session_state.current_agent_audio_text = ""
-                                    st.session_state.realtime_hint_text = ""
-                                    if "bytes_to_process" in st.session_state:
-                                        st.session_state.bytes_to_process = None
-                                    
-                                    # ⭐ 수정: 성공 메시지는 조건부로만 표시 (불필요한 rerun 방지)
-                                    # st.success(L.get("call_ended_no_additional_inquiry", "✅ 고객이 추가 문의 사항이 없다고 확인했습니다. 에이전트가 감사 인사를 전송한 후 통화가 종료되었습니다."))
-                                # ⭐ "추가 문의 사항도 있습니다" 응답 처리 (통화 계속)
-                                elif L['customer_has_additional_inquiries'] in customer_reaction:
-                                    # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
-                                    st.session_state.current_agent_audio_text = ""
-                                    st.session_state.realtime_hint_text = ""
-                                    if "bytes_to_process" in st.session_state:
-                                        st.session_state.bytes_to_process = None
-                                    
-                                    # ⭐ 수정: 정보 메시지는 조건부로만 표시 (불필요한 rerun 방지)
-                                    # st.info(L.get("customer_has_additional_inquiry_info", "💡 고객이 추가 문의 사항이 있다고 했습니다. 다음 응답을 녹음하세요."))
-                                else:
-                                    # 일반 고객 반응 처리
-                                    # 에이전트 입력 영역 초기화 (다음 녹음을 위해)
-                                    st.session_state.current_agent_audio_text = ""
-                                    st.session_state.realtime_hint_text = ""
-                                    if "bytes_to_process" in st.session_state:
-                                        st.session_state.bytes_to_process = None
-                                
-                                # ⭐ 고객 반응 생성 완료 플래그 설정
-                                st.session_state.customer_reaction_generated_this_cycle = True
-                                # ⭐ app.py 스타일: 고객 반응 생성 완료 시 rerun하여 UI 업데이트
-                                # ⭐ 수정: Streamlit이 자동으로 rerun하므로 명시적 rerun 불필요
-                                # st.rerun()
-                        else:
-                            st.error(customer_reaction)
-                            # 에러 발생 시에도 플래그 초기화
-                            st.session_state.process_customer_reaction = False
-                            if "pending_agent_transcript" in st.session_state:
-                                del st.session_state.pending_agent_transcript
-                            st.session_state.customer_reaction_generated_this_cycle = False
+                # ⭐ 고객 응답 생성 로직 제거 (이미 위에서 바로 처리하도록 수정됨)
+                # ⭐ app.py 스타일: 에이전트 응답 전사 후 바로 고객 반응 생성 (위에서 처리)
                 
                 # ⭐ 수정: 안내 메시지는 조건부로만 표시 (불필요한 rerun 방지)
                 # if st.session_state.get("process_customer_reaction") or st.session_state.get("customer_turn_start"):
                 #     st.caption("💡 고객 응답이 생성되었습니다. 위의 '에이전트 응답'에서 다시 녹음하세요.")
             
             # 통화 로그
-            with st.expander("📋 통화 로그", expanded=False):
+            with st.expander(L.get("call_log_expander", "📋 통화 로그"), expanded=False):
                 if call_status:
                     st.json({
-                        "통화 ID": st.session_state.current_call_id,
-                        "통화 시간": f"{int(call_status['duration'] // 60):02d}:{int(call_status['duration'] % 60):02d}",
-                        "오디오 청크": call_status['chunks_count'],
-                        "비디오 활성화": st.session_state.video_enabled
+                        L.get("call_id_label", "통화 ID"): st.session_state.current_call_id,
+                        L.get("call_duration_label", "통화 시간"): f"{int(call_status['duration'] // 60):02d}:{int(call_status['duration'] % 60):02d}",
+                        L.get("audio_chunks_label", "오디오 청크"): call_status['chunks_count'],
+                        L.get("video_enabled_label", "비디오 활성화"): st.session_state.video_enabled
                     })
             
             # 통화 시간 업데이트를 위한 자동 새로고침 (5초마다) - 주석 처리
@@ -7188,9 +7142,9 @@ elif feature_selection == L["sim_tab_phone"]:
                                     st.warning(L.get("translation_empty", "번역 결과가 비어있습니다. 원본 텍스트를 사용합니다."))
                                     st.session_state.transfer_summary_text = original_summary if original_summary else ""
                                     st.session_state.translation_success = False
-                                    
-                                    # ⭐ 재실행 불필요: 결과는 이미 세션 상태에 저장되어 자동 표시됨
-                                    # st.rerun()
+                                
+                                # ⭐ 재실행 불필요: 버튼 클릭 시 자동으로 rerun됨
+                                # st.rerun()
                     except Exception as e:
                         import traceback
                         error_details = traceback.format_exc()
@@ -7494,13 +7448,13 @@ elif feature_selection == L["sim_tab_phone"]:
 
         st.markdown("---")
 
-        with st.expander("통화 기록 요약"):
-            st.subheader("AI 통화 요약")
+        with st.expander(L.get("call_summary_expander", "통화 기록 요약")):
+            st.subheader(L.get("ai_call_summary_header", "AI 통화 요약"))
 
             if st.session_state.call_summary_text:
                 st.info(st.session_state.call_summary_text)
             else:
-                st.error("❌ 통화 요약 생성 실패")
+                st.error(L.get("call_summary_failed", "❌ 통화 요약 생성 실패"))
 
             st.markdown("---")
 
