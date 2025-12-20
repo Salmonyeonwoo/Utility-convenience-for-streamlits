@@ -1320,11 +1320,10 @@ with st.sidebar:
     feature_selection = st.session_state.get("feature_selection", L["sim_tab_chat_email"])
     
     st.markdown("---")
-
-    # ⭐ API Key 설정 섹션 추가
-    st.subheader("🔑 API Key 설정")
     
-    # LLM 선택
+    # ⭐ LLM 모델 선택 (API Key 입력 필드는 제외)
+    st.subheader("🤖 LLM 모델 선택")
+    
     llm_options = {
         "openai_gpt4": "OpenAI GPT-4",
         "openai_gpt35": "OpenAI GPT-3.5",
@@ -1345,38 +1344,6 @@ with st.sidebar:
     )
     if selected_llm != current_llm:
         st.session_state.selected_llm = selected_llm
-    
-    # API Key 매핑
-    api_key_map = {
-        "openai_gpt4": "openai",
-        "openai_gpt35": "openai",
-        "gemini_pro": "gemini",
-        "gemini_flash": "gemini",
-        "claude": "claude",
-        "groq": "groq",
-        "nvidia": "nvidia"
-    }
-    
-    api_name = api_key_map.get(selected_llm, "openai")
-    api_config = SUPPORTED_APIS.get(api_name, {})
-    
-    if api_config:
-        # 현재 API Key 확인
-        current_key = get_api_key(api_name)
-        if not current_key:
-            # 수동 입력 필드
-            session_key = api_config.get("session_key", "")
-            manual_key = st.text_input(
-                api_config.get("label", "API Key"),
-                value=st.session_state.get(session_key, ""),
-                type="password",
-                placeholder=api_config.get("placeholder", "API Key를 입력하세요"),
-                key=f"manual_api_key_{selected_llm}"
-            )
-            if manual_key and manual_key != st.session_state.get(session_key, ""):
-                st.session_state[session_key] = manual_key
-        else:
-            st.success(f"✅ {api_config.get('label', 'API Key')} 설정됨")
 
 # 메인 타이틀
 # ⭐ L 변수가 정의되어 있는지 확인 (사이드바에서 이미 정의됨)
@@ -7502,6 +7469,49 @@ elif feature_selection == L["rag_tab"]:
     st.markdown(L["rag_desc"])
     st.markdown("---")
 
+    # ⭐ 학습 자료 업로드 섹션 - 메인 컴포넌트 상단에 배치
+    st.subheader("📚 학습 자료 업로드")
+    uploaded_files = st.file_uploader(
+        L["file_uploader"],
+        type=["pdf", "txt", "html"],
+        key="rag_file_uploader", # RAG 전용 키
+        accept_multiple_files=True,
+        help="RAG에 사용할 학습 자료를 업로드하세요. PDF, TXT, HTML 파일을 지원합니다."
+    )
+
+    if uploaded_files:
+        if uploaded_files != st.session_state.uploaded_files_state:
+            # 파일이 변경되면 RAG 상태 초기화
+            st.session_state.is_rag_ready = False
+            st.session_state.rag_vectorstore = None
+            st.session_state.uploaded_files_state = uploaded_files
+
+        if not st.session_state.is_rag_ready:
+            if st.button(L["button_start_analysis"]):
+                if not st.session_state.is_llm_ready:
+                    st.error(L["simulation_no_key_warning"])
+                else:
+                    with st.spinner(L["data_analysis_progress"]):
+                        vectorstore, count = build_rag_index(uploaded_files)
+
+                    if vectorstore:
+                        st.session_state.rag_vectorstore = vectorstore
+                        st.session_state.is_rag_ready = True
+                        st.success(L["embed_success"].format(count=count))
+                        st.session_state.rag_messages = [
+                            {"role": "assistant", "content": f"✅ {len(uploaded_files)}개 파일 분석 완료. 질문해 주세요."}
+                        ]
+                    else:
+                        st.error(L["embed_fail"])
+                        st.session_state.is_rag_ready = False
+    else:
+        st.info(L["warning_no_files"])
+        st.session_state.is_rag_ready = False
+        st.session_state.rag_vectorstore = None
+        st.session_state.rag_messages = []
+
+    st.markdown("---")
+
     # ⭐ RAG 데이터 학습 기능 추가 - AI 고객 응대 시뮬레이터 데이터를 일일 파일로 학습
     st.subheader("📚 고객 가이드 자동 생성 및 관리 (일일 학습)")
     
@@ -7624,48 +7634,6 @@ elif feature_selection == L["rag_tab"]:
         else:
             st.info("먼저 고객 가이드를 생성해주세요.")
     
-    st.markdown("---")
-
-    # --- 파일 업로드 섹션 ---
-    # ⭐ 수정된 부분: RAG 탭 전용 키 사용
-    uploaded_files = st.file_uploader(
-        L["file_uploader"],
-        type=["pdf", "txt", "html"],
-        key="rag_file_uploader", # RAG 전용 키
-        accept_multiple_files=True
-    )
-
-    if uploaded_files:
-        if uploaded_files != st.session_state.uploaded_files_state:
-            # 파일이 변경되면 RAG 상태 초기화
-            st.session_state.is_rag_ready = False
-            st.session_state.rag_vectorstore = None
-            st.session_state.uploaded_files_state = uploaded_files
-
-        if not st.session_state.is_rag_ready:
-            if st.button(L["button_start_analysis"]):
-                if not st.session_state.is_llm_ready:
-                    st.error(L["simulation_no_key_warning"])
-                else:
-                    with st.spinner(L["data_analysis_progress"]):
-                        vectorstore, count = build_rag_index(uploaded_files)
-
-                    if vectorstore:
-                        st.session_state.rag_vectorstore = vectorstore
-                        st.session_state.is_rag_ready = True
-                        st.success(L["embed_success"].format(count=count))
-                        st.session_state.rag_messages = [
-                            {"role": "assistant", "content": f"✅ {len(uploaded_files)}개 파일 분석 완료. 질문해 주세요."}
-                        ]
-                    else:
-                        st.error(L["embed_fail"])
-                        st.session_state.is_rag_ready = False
-    else:
-        st.info(L["warning_no_files"])
-        st.session_state.is_rag_ready = False
-        st.session_state.rag_vectorstore = None
-        st.session_state.rag_messages = []
-
     st.markdown("---")
 
     # --- 챗봇 섹션 (app.py 스타일로 간소화) ---
