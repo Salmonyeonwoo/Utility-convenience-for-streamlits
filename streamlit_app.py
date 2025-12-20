@@ -6383,6 +6383,11 @@ elif feature_selection == L["sim_tab_phone"]:
             with hint_cols[1]:
                 # 힌트 요청 버튼
                 if st.button(L["button_request_hint"], key=f"btn_request_hint_call_{st.session_state.sim_instance_id}"):
+                    # ⭐ 응대 힌트 버튼 클릭 시 전사 대기 상태만 초기화 (의도치 않은 전사 방지)
+                    # 실제 녹음 완료 후 전사는 정상 작동하도록 bytes_to_process_call_audio만 초기화
+                    if "bytes_to_process_call_audio" in st.session_state:
+                        st.session_state.bytes_to_process_call_audio = None
+                    
                     with st.spinner(L["response_generating"]):
                         # 전화 탭이므로 is_call=True
                         hint = generate_realtime_hint(current_lang, is_call=True)
@@ -6823,6 +6828,10 @@ elif feature_selection == L["sim_tab_phone"]:
                     st.session_state.process_customer_reaction = False
                     if "pending_agent_transcript" in st.session_state:
                         del st.session_state.pending_agent_transcript
+                    # ⭐ 통화 재개 버튼 클릭 시 전사 대기 상태만 초기화 (의도치 않은 전사 방지)
+                    # 실제 녹음 완료 후 전사는 정상 작동하도록 bytes_to_process_call_audio만 초기화
+                    if "bytes_to_process_call_audio" in st.session_state:
+                        st.session_state.bytes_to_process_call_audio = None
                     if st.session_state.hold_start_time:
                         st.session_state.total_hold_duration += datetime.now() - st.session_state.hold_start_time
                         st.session_state.hold_start_time = None
@@ -6835,6 +6844,10 @@ elif feature_selection == L["sim_tab_phone"]:
                     st.session_state.process_customer_reaction = False
                     if "pending_agent_transcript" in st.session_state:
                         del st.session_state.pending_agent_transcript
+                    # ⭐ 대기 버튼 클릭 시 전사 대기 상태만 초기화 (의도치 않은 전사 방지)
+                    # 실제 녹음 완료 후 전사는 정상 작동하도록 bytes_to_process_call_audio만 초기화
+                    if "bytes_to_process_call_audio" in st.session_state:
+                        st.session_state.bytes_to_process_call_audio = None
                     st.session_state.hold_start_time = datetime.now()
                     # ⭐ 재실행 불필요: Hold 상태는 이미 반영됨, 다음 렌더링에서 자동 표시됨
                     # st.rerun()  # ⭐ Hold 상태 즉시 반영
