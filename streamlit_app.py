@@ -184,6 +184,170 @@ from visualization import (
     visualize_case_trends, visualize_customer_characteristics
 )
 
+# 고객 데이터 관리자 (모듈화된 버전)
+try:
+    from customer_data_manager import CustomerDataManager
+    CUSTOMER_DATA_AVAILABLE = True
+except ImportError:
+    CUSTOMER_DATA_AVAILABLE = False
+    # CustomerDataManager가 없으면 간단한 클래스 생성
+    class CustomerDataManager:
+        def __init__(self):
+            self.data_dir = "customer_data"
+            import os
+            os.makedirs(self.data_dir, exist_ok=True)
+        
+        def load_customer_data(self, customer_id):
+            import json
+            import os
+            import logging
+            
+            logger = logging.getLogger(__name__)
+            filepath = os.path.join(self.data_dir, f"{customer_id}.json")
+            
+            logger.debug(f"[load_customer_data 시작] customer_id={customer_id}, filepath={filepath}")
+            
+            if not os.path.exists(filepath):
+                logger.debug(f"[고객 데이터 없음] filepath={filepath}")
+                return None
+            
+            try:
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    logger.debug(f"[고객 데이터 로드 성공] customer_id={customer_id}, conversations={len(data.get('conversations', []))}")
+                    return data
+            except json.JSONDecodeError as e:
+                logger.error(f"[고객 데이터 JSON 파싱 실패] customer_id={customer_id}, error={e}")
+                return None
+            except Exception as e:
+                logger.error(f"[고객 데이터 로드 실패] customer_id={customer_id}, error={e}", exc_info=True)
+                return None
+        
+        def save_customer_data(self, customer_id, customer_data, merge=True):
+            import json
+            import os
+            import logging
+            from datetime import datetime
+            
+            logger = logging.getLogger(__name__)
+            filepath = os.path.join(self.data_dir, f"{customer_id}.json")
+            
+            try:
+                logger.debug(f"[save_customer_data 시작] customer_id={customer_id}, merge={merge}, filepath={filepath}")
+                
+                # 병합 모드인 경우 기존 데이터 로드
+                if merge:
+                    existing_data = self.load_customer_data(customer_id)
+                    logger.debug(f"[병합 모드] 기존 데이터 존재: {existing_data is not None}")
+                    
+                    if existing_data:
+                        # 기본 정보 병합 (새 값이 있으면 업데이트)
+                        if "data" in customer_data:
+                            if "data" not in existing_data:
+                                existing_data["data"] = {}
+                            
+                            # 기본 필드 병합
+                            for key in ["name", "email", "phone", "company", "account_created_at"]:
+                                if key in customer_data["data"] and customer_data["data"][key]:
+                                    existing_data["data"][key] = customer_data["data"][key]
+                            
+                            # last_access_at, last_consultation_at은 항상 업데이트
+                            if "last_access_at" in customer_data["data"]:
+                                existing_data["data"]["last_access_at"] = customer_data["data"]["last_access_at"]
+                            if "last_consultation_at" in customer_data["data"]:
+                                existing_data["data"]["last_consultation_at"] = customer_data["data"]["last_consultation_at"]
+                            
+                            # 상담 이력 병합
+                            if "consultation_history" in customer_data["data"]:
+                                if "consultation_history" not in existing_data["data"]:
+                                    existing_data["data"]["consultation_history"] = []
+                                # consultation_id 기준으로 중복 제거 및 병합
+                                existing_ids = {h.get("consultation_id") for h in existing_data["data"]["consultation_history"]}
+                                for consultation in customer_data["data"]["consultation_history"]:
+                                    cid = consultation.get("consultation_id")
+                                    if cid and cid not in existing_ids:
+                                        existing_data["data"]["consultation_history"].append(consultation)
+                                        existing_ids.add(cid)
+                                    elif cid:
+                                        # 기존 항목 업데이트
+                                        idx = next((i for i, h in enumerate(existing_data["data"]["consultation_history"]) if h.get("consultation_id") == cid), None)
+                                        if idx is not None:
+                                            existing_data["data"]["consultation_history"][idx] = consultation
+                                # 날짜순 정렬
+                                existing_data["data"]["consultation_history"].sort(key=lambda x: x.get("date", ""), reverse=True)
+                            
+                            # 메모 병합 (추가만, 덮어쓰지 않음)
+                            if "notes" in customer_data["data"] and customer_data["data"]["notes"]:
+                                existing_notes = existing_data["data"].get("notes", "")
+                                new_notes = customer_data["data"]["notes"]
+                                if new_notes and new_notes not in existing_notes:
+                                    if existing_notes:
+                                        existing_data["data"]["notes"] = f"{existing_notes}\n\n{new_notes}"
+                                    else:
+                                        existing_data["data"]["notes"] = new_notes
+                        
+                        # 대화 이력 병합 (중복 제거)
+                        if "conversations" in customer_data:
+                            if "conversations" not in existing_data:
+                                existing_data["conversations"] = []
+                            # timestamp와 content 기준으로 중복 제거
+                            existing_convs = {(c.get("timestamp", ""), c.get("content", "")[:50]) for c in existing_data["conversations"]}
+                            for conv in customer_data["conversations"]:
+                                conv_key = (conv.get("timestamp", ""), conv.get("content", "")[:50])
+                                if conv_key not in existing_convs:
+                                    existing_data["conversations"].append(conv)
+                                    existing_convs.add(conv_key)
+                        
+                        # current_consultation 업데이트
+                        if "current_consultation" in customer_data:
+                            existing_data["current_consultation"] = customer_data["current_consultation"]
+                        
+                        customer_data = existing_data
+                        logger.debug(f"[병합 완료] conversations={len(customer_data.get('conversations', []))}, consultation_history={len(customer_data.get('data', {}).get('consultation_history', []))}")
+                
+                # 업데이트 시간 추가
+                customer_data["updated_at"] = datetime.now().isoformat()
+                if "created_at" not in customer_data:
+                    customer_data["created_at"] = datetime.now().isoformat()
+                
+                # 디렉토리 확인 및 생성
+                os.makedirs(self.data_dir, exist_ok=True)
+                
+                # 저장
+                logger.debug(f"[파일 저장 시작] filepath={filepath}")
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    json.dump(customer_data, f, ensure_ascii=False, indent=2)
+                
+                # 저장 확인
+                if os.path.exists(filepath):
+                    file_size = os.path.getsize(filepath)
+                    logger.info(f"[고객 데이터 저장 성공] customer_id={customer_id}, filepath={filepath}, size={file_size} bytes")
+                    return True
+                else:
+                    logger.error(f"[고객 데이터 저장 실패] 파일이 생성되지 않음: {filepath}")
+                    return False
+                    
+            except Exception as e:
+                logger.error(f"[고객 데이터 저장 실패] customer_id={customer_id}, error={e}", exc_info=True)
+                return False
+        
+        def list_all_customers(self):
+            import os
+            if not os.path.exists(self.data_dir):
+                return []
+            customers = []
+            for filename in os.listdir(self.data_dir):
+                if filename.endswith('.json'):
+                    customer_id = filename.replace('.json', '')
+                    data = self.load_customer_data(customer_id)
+                    if data:
+                        customers.append({
+                            "customer_id": customer_id,
+                            "updated_at": data.get("updated_at", ""),
+                            "has_data": True
+                        })
+            return sorted(customers, key=lambda x: x.get("updated_at", ""), reverse=True)
+
 # 전화 통화 처리 클래스 (app.py 스타일)
 try:
     from call_handler import CallHandler
@@ -339,47 +503,8 @@ except ImportError:
             
             return filepath
 
-# 고객 데이터 관리 (app.py 스타일)
-try:
-    from customer_data import CustomerDataManager
-    CUSTOMER_DATA_AVAILABLE = True
-except ImportError:
-    CUSTOMER_DATA_AVAILABLE = False
-    # CustomerDataManager가 없으면 간단한 클래스 생성
-    class CustomerDataManager:
-        def __init__(self):
-            self.data_dir = "customer_data"
-            import os
-            os.makedirs(self.data_dir, exist_ok=True)
-        
-        def load_customer_data(self, customer_id):
-            import json
-            import os
-            filepath = os.path.join(self.data_dir, f"{customer_id}.json")
-            if not os.path.exists(filepath):
-                return None
-            try:
-                with open(filepath, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            except Exception:
-                return None
-        
-        def list_all_customers(self):
-            import os
-            if not os.path.exists(self.data_dir):
-                return []
-            customers = []
-            for filename in os.listdir(self.data_dir):
-                if filename.endswith('.json'):
-                    customer_id = filename.replace('.json', '')
-                    data = self.load_customer_data(customer_id)
-                    if data:
-                        customers.append({
-                            "customer_id": customer_id,
-                            "updated_at": data.get("updated_at", ""),
-                            "has_data": True
-                        })
-            return sorted(customers, key=lambda x: x.get("updated_at", ""), reverse=True)
+# 고객 데이터 관리 (모듈화된 버전 사용)
+# 위에서 이미 import 했으므로 여기는 제거됨
 
 
 # ========================================
@@ -425,229 +550,28 @@ os.makedirs(VIDEO_DIR, exist_ok=True)
 # ========================================
 # 1-1. Session State 초기화 (전화 발신 관련 상태 추가)
 # ========================================
-# ⭐ 사이드바 버튼은 사이드바 블록 안으로 이동해야 함
-# 여기서는 세션 상태만 초기화
+# ⭐ 세션 상태 초기화는 session_state_manager 모듈로 이동
+from session_state_manager import initialize_session_state
+initialize_session_state()
 
-if "language" not in st.session_state:
-    st.session_state.language = DEFAULT_LANG
-if "is_llm_ready" not in st.session_state:
-    st.session_state.is_llm_ready = False
-if "llm_init_error_msg" not in st.session_state:
-    st.session_state.llm_init_error_msg = ""
-if "uploaded_files_state" not in st.session_state:
-    st.session_state.uploaded_files_state = None
-if "is_rag_ready" not in st.session_state:
-    st.session_state.is_rag_ready = False
-if "rag_vectorstore" not in st.session_state:
-    st.session_state.rag_vectorstore = None
-if "rag_messages" not in st.session_state:
-    st.session_state.rag_messages = []
-if "agent_input" not in st.session_state:
-    st.session_state.agent_input = ""
-if "last_audio" not in st.session_state:
-    st.session_state.last_audio = None
-if "simulator_messages" not in st.session_state:
-    st.session_state.simulator_messages = []
-if "simulator_memory" not in st.session_state:
-    st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history")
-if "simulator_chain" not in st.session_state:
-    st.session_state.simulator_chain = None
-if "initial_advice_provided" not in st.session_state:
-    st.session_state.initial_advice_provided = False
-if "is_chat_ended" not in st.session_state:
-    st.session_state.is_chat_ended = False
-if "show_delete_confirm" not in st.session_state:
-    st.session_state.show_delete_confirm = False
-if "customer_query_text_area" not in st.session_state:
-    st.session_state.customer_query_text_area = ""
-if "agent_response_area_text" not in st.session_state:
-    st.session_state.agent_response_area_text = ""
-if "reset_agent_response_area" not in st.session_state:
-    st.session_state.reset_agent_response_area = False
-if "last_transcript" not in st.session_state:
-    st.session_state.last_transcript = ""
-if "sim_audio_bytes" not in st.session_state:
-    st.session_state.sim_audio_bytes = None
-if "chat_state" not in st.session_state:
-    st.session_state.chat_state = "idle"
-    # idle → initial_customer → supervisor_advice → agent_turn → customer_turn → closing
-if "openai_client" not in st.session_state:
-    st.session_state.openai_client = None
-if "openai_init_msg" not in st.session_state:
-    st.session_state.openai_init_msg = ""
-if "sim_stage" not in st.session_state:
-    st.session_state.sim_stage = "WAIT_FIRST_QUERY"
-    # WAIT_FIRST_QUERY (초기 문의 입력)
-    # AGENT_TURN (에이전트 응답 입력)
-    # CUSTOMER_TURN (고객 반응 생성 요청)
-    # WAIT_CLOSING_CONFIRMATION_FROM_AGENT (고객이 감사, 에이전트가 종료 확인 메시지 보내기 대기)
-    # WAIT_CUSTOMER_CLOSING_RESPONSE (종료 확인 메시지 보냄, 고객의 마지막 응답 대기)
-    # FINAL_CLOSING_ACTION (최종 종료 버튼 대기)
-    # CLOSING (채팅 종료)
-    # ⭐ 추가: OUTBOUND_CALL_IN_PROGRESS (전화 발신 진행 중)
-if "start_time" not in st.session_state:  # AHT 타이머 시작 시간
-    st.session_state.start_time = None
-if "is_solution_provided" not in st.session_state:  # 솔루션 제공 여부 플래그
-    st.session_state.is_solution_provided = False
-if "transfer_summary_text" not in st.session_state:  # 이관 시 번역된 요약
-    st.session_state.transfer_summary_text = ""
-if "translation_success" not in st.session_state:  # 번역 성공 여부 추적
-    st.session_state.translation_success = True
-if "language_transfer_requested" not in st.session_state:  # 고객의 언어 이관 요청 여부
-    st.session_state.language_transfer_requested = False
-if "customer_attachment_file" not in st.session_state:  # 고객 첨부 파일 정보
-    st.session_state.customer_attachment_file = None
-if "customer_data_manager" not in st.session_state:  # 고객 데이터 관리자
-    st.session_state.customer_data_manager = CustomerDataManager()
-if "customer_data" not in st.session_state:  # 현재 고객 데이터
-    st.session_state.customer_data = None
-if "show_agent_response_ui" not in st.session_state:  # 에이전트 응답 UI 표시 여부
-    st.session_state.show_agent_response_ui = False
-if "show_customer_data_ui" not in st.session_state:  # 고객 데이터 가져오기 UI 표시 여부
-    st.session_state.show_customer_data_ui = False
-if "language_at_transfer" not in st.session_state:  # 현재 언어와 비교를 위한 변수
-    st.session_state.language_at_transfer = st.session_state.language
-if "language_at_transfer_start" not in st.session_state:  # 번역 재시도를 위한 원본 언어
-    st.session_state.language_at_transfer_start = st.session_state.language
-if "transfer_retry_count" not in st.session_state:
-    st.session_state.transfer_retry_count = 0
-if "customer_type_sim_select" not in st.session_state:  # FIX: Attribute Error 해결
-    # LANG이 정의되기 전이므로 기본값을 직접 설정
-    default_customer_type = "까다로운 고객"  # 한국어 기본값
-    if st.session_state.language == "en":
-        default_customer_type = "Difficult Customer"
-    elif st.session_state.language == "ja":
-        default_customer_type = "難しい顧客"
-    st.session_state.customer_type_sim_select = default_customer_type
-if "customer_email" not in st.session_state:  # FIX: customer_email 초기화
-    st.session_state.customer_email = ""
-if "customer_phone" not in st.session_state:  # FIX: customer_phone 초기화
-    st.session_state.customer_phone = ""
-if "agent_response_input_box_widget" not in st.session_state:  # FIX: customer_phone 초기화
-    st.session_state.agent_response_input_box_widget = ""
-# 고객 검증 관련 상태
-if "is_customer_verified" not in st.session_state:
-    st.session_state.is_customer_verified = False
-if "verification_info" not in st.session_state:  # 시스템 내부 검증 정보 (confidential)
-    st.session_state.verification_info = {
-        "receipt_number": "",
-        "card_last4": "",
-        "customer_name": "",
-        "customer_email": "",
-        "customer_phone": "",
-        "verification_attempts": 0
-    }
-if "verification_stage" not in st.session_state:  # WAIT_VERIFICATION, VERIFICATION_IN_PROGRESS, VERIFIED, VERIFICATION_FAILED
-    st.session_state.verification_stage = "WAIT_VERIFICATION"
-if "sim_instance_id" not in st.session_state:  # FIX: DuplicateWidgetID 방지용 인스턴스 ID 초기화
-    st.session_state.sim_instance_id = str(uuid.uuid4())
-if "sim_attachment_context_for_llm" not in st.session_state:
-    st.session_state.sim_attachment_context_for_llm = ""
-if "realtime_hint_text" not in st.session_state:
-    st.session_state.realtime_hint_text = ""
-# ⭐ 추가: 전화 발신 관련 상태
-if "sim_call_outbound_summary" not in st.session_state:
-    st.session_state.sim_call_outbound_summary = ""
-if "sim_call_outbound_target" not in st.session_state:
-    st.session_state.sim_call_outbound_target = None
-# ----------------------------------------------------------------------
-# ⭐ 전화 기능 관련 상태 추가 (app.py 스타일)
+# 세션 상태 초기화는 session_state_manager.py에서 처리됨
+# 추가적인 초기화가 필요한 경우에만 아래에 추가
+
+# 전화 관련 핸들러는 여기서 직접 초기화 (import 오류 방지)
 if "call_handler" not in st.session_state:
-    st.session_state.call_handler = CallHandler()
+    try:
+        from call_handler import CallHandler
+        st.session_state.call_handler = CallHandler()
+    except ImportError:
+        # fallback: streamlit_app.py에 정의된 CallHandler 사용
+        st.session_state.call_handler = CallHandler()
 if "audio_handler" not in st.session_state:
-    st.session_state.audio_handler = AppAudioHandler()
-if "call_active" not in st.session_state:
-    st.session_state.call_active = False
-if "current_call_id" not in st.session_state:
-    st.session_state.current_call_id = None
-if "video_enabled" not in st.session_state:
-    st.session_state.video_enabled = False
-if "opponent_video_frames" not in st.session_state:
-    st.session_state.opponent_video_frames = []  # 상대방 비디오 프레임 저장
-if "last_camera_frame" not in st.session_state:
-    st.session_state.last_camera_frame = None
-
-# ⭐ 전화 기능 관련 상태 추가
-if "call_sim_stage" not in st.session_state:
-    st.session_state.call_sim_stage = "WAITING_CALL"  # WAITING_CALL, RINGING, IN_CALL, CALL_ENDED
-if "call_sim_mode" not in st.session_state:
-    st.session_state.call_sim_mode = "INBOUND"  # INBOUND or OUTBOUND
-if "incoming_phone_number" not in st.session_state:
-    st.session_state.incoming_phone_number = "+82 10-1234-5678"
-if "is_on_hold" not in st.session_state:
-    st.session_state.is_on_hold = False
-if "hold_start_time" not in st.session_state:
-    st.session_state.hold_start_time = None
-if "total_hold_duration" not in st.session_state:
-    st.session_state.total_hold_duration = timedelta(0)
-if "current_customer_audio_text" not in st.session_state:
-    st.session_state.current_customer_audio_text = ""
-if "current_agent_audio_text" not in st.session_state:
-    st.session_state.current_agent_audio_text = ""
-if "agent_response_input_box_widget_call" not in st.session_state:  # 전화 탭 전용 입력창
-    st.session_state.agent_response_input_box_widget_call = ""
-if "call_initial_query" not in st.session_state:  # 전화 탭 전용 초기 문의
-    st.session_state.call_initial_query = ""
-if "call_website_url" not in st.session_state:  # 전화 탭 전용 홈페이지 주소
-    st.session_state.call_website_url = ""
-# ⭐ 추가: 통화 요약 및 초기 고객 음성 저장소
-if "call_summary_text" not in st.session_state:
-    st.session_state.call_summary_text = ""
-if "customer_initial_audio_bytes" not in st.session_state:  # 고객의 첫 음성 (TTS 결과) 저장
-    st.session_state.customer_initial_audio_bytes = None
-if "last_recorded_audio_bytes" not in st.session_state:  # 마지막 녹음된 오디오 (재생용)
-    st.session_state.last_recorded_audio_bytes = None
-if "last_customer_audio_bytes" not in st.session_state:  # 마지막 고객 응답 오디오 (재생용)
-    st.session_state.last_customer_audio_bytes = None
-if "keep_customer_audio_display" not in st.session_state:  # 고객 오디오 재생 표시 플래그
-    st.session_state.keep_customer_audio_display = False
-if "customer_audio_played_once" not in st.session_state:  # 고객 오디오 재생 상태 플래그
-    st.session_state.customer_audio_played_once = False
-if "supervisor_policy_context" not in st.session_state:
-    # Supervisor가 업로드한 예외 정책 텍스트를 저장합니다.
-    st.session_state.supervisor_policy_context = ""
-if "agent_policy_attachment_content" not in st.session_state:
-    # 에이전트가 업로드한 정책 파일 객체(또는 내용)를 저장합니다.
-    st.session_state.agent_policy_attachment_content = ""
-if "customer_attachment_b64" not in st.session_state:
-    st.session_state.customer_attachment_b64 = ""
-if "customer_history_summary" not in st.session_state:
-    st.session_state.customer_history_summary = ""
-if "customer_avatar" not in st.session_state:
-    st.session_state.customer_avatar = {
-        "gender": "male",  # 기본값
-        "state": "NEUTRAL",  # 기본 아바타 상태
-    }
-# ⭐ 추가: 비디오 동기화 관련 세션 상태
-if "current_customer_video" not in st.session_state:
-    st.session_state.current_customer_video = None  # 현재 재생 중인 고객 비디오 경로
-if "current_customer_video_bytes" not in st.session_state:
-    st.session_state.current_customer_video_bytes = None  # 현재 재생 중인 고객 비디오 바이트
-if "is_video_sync_enabled" not in st.session_state:
-    st.session_state.is_video_sync_enabled = True  # 비디오 동기화 활성화 여부
-if "video_male_neutral" not in st.session_state:
-    st.session_state.video_male_neutral = None  # 남자 중립 비디오 경로
-if "video_male_happy" not in st.session_state:
-    st.session_state.video_male_happy = None
-if "video_male_angry" not in st.session_state:
-    st.session_state.video_male_angry = None
-if "video_male_asking" not in st.session_state:
-    st.session_state.video_male_asking = None
-if "video_male_sad" not in st.session_state:
-    st.session_state.video_male_sad = None
-if "video_female_neutral" not in st.session_state:
-    st.session_state.video_female_neutral = None  # 여자 중립 비디오 경로
-if "video_female_happy" not in st.session_state:
-    st.session_state.video_female_happy = None
-if "video_female_angry" not in st.session_state:
-    st.session_state.video_female_angry = None
-if "video_female_asking" not in st.session_state:
-    st.session_state.video_female_asking = None
-if "video_female_sad" not in st.session_state:
-    st.session_state.video_female_sad = None
-# ⭐ 추가: 전사할 오디오 바이트 임시 저장소
-if "bytes_to_process" not in st.session_state:
-    st.session_state.bytes_to_process = None
+    try:
+        from audio_handler import AppAudioHandler
+        st.session_state.audio_handler = AppAudioHandler()
+    except ImportError:
+        # fallback: streamlit_app.py에 정의된 AppAudioHandler 사용
+        st.session_state.audio_handler = AppAudioHandler()
 
 # 언어 키 안전하게 가져오기
 current_lang = st.session_state.get("language", "ko")
@@ -662,14 +586,10 @@ if "user_gemini_key" in st.session_state and st.session_state["user_gemini_key"]
 # ========================================
 # 0. 세션 상태 초기화
 # ========================================
+# 세션 상태 초기화는 session_state_manager.py에서 처리됨
+# SUPPORTED_APIS 관련 세션 상태는 session_state_manager에서 처리됨
 
-# 세션 초기화 (SUPPORTED_APIS는 config에서 import됨)
-for api, cfg in SUPPORTED_APIS.items():
-    if cfg["session_key"] not in st.session_state:
-        st.session_state[cfg["session_key"]] = ""
-
-if "selected_llm" not in st.session_state:
-    st.session_state.selected_llm = "openai_gpt4"
+# selected_llm은 session_state_manager에서 처리됨
 
 
 # ========================================
@@ -1192,158 +1112,10 @@ Customer Inquiry:
 # ========================================
 # 9. 사이드바
 # ========================================
+from ui.sidebar import render_sidebar
+render_sidebar()
 
-with st.sidebar:
-    # 언어 키 안전하게 가져오기
-    if "language" not in st.session_state:
-        st.session_state.language = "ko"
-    current_lang = st.session_state.get("language", "ko")
-    if current_lang not in ["ko", "en", "ja"]:
-        current_lang = "ko"
-    L = LANG.get(current_lang, LANG["ko"])
-    
-    # 회사 목록 초기화 (회사 정보 탭에서 사용)
-    if "company_language_priority" not in st.session_state:
-        st.session_state.company_language_priority = {
-            "default": ["ko", "en", "ja"],
-            "companies": {}
-        }
-    
-    st.markdown("---")
-    
-    # 언어 선택
-    if "language" not in st.session_state:
-        st.session_state.language = "ko"
-    current_lang = st.session_state.get("language", "ko")
-    if current_lang not in ["ko", "en", "ja"]:
-        current_lang = "ko"
-    L = LANG.get(current_lang, LANG["ko"])
-    
-    lang_priority = st.session_state.company_language_priority["default"]
-    
-    selected_lang_key = st.selectbox(
-        L["lang_select"],
-        options=lang_priority,
-        index=lang_priority.index(st.session_state.language) if st.session_state.language in lang_priority else 0,
-        format_func=lambda x: {"ko": "한국어", "en": "English", "ja": "日本語"}[x],
-    )
-
-    # 🔹 언어 변경 감지
-    if selected_lang_key != st.session_state.language:
-        st.session_state.language = selected_lang_key
-        # 채팅/전화 공통 상태 초기화
-        st.session_state.simulator_messages = []
-        # ⭐ 안전한 메모리 초기화
-        try:
-            if hasattr(st.session_state, 'simulator_memory') and st.session_state.simulator_memory is not None:
-                st.session_state.simulator_memory.clear()
-        except Exception:
-            # 메모리 초기화 실패 시 새로 생성
-            try:
-                st.session_state.simulator_memory = ConversationBufferMemory(memory_key="chat_history")
-            except Exception:
-                pass  # 초기화 실패해도 계속 진행
-        st.session_state.initial_advice_provided = False
-        st.session_state.is_chat_ended = False
-        # ⭐ 수정: 위젯이 생성된 후에는 session_state를 직접 수정할 수 없으므로 플래그 사용
-        st.session_state.reset_agent_response_area = True
-        st.session_state.customer_query_text_area = ""
-        st.session_state.last_transcript = ""
-        st.session_state.sim_audio_bytes = None
-        st.session_state.sim_stage = "WAIT_FIRST_QUERY"
-        st.session_state.customer_attachment_file = []  # 언어 변경 시 첨부 파일 초기화
-        st.session_state.sim_attachment_context_for_llm = ""  # 컨텍스트 초기화
-        st.session_state.agent_attachment_file = []  # 에이전트 첨부 파일 초기화
-        # 전화 시뮬레이터 상태 초기화
-        st.session_state.call_sim_stage = "WAITING_CALL"
-        st.session_state.call_sim_mode = "INBOUND"
-        st.session_state.is_on_hold = False
-        st.session_state.total_hold_duration = timedelta(0)
-        st.session_state.hold_start_time = None
-        st.session_state.current_customer_audio_text = ""
-        st.session_state.current_agent_audio_text = ""
-        st.session_state.agent_response_input_box_widget_call = ""
-        st.session_state.call_initial_query = ""
-        # 전화 발신 관련 상태 초기화
-        st.session_state.sim_call_outbound_summary = ""
-        st.session_state.sim_call_outbound_target = None
-        # ⭐ 언어 변경 시 재실행 - 무한 루프 방지를 위해 플래그 사용
-        if "language_changed" not in st.session_state or not st.session_state.language_changed:
-            st.session_state.language_changed = True
-        else:
-            # 이미 한 번 재실행했으면 플래그 초기화
-            st.session_state.language_changed = False
-
-    # 언어 키 안전하게 가져오기
-    current_lang = st.session_state.get("language", "ko")
-    if current_lang not in ["ko", "en", "ja"]:
-        current_lang = "ko"
-    L = LANG.get(current_lang, LANG["ko"])
-
-    st.title(L["sidebar_title"])
-    st.markdown("---")
-
-    # ⭐ 기능 선택 - 기본값을 AI 챗 시뮬레이터로 설정 (먼저 배치)
-    if "feature_selection" not in st.session_state:
-        st.session_state.feature_selection = L["sim_tab_chat_email"]
-
-    # ⭐ 핵심 기능과 더보기 기능 분리 (회사 정보 및 FAQ 추가)
-    core_features = [L["sim_tab_chat_email"], L["sim_tab_phone"], L["company_info_tab"]]
-    other_features = [L["rag_tab"], L["content_tab"], L["lstm_tab"], L["voice_rec_header"]]
-    
-    # 모든 기능을 하나의 리스트로 통합 (하나만 선택 가능하도록)
-    all_features = core_features + other_features
-    
-    # 현재 선택된 기능
-    current_selection = st.session_state.get("feature_selection", L["sim_tab_chat_email"])
-    
-    # 현재 선택의 인덱스 찾기
-    try:
-        current_index = all_features.index(current_selection) if current_selection in all_features else 0
-    except (ValueError, AttributeError):
-        current_index = 0
-    
-    # ⭐ 기능 선택 섹션
-    st.subheader("📋 기능 선택")
-    selected_feature = st.radio(
-        "기능 선택",
-        all_features,
-        index=current_index,
-        key="unified_feature_selection",
-        label_visibility="visible"
-    )
-    
-    # 선택된 기능 업데이트
-    if selected_feature != current_selection:
-        st.session_state.feature_selection = selected_feature
-    
-    feature_selection = st.session_state.get("feature_selection", L["sim_tab_chat_email"])
-    
-    st.markdown("---")
-    
-    # ⭐ LLM 모델 선택 (API Key 입력 필드는 제외)
-    st.subheader("🤖 LLM 모델 선택")
-    
-    llm_options = {
-        "openai_gpt4": "OpenAI GPT-4",
-        "openai_gpt35": "OpenAI GPT-3.5",
-        "gemini_pro": "Google Gemini Pro",
-        "gemini_flash": "Google Gemini Flash",
-        "claude": "Anthropic Claude",
-        "groq": "Groq",
-        "nvidia": "NVIDIA NIM"
-    }
-    
-    current_llm = st.session_state.get("selected_llm", "openai_gpt4")
-    selected_llm = st.selectbox(
-        "LLM 모델 선택",
-        options=list(llm_options.keys()),
-        format_func=lambda x: llm_options[x],
-        index=list(llm_options.keys()).index(current_llm) if current_llm in llm_options else 0,
-        key="sidebar_llm_select"
-    )
-    if selected_llm != current_llm:
-        st.session_state.selected_llm = selected_llm
+# 기존 사이드바 코드는 ui/sidebar.py로 이동됨 (제거 완료)
 
 # 메인 타이틀
 # ⭐ L 변수가 정의되어 있는지 확인 (사이드바에서 이미 정의됨)
@@ -1356,907 +1128,20 @@ if current_lang not in ["ko", "en", "ja"]:
 L = LANG.get(current_lang, LANG["ko"])
 
 # ⭐ 타이틀과 설명을 한 줄로 간결하게 표시
-feature_selection = st.session_state.get("feature_selection", L["sim_tab_chat_email"])
-if feature_selection == L["sim_tab_chat_email"]:
-    st.markdown(f"### 📧 {L['sim_tab_chat_email']}")
-    st.caption(L['sim_tab_chat_email_desc'])
-elif feature_selection == L["sim_tab_phone"]:
-    st.markdown(f"### 📞 {L['sim_tab_phone']}")
-    st.caption(L['sim_tab_phone_desc'])
-elif feature_selection == L["rag_tab"]:
-    st.markdown(f"### 📚 {L['rag_tab']}")
-    st.caption(L['rag_tab_desc'])
-elif feature_selection == L["content_tab"]:
-    st.markdown(f"### 📝 {L['content_tab']}")
-    st.caption(L['content_tab_desc'])
-elif feature_selection == L["lstm_tab"]:
-    st.markdown(f"### 📊 {L['lstm_tab']}")
-    st.caption(L['lstm_tab_desc'])
-elif feature_selection == L["voice_rec_header"]:
-    st.markdown(f"### 🎤 {L['voice_rec_header']}")
-    st.caption(L['voice_rec_header_desc'])
-elif feature_selection == L["company_info_tab"]:
-    # 공백 축소: 제목과 설명을 한 줄로 간결하게 표시
-    st.markdown(f"#### 📋 {L['company_info_tab']}")
-    st.caption(L['company_info_tab_desc'])
+from ui.page_titles import render_page_title
+render_page_title()
 
 # ========================================
 # 10. 기능별 페이지
 # ========================================
 
+# feature_selection 변수 가져오기
+feature_selection = st.session_state.get("feature_selection", L.get("sim_tab_chat_email", "채팅/이메일 시뮬레이터"))
+
 # -------------------- Company Info & FAQ Tab --------------------
 if feature_selection == L["company_info_tab"]:
-    current_lang = st.session_state.get("language", "ko")
-    if current_lang not in ["ko", "en", "ja"]:
-        current_lang = "ko"
-    L = LANG.get(current_lang, LANG["ko"])
-    
-    # FAQ 데이터베이스 로드
-    faq_data = load_faq_database()
-    companies = list(faq_data.get("companies", {}).keys())
-    
-    # 회사명 검색 입력 (상단에 배치) - 입력란은 글로벌 기업 영문명 고려하여 원래 크기 유지
-    col_search_header, col_search_input, col_search_btn = st.columns([0.5, 1.2, 0.2])
-    with col_search_header:
-        st.write(f"**{L['search_company']}**")
-    with col_search_input:
-        company_search_input = st.text_input(
-            "",
-            placeholder=L["company_search_placeholder"],
-            key="company_search_input",
-            value=st.session_state.get("searched_company", ""),
-            label_visibility="collapsed"
-        )
-    with col_search_btn:
-        search_button = st.button(f"🔍 {L['company_search_button']}", key="company_search_btn", type="primary", use_container_width=True)
-    
-    # 검색된 회사 정보 저장
-    searched_company = st.session_state.get("searched_company", "")
-    searched_company_data = st.session_state.get("searched_company_data", None)
-    
-    # 검색 버튼 클릭 시 LLM으로 회사 정보 생성
-    if search_button and company_search_input:
-        with st.spinner(f"{company_search_input} {L['generating_company_info']}"):
-            generated_data = generate_company_info_with_llm(company_search_input, current_lang)
-            st.session_state.searched_company = company_search_input
-            st.session_state.searched_company_data = generated_data
-            searched_company = company_search_input
-            searched_company_data = generated_data
-            
-            # 생성된 데이터를 데이터베이스에 저장
-            if company_search_input not in faq_data.get("companies", {}):
-                faq_data.setdefault("companies", {})[company_search_input] = {
-                    f"info_{current_lang}": generated_data.get("company_info", ""),
-                    "info_ko": generated_data.get("company_info", ""),
-                    "info_en": "",
-                    "info_ja": "",
-                    "popular_products": generated_data.get("popular_products", []),
-                    "trending_topics": generated_data.get("trending_topics", []),
-                    "faqs": generated_data.get("faqs", []),
-                    "interview_questions": generated_data.get("interview_questions", []),
-                    "ceo_info": generated_data.get("ceo_info", {})
-                }
-                save_faq_database(faq_data)
-    
-    # 검색된 회사가 있으면 해당 데이터 사용, 없으면 기존 회사 선택
-    if searched_company and searched_company_data:
-        display_company = searched_company
-        display_data = searched_company_data
-        # 데이터베이스에도 저장되어 있으면 업데이트
-        if display_company in faq_data.get("companies", {}):
-            faq_data["companies"][display_company].update({
-                f"info_{current_lang}": display_data.get("company_info", ""),
-                "popular_products": display_data.get("popular_products", []),
-                "trending_topics": display_data.get("trending_topics", []),
-                "faqs": display_data.get("faqs", []),
-                "interview_questions": display_data.get("interview_questions", []),
-                "ceo_info": display_data.get("ceo_info", {})
-            })
-            save_faq_database(faq_data)
-    elif companies:
-        display_company = st.selectbox(
-            L["select_company"],
-            options=companies,
-            key="company_select_display"
-        )
-        company_db_data = faq_data["companies"][display_company]
-        display_data = {
-            "company_info": company_db_data.get(f"info_{current_lang}", company_db_data.get("info_ko", "")),
-            "popular_products": company_db_data.get("popular_products", []),
-            "trending_topics": company_db_data.get("trending_topics", []),
-            "faqs": company_db_data.get("faqs", []),
-            "interview_questions": company_db_data.get("interview_questions", []),
-            "ceo_info": company_db_data.get("ceo_info", {})
-        }
-    else:
-        display_company = None
-        display_data = None
-    
-    # 탭 생성 (FAQ 검색 탭 제거, FAQ 탭에 통합) - 공백 축소
-    tab1, tab2, tab3 = st.tabs([
-        L["company_info"], 
-        L["company_faq"], 
-        L["button_add_company"]
-    ])
-    
-    # 탭 1: 회사 소개 및 시각화
-    with tab1:
-        if display_company and display_data:
-            # 제목을 더 간결하게 표시
-            st.markdown(f"#### {display_company} - {L['company_info']}")
-            
-            # 회사 소개 표시
-            if display_data.get("company_info"):
-                st.markdown(display_data["company_info"])
-            
-            # 시각화 차트 표시
-            if display_data.get("popular_products") or display_data.get("trending_topics"):
-                charts = visualize_company_data(
-                    {
-                        "popular_products": display_data.get("popular_products", []),
-                        "trending_topics": display_data.get("trending_topics", [])
-                    },
-                    current_lang
-                )
-                
-                if charts:
-                    # 막대 그래프 표시 - 공백 축소
-                    st.markdown(f"#### 📊 {L['visualization_chart']}")
-                    col1_bar, col2_bar = st.columns(2)
-                    
-                    if "products_bar" in charts:
-                        with col1_bar:
-                            st.plotly_chart(charts["products_bar"], use_container_width=True)
-                    
-                    if "topics_bar" in charts:
-                        with col2_bar:
-                            st.plotly_chart(charts["topics_bar"], use_container_width=True)
-                    
-                    # 선형 그래프 표시
-                    col1_line, col2_line = st.columns(2)
-                    
-                    if "products_line" in charts:
-                        with col1_line:
-                            st.plotly_chart(charts["products_line"], use_container_width=True)
-                    
-                    if "topics_line" in charts:
-                        with col2_line:
-                            st.plotly_chart(charts["topics_line"], use_container_width=True)
-            
-            # 인기 상품 목록 (이미지 포함) - 공백 축소
-            if display_data.get("popular_products"):
-                st.markdown(f"#### {L['popular_products']}")
-                # 상품을 그리드 형태로 표시
-                product_cols = st.columns(min(3, len(display_data["popular_products"])))
-                for idx, product in enumerate(display_data["popular_products"]):
-                    product_text = product.get(f"text_{current_lang}", product.get("text_ko", ""))
-                    product_score = product.get("score", 0)
-                    product_image_url = product.get("image_url", "")
-                    
-                    with product_cols[idx % len(product_cols)]:
-                        # 이미지 표시 - 상품명 기반으로 동적 이미지 검색
-                        if not product_image_url:
-                            # 모든 언어 버전의 상품명을 확인하여 이미지 URL 생성
-                            # 우선순위: 현재 언어 > 한국어 > 영어 > 일본어
-                            image_found = False
-                            for lang_key in [current_lang, "ko", "en", "ja"]:
-                                check_text = product.get(f"text_{lang_key}", "")
-                                if check_text:
-                                    check_url = get_product_image_url(check_text)
-                                    if check_url:
-                                        product_image_url = check_url
-                                        image_found = True
-                                        break
-                            
-                            # 모든 언어에서 이미지를 찾지 못한 경우 기본 이미지 사용
-                            if not image_found:
-                                product_image_url = get_product_image_url(product_text)
-                        
-                        # 이미지 표시 시도 (로컬 파일 및 URL 모두 지원)
-                        image_displayed = False
-                        if product_image_url:
-                            try:
-                                # 로컬 파일 경로인 경우
-                                if os.path.exists(product_image_url):
-                                    st.image(product_image_url, caption=product_text[:30], use_container_width=True)
-                                    image_displayed = True
-                                # URL인 경우
-                                elif product_image_url.startswith("http://") or product_image_url.startswith("https://"):
-                                    try:
-                                        # HEAD 요청으로 이미지 존재 여부 확인 (타임아웃 2초)
-                                        response = requests.head(product_image_url, timeout=2, allow_redirects=True)
-                                        if response.status_code == 200:
-                                            st.image(product_image_url, caption=product_text[:30], use_container_width=True)
-                                            image_displayed = True
-                                        else:
-                                            image_displayed = False
-                                    except Exception:
-                                        # HEAD 요청 실패 시에도 이미지 표시 시도 (일부 서버는 HEAD를 지원하지 않음)
-                                        try:
-                                            st.image(product_image_url, caption=product_text[:30], use_container_width=True)
-                                            image_displayed = True
-                                        except Exception:
-                                            image_displayed = False
-                                else:
-                                    # 기타 경로 시도
-                                    try:
-                                        st.image(product_image_url, caption=product_text[:30], use_container_width=True)
-                                        image_displayed = True
-                                    except Exception:
-                                        image_displayed = False
-                            except Exception as img_error:
-                                # 이미지 로딩 실패
-                                image_displayed = False
-                        
-                        # 이미지 표시 실패 시 이모지 카드 표시
-                        if not image_displayed:
-                            product_emoji = "🎫" if "티켓" in product_text or "ticket" in product_text.lower() else \
-                                          "🎢" if "테마파크" in product_text or "theme" in product_text.lower() or "디즈니" in product_text or "유니버셜" in product_text or "스튜디오" in product_text else \
-                                          "✈️" if "항공" in product_text or "flight" in product_text.lower() else \
-                                          "🏨" if "호텔" in product_text or "hotel" in product_text.lower() else \
-                                          "🍔" if "음식" in product_text or "food" in product_text.lower() else \
-                                          "🌏" if "여행" in product_text or "travel" in product_text.lower() or "사파리" in product_text else \
-                                          "📦"
-                            product_html = """<div style='text-align: center; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                                border-radius: 10px; color: white; min-height: 200px; display: flex; flex-direction: column; justify-content: center;'>
-                                    <h1 style='font-size: 64px; margin: 0;'>""" + product_emoji + """</h1>
-                                    <p style='font-size: 16px; margin-top: 15px; font-weight: bold;'>""" + product_text[:25] + """</p>
-                                </div>"""
-                            st.markdown(product_html, unsafe_allow_html=True)
-                        
-                        st.write(f"**{product_text}**")
-                        st.caption(f"{L.get('popularity', '인기도')}: {product_score}")
-                        st.markdown("---")
-            
-            # 화제의 소식 목록 (상세 내용 포함) - 공백 축소
-            if display_data.get("trending_topics"):
-                st.markdown(f"#### {L['trending_topics']}")
-                for idx, topic in enumerate(display_data["trending_topics"], 1):
-                    topic_text = topic.get(f"text_{current_lang}", topic.get("text_ko", ""))
-                    topic_score = topic.get("score", 0)
-                    topic_detail = topic.get(f"detail_{current_lang}", topic.get("detail_ko", ""))
-                    
-                    with st.expander(f"{idx}. **{topic_text}** ({L.get('trend_score', '화제도')}: {topic_score})"):
-                        if topic_detail:
-                            st.write(topic_detail)
-                        else:
-                            # 상세 내용이 없으면 LLM으로 생성
-                            if display_company:
-                                try:
-                                    # 언어별 프롬프트
-                                    detail_prompts = {
-                                        "ko": f"{display_company}의 '{topic_text}'에 대한 상세 내용을 200자 이상 작성해주세요.",
-                                        "en": f"Please write detailed content of at least 200 characters about '{topic_text}' from {display_company}.",
-                                        "ja": f"{display_company}の「{topic_text}」に関する詳細内容を200文字以上で作成してください。"
-                                    }
-                                    detail_prompt = detail_prompts.get(current_lang, detail_prompts["ko"])
-                                    generated_detail = run_llm(detail_prompt)
-                                    if generated_detail and not generated_detail.startswith("❌"):
-                                        st.write(generated_detail)
-                                        # 생성된 상세 내용을 데이터베이스에 저장
-                                        if display_company in faq_data.get("companies", {}):
-                                            topic_idx = idx - 1
-                                            if topic_idx < len(faq_data["companies"][display_company].get("trending_topics", [])):
-                                                faq_data["companies"][display_company]["trending_topics"][topic_idx][f"detail_{current_lang}"] = generated_detail
-                                                save_faq_database(faq_data)
-                                    else:
-                                        st.write(L.get("generating_detail", "상세 내용을 생성하는 중입니다..."))
-                                except Exception as e:
-                                    st.write(L.get("checking_additional_info", "상세 내용: {topic}에 대한 추가 정보를 확인 중입니다.").format(topic=topic_text))
-                            else:
-                                st.write(L.get("checking_additional_info", "상세 내용: {topic}에 대한 추가 정보를 확인 중입니다.").format(topic=topic_text))
-            
-            # CEO/대표이사 정보 표시
-            if display_data.get("ceo_info"):
-                ceo_info = display_data["ceo_info"]
-                ceo_name = ceo_info.get(f"name_{current_lang}", ceo_info.get("name_ko", ""))
-                ceo_position = ceo_info.get(f"position_{current_lang}", ceo_info.get("position_ko", ""))
-                ceo_bio = ceo_info.get(f"bio_{current_lang}", ceo_info.get("bio_ko", ""))
-                ceo_tenure = ceo_info.get(f"tenure_{current_lang}", ceo_info.get("tenure_ko", ""))
-                ceo_education = ceo_info.get(f"education_{current_lang}", ceo_info.get("education_ko", ""))
-                ceo_career = ceo_info.get(f"career_{current_lang}", ceo_info.get("career_ko", ""))
-                
-                if ceo_name or ceo_position:
-                    st.markdown(f"#### 👔 {L.get('ceo_info', 'CEO/대표이사 정보')}")
-                    st.markdown("---")
-                    
-                    # CEO 정보 카드 형태로 표시
-                    col_ceo_left, col_ceo_right = st.columns([1, 2])
-                    
-                    with col_ceo_left:
-                        # CEO 이름과 직책
-                        if ceo_name:
-                            st.markdown(f"### {ceo_name}")
-                        if ceo_position:
-                            st.markdown(f"**{L.get('position', '직책')}:** {ceo_position}")
-                        if ceo_tenure:
-                            st.markdown(f"**{L.get('tenure', '재임 기간')}:** {ceo_tenure}")
-                    
-                    with col_ceo_right:
-                        # 상세 소개
-                        if ceo_bio:
-                            st.markdown(f"**{L.get('ceo_bio', '소개')}**")
-                            st.markdown(ceo_bio)
-                    
-                    # 학력 및 경력 정보
-                    if ceo_education or ceo_career:
-                        st.markdown("---")
-                        col_edu, col_career = st.columns(2)
-                        
-                        with col_edu:
-                            if ceo_education:
-                                st.markdown(f"**{L.get('education', '학력')}**")
-                                st.markdown(ceo_education)
-                        
-                        with col_career:
-                            if ceo_career:
-                                st.markdown(f"**{L.get('career', '주요 경력')}**")
-                                st.markdown(ceo_career)
-                    
-                    st.markdown("---")
-            
-            # 면접 질문 목록 표시
-            if display_data.get("interview_questions"):
-                st.markdown(f"#### 💼 {L.get('interview_questions', '면접 예상 질문')}")
-                st.markdown(f"*{L.get('interview_questions_desc', '면접에서 나올 만한 핵심 질문들과 상세한 답변입니다. 면접 준비와 회사 이해에 도움이 됩니다.')}*")
-                st.markdown("---")
-                
-                # 카테고리별로 그룹화
-                interview_by_category = {}
-                for idx, iq in enumerate(display_data["interview_questions"]):
-                    question = iq.get(f"question_{current_lang}", iq.get("question_ko", ""))
-                    answer = iq.get(f"answer_{current_lang}", iq.get("answer_ko", ""))
-                    category = iq.get(f"category_{current_lang}", iq.get("category_ko", L.get("interview_category_other", "기타")))
-                    
-                    if category not in interview_by_category:
-                        interview_by_category[category] = []
-                    interview_by_category[category].append({
-                        "question": question,
-                        "answer": answer,
-                        "index": idx + 1
-                    })
-                
-                # 카테고리별로 표시
-                for category, questions in interview_by_category.items():
-                    with st.expander(f"📋 **{category}** ({len(questions)}{L.get('items', '개')})"):
-                        for item in questions:
-                            st.markdown(f"**{item['index']}. {item['question']}**")
-                            st.markdown(item['answer'])
-                            st.markdown("---")
-        else:
-            st.info(L["company_search_or_select"])
-    
-    # 탭 2: 자주 묻는 질문 (FAQ) - 검색 기능 포함
-    with tab2:
-        if display_company and display_data:
-            # 제목을 더 간결하게 표시
-            st.markdown(f"#### {display_company} - {L['company_faq']}")
-            
-            # FAQ 검색 기능 (탭 내부에 통합) - 검색 범위 확대, 공백 축소
-            col_search_faq, col_btn_faq = st.columns([3.5, 1])
-            with col_search_faq:
-                faq_search_query = st.text_input(
-                    L["faq_search_placeholder"],
-                    key="faq_search_in_tab",
-                    placeholder=L.get("faq_search_placeholder_extended", L["faq_search_placeholder"])
-                )
-            with col_btn_faq:
-                faq_search_btn = st.button(L["button_search_faq"], key="faq_search_btn_in_tab")
-            
-            faqs = display_data.get("faqs", [])
-            popular_products = display_data.get("popular_products", [])
-            trending_topics = display_data.get("trending_topics", [])
-            company_info = display_data.get("company_info", "")
-            
-            # 검색 관련 변수 초기화
-            matched_products = []
-            matched_topics = []
-            matched_info = False
-            
-            # 검색어가 있으면 확장된 검색 (FAQ, 상품, 화제 소식, 회사 소개 모두 검색)
-            if faq_search_query and faq_search_btn:
-                query_lower = faq_search_query.lower()
-                filtered_faqs = []
-                
-                # 1. FAQ 검색 (기본 FAQ + 상품명 관련 FAQ)
-                for faq in faqs:
-                    question = faq.get(f"question_{current_lang}", faq.get("question_ko", ""))
-                    answer = faq.get(f"answer_{current_lang}", faq.get("answer_ko", ""))
-                    if query_lower in question.lower() or query_lower in answer.lower():
-                        filtered_faqs.append(faq)
-                
-                # 2. 상품명으로 FAQ 검색 (상품명이 검색어와 일치하거나 포함되는 경우)
-                # 검색어가 상품명에 포함되면 해당 상품과 관련된 FAQ를 찾아서 표시
-                for product in popular_products:
-                    product_text = product.get(f"text_{current_lang}", product.get("text_ko", ""))
-                    product_text_lower = product_text.lower()
-                    
-                    # 검색어가 상품명에 포함되는 경우
-                    if query_lower in product_text_lower:
-                        # 해당 상품명이 FAQ 질문/답변에 포함된 경우 찾기
-                        product_related_faqs = []
-                        for faq in faqs:
-                            question = faq.get(f"question_{current_lang}", faq.get("question_ko", ""))
-                            answer = faq.get(f"answer_{current_lang}", faq.get("answer_ko", ""))
-                            # 상품명이 FAQ에 언급되어 있으면 추가
-                            if product_text_lower in question.lower() or product_text_lower in answer.lower():
-                                if faq not in filtered_faqs:
-                                    filtered_faqs.append(faq)
-                                    product_related_faqs.append(faq)
-                        
-                        # 상품명이 매칭되었지만 관련 FAQ가 없는 경우, 상품 정보만 표시
-                        if not product_related_faqs:
-                            matched_products.append(product)
-                
-                # 2. 인기 상품 검색
-                for product in popular_products:
-                    product_text = product.get(f"text_{current_lang}", product.get("text_ko", ""))
-                    if query_lower in product_text.lower():
-                        matched_products.append(product)
-                
-                # 3. 화제의 소식 검색
-                for topic in trending_topics:
-                    topic_text = topic.get(f"text_{current_lang}", topic.get("text_ko", ""))
-                    if query_lower in topic_text.lower():
-                        matched_topics.append(topic)
-                
-                # 4. 회사 소개 검색
-                if query_lower in company_info.lower():
-                    matched_info = True
-                
-                # 검색 결과가 있으면 표시
-                if filtered_faqs or matched_products or matched_topics or matched_info:
-                    # 매칭된 상품 표시 (FAQ가 없는 경우에만)
-                    if matched_products and not filtered_faqs:
-                        st.subheader(f"🔍 {L.get('related_products', '관련 상품')} ({len(matched_products)}{L.get('items', '개')})")
-                        st.info(L.get("no_faq_for_product", "해당 상품과 관련된 FAQ를 찾을 수 없습니다. 상품 정보만 표시됩니다."))
-                        for idx, product in enumerate(matched_products, 1):
-                            product_text = product.get(f"text_{current_lang}", product.get("text_ko", ""))
-                            product_score = product.get("score", 0)
-                            st.write(f"• **{product_text}** ({L.get('popularity', '인기도')}: {product_score})")
-                        st.markdown("---")
-                    
-                    # 매칭된 화제 소식 표시
-                    if matched_topics:
-                        st.subheader(f"🔍 {L.get('related_trending_news', '관련 화제 소식')} ({len(matched_topics)}{L.get('items', '개')})")
-                        for idx, topic in enumerate(matched_topics, 1):
-                            topic_text = topic.get(f"text_{current_lang}", topic.get("text_ko", ""))
-                            topic_score = topic.get("score", 0)
-                            st.write(f"• **{topic_text}** ({L.get('trend_score', '화제도')}: {topic_score})")
-                        st.markdown("---")
-                    
-                    # 매칭된 회사 소개 표시
-                    if matched_info:
-                        st.subheader(f"🔍 {L.get('related_company_info', '관련 회사 소개 내용')}")
-                        # 검색어가 포함된 부분 강조하여 표시
-                        info_lower = company_info.lower()
-                        query_pos = info_lower.find(query_lower)
-                        if query_pos != -1:
-                            start = max(0, query_pos - 100)
-                            end = min(len(company_info), query_pos + len(query_lower) + 100)
-                            snippet = company_info[start:end]
-                            if start > 0:
-                                snippet = "..." + snippet
-                            if end < len(company_info):
-                                snippet = snippet + "..."
-                            # 검색어 강조
-                            highlighted = snippet.replace(
-                                query_lower, 
-                                f"**{query_lower}**"
-                            )
-                            st.write(highlighted)
-                        st.markdown("---")
-                    
-                    # FAQ 결과
-                    faqs = filtered_faqs
-                else:
-                    faqs = []
-            
-            # FAQ 목록 표시
-            if faqs:
-                if faq_search_query and faq_search_btn:
-                    st.subheader(f"🔍 {L.get('related_faq', '관련 FAQ')} ({len(faqs)}{L.get('items', '개')})")
-                else:
-                    st.subheader(f"{L['company_faq']} ({len(faqs)}{L.get('items', '개')})")
-                for idx, faq in enumerate(faqs, 1):
-                    question = faq.get(f"question_{current_lang}", faq.get("question_ko", ""))
-                    answer = faq.get(f"answer_{current_lang}", faq.get("answer_ko", ""))
-                    with st.expander(f"{L['faq_question_prefix'].format(num=idx)} {question}"):
-                        st.write(f"**{L['faq_answer']}:** {answer}")
-            else:
-                if faq_search_query and faq_search_btn:
-                    # 검색 결과가 없을 때만 메시지 표시 (위에서 이미 관련 상품/소식 등이 표시되었을 수 있음)
-                    if not (matched_products or matched_topics or matched_info):
-                        st.info(L["no_faq_results"])
-                else:
-                    st.info(L.get("no_faq_for_company", f"{display_company}의 FAQ가 없습니다.").format(company=display_company))
-        else:
-            st.info(L.get("no_company_selected", "회사명을 검색하거나 선택해주세요."))
-    
-    # 탭 3: 고객 문의 재확인 (에이전트용)
-    with tab3:
-        # 제목과 설명을 한 줄로 간결하게 표시
-        st.markdown(f"#### {L['customer_inquiry_review']}")
-        st.caption(L.get("customer_inquiry_review_desc", "에이전트가 상사들에게 고객 문의 내용을 재확인하고, AI 답안 및 힌트를 생성할 수 있는 기능입니다."))
-        
-        # 세션 상태 초기화
-        if "generated_ai_answer" not in st.session_state:
-            st.session_state.generated_ai_answer = None
-        if "generated_hint" not in st.session_state:
-            st.session_state.generated_hint = None
-        
-        # 회사 선택 (선택사항)
-        selected_company_for_inquiry = None
-        if companies:
-            all_option = L.get("all_companies", "전체")
-            selected_company_for_inquiry = st.selectbox(
-                f"{L['select_company']} ({L.get('optional', '선택사항')})",
-                options=[all_option] + companies,
-                key="inquiry_company_select"
-            )
-            if selected_company_for_inquiry == all_option:
-                selected_company_for_inquiry = None
-        
-        # 고객 문의 내용 입력
-        customer_inquiry = st.text_area(
-            L["inquiry_question_label"],
-            placeholder=L["inquiry_question_placeholder"],
-            key="customer_inquiry_input",
-            height=150
-        )
-        
-        # 고객 첨부 파일 업로드
-        uploaded_file = st.file_uploader(
-            L.get("inquiry_attachment_label", "📎 고객 첨부 파일 업로드 (사진/스크린샷)"),
-            type=["png", "jpg", "jpeg", "pdf"],
-            key="customer_inquiry_attachment",
-            help=L.get("inquiry_attachment_help", "특히 취소 불가 여행상품의 비행기 지연, 여권 이슈 등 불가피한 사유의 경우, 반드시 사진이나 스크린샷을 첨부해주세요.")
-        )
-        
-        # 업로드된 파일 정보 저장
-        attachment_info = ""
-        uploaded_file_info = None
-        file_content_extracted = ""
-        file_content_translated = ""
-        
-        if uploaded_file is not None:
-            file_name = uploaded_file.name
-            file_type = uploaded_file.type
-            file_size = len(uploaded_file.getvalue())
-            st.success(L.get("inquiry_attachment_uploaded", "✅ 첨부 파일이 업로드되었습니다: {filename}").format(filename=file_name))
-            
-            # 파일 정보 저장
-            uploaded_file_info = {
-                "name": file_name,
-                "type": file_type,
-                "size": file_size
-            }
-            
-            # 파일 내용 추출 (PDF, TXT, 이미지 파일인 경우)
-            if file_name.lower().endswith(('.pdf', '.txt', '.png', '.jpg', '.jpeg')):
-                try:
-                    with st.spinner(L.get("extracting_file_content", "파일 내용 추출 중...")):
-                        if file_name.lower().endswith('.pdf'):
-                            import tempfile
-                            import os
-                            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-                            tmp.write(uploaded_file.getvalue())
-                            tmp.flush()
-                            tmp.close()
-                            try:
-                                loader = PyPDFLoader(tmp.name)
-                                file_docs = loader.load()
-                                file_content_extracted = "\n".join([doc.page_content for doc in file_docs])
-                            finally:
-                                try:
-                                    os.remove(tmp.name)
-                                except:
-                                    pass
-                        elif file_name.lower().endswith('.txt'):
-                            uploaded_file.seek(0)  # 파일 포인터를 처음으로 이동
-                            file_content_extracted = uploaded_file.read().decode("utf-8", errors="ignore")
-                        elif file_name.lower().endswith(('.png', '.jpg', '.jpeg')):
-                            # 이미지 파일의 경우 OCR을 사용하여 텍스트 추출
-                            uploaded_file.seek(0)
-                            image_bytes = uploaded_file.getvalue()
-                            image_base64 = base64.b64encode(image_bytes).decode('utf-8')
-                            
-                            # Gemini Vision API를 사용하여 이미지에서 텍스트 추출
-                            ocr_prompt = """이 이미지에 있는 모든 텍스트를 정확히 추출해주세요. 
-이미지에 한국어, 일본어, 영어 등 어떤 언어의 텍스트가 있든 모두 추출하고, 
-텍스트의 구조와 순서를 유지해주세요. 
-이미지에 텍스트가 없으면 "텍스트 없음"이라고 답변하세요.
-
-추출된 텍스트:"""
-                            
-                            try:
-                                # Gemini Vision API 호출
-                                gemini_key = get_api_key("gemini")
-                                if gemini_key:
-                                    import google.generativeai as genai
-                                    genai.configure(api_key=gemini_key)
-                                    model = genai.GenerativeModel('gemini-2.0-flash-exp')
-                                    
-                                    # 이미지와 프롬프트를 함께 전송
-                                    response = model.generate_content([
-                                        {
-                                            "mime_type": file_type,
-                                            "data": image_bytes
-                                        },
-                                        ocr_prompt
-                                    ])
-                                    file_content_extracted = response.text if response.text else ""
-                                else:
-                                    # Gemini 키가 없으면 LLM에 base64 이미지를 전송하여 OCR 요청
-                                    ocr_llm_prompt = """{ocr_prompt}
-
-이미지는 base64로 인코딩되어 전송되었습니다. 이미지에서 텍스트를 추출해주세요."""
-                                    # LLM이 이미지를 직접 처리할 수 없으므로, 사용자에게 안내
-                                    file_content_extracted = ""
-                                    st.info(L.get("ocr_requires_manual", "이미지 OCR을 위해서는 Gemini API 키가 필요합니다. 이미지의 텍스트를 수동으로 입력해주세요."))
-                            except Exception as ocr_error:
-                                error_msg = L.get("ocr_error", "이미지 텍스트 추출 중 오류: {error}")
-                                st.warning(error_msg.format(error=str(ocr_error)))
-                                file_content_extracted = ""
-                        
-                        # 파일 내용이 추출된 경우 언어 감지 및 번역 (일본어/영어 버전에서 한국어 파일 번역)
-                        if file_content_extracted and current_lang in ["ja", "en"]:
-                            # 한국어 내용인지 확인하고 번역
-                            with st.spinner(L.get("detecting_language", "언어 감지 중...")):
-                                # 언어 감지 프롬프트 (현재 언어에 맞춤)
-                                detect_prompts = {
-                                    "ja": f"""次のテキストの言語を検出してください。韓国語、日本語、英語のいずれかで答えてください。
-
-テキスト:
-{file_content_extracted[:500]}
-
-言語:""",
-                                    "en": f"""Detect the language of the following text. Answer with only one of: Korean, Japanese, or English.
-
-Text:
-{file_content_extracted[:500]}
-
-Language:""",
-                                    "ko": f"""다음 텍스트의 언어를 감지해주세요. 한국어, 일본어, 영어 중 하나로만 답변하세요.
-
-텍스트:
-{file_content_extracted[:500]}
-
-언어:"""
-                                }
-                                detect_prompt = detect_prompts.get(current_lang, detect_prompts["ko"])
-                                detected_lang = run_llm(detect_prompt).strip().lower()
-                                
-                                # 한국어로 감지된 경우 현재 언어로 번역
-                                if "한국어" in detected_lang or "korean" in detected_lang or "ko" in detected_lang:
-                                    with st.spinner(L.get("translating_content", "파일 내용 번역 중...")):
-                                        # 번역 프롬프트 (현재 언어에 맞춤)
-                                        translate_prompts = {
-                                            "ja": f"""次の韓国語テキストを日本語に翻訳してください。原文の意味とトーンを正確に維持しながら、自然な日本語で翻訳してください。
-
-韓国語テキスト:
-{file_content_extracted}
-
-日本語翻訳:""",
-                                            "en": f"""Please translate the following Korean text into English. Maintain the exact meaning and tone of the original text while translating into natural English.
-
-Korean text:
-{file_content_extracted}
-
-English translation:"""
-                                        }
-                                        translate_prompt = translate_prompts.get(current_lang)
-                                        if translate_prompt:
-                                            file_content_translated = run_llm(translate_prompt)
-                                            if file_content_translated and not file_content_translated.startswith("❌"):
-                                                st.info(L.get("file_translated", "✅ 파일 내용이 번역되었습니다."))
-                                            else:
-                                                file_content_translated = ""
-                except Exception as e:
-                    error_msg = L.get("file_extraction_error", "파일 내용 추출 중 오류가 발생했습니다: {error}")
-                    st.warning(error_msg.format(error=str(e)))
-            
-            # 언어별 파일 정보 텍스트 생성
-            file_content_to_include = file_content_translated if file_content_translated else file_content_extracted
-            content_section = ""
-            if file_content_to_include:
-                content_section = f"\n\n[파일 내용]\n{file_content_to_include[:2000]}"  # 최대 2000자만 포함
-                if len(file_content_to_include) > 2000:
-                    content_section += "\n...(내용이 길어 일부만 표시됨)"
-            
-            attachment_info_by_lang = {
-                "ko": f"\n\n[고객 첨부 파일 정보]\n- 파일명: {file_name}\n- 파일 타입: {file_type}\n- 파일 크기: {file_size} bytes\n- 참고: 고객이 {file_name} 파일을 첨부했습니다. 이 파일은 비행기 지연, 여권 이슈, 질병 등 불가피한 사유로 인한 취소 불가 여행상품 관련 증빙 자료일 수 있습니다. 파일 내용을 참고하여 응대하세요.{content_section}",
-                "en": f"\n\n[Customer Attachment Information]\n- File name: {file_name}\n- File type: {file_type}\n- File size: {file_size} bytes\n- Note: The customer has attached the file {file_name}. This file may be evidence related to non-refundable travel products due to unavoidable reasons such as flight delays, passport issues, illness, etc. Please refer to the file content when responding.{content_section}",
-                "ja": f"\n\n[顧客添付ファイル情報]\n- ファイル名: {file_name}\n- ファイルタイプ: {file_type}\n- ファイルサイズ: {file_size} bytes\n- 参考: 顧客が{file_name}ファイルを添付しました。このファイルは、飛行機の遅延、パスポートの問題、病気などやむを得ない理由によるキャンセル不可の旅行商品に関連する証拠資料である可能性があります。ファイルの内容を参照して対応してください。{content_section}"
-            }
-            attachment_info = attachment_info_by_lang.get(current_lang, attachment_info_by_lang["ko"])
-            
-            # 이미지 파일인 경우 미리보기 표시
-            if file_type and file_type.startswith("image/"):
-                st.image(uploaded_file, caption=file_name, use_container_width=True)
-        
-        col_ai_answer, col_hint = st.columns(2)
-        
-        # AI 답안 생성
-        with col_ai_answer:
-            if st.button(L["button_generate_ai_answer"], key="generate_ai_answer_btn", type="primary"):
-                if customer_inquiry:
-                    with st.spinner(L["generating_ai_answer"]):
-                        # 회사 정보가 있으면 포함하여 답안 생성
-                        company_context = ""
-                        if selected_company_for_inquiry and selected_company_for_inquiry in faq_data.get("companies", {}):
-                            company_data = get_company_info_faq(selected_company_for_inquiry, current_lang)
-                            company_info_label = L.get("company_info", "회사 정보")
-                            company_context = f"\n\n{company_info_label}: {company_data.get('info', '')}"
-                            # 관련 FAQ도 포함
-                            related_faqs = company_data.get("faqs", [])[:5]  # 상위 5개만
-                            if related_faqs:
-                                faq_label = L.get("company_faq", "자주 나오는 질문")
-                                faq_context = f"\n\n{faq_label}:\n"
-                                for faq in related_faqs:
-                                    q = faq.get(f"question_{current_lang}", faq.get("question_ko", ""))
-                                    a = faq.get(f"answer_{current_lang}", faq.get("answer_ko", ""))
-                                    faq_context += f"Q: {q}\nA: {a}\n"
-                                company_context += faq_context
-                        
-                        # 언어별 프롬프트
-                        lang_prompts_inquiry = {
-                            "ko": f"""다음 고객 문의에 대한 전문적이고 친절한 답안을 작성해주세요.
-
-고객 문의: {customer_inquiry}
-{company_context}
-{attachment_info if attachment_info else ""}
-
-답안은 다음을 포함해야 합니다:
-1. 고객의 문의에 대한 명확한 답변
-2. 필요한 경우 추가 정보나 안내
-3. 친절하고 전문적인 톤
-4. 첨부 파일이 있는 경우, 해당 파일 내용을 참고하여 응대하세요. 특히 취소 불가 여행상품의 비행기 지연, 여권 이슈 등 불가피한 사유의 경우, 첨부된 증빙 자료를 확인하고 적절히 대응하세요.
-
-답안:""",
-                            "en": f"""Please write a professional and friendly answer to the following customer inquiry.
-
-Customer Inquiry: {customer_inquiry}
-{company_context}
-{attachment_info if attachment_info else ""}
-
-The answer should include:
-1. Clear answer to the customer's inquiry
-2. Additional information or guidance if needed
-3. Friendly and professional tone
-4. If there is an attachment, please reference the file content in your response. For non-refundable travel products with unavoidable reasons (flight delays, passport issues, etc.), review the attached evidence and respond appropriately.
-
-Answer:""",
-                            "ja": f"""次の顧客問い合わせに対する専門的で親切な回答を作成してください。
-
-顧客問い合わせ: {customer_inquiry}
-{company_context}
-{attachment_info if attachment_info else ""}
-
-回答には以下を含める必要があります:
-1. 顧客の問い合わせに対する明確な回答
-2. 必要に応じて追加情報や案内
-3. 親切で専門的なトーン
-4. 添付ファイルがある場合は、そのファイルの内容を参照して対応してください。特にキャンセル不可の旅行商品で、飛行機の遅延、パスポートの問題などやむを得ない理由がある場合は、添付された証拠資料を確認し、適切に対応してください。
-
-回答:"""
-                        }
-                        prompt = lang_prompts_inquiry.get(current_lang, lang_prompts_inquiry["ko"])
-                        
-                        ai_answer = run_llm(prompt)
-                        st.session_state.generated_ai_answer = ai_answer
-                        st.success(f"✅ {L.get('ai_answer_generated', 'AI 답안이 생성되었습니다.')}")
-                else:
-                    st.warning(L.get("warning_enter_inquiry", "고객 문의 내용을 입력해주세요."))
-        
-        # 응대 힌트 생성
-        with col_hint:
-            if st.button(L["button_generate_hint"], key="generate_hint_btn", type="primary"):
-                if customer_inquiry:
-                    with st.spinner(L["generating_hint"]):
-                        # 회사 정보가 있으면 포함하여 힌트 생성
-                        company_context = ""
-                        if selected_company_for_inquiry and selected_company_for_inquiry in faq_data.get("companies", {}):
-                            company_data = get_company_info_faq(selected_company_for_inquiry, current_lang)
-                            company_info_label = L.get("company_info", "회사 정보")
-                            company_context = f"\n\n{company_info_label}: {company_data.get('info', '')}"
-                        
-                        # 언어별 프롬프트
-                        lang_prompts_hint = {
-                            "ko": f"""다음 고객 문의에 대한 응대 힌트를 작성해주세요.
-
-고객 문의: {customer_inquiry}
-{company_context}
-{attachment_info if attachment_info else ""}
-
-응대 힌트는 다음을 포함해야 합니다:
-1. 고객 문의의 핵심 포인트
-2. 응대 시 주의사항
-3. 권장 응대 방식
-4. 추가 확인이 필요한 사항 (있는 경우)
-5. 첨부 파일이 있는 경우, 해당 파일을 확인하고 증빙 자료로 활용하세요. 특히 취소 불가 여행상품의 경우, 첨부된 사진이나 스크린샷을 통해 불가피한 사유를 확인하고 적절한 조치를 취하세요.
-
-응대 힌트:""",
-                            "en": f"""Please write response hints for the following customer inquiry.
-
-Customer Inquiry: {customer_inquiry}
-{company_context}
-{attachment_info if attachment_info else ""}
-
-Response hints should include:
-1. Key points of the customer inquiry
-2. Precautions when responding
-3. Recommended response method
-4. Items that need additional confirmation (if any)
-5. If there is an attachment, review the file and use it as evidence. For non-refundable travel products, verify unavoidable reasons through attached photos or screenshots and take appropriate action.
-
-Response Hints:""",
-                            "ja": f"""次の顧客問い合わせに対する対応ヒントを作成してください。
-
-顧客問い合わせ: {customer_inquiry}
-{company_context}
-{attachment_info if attachment_info else ""}
-
-対応ヒントには以下を含める必要があります:
-1. 顧客問い合わせの核心ポイント
-2. 対応時の注意事項
-3. 推奨対応方法
-4. 追加確認が必要な事項（ある場合）
-5. 添付ファイルがある場合は、そのファイルを確認し、証拠資料として活用してください。特にキャンセル不可の旅行商品の場合、添付された写真やスクリーンショットを通じてやむを得ない理由を確認し、適切な措置を取ってください。
-
-対応ヒント:"""
-                        }
-                        prompt = lang_prompts_hint.get(current_lang, lang_prompts_hint["ko"])
-                        
-                        hint = run_llm(prompt)
-                        st.session_state.generated_hint = hint
-                        st.success(f"✅ {L.get('hint_generated', '응대 힌트가 생성되었습니다.')}")
-                else:
-                    st.warning(L.get("warning_enter_inquiry", "고객 문의 내용을 입력해주세요."))
-        
-        # 생성된 결과 표시
-        if st.session_state.get("generated_ai_answer"):
-            st.markdown("---")
-            st.subheader(L["ai_answer_header"])
-            
-            answer_text = st.session_state.generated_ai_answer
-            
-            # 답안을 선택 가능한 텍스트로 표시 (폰트 크기 확대)
-            import html as html_escape
-            answer_escaped = html_escape.escape(answer_text)
-            st.markdown(f"""
-            <div style="font-size: 18px; line-height: 1.8; padding: 20px; background-color: #f8f9fa; border-radius: 5px; border: 1px solid #dee2e6;">
-            <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: 'Malgun Gothic', '맑은 고딕', 'Noto Sans JP', sans-serif; margin: 0; font-size: 18px; color: #212529;">{answer_escaped}</pre>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # 다운로드 버튼 추가 (더 안정적인 복사 방법)
-            col_copy, col_download = st.columns(2)
-            with col_copy:
-                st.info(L.get("copy_instruction", "💡 위 텍스트를 선택하고 Ctrl+C (Mac: Cmd+C)로 복사하세요."))
-            with col_download:
-                st.download_button(
-                    label=f"📥 {L.get('button_download_answer', '답안 다운로드')}",
-                    data=answer_text.encode('utf-8'),
-                    file_name=f"ai_answer_{st.session_state.get('copy_answer_id', 0)}.txt",
-                    mime="text/plain",
-                    key="download_answer_btn"
-                )
-        
-        if st.session_state.get("generated_hint"):
-            st.markdown("---")
-            st.subheader(L["hint_header"])
-            
-            hint_text = st.session_state.generated_hint
-            
-            # 힌트를 선택 가능한 텍스트로 표시 (폰트 크기 확대)
-            import html as html_escape
-            hint_escaped = html_escape.escape(hint_text)
-            st.markdown(f"""
-            <div style="font-size: 18px; line-height: 1.8; padding: 20px; background-color: #f8f9fa; border-radius: 5px; border: 1px solid #dee2e6;">
-            <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: 'Malgun Gothic', '맑은 고딕', 'Noto Sans JP', sans-serif; margin: 0; font-size: 18px; color: #212529;">{hint_escaped}</pre>
-            </div>
-            """, unsafe_allow_html=True)
+    from pages.company_info import render_company_info_tab
+    render_company_info_tab()
 
 # ========================================
 # 채팅/메일 시뮬레이터 탭 처리
@@ -2979,8 +1864,45 @@ if feature_selection == L["sim_tab_chat_email"]:
             if index < len(st.session_state.simulator_messages):
                 st.session_state.simulator_messages[index]["feedback"] = feedback_value
     
+    # ⭐ 카카오톡 스타일 채팅 UI CSS 추가
+    st.markdown("""
+    <style>
+    /* 카카오톡 스타일 채팅 UI */
+    .stChatMessage {
+        padding: 8px 12px;
+        margin: 4px 0;
+        border-radius: 12px;
+        max-width: 70%;
+    }
+    .stChatMessage[data-testid="user"] {
+        background-color: #FEE500;
+        margin-left: auto;
+        margin-right: 0;
+    }
+    .stChatMessage[data-testid="assistant"] {
+        background-color: #F5F5F5;
+        margin-left: 0;
+        margin-right: auto;
+    }
+    /* 작은 아이콘 버튼 스타일 */
+    .compact-icon-button {
+        padding: 4px 8px;
+        font-size: 14px;
+        min-width: auto;
+        height: 28px;
+    }
+    /* 메시지 말풍선 내부 버튼 그룹 */
+    .message-action-buttons {
+        display: flex;
+        gap: 4px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     # 채팅/이메일 탭에서만 메시지 표시
-    # ⭐ app.py 스타일로 간소화: 깔끔한 채팅 UI
+    # ⭐ 카카오톡 스타일 채팅 UI
     if st.session_state.simulator_messages:
         for idx, msg in enumerate(st.session_state.simulator_messages):
             # ⭐ 수정: 안전한 딕셔너리 접근
@@ -3033,14 +1955,14 @@ if feature_selection == L["sim_tab_chat_email"]:
                         args=[idx],
                     )
                 
-                # 3. 고객 메시지에 응대 힌트, 전화 버튼 및 추가 기능 버튼들
+                # 3. 고객 메시지에 작은 아이콘 버튼들 (카카오톡 스타일)
                 if role == "customer" or role == "customer_rebuttal":
-                    # 첫 번째 행: 응대 힌트, 전화 버튼들 (admin.py 스타일: 간단한 컬럼 구조)
-                    button_cols_customer_row1 = st.columns(3)
+                    # 작은 아이콘 버튼들 (한 줄에 여러 개)
+                    icon_cols = st.columns([1, 1, 1, 1, 1, 1])
                     
-                    # 응대 힌트 버튼
-                    with button_cols_customer_row1[0]:
-                        if st.button(L.get("button_hint", "💡 응대 힌트"), key=f"hint_btn_customer_{idx}_{st.session_state.sim_instance_id}", use_container_width=True, type="secondary"):
+                    # 응대 힌트 아이콘 버튼
+                    with icon_cols[0]:
+                        if st.button("💡", key=f"hint_icon_{idx}_{st.session_state.sim_instance_id}", help=L.get("button_hint", "응대 힌트"), use_container_width=True):
                             if st.session_state.is_llm_ready:
                                 # 다른 플래그들 초기화 (하나만 보이도록)
                                 st.session_state.show_verification_ui = False
@@ -3071,38 +1993,29 @@ if feature_selection == L["sim_tab_chat_email"]:
                             else:
                                 st.warning(L.get("simulation_no_key_warning", "LLM이 준비되지 않았습니다."))
                     
-                    # 업체에 전화 버튼
-                    with button_cols_customer_row1[1]:
-                        if st.button(L.get("button_call_company", "📞 업체에 전화"), key=f"call_provider_customer_{idx}_{st.session_state.sim_instance_id}", use_container_width=True, type="secondary"):
-                            # 다른 플래그들 초기화
+                    # 업체 전화 아이콘 버튼
+                    with icon_cols[1]:
+                        if st.button("📞", key=f"call_provider_icon_{idx}_{st.session_state.sim_instance_id}", help=L.get("button_call_company", "업체에 전화"), use_container_width=True):
                             st.session_state.show_verification_ui = False
                             st.session_state.show_draft_ui = False
                             st.session_state.show_customer_data_ui = False
                             st.session_state.show_agent_response_ui = False
                             st.session_state.sim_call_outbound_target = L.get("call_target_provider", "현지 업체/파트너")
                             st.session_state.sim_stage = "OUTBOUND_CALL_IN_PROGRESS"
-                            # ⭐ 재실행 불필요: 상태 변경은 이미 반영됨, 다음 렌더링에서 자동 표시됨
-                            # st.rerun()
                     
-                    # 고객에게 전화 버튼
-                    with button_cols_customer_row1[2]:
-                        if st.button(L.get("button_call_customer", "📞 고객에게 전화"), key=f"call_customer_customer_{idx}_{st.session_state.sim_instance_id}", use_container_width=True, type="secondary"):
-                            # 다른 플래그들 초기화
+                    # 고객 전화 아이콘 버튼
+                    with icon_cols[2]:
+                        if st.button("📱", key=f"call_customer_icon_{idx}_{st.session_state.sim_instance_id}", help=L.get("button_call_customer", "고객에게 전화"), use_container_width=True):
                             st.session_state.show_verification_ui = False
                             st.session_state.show_draft_ui = False
                             st.session_state.show_customer_data_ui = False
                             st.session_state.show_agent_response_ui = False
                             st.session_state.sim_call_outbound_target = L.get("call_target_customer", "고객")
                             st.session_state.sim_stage = "OUTBOUND_CALL_IN_PROGRESS"
-                            # ⭐ 재실행 불필요: 상태 변경은 이미 반영됨, 다음 렌더링에서 자동 표시됨
-                            # st.rerun()
                     
-                    # 두 번째 행: AI 응대 가이드라인, 응대 초안, 고객 검증 버튼들
-                    button_cols_customer_row2 = st.columns(4)
-                    
-                    # AI 응대 가이드라인 버튼 (에이전트 응답 UI 포함)
-                    with button_cols_customer_row2[0]:
-                        if st.button(L.get("button_ai_guideline", "📋 AI 응대 가이드라인"), key=f"guideline_btn_customer_{idx}_{st.session_state.sim_instance_id}", use_container_width=True, type="secondary"):
+                    # AI 응대 가이드라인 아이콘 버튼
+                    with icon_cols[3]:
+                        if st.button("📋", key=f"guideline_icon_{idx}_{st.session_state.sim_instance_id}", help=L.get("button_ai_guideline", "AI 응대 가이드라인"), use_container_width=True):
                             if st.session_state.is_llm_ready:
                                 # 다른 플래그들 초기화 (하나만 보이도록)
                                 st.session_state.show_verification_ui = False
@@ -3156,9 +2069,9 @@ if feature_selection == L["sim_tab_chat_email"]:
                             else:
                                 st.warning(L.get("simulation_no_key_warning", "LLM이 준비되지 않았습니다."))
                     
-                    # 고객 데이터 가져오기 버튼 (app.py 스타일)
-                    with button_cols_customer_row2[1]:
-                        if st.button(L.get("button_customer_data", "📋 고객 데이터"), key=f"customer_data_btn_{idx}_{st.session_state.sim_instance_id}", use_container_width=True, type="secondary"):
+                    # 고객 데이터 아이콘 버튼
+                    with icon_cols[4]:
+                        if st.button("👤", key=f"customer_data_icon_{idx}_{st.session_state.sim_instance_id}", help=L.get("button_customer_data", "고객 데이터"), use_container_width=True):
                             # 다른 플래그들 초기화 (하나만 보이도록)
                             st.session_state.show_agent_response_ui = False
                             st.session_state.show_verification_ui = False
@@ -3231,9 +2144,9 @@ if feature_selection == L["sim_tab_chat_email"]:
                                     "content": info_message
                                 })
                     
-                    # 응대 초안 버튼
-                    with button_cols_customer_row2[2]:
-                        if st.button(L.get("button_draft", "✍️ 응대 초안"), key=f"draft_btn_customer_{idx}_{st.session_state.sim_instance_id}", use_container_width=True, type="secondary"):
+                    # 응대 초안 아이콘 버튼
+                    with icon_cols[5]:
+                        if st.button("✍️", key=f"draft_icon_{idx}_{st.session_state.sim_instance_id}", help=L.get("button_draft", "응대 초안"), use_container_width=True):
                             if st.session_state.is_llm_ready:
                                 # 다른 플래그들 초기화 (하나만 보이도록)
                                 st.session_state.show_agent_response_ui = False
@@ -3284,9 +2197,10 @@ if feature_selection == L["sim_tab_chat_email"]:
                             else:
                                 st.warning(L.get("simulation_no_key_warning", "LLM이 준비되지 않았습니다."))
                     
-                    # 고객 검증 버튼 (검증 전 제한 사항 포함)
-                    with button_cols_customer_row2[3]:
-                        if st.button(L.get("button_verification", "🔐 고객 검증"), key=f"verification_btn_customer_{idx}_{st.session_state.sim_instance_id}", use_container_width=True, type="secondary"):
+                    # 고객 검증 아이콘 버튼 (별도 행에 배치)
+                    verification_col = st.columns([1])
+                    with verification_col[0]:
+                        if st.button("🔐", key=f"verification_icon_{idx}_{st.session_state.sim_instance_id}", help=L.get("button_verification", "고객 검증"), use_container_width=True):
                             # 다른 플래그들 초기화 (하나만 보이도록)
                             st.session_state.show_agent_response_ui = False
                             st.session_state.show_draft_ui = False
@@ -3549,8 +2463,8 @@ if feature_selection == L["sim_tab_chat_email"]:
             # 데이터 가져오기는 메시지로 표시되므로 헤더 불필요
             pass
         else:
-            # 기본 에이전트 응답 헤더 표시
-            st.markdown(f"### {L['agent_response_header']}")
+            # 기본 에이전트 응답 헤더는 메시지 입력 칸 바로 위에 표시 (아래로 이동)
+            pass  # 헤더는 입력 칸 바로 위로 이동
 
         # ⭐ 실시간 응대 힌트 영역 제거 (메시지 말풍선에 버튼으로 이동)
         # 힌트는 에이전트 응답 메시지 말풍선의 '응대 힌트' 버튼을 통해 사용할 수 있습니다.
@@ -4085,11 +2999,11 @@ if feature_selection == L["sim_tab_chat_email"]:
                 # 시스템에 저장된 검증 정보 (시뮬레이션용 - 실제로는 DB에서 가져옴)
                 stored_verification_info = st.session_state.verification_info.copy()
                 
-                # 검증 버튼
+                # 검증 버튼 (길이 최소화)
                 st.markdown("---")
                 verify_cols = st.columns([1, 1])
                 with verify_cols[0]:
-                    if st.button(L['button_verify'], key="btn_verify_customer", use_container_width=True, type="primary"):
+                    if st.button(L['button_verify'], key="btn_verify_customer", type="primary"):
                         # 파일 검증 정보 확인 (고객 첨부 파일 또는 새로 업로드한 파일)
                         final_file_verified = False
                         file_info_for_verification = None
@@ -4224,7 +3138,7 @@ if feature_selection == L["sim_tab_chat_email"]:
                             st.error(error_message)
                 
                 with verify_cols[1]:
-                    if st.button(L['button_retry_verification'], key="btn_retry_verification", use_container_width=True):
+                    if st.button(L['button_retry_verification'], key="btn_retry_verification"):
                         st.session_state.verification_stage = "WAIT_VERIFICATION"
                         st.session_state.verification_info["verification_attempts"] = 0
                         # ⭐ 재실행 불필요: 상태 변경은 이미 반영됨, 다음 렌더링에서 자동 표시됨
@@ -4384,41 +3298,50 @@ if feature_selection == L["sim_tab_chat_email"]:
                 st.session_state.agent_response_area_text = ""
             st.session_state.reset_agent_response_area = False
         
-        # ⭐ 마이크 전사 결과가 있으면 text_area에 표시 (호환성 유지)
+        # ⭐ 마이크 전사 결과 또는 자동 생성된 응대 초안이 있으면 입력창에 표시
         # 위젯 생성 전에만 값을 설정할 수 있으므로 여기서 처리
         # ⭐ [수정 1] 전사 결과가 입력 칸에 확실히 반영되도록 보장 (최우선 처리)
         if st.session_state.get("last_transcript") and st.session_state.last_transcript:
             # 전사 결과를 text_area의 value로 사용되는 세션 상태 변수에 반영
             st.session_state.agent_response_area_text = st.session_state.last_transcript
-            # 전사 결과를 반영했으므로, last_transcript는 전송 시점에 초기화하도록 유지
-            # st.session_state.last_transcript = "" # *주의: 전송 로직에서 필요할 수 있으므로, 전송 시점에 초기화 고려
+        # ⭐ [추가] 자동 생성된 응대 초안이 있으면 입력창에 표시 (전사 결과보다 우선순위 낮음)
+        elif st.session_state.get("auto_generated_draft") and st.session_state.auto_generated_draft:
+            if not st.session_state.get("agent_response_area_text") or not st.session_state.agent_response_area_text:
+                st.session_state.agent_response_area_text = st.session_state.auto_generated_draft
+                # 표시 후 초기화 (한 번만 표시)
+                st.session_state.auto_generated_draft = None
         # ⭐ [추가 수정] agent_response_area_text가 비어있고 last_transcript가 있으면 반영
         elif not st.session_state.get("agent_response_area_text") and st.session_state.get("last_transcript") and st.session_state.last_transcript:
             st.session_state.agent_response_area_text = st.session_state.last_transcript
 
-        # --- UI 개선: app.py 스타일로 자연스러운 채팅 입력 (st.chat_input 사용) ---
+        # --- UI 개선: 에이전트 응답 헤더를 입력 칸 바로 위에 배치 ---
+        # ⭐ 에이전트 응답 헤더 표시 (메시지 입력 칸 바로 위)
+        if not show_verification_from_button and not show_draft_ui and not show_customer_data_ui:
+            st.markdown(f"### {L['agent_response_header']}")
+        
+        # --- UI 개선: 메시지 입력 칸과 파일 첨부 버튼을 한 줄에 배치 ---
         # ⭐ 메시지 입력 칸은 항상 표시 (어떤 기능 버튼을 클릭해도 항상 표시)
         
         # ⭐ 수정: 전사 결과는 입력 필드에만 표시하고, 자동 전송하지 않음
         # 사용자가 직접 입력하거나 전송 버튼을 눌러야 메시지가 전송됨
         # (자동 전송 로직 제거 - 순서 꼬임 방지)
         
-        # st.chat_input으로 입력 받기 (app.py 스타일)
-        agent_response_input = st.chat_input(L.get("agent_response_placeholder", "고객에게 응답하세요..."))
+        # 입력 칸과 파일 첨부 버튼을 한 줄에 배치
+        input_cols = st.columns([10, 1])
         
-        # 추가 기능 버튼들 (파일 첨부만) - 입력 영역 아래에 배치
-        col_extra_features = st.columns([1, 1])
+        with input_cols[0]:
+            # st.chat_input으로 입력 받기 (app.py 스타일)
+            agent_response_input = st.chat_input(L.get("agent_response_placeholder", "고객에게 응답하세요..."))
         
-        with col_extra_features[0]:
-            # (+) 파일 첨부 버튼
-            if st.button(L.get("button_add_attachment", "➕ 파일 첨부"), key="btn_add_attachment_unified", use_container_width=True, type="secondary"):
+        with input_cols[1]:
+            # (+) 파일 첨부 버튼 (입력 칸 옆에 작은 버튼으로 배치)
+            if st.button("➕", key="btn_add_attachment_unified", help=L.get("button_add_attachment", "파일 첨부"), use_container_width=True, type="secondary"):
                 st.session_state.show_agent_file_uploader = True
         
-        with col_extra_features[1]:
-            # 전사 결과 표시 (있는 경우)
-            if st.session_state.get("agent_response_area_text") and st.session_state.agent_response_area_text:
-                transcript_preview = st.session_state.agent_response_area_text[:30]
-                st.caption(L.get("transcription_label", "💬 전사: {text}...").format(text=transcript_preview))
+        # 전사 결과 표시 (있는 경우) - 입력 칸 아래에 작은 텍스트로 표시
+        if st.session_state.get("agent_response_area_text") and st.session_state.agent_response_area_text:
+            transcript_preview = st.session_state.agent_response_area_text[:30]
+            st.caption(L.get("transcription_label", "💬 전사: {text}...").format(text=transcript_preview))
 
         # 전송 로직 실행 (st.chat_input은 Enter 키 또는 전송 버튼으로 자동 전송됨)
         agent_response = None
@@ -4450,6 +3373,116 @@ if feature_selection == L["sim_tab_chat_email"]:
                 st.session_state.simulator_messages.append(
                     {"role": "agent_response", "content": final_response_content}
                 )
+                
+                # ⭐ 고객 데이터 자동 저장 (에이전트 응답 시마다 업데이트) - 완벽한 구현
+                try:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    
+                    # 고객 ID 결정 (이메일 > 전화번호 > 인스턴스 ID 순)
+                    customer_id = st.session_state.get("customer_email", "") or st.session_state.get("customer_phone", "")
+                    if not customer_id:
+                        customer_id = f"customer_{st.session_state.sim_instance_id}"
+                    
+                    logger.info(f"[고객 데이터 저장 시작] customer_id={customer_id}")
+                    
+                    # 기존 고객 데이터 로드 (병합을 위해)
+                    existing_data = st.session_state.customer_data_manager.load_customer_data(customer_id)
+                    logger.debug(f"[고객 데이터 로드] 기존 데이터 존재 여부: {existing_data is not None}")
+                    
+                    # 현재 상담 요약 생성 (있는 경우)
+                    consultation_summary = ""
+                    try:
+                        if st.session_state.simulator_messages:
+                            consultation_summary = generate_chat_summary(
+                                st.session_state.simulator_messages,
+                                st.session_state.get("customer_query_text_area", ""),
+                                st.session_state.get("customer_type_sim_select", ""),
+                                st.session_state.get("language", "ko")
+                            )
+                            if consultation_summary:
+                                consultation_summary = str(consultation_summary)
+                    except Exception as e:
+                        logger.warning(f"[상담 요약 생성 실패] {e}")
+                    
+                    # 고객 데이터 구성 (완전한 스키마)
+                    current_time = datetime.now().isoformat()
+                    customer_data = {
+                        "customer_id": customer_id,
+                        "data": {
+                            "name": st.session_state.get("customer_name", ""),
+                            "email": st.session_state.get("customer_email", ""),
+                            "phone": st.session_state.get("customer_phone", ""),
+                            "company": st.session_state.get("customer_company", ""),
+                            "account_created_at": existing_data.get("data", {}).get("account_created_at", current_time) if existing_data else current_time,
+                            "last_access_at": current_time,
+                            "last_consultation_at": current_time,
+                            "consultation_history": existing_data.get("data", {}).get("consultation_history", []) if existing_data else [],
+                            "notes": existing_data.get("data", {}).get("notes", "") if existing_data else ""
+                        },
+                        "conversations": [
+                            {
+                                "role": msg.get("role", ""),
+                                "content": msg.get("content", ""),
+                                "timestamp": msg.get("timestamp", current_time)
+                            }
+                            for msg in st.session_state.simulator_messages  # 전체 메시지 저장
+                        ],
+                        "current_consultation": {
+                            "consultation_id": st.session_state.sim_instance_id,
+                            "started_at": st.session_state.get("consultation_started_at", current_time),
+                            "last_updated_at": current_time,
+                            "summary": consultation_summary,
+                            "customer_type": st.session_state.get("customer_type_sim_select", ""),
+                            "language": st.session_state.get("language", "ko"),
+                            "messages_count": len(st.session_state.simulator_messages),
+                            "is_ended": st.session_state.get("is_chat_ended", False)
+                        }
+                    }
+                    
+                    # 상담 이력에 현재 상담 추가 (중복 방지)
+                    consultation_entry = {
+                        "consultation_id": st.session_state.sim_instance_id,
+                        "date": current_time,
+                        "summary": consultation_summary[:200] if consultation_summary else "",
+                        "customer_type": st.session_state.get("customer_type_sim_select", ""),
+                        "language": st.session_state.get("language", "ko")
+                    }
+                    if existing_data and "data" in existing_data and "consultation_history" in existing_data["data"]:
+                        # 기존 상담 이력에서 동일한 consultation_id가 있으면 업데이트, 없으면 추가
+                        history = existing_data["data"]["consultation_history"]
+                        existing_idx = next((i for i, h in enumerate(history) if h.get("consultation_id") == st.session_state.sim_instance_id), None)
+                        if existing_idx is not None:
+                            history[existing_idx] = consultation_entry
+                        else:
+                            history.append(consultation_entry)
+                        customer_data["data"]["consultation_history"] = history
+                    else:
+                        customer_data["data"]["consultation_history"] = [consultation_entry]
+                    
+                    logger.debug(f"[고객 데이터 구성 완료] conversations={len(customer_data['conversations'])}, consultation_history={len(customer_data['data']['consultation_history'])}")
+                    
+                    # 고객 데이터 저장
+                    save_success = st.session_state.customer_data_manager.save_customer_data(
+                        customer_id,
+                        customer_data,
+                        merge=True
+                    )
+                    
+                    if save_success:
+                        logger.info(f"[고객 데이터 저장 성공] customer_id={customer_id}, conversations={len(customer_data['conversations'])}")
+                        # 저장 성공 확인을 위해 다시 로드해서 검증
+                        verify_data = st.session_state.customer_data_manager.load_customer_data(customer_id)
+                        if verify_data:
+                            logger.debug(f"[고객 데이터 검증 성공] 저장된 conversations={len(verify_data.get('conversations', []))}")
+                        else:
+                            logger.error(f"[고객 데이터 검증 실패] 저장 후 로드 실패: customer_id={customer_id}")
+                    else:
+                        logger.error(f"[고객 데이터 저장 실패] customer_id={customer_id}")
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"[고객 데이터 저장 중 오류] customer_id={customer_id}, error={e}", exc_info=True)
 
                 # ⭐ 추가: 에이전트 응답에 메일 끝인사가 포함되어 있는지 확인
                 email_closing_patterns = [
@@ -4498,6 +3531,35 @@ if feature_selection == L["sim_tab_chat_email"]:
                     st.session_state.simulator_messages.append(
                         {"role": "customer", "content": customer_response}
                     )
+                    
+                    # ⭐ 응대 초안 자동 생성 (고객 메시지 수신 시)
+                    try:
+                        with st.spinner(L.get("generating_draft_auto", "응대 초안 자동 생성 중...")):
+                            # 최근 고객 메시지 가져오기
+                            recent_customer_messages = [
+                                msg.get("content", "") 
+                                for msg in st.session_state.simulator_messages 
+                                if msg.get("role") in ["customer", "customer_rebuttal", "initial_query"]
+                            ]
+                            latest_customer_query = recent_customer_messages[-1] if recent_customer_messages else customer_response
+                            
+                            # 응대 초안 생성
+                            draft_text = _generate_initial_advice(
+                                latest_customer_query,
+                                st.session_state.get("customer_type_sim_select", ""),
+                                st.session_state.customer_email,
+                                st.session_state.customer_phone,
+                                st.session_state.language,
+                                st.session_state.customer_attachment_file
+                            )
+                            
+                            # 응대 초안을 세션 상태에 저장 (입력창에 자동 표시용)
+                            st.session_state.auto_generated_draft = draft_text
+                            st.session_state.agent_response_area_text = draft_text
+                    except Exception as e:
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.error(f"응대 초안 자동 생성 실패: {e}", exc_info=True)
                     
                     # ⭐ 추가: 메일 끝인사가 포함된 경우 고객 응답 확인 및 설문 조사 버튼 활성화
                     if st.session_state.get("has_email_closing", False):
@@ -4558,13 +3620,15 @@ if feature_selection == L["sim_tab_chat_email"]:
                 # st.rerun()
             
 
-        # --- 언어 이관 버튼 ---
+        # --- 언어 이관 버튼 (말풍선 스타일로 변경) ---
         st.markdown("---")
         st.markdown(f"**{L['transfer_header']}**")
-        transfer_cols = st.columns(len(LANG) - 1)
-
+        
         languages = list(LANG.keys())
         languages.remove(current_lang)
+        
+        # 말풍선 스타일로 버튼 배치 (작은 버튼들로 변경)
+        transfer_cols = st.columns(len(languages))
 
 
         def transfer_session(target_lang: str, current_messages: List[Dict[str, str]]):
@@ -4719,16 +3783,22 @@ if feature_selection == L["sim_tab_chat_email"]:
                         st.error(error_msg)
                         summary_text = L.get("summary_generation_error", "요약 생성 오류: {error}").format(error=str(e))
         
-        # 이관 버튼 렌더링
+        # 이관 버튼 렌더링 (말풍선 스타일 - 작은 버튼)
         for idx, lang_code in enumerate(languages):
-            lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(lang_code, lang_code)
-            transfer_label = L.get(f"transfer_to_{lang_code}", f"Transfer to {lang_name} Team")
+            lang_name = {"ko": "한국어", "en": "영어", "ja": "일본어"}.get(lang_code, lang_code)
+            # 말풍선 스타일 라벨 (짧게)
+            if lang_code == "en":
+                transfer_label = "US 영어 팀으로 이관"
+            elif lang_code == "ja":
+                transfer_label = "JP 일본어 팀으로 이관"
+            else:
+                transfer_label = f"{lang_name} 팀으로 이관"
             
             with transfer_cols[idx]:
                 if st.button(
                     transfer_label,
                     key=f"btn_transfer_{lang_code}_{st.session_state.sim_instance_id}",
-                    use_container_width=True
+                    type="secondary"
                 ):
                     transfer_session(lang_code, st.session_state.simulator_messages)
     
@@ -5557,369 +4627,6 @@ elif feature_selection == L["sim_tab_phone"]:
         st.markdown("---")
 
     # ⭐ 왼쪽 비디오 섹션 제거 (비디오 업로드 내용은 상대방 화면 밑으로 이동)
-    if False:  # 기존 비디오 업로드 섹션 비활성화
-        if st.session_state.call_sim_stage == "WAITING_CALL":
-            st.info(L.get("waiting_call", "통화 수신 대기 중..."))
-
-        elif st.session_state.call_sim_stage == "CALL_ENDED":
-            st.info(L.get("call_ended", "통화 종료"))
-
-        else:
-            # ⭐ 비디오 파일 업로드 옵션 추가 (로컬 경로 지원)
-            # 항상 펼쳐진 상태로 표시하여 비디오를 쉽게 확인할 수 있도록 함
-            with st.expander(L["video_upload_expander"], expanded=True):
-                # 비디오 동기화 활성화 여부
-                st.session_state.is_video_sync_enabled = st.checkbox(
-                    L["video_sync_enable"],
-                    value=st.session_state.is_video_sync_enabled,
-                    key="video_sync_checkbox"
-                )
-                
-                # OpenAI/Gemini 기반 영상 RAG 설명
-                st.markdown("---")
-                st.markdown(f"**{L['video_rag_title']}**")
-                st.success(L["video_rag_desc"])
-                
-                # 가상 휴먼 기술은 현재 비활성화 (OpenAI/Gemini 기반 영상 RAG 사용)
-                st.session_state.virtual_human_enabled = False
-                
-                # 성별 및 감정 상태별 비디오 업로드
-                st.markdown(f"**{L['video_gender_emotion_setting']}**")
-                col_gender_video, col_emotion_video = st.columns(2)
-                
-                with col_gender_video:
-                    video_gender = st.radio(L["video_gender_label"], [L["video_gender_male"], L["video_gender_female"]], key="video_gender_select", horizontal=True)
-                    gender_key = "male" if video_gender == L["video_gender_male"] else "female"
-                
-                with col_emotion_video:
-                    video_emotion = st.selectbox(
-                        L["video_emotion_label"],
-                        ["NEUTRAL", "HAPPY", "ANGRY", "ASKING", "SAD"],
-                        key="video_emotion_select"
-                    )
-                    emotion_key = video_emotion.lower()
-                
-                # 해당 조합의 비디오 업로드
-                video_key = f"video_{gender_key}_{emotion_key}"
-                uploaded_video = st.file_uploader(
-                    L["video_upload_label"].format(gender=video_gender, emotion=video_emotion),
-                    type=["mp4", "webm", "ogg"],
-                    key=f"customer_video_uploader_{gender_key}_{emotion_key}"
-                )
-                
-                # ⭐ Gemini 제안: 바이트 데이터를 세션 상태에 직접 저장 (파일 저장은 옵션)
-                upload_key = f"last_uploaded_video_{gender_key}_{emotion_key}"
-                video_bytes_key = f"video_bytes_{gender_key}_{emotion_key}"  # 바이트 데이터 저장 키
-                
-                if uploaded_video is not None:
-                    # 파일이 새로 업로드되었는지 확인 (파일명으로 비교)
-                    current_upload_name = uploaded_video.name if hasattr(uploaded_video, 'name') else None
-                    last_upload_info = st.session_state.get(upload_key, None)
-                    # 딕셔너리인 경우 'name' 키에서 파일명 가져오기
-                    if isinstance(last_upload_info, dict):
-                        last_upload_name = last_upload_info.get('name', None)
-                    else:
-                        last_upload_name = last_upload_info
-                    
-                    # 새 파일이거나 이전과 다른 파일인 경우에만 저장
-                    if current_upload_name != last_upload_name:
-                        try:
-                            video_bytes = uploaded_video.read()
-                            current_upload_size = len(video_bytes)
-                            
-                            if not video_bytes or len(video_bytes) == 0:
-                                st.error(L["video_empty_error"])
-                            else:
-                                # 파일명 및 확장자 결정
-                                uploaded_filename = uploaded_video.name if hasattr(uploaded_video, 'name') else f"{gender_key}_{emotion_key}.mp4"
-                                file_ext = os.path.splitext(uploaded_filename)[1].lower() if uploaded_filename else ".mp4"
-                                if file_ext not in ['.mp4', '.webm', '.ogg', '.mpeg4']:
-                                    file_ext = ".mp4"
-                                
-                                # MIME 타입 결정
-                                mime_type = uploaded_video.type if hasattr(uploaded_video, 'type') else f"video/{file_ext.lstrip('.')}"
-                                if not mime_type or mime_type == "application/octet-stream":
-                                    mime_type = f"video/{file_ext.lstrip('.')}"
-                                
-                                # ⭐ 1차 해결책: 바이트 데이터를 세션 상태에 직접 저장 (가장 안정적)
-                                st.session_state[video_bytes_key] = video_bytes
-                                st.session_state[video_key] = video_bytes_key  # 경로 대신 바이트 키 저장
-                                st.session_state[upload_key] = {
-                                    'name': current_upload_name,
-                                    'size': current_upload_size,
-                                    'mime': mime_type,
-                                    'ext': file_ext
-                                }
-                                
-                                file_size_mb = current_upload_size / (1024 * 1024)
-                                st.success(L["video_bytes_saved"].format(name=current_upload_name, size=f"{file_size_mb:.2f}"))
-                                
-                                # ⭐ 즉시 미리보기 (바이트 데이터 직접 사용)
-                                try:
-                                    st.video(video_bytes, format=mime_type, autoplay=False, loop=False, muted=False)
-                                except Exception as video_error:
-                                    st.warning(f"⚠️ {L.get('video_preview_error', '비디오 미리보기 오류')}: {video_error}")
-                                    # MIME 타입을 기본값으로 재시도
-                                    try:
-                                        st.video(video_bytes, format=f"video/{file_ext.lstrip('.')}", autoplay=False, loop=False, muted=False)
-                                    except:
-                                        st.error(L["video_playback_error"])
-                                
-                                # ⭐ 옵션: 파일 저장도 시도 (백업용, 실패해도 바이트는 이미 저장됨)
-                                try:
-                                    video_dir = os.path.join(DATA_DIR, "videos")
-                                    os.makedirs(video_dir, exist_ok=True)
-                                    video_filename = f"{gender_key}_{emotion_key}{file_ext}"
-                                    video_path = os.path.join(video_dir, video_filename)
-                                    
-                                    # 파일 저장 시도 (권한 문제가 있어도 바이트는 이미 저장됨)
-                                    try:
-                                        with open(video_path, "wb") as f:
-                                            f.write(video_bytes)
-                                            f.flush()
-                                        st.info(f"📂 파일도 저장됨: {video_path}")
-                                    except Exception as save_error:
-                                        st.info(f"💡 파일 저장은 건너뛰었습니다 (바이트 데이터는 메모리에 저장됨): {save_error}")
-                                except:
-                                    pass  # 파일 저장 실패해도 바이트는 이미 저장됨
-                                
-                        except Exception as e:
-                            st.error(L["video_upload_error"].format(error=str(e)))
-                            import traceback
-                            st.code(traceback.format_exc())
-                
-                # 업로드된 비디오가 있으면 현재 선택된 조합의 비디오 표시
-                st.markdown("---")
-                st.markdown(f"**{L['video_current_selection'].format(gender=video_gender, emotion=video_emotion)}**")
-                
-                # ⭐ Gemini 제안: 세션 상태에서 바이트 데이터 직접 조회
-                video_bytes_key = f"video_bytes_{gender_key}_{emotion_key}"
-                current_video_bytes = st.session_state.get(video_bytes_key, None)
-                
-                if current_video_bytes:
-                    # 바이트 데이터가 있으면 직접 사용 (가장 안정적)
-                    upload_info = st.session_state.get(upload_key, {})
-                    mime_type = upload_info.get('mime', 'video/mp4')
-                    file_ext = upload_info.get('ext', '.mp4')
-                    
-                    st.success(f"✅ 비디오 바이트 데이터 발견: {upload_info.get('name', '업로드된 비디오')}")
-                    try:
-                        st.video(current_video_bytes, format=mime_type, autoplay=False, loop=False, muted=False)
-                        st.caption(L["video_auto_play_info"].format(gender=video_gender, emotion=video_emotion))
-                    except Exception as e:
-                        st.warning(f"비디오 재생 오류: {e}")
-                        # MIME 타입을 기본값으로 재시도
-                        try:
-                            st.video(current_video_bytes, format=f"video/{file_ext.lstrip('.')}", autoplay=False, loop=False, muted=False)
-                        except:
-                            st.error(L["video_playback_error"])
-                else:
-                    # 바이트 데이터가 없으면 파일 경로로 시도 (하위 호환성)
-                    current_video_path = get_video_path_by_avatar(
-                        gender_key,
-                        video_emotion,
-                        is_speaking=False,
-                        gesture="NONE"
-                    )
-                    
-                    if current_video_path and os.path.exists(current_video_path):
-                        st.success(f"✅ 비디오 파일 발견: {os.path.basename(current_video_path)}")
-                        try:
-                            with open(current_video_path, "rb") as f:
-                                existing_video_bytes = f.read()
-                            st.video(existing_video_bytes, format="video/mp4", autoplay=False, loop=False, muted=False)
-                            st.caption(L["video_auto_play_info"].format(gender=video_gender, emotion=video_emotion))
-                        except Exception as e:
-                            st.warning(f"비디오 재생 오류: {e}")
-                    else:
-                        st.info(L["video_upload_prompt"].format(filename=f"{gender_key}_{emotion_key}.mp4"))
-                    
-                    # 디버깅 정보: 비디오 디렉토리와 파일 목록 표시
-                    video_dir = os.path.join(DATA_DIR, "videos")
-                    st.caption(L["video_save_path"] + f" {video_dir}")
-                    
-                    if os.path.exists(video_dir):
-                        all_videos = [f for f in os.listdir(video_dir) if f.endswith(('.mp4', '.webm', '.ogg'))]
-                        if all_videos:
-                            st.caption(f"{L['video_uploaded_files']} ({len(all_videos)}개):")
-                            for vid in all_videos:
-                                st.caption(f"  - {vid}")
-                            
-                            # 비슷한 비디오 파일이 있는지 확인
-                            similar_videos = [
-                                f for f in all_videos
-                                if f.startswith(f"{gender_key}_") and f.endswith(('.mp4', '.webm', '.ogg'))
-                            ]
-                            if similar_videos:
-                                st.caption(f"📁 {L.get('video_similar_gender', '같은 성별의 다른 비디오')}: {', '.join(similar_videos[:3])}")
-                                st.caption(L.get("video_rename_hint", "💡 위 비디오 중 하나를 사용하려면 파일명을 변경하거나 새로 업로드하세요."))
-                        else:
-                            st.caption(L["video_directory_empty"])
-                    else:
-                        st.caption(L["video_directory_not_exist"].format(path=video_dir))
-                
-                # 또는 로컬 파일 경로 입력 및 복사
-                video_path_input = st.text_input(
-                    L["video_local_path_input"],
-                    placeholder=L["video_local_path_placeholder"],
-                    key="video_path_input"
-                )
-                
-                if video_path_input:
-                    try:
-                        # ⭐ Gemini 제안: 절대 경로 검증 강화
-                        if not os.path.isabs(video_path_input):
-                            st.error("❌ 로컬 경로 입력 시 반드시 **절대 경로**를 사용해주세요 (예: C:\\Users\\...\\video.mp4).")
-                            st.error("💡 Streamlit 앱이 실행되는 서버 환경과 파일 시스템이 다르면 접근할 수 없습니다.")
-                            st.stop()
-                        
-                        source_video_path = video_path_input
-                        
-                        if not os.path.exists(source_video_path):
-                            st.error(f"❌ 파일을 찾을 수 없습니다: {source_video_path}")
-                            st.error("💡 파일 경로를 확인하고, Streamlit 앱이 실행되는 서버에서 접근 가능한 경로인지 확인해주세요.")
-                            st.stop()
-                        
-                        # 원본 파일 읽기
-                        with open(source_video_path, "rb") as f:
-                            video_bytes = f.read()
-                        
-                        if len(video_bytes) == 0:
-                            st.error("❌ 파일이 비어있습니다.")
-                            st.stop()
-                        
-                        # 파일명 및 확장자 결정
-                        source_filename = os.path.basename(source_video_path)
-                        file_ext = os.path.splitext(source_filename)[1].lower()
-                        if file_ext not in ['.mp4', '.webm', '.ogg', '.mpeg4']:
-                            file_ext = ".mp4"
-                        
-                        mime_type = f"video/{file_ext.lstrip('.')}"
-                        
-                        # ⭐ 바이트 데이터를 세션 상태에 직접 저장 (파일 복사는 옵션)
-                        video_bytes_key = f"video_bytes_{gender_key}_{emotion_key}"
-                        st.session_state[video_bytes_key] = video_bytes
-                        st.session_state[video_key] = video_bytes_key
-                        st.session_state[upload_key] = {
-                            'name': source_filename,
-                            'size': len(video_bytes),
-                            'mime': mime_type,
-                            'ext': file_ext
-                        }
-                        
-                        file_size_mb = len(video_bytes) / (1024 * 1024)
-                        st.success(f"✅ 비디오 바이트 로드 완료: {source_filename} ({file_size_mb:.2f} MB)")
-                        
-                        # 비디오 미리보기 (바이트 데이터 직접 사용)
-                        try:
-                            st.video(video_bytes, format=mime_type, autoplay=False, loop=False, muted=False)
-                        except Exception as video_error:
-                            st.warning(f"⚠️ 비디오 미리보기 오류: {video_error}")
-                        
-                        # ⭐ 옵션: 파일 복사도 시도 (백업용)
-                        try:
-                            video_dir = os.path.join(DATA_DIR, "videos")
-                            os.makedirs(video_dir, exist_ok=True)
-                            video_filename = f"{gender_key}_{emotion_key}{file_ext}"
-                            target_video_path = os.path.join(video_dir, video_filename)
-                            
-                            with open(target_video_path, "wb") as f:
-                                f.write(video_bytes)
-                                f.flush()
-                            st.info(f"📂 파일도 복사됨: {target_video_path}")
-                        except Exception as copy_error:
-                            st.info(f"💡 파일 복사는 건너뛰었습니다 (바이트 데이터는 메모리에 저장됨): {copy_error}")
-                        
-                        # 입력 필드 초기화
-                        st.session_state.video_path_input = ""
-                        
-                    except Exception as e:
-                        st.error(f"❌ 비디오 파일 로드 오류: {str(e)}")
-                        import traceback
-                        st.code(traceback.format_exc())
-            
-            # 상태 선택 및 비디오 표시
-            st.markdown("---")
-            st.markdown(f"**{L['video_current_avatar']}**")
-            
-            if st.session_state.is_on_hold:
-                avatar_state = "HOLD"
-            else:
-                avatar_state = st.session_state.customer_avatar.get("state", "NEUTRAL")
-            
-            customer_gender = st.session_state.customer_avatar.get("gender", "male")
-            
-            # get_video_path_by_avatar 함수를 사용하여 비디오 경로 찾기
-            video_path = get_video_path_by_avatar(
-                customer_gender, 
-                avatar_state, 
-                is_speaking=False,  # 미리보기는 자동 재생하지 않음
-                gesture="NONE"
-            )
-            
-            # 비디오 표시
-            if video_path and os.path.exists(video_path):
-                try:
-                    with open(video_path, "rb") as f:
-                        video_bytes = f.read()
-                    
-                    # 비디오 정보 표시
-                    avatar_emoji = {
-                        "NEUTRAL": "😐",
-                        "HAPPY": "😊",
-                        "ANGRY": "😠",
-                        "ASKING": "🤔",
-                        "SAD": "😢",
-                        "HOLD": "⏸️"
-                    }.get(avatar_state, "😐")
-                    
-                    st.markdown(f"### {avatar_emoji} {customer_gender.upper()} - {avatar_state}")
-                    st.caption(f"비디오: {os.path.basename(video_path)}")
-                    
-                    # 현재 말하는 중이면 자동 재생, 아니면 수동 재생
-                    is_speaking = bool(
-                        st.session_state.get("customer_initial_audio_bytes") or 
-                        st.session_state.get("current_customer_audio_text")
-                    )
-                    
-                    autoplay_video = st.session_state.is_video_sync_enabled and is_speaking
-                    st.video(video_bytes, format="video/mp4", autoplay=autoplay_video, loop=False, muted=False)
-                    
-                except Exception as e:
-                    st.warning(f"비디오 재생 오류: {e}")
-                    avatar_emoji = {
-                        "NEUTRAL": "😐",
-                        "HAPPY": "😊",
-                        "ANGRY": "😠",
-                        "ASKING": "🤔",
-                        "SAD": "😢",
-                        "HOLD": "⏸️"
-                    }.get(avatar_state, "😐")
-                    st.markdown(f"### {avatar_emoji} {L['customer_avatar']}")
-                    st.info(L.get("avatar_status_info", "상태: {state} | 성별: {gender}").format(state=avatar_state, gender=customer_gender))
-            else:
-                # 비디오가 없으면 이모지로 표시
-                avatar_emoji = {
-                    "NEUTRAL": "😐",
-                    "HAPPY": "😊",
-                    "ANGRY": "😠",
-                    "ASKING": "🤔",
-                    "SAD": "😢",
-                    "HOLD": "⏸️"
-                }.get(avatar_state, "😐")
-                
-                st.markdown(f"### {avatar_emoji} 고객 아바타")
-                st.info(L.get("avatar_status_info", "상태: {state} | 성별: {gender}").format(state=avatar_state, gender=customer_gender))
-                st.warning(L["video_avatar_upload_prompt"].format(filename=f"{customer_gender}_{avatar_state.lower()}.mp4"))
-                
-                # 업로드된 비디오 목록 표시
-                video_dir = os.path.join(DATA_DIR, "videos")
-                if os.path.exists(video_dir):
-                    uploaded_videos = [f for f in os.listdir(video_dir) if f.endswith(('.mp4', '.webm', '.ogg'))]
-                    if uploaded_videos:
-                        st.caption(f"{L['video_uploaded_files']}: {', '.join(uploaded_videos[:5])}")
-                        if len(uploaded_videos) > 5:
-                            st.caption(L.get("video_more_files", f"... 외 {len(uploaded_videos) - 5}개").format(count=len(uploaded_videos) - 5))
 
     # ⭐ col_cc는 위에서 이미 처리됨
 
@@ -7478,208 +6185,8 @@ elif feature_selection == L["sim_tab_phone"]:
 
 # -------------------- RAG Tab --------------------
 elif feature_selection == L["rag_tab"]:
-    st.header(L["rag_header"])
-    st.markdown(L["rag_desc"])
-    st.markdown("---")
-
-    # ⭐ 학습 자료 업로드 섹션 - 메인 컴포넌트 상단에 배치
-    st.subheader("📚 학습 자료 업로드")
-    uploaded_files = st.file_uploader(
-        L["file_uploader"],
-        type=["pdf", "txt", "html"],
-        key="rag_file_uploader", # RAG 전용 키
-        accept_multiple_files=True,
-        help="RAG에 사용할 학습 자료를 업로드하세요. PDF, TXT, HTML 파일을 지원합니다."
-    )
-
-    if uploaded_files:
-        if uploaded_files != st.session_state.uploaded_files_state:
-            # 파일이 변경되면 RAG 상태 초기화
-            st.session_state.is_rag_ready = False
-            st.session_state.rag_vectorstore = None
-            st.session_state.uploaded_files_state = uploaded_files
-
-        if not st.session_state.is_rag_ready:
-            if st.button(L["button_start_analysis"]):
-                if not st.session_state.is_llm_ready:
-                    st.error(L["simulation_no_key_warning"])
-                else:
-                    with st.spinner(L["data_analysis_progress"]):
-                        vectorstore, count = build_rag_index(uploaded_files)
-
-                    if vectorstore:
-                        st.session_state.rag_vectorstore = vectorstore
-                        st.session_state.is_rag_ready = True
-                        st.success(L["embed_success"].format(count=count))
-                        st.session_state.rag_messages = [
-                            {"role": "assistant", "content": f"✅ {len(uploaded_files)}개 파일 분석 완료. 질문해 주세요."}
-                        ]
-                    else:
-                        st.error(L["embed_fail"])
-                        st.session_state.is_rag_ready = False
-    else:
-        st.info(L["warning_no_files"])
-        st.session_state.is_rag_ready = False
-        st.session_state.rag_vectorstore = None
-        st.session_state.rag_messages = []
-
-    st.markdown("---")
-
-    # ⭐ RAG 데이터 학습 기능 추가 - AI 고객 응대 시뮬레이터 데이터를 일일 파일로 학습
-    st.subheader("📚 고객 가이드 자동 생성 및 관리 (일일 학습)")
-    
-    # 오늘 날짜의 가이드 파일 확인
-    today_str = datetime.now().strftime("%y%m%d")
-    guide_filename = f"{today_str}_고객가이드.TXT"
-    guide_filepath = os.path.join(DATA_DIR, guide_filename)
-    
-    # 기존 가이드 파일 표시
-    if os.path.exists(guide_filepath):
-        st.info(f"✅ 오늘의 고객 가이드가 이미 생성되어 있습니다: {guide_filename}")
-        with st.expander("📄 생성된 가이드 미리보기"):
-            try:
-                with open(guide_filepath, "r", encoding="utf-8") as f:
-                    guide_preview = f.read()
-                st.text_area("가이드 내용", guide_preview[:2000] + "..." if len(guide_preview) > 2000 else guide_preview, height=300, disabled=True)
-            except Exception as e:
-                st.error(f"가이드 파일 읽기 오류: {e}")
-    else:
-        st.info("💡 고객 응대 시뮬레이션을 실행하면 자동으로 가이드가 생성됩니다.")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button(L.get("button_generate_daily_guide", "🔄 오늘 날짜 고객 가이드 수동 생성/업데이트"), key="generate_daily_guide", use_container_width=True):
-            # 최근 이력 로드
-            all_histories = load_simulation_histories_local(st.session_state.language)
-            
-            if all_histories:
-                if st.session_state.is_llm_ready:
-                    # simulation_handler의 함수 사용 (이미 import됨)
-                    with st.spinner(L.get("generating_customer_guide", "고객 가이드 생성 중...")):
-                        guide_content = generate_daily_customer_guide(all_histories, st.session_state.language)
-                        
-                        if guide_content:
-                            saved_path = save_daily_customer_guide(guide_content, st.session_state.language)
-                            
-                            if saved_path:
-                                st.success(L.get("guide_generated", "✅ 고객 가이드가 생성/업데이트되었습니다: {filename}").format(filename=guide_filename))
-                                st.info(L.get("guide_file_location", "파일 위치: {path}").format(path=saved_path))
-                                # ⭐ 재실행 불필요: 성공 메시지가 이미 표시됨
-                                # st.rerun()
-                            else:
-                                st.error(L.get("guide_save_failed", "가이드 저장에 실패했습니다."))
-                        else:
-                            st.warning(L.get("guide_generation_failed", "가이드 생성에 실패했습니다. LLM API Key를 확인해주세요."))
-                else:
-                    st.error(L.get("llm_not_ready", "LLM이 준비되지 않았습니다. API Key를 설정해주세요."))
-            else:
-                st.warning(L.get("no_history_for_analysis", "분석할 이력이 없습니다. 먼저 고객 응대 시뮬레이션을 실행하세요."))
-    
-    with col2:
-        # 생성된 가이드를 RAG에 자동 추가하는 기능
-        if os.path.exists(guide_filepath):
-            if st.button(L.get("button_add_guide_to_rag", "📚 생성된 가이드를 RAG 인덱스에 추가"), key="add_guide_to_rag", use_container_width=True):
-                if not st.session_state.is_llm_ready:
-                    st.error(L.get("llm_not_ready", "LLM이 준비되지 않았습니다. API Key를 설정해주세요."))
-                else:
-                    try:
-                        # 가이드 파일을 RAG 인덱스에 추가
-                        from rag_handler import build_rag_index, get_embedding_function, load_documents, split_documents
-                        from langchain_core.documents import Document
-                        from langchain_community.vectorstores import FAISS
-                        
-                        with st.spinner("RAG 인덱스 업데이트 중..."):
-                            # 가이드 파일 읽기
-                            with open(guide_filepath, "r", encoding="utf-8") as f:
-                                guide_text = f.read()
-                            
-                            # 문서 생성
-                            new_doc = Document(
-                                page_content=guide_text,
-                                metadata={"source": guide_filepath, "type": "customer_guide", "date": today_str}
-                            )
-                            
-                            # 기존 RAG 인덱스가 있으면 로드하여 병합
-                            if st.session_state.rag_vectorstore:
-                                # 임베딩 함수 가져오기
-                                embedding_func = get_embedding_function()
-                                
-                                if embedding_func:
-                                    # 문서를 청크로 분할
-                                    from rag_handler import split_documents
-                                    chunks = split_documents([new_doc])
-                                    
-                                    # 기존 벡터스토어에 추가
-                                    st.session_state.rag_vectorstore.add_documents(chunks)
-                                    
-                                    # 인덱스 저장
-                                    st.session_state.rag_vectorstore.save_local(RAG_INDEX_DIR)
-                                    
-                                    st.success(f"✅ 고객 가이드가 RAG 인덱스에 추가되었습니다! (추가된 청크 수: {len(chunks)})")
-                                else:
-                                    st.error("임베딩 함수를 초기화할 수 없습니다.")
-                            else:
-                                # 새 인덱스 생성 (가이드 파일을 파일 객체로 변환)
-                                # build_rag_index는 파일 객체 리스트를 받으므로, 파일을 읽어서 객체 생성
-                                import tempfile
-                                
-                                # ⭐ 수정: 파일 경로를 직접 전달하도록 변경 (파일 객체 대신)
-                                # load_documents 함수가 파일 경로도 처리할 수 있도록 수정됨
-                                try:
-                                    vectorstore, count = build_rag_index([guide_filepath])
-                                    
-                                    if vectorstore:
-                                        st.session_state.rag_vectorstore = vectorstore
-                                        st.session_state.is_rag_ready = True
-                                        st.success(f"✅ RAG 인덱스가 생성되었습니다. (문서 수: {count})")
-                                    else:
-                                        st.error("RAG 인덱스 생성에 실패했습니다.")
-                                except Exception as e:
-                                    st.error(f"RAG 인덱스 생성 중 오류: {e}")
-                                    import traceback
-                                    st.code(traceback.format_exc())
-                                
-                    except Exception as e:
-                        st.error(f"RAG 인덱스 업데이트 중 오류 발생: {e}")
-                        import traceback
-                        st.code(traceback.format_exc())
-        else:
-            st.info("먼저 고객 가이드를 생성해주세요.")
-    
-    st.markdown("---")
-
-    # --- 챗봇 섹션 (app.py 스타일로 간소화) ---
-    if st.session_state.is_rag_ready and st.session_state.rag_vectorstore:
-        if "rag_messages" not in st.session_state:
-            st.session_state.rag_messages = [{"role": "assistant", "content": "분석된 자료에 대해 질문해 주세요."}]
-
-        # 메시지 표시 (app.py 스타일)
-        for message in st.session_state.rag_messages:
-            with st.chat_message(message["role"]):
-                st.write(message["content"])
-
-        # 입력 (app.py 스타일: st.chat_input 사용)
-        if prompt := st.chat_input(L.get("rag_input_placeholder", "질문을 입력하세요...")):
-            # 사용자 메시지 추가 및 표시
-            st.session_state.rag_messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.write(prompt)
-
-            # AI 응답 생성 및 표시
-            with st.chat_message("assistant"):
-                with st.spinner(L.get("response_generating", "답변 생성 중...")):
-                    response = rag_answer(
-                        prompt,
-                        st.session_state.rag_vectorstore,
-                        st.session_state.language
-                    )
-                    st.write(response)
-
-            # 응답을 메시지에 추가
-            st.session_state.rag_messages.append({"role": "assistant", "content": response})
-    else:
-        st.warning(L.get("warning_rag_not_ready", "RAG가 준비되지 않았습니다. 파일을 업로드하고 분석을 시작하세요."))
+    from pages.rag_page import render_rag_page
+    render_rag_page()
 
 # -------------------- Content Tab --------------------
 elif feature_selection == L["content_tab"]:
