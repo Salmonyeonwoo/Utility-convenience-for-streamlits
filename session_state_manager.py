@@ -4,7 +4,29 @@
 # ========================================
 
 import streamlit as st
-from langchain.memory import ConversationBufferMemory
+
+# LangChain Memory import with fallback support
+try:
+    try:
+        from langchain.memory import ConversationBufferMemory
+    except ImportError:
+        try:
+            from langchain_classic.memory import ConversationBufferMemory
+        except ImportError:
+            from langchain_core.memory import ConversationBufferMemory
+except ImportError:
+    # Fallback: Create a simple mock class if langchain is not available
+    class ConversationBufferMemory:
+        def __init__(self, **kwargs):
+            self.memory_key = kwargs.get("memory_key", "chat_history")
+            self.chat_memory = type('obj', (object,), {'messages': []})()
+        
+        def save_context(self, inputs, outputs):
+            pass
+        
+        def load_memory_variables(self, inputs):
+            return {self.memory_key: []}
+
 from customer_data_manager import CustomerDataManager
 from lang_pack import LANG, DEFAULT_LANG
 
