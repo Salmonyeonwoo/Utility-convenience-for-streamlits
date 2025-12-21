@@ -551,8 +551,12 @@ os.makedirs(VIDEO_DIR, exist_ok=True)
 # 1-1. Session State 초기화 (전화 발신 관련 상태 추가)
 # ========================================
 # ⭐ 세션 상태 초기화는 session_state_manager 모듈로 이동
-from session_state_manager import initialize_session_state
-initialize_session_state()
+try:
+    from session_state_manager import initialize_session_state
+    initialize_session_state()
+except ImportError as e:
+    st.error(f"❌ session_state_manager 모듈을 찾을 수 없습니다. 파일이 GitHub에 포함되었는지 확인해주세요. 오류: {e}")
+    st.stop()
 
 # 세션 상태 초기화는 session_state_manager.py에서 처리됨
 # 추가적인 초기화가 필요한 경우에만 아래에 추가
@@ -1140,8 +1144,16 @@ feature_selection = st.session_state.get("feature_selection", L.get("sim_tab_cha
 
 # -------------------- Company Info & FAQ Tab --------------------
 if feature_selection == L["company_info_tab"]:
-    from pages.company_info import render_company_info_tab
-    render_company_info_tab()
+    try:
+        from pages.company_info import render_company_info_tab
+        render_company_info_tab()
+    except ImportError as e:
+        st.error(f"❌ pages.company_info 모듈을 찾을 수 없습니다. pages 디렉토리와 company_info.py 파일이 GitHub에 포함되었는지 확인해주세요. 오류: {e}")
+        st.info("💡 해결 방법: GitHub 저장소에 다음 파일들이 포함되어 있는지 확인하세요:\n- pages/__init__.py\n- pages/company_info.py")
+    except Exception as e:
+        st.error(f"❌ 회사 정보 FAQ 탭을 로드하는 중 오류가 발생했습니다: {e}")
+        import traceback
+        st.code(traceback.format_exc())
 
 # ========================================
 # 채팅/메일 시뮬레이터 탭 처리
@@ -6185,8 +6197,16 @@ elif feature_selection == L["sim_tab_phone"]:
 
 # -------------------- RAG Tab --------------------
 elif feature_selection == L["rag_tab"]:
-    from pages.rag_page import render_rag_page
-    render_rag_page()
+    try:
+        from pages.rag_page import render_rag_page
+        render_rag_page()
+    except ImportError as e:
+        st.error(f"❌ pages.rag_page 모듈을 찾을 수 없습니다. pages 디렉토리와 rag_page.py 파일이 GitHub에 포함되었는지 확인해주세요. 오류: {e}")
+        st.info("💡 해결 방법: GitHub 저장소에 다음 파일들이 포함되어 있는지 확인하세요:\n- pages/__init__.py\n- pages/rag_page.py")
+    except Exception as e:
+        st.error(f"❌ RAG 페이지를 로드하는 중 오류가 발생했습니다: {e}")
+        import traceback
+        st.code(traceback.format_exc())
 
 # -------------------- Content Tab --------------------
 elif feature_selection == L["content_tab"]:
