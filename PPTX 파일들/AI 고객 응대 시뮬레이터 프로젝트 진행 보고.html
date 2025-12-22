@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 고객 응대 시뮬레이터 프로젝트 보고서</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&family=Urbanist:wght@600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --secondary: #6366f1;
+            --accent: #10b981;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; }
+        body { 
+            margin: 0; padding: 0; background-color: #020617; 
+            color: var(--light); font-family: 'Pretendard', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .slide-container {
+            width: 1280px; height: 720px;
+            background-color: var(--dark);
+            position: relative; overflow: hidden;
+            display: flex; flex-direction: column;
+            padding: 50px 70px;
+            margin: 20px auto;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Background Visuals */
+        .bg-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover; background-position: center;
+            opacity: 0.15; z-index: 0; pointer-events: none;
+        }
+        .slide-container > * { position: relative; z-index: 1; }
+
+        /* Typography */
+        h1 { font-family: 'Urbanist', sans-serif; font-size: 64px; font-weight: 800; margin: 0; line-height: 1.1; letter-spacing: -2px; }
+        h1 span { color: var(--primary); }
+        .slide-title { font-size: 42px; font-weight: 800; margin-bottom: 35px; color: var(--light); display: flex; align-items: center; gap: 15px; }
+        .slide-title::after { content: ''; flex-grow: 1; height: 1px; background: linear-gradient(90deg, var(--primary), transparent); margin-left: 20px; }
+        
+        p, li { font-size: 19px; color: #94a3b8; line-height: 1.6; margin-bottom: 10px; }
+        strong { color: var(--light); font-weight: 600; }
+
+        /* Layout Helpers */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
+        .flex-grow { flex-grow: 1; }
+
+        /* Components from K-Food Style */
+        .card { 
+            background: var(--card-bg); border: 1px solid var(--border); 
+            border-radius: 20px; padding: 30px; backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        .card:hover { border-color: var(--primary); transform: translateY(-5px); }
+        .card-header { font-size: 22px; font-weight: 700; color: var(--primary); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        
+        .badge { 
+            display: inline-block; padding: 5px 15px; border-radius: 30px; 
+            font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+        .badge-primary { background: rgba(14, 165, 233, 0.2); color: var(--primary); border: 1px solid var(--primary); }
+        .badge-accent { background: rgba(16, 185, 129, 0.2); color: var(--accent); border: 1px solid var(--accent); }
+
+        .timeline { display: flex; justify-content: space-between; position: relative; margin-top: 50px; }
+        .timeline::before { content: ''; position: absolute; top: 15px; left: 0; width: 100%; height: 2px; background: var(--border); z-index: 0; }
+        .timeline-node { width: 30px; height: 30px; background: var(--dark); border: 4px solid var(--primary); border-radius: 50%; z-index: 1; }
+        .timeline-content { margin-top: 20px; text-align: center; width: 200px; }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+        th { text-align: left; padding: 15px; color: var(--primary); font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
+        td { padding: 20px; background: var(--card-bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        td:first-child { border-left: 1px solid var(--border); border-radius: 15px 0 0 15px; font-weight: 700; color: var(--light); }
+        td:last-child { border-right: 1px solid var(--border); border-radius: 0 15px 15px 0; }
+
+        .image-box { border-radius: 20px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        .image-box img { width: 100%; height: 100%; object-fit: cover; }
+
+        .stat-circle { width: 100px; height: 100px; border-radius: 50%; border: 4px solid var(--primary); display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Urbanist'; }
+        .stat-value { font-size: 28px; font-weight: 800; color: var(--light); }
+        .stat-label { font-size: 12px; color: var(--primary); }
+
+        /* Icon Styles */
+        .icon-box { width: 50px; height: 50px; background: var(--primary); border-radius: 12px; display: grid; place-items: center; color: var(--dark); font-size: 20px; }
+    </style>
+</head>
+<body>
+
+<!-- Slide 1: Cover -->
+<div class="slide-container">
+    <div class="bg-overlay" style="background-image: url(''); opacity: 0.2;"></div>
+    <div class="flex-grow" style="display: flex; flex-direction: column; justify-content: center; align-items: flex-start;">
+        <div class="badge badge-primary">K-Digital Training Project</div>
+        <h1>AI Customer Service<br><span>Simulator Project</span></h1>
+        <div style="width: 100px; height: 4px; background: var(--primary); margin: 30px 0;"></div>
+        <p style="font-size: 24px; color: var(--light);">OpenAI & Gemini API 기반 지능형 CS 훈련 플랫폼 개발 보고</p>
+        <p style="margin-top: 40px; font-weight: 600;">발표자: Salmonyeonwoo | 2024.12.18</p>
+    </div>
+</div>
+
+<!-- Slide 2: RAG & Chat System -->
+<div class="slide-container">
+    <h2 class="slide-title">지능형 RAG 및 멀티채널 채팅 시스템</h2>
+    <div class="grid-2 flex-grow">
+        <div class="card">
+            <div class="card-header"><i class="fa-solid fa-brain"></i> RAG 지식 챗봇 활성화</div>
+            <p><strong>주요 고도화 사항:</strong></p>
+            <ul>
+                <li>단순 대화를 넘어 지식 베이스(Knowledge Base) 기반 답변</li>
+                <li>Gemini & Cursor AI를 활용한 로직 5회 이상의 리팩토링</li>
+                <li>정보 요청, 솔루션 제공 등 LLM 기능 범위 정교화</li>
+            </ul>
+            <div class="highlight-box" style="margin-top: 20px; color: var(--primary);">
+                <i class="fa-solid fa-check-circle"></i> 이메일 및 채팅 Formations 통합 연동 완료
+            </div>
+        </div>
+        <div class="image-box">
+            <img src="" alt="AI Chat System">
+        </div>
+    </div>
+</div>
+
+<!-- Slide 3: Infrastructure Transition -->
+<div class="slide-container">
+    <h2 class="slide-title">인프라 전략 및 Priority 변경 (Pivot)</h2>
+    <div class="grid-2 flex-grow">
+        <div class="image-box">
+            <img src="" alt="Infrastructure">
+        </div>
+        <div class="card">
+            <div class="badge badge-primary">11월 2주차 ~ 현재</div>
+            <div class="card-header"><i class="fa-solid fa-server"></i> Firebase 에서 OpenAI/Gemini로</div>
+            <p>초기 Firebase 연동 시 요금제 및 발급 지연 이슈 발생</p>
+            <table style="width: 100%; border-spacing: 0;">
+                <tr>
+                    <td style="background: rgba(244, 63, 94, 0.1); border: 1px solid #f43f5e; color: #f43f5e; padding: 10px;">Firebase</td>
+                    <td style="padding: 10px;">요금제 제한 및 지연</td>
+                </tr>
+                <tr>
+                    <td style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent); color: var(--accent); padding: 10px;">OpenAI</td>
+                    <td style="padding: 10px;">Secret TOML/ENV 통합 연동</td>
+                </tr>
+                <tr>
+                    <td style="background: rgba(14, 165, 233, 0.1); border: 1px solid var(--primary); color: var(--primary); padding: 10px;">Gemini</td>
+                    <td style="padding: 10px;">토큰 만료 대비 하이브리드 운영</td>
+                </tr>
+            </table>
+            <p style="font-size: 15px; margin-top: 15px;">* NVIDIA 교육 수료 및 토큰 지원 종료를 대비한 구글 AI 스튜디오 연동 완료</p>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 4: Response & Translation -->
+<div class="slide-container">
+    <h2 class="slide-title">글로벌 응대 및 프로필 분석 로직</h2>
+    <div class="grid-3 flex-grow">
+        <div class="card">
+            <div class="icon-box"><i class="fa-solid fa-language"></i></div>
+            <h3 style="margin: 15px 0 10px;">다국어 이관</h3>
+            <p style="font-size: 15px;">영어, 일본어 언어 설정 및 팀 이관/번역 기능 도입. AI 응대 조언 기능 내 이메일 포맷 통합.</p>
+        </div>
+        <div class="card">
+            <div class="icon-box"><i class="fa-solid fa-user-gear"></i></div>
+            <h3 style="margin: 15px 0 10px;">프로필 분석</h3>
+            <p style="font-size: 15px;">고객 페르소나 분석을 통한 맞춤형 응대 시작. 문의 내용에 따른 LLM 페르소나 자동 최적화.</p>
+        </div>
+        <div class="card" style="border-color: var(--accent);">
+            <div class="icon-box" style="background: var(--accent);"><i class="fa-solid fa-envelope-open-text"></i></div>
+            <h3 style="margin: 15px 0 10px;">통합 답변 시스템</h3>
+            <p style="font-size: 15px;">채팅과 메일 형식을 별도 운영하지 않고 하나의 AI 엔진으로 통합하여 일관성 확보.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 5: Branching Logic (Survey vs Re-ask) -->
+<div class="slide-container">
+    <h2 class="slide-title">응대 시나리오 분기 및 종료 로직</h2>
+    <div class="content-area">
+        <div style="text-align: center; margin-bottom: 40px;">
+            <p style="color: var(--light); font-size: 22px;">고객 피드백: "알겠습니다. 감사합니다" 인식 시</p>
+        </div>
+        <div class="grid-2">
+            <div class="card" style="border-left: 8px solid var(--accent);">
+                <div class="badge badge-accent">Case A: 종료 결정</div>
+                <h3>추가 문의 없음</h3>
+                <p>설문 조사 링크 자동 전송 및 '응대 종료' 버튼 활성화. (11월 4주차 시스템 적용)</p>
+            </div>
+            <div class="card" style="border-left: 8px solid #f59e0b;">
+                <div class="badge" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid #f59e0b;">Case B: 지속 대화</div>
+                <h3>추가 문의 발생</h3>
+                <p>이전 문맥(Context)을 유지한 상태로 즉시 재응대 로직 가동 및 솔루션 재탐색.</p>
+            </div>
+        </div>
+        <div class="image-box" style="margin-top: 30px; height: 180px;">
+            <img src="" style="opacity: 0.6;">
+        </div>
+    </div>
+</div>
+
+<!-- Slide 6: Voice & Phone (Riva Integration) -->
+<div class="slide-container">
+    <h2 class="slide-title">전화 기능(Riva/TTS) 도입 및 모듈화</h2>
+    <div class="grid-2 flex-grow">
+        <div class="card">
+            <div class="badge badge-primary">11월 4주차 ~ 12월 2주차</div>
+            <div class="card-header"><i class="fa-solid fa-phone-volume"></i> Riva & TTS 실시간 연동</div>
+            <p><strong>개발 전용 모듈 분리:</strong></p>
+            <ul>
+                <li><strong>call_handler.py:</strong> 비동기 통화 처리 로직 전문화</li>
+                <li><strong>audio_handler.py:</strong> 실시간 스트리밍 및 버퍼 관리</li>
+            </ul>
+            <p>UI Customizing 전용 시험 파일(app.py)을 별도로 생성하여 레이아웃 고도화 및 리뉴얼 진행 중.</p>
+        </div>
+        <div class="image-box">
+            <img src="" alt="Voice System">
+        </div>
+    </div>
+</div>
+
+<!-- Slide 7: Pivot Strategy (Virtual Human) -->
+<div class="slide-container">
+    <h2 class="slide-title">위기 관리: 가상 휴먼 API 지원 보류 및 대안</h2>
+    <div class="grid-2 flex-grow">
+        <div class="card" style="border-top: 5px solid #f43f5e;">
+            <div class="badge" style="background: rgba(244, 63, 94, 0.2); color: #f43f5e;">Issue / Support Status</div>
+            <h3 style="color: #f43f5e;">가상 휴먼 API 지원 불가</h3>
+            <p>담당자 협의 결과, 예산 문제로 인한 가상 휴먼 API 지원이 불가함(보류 결정).</p>
+        </div>
+        <div class="card" style="border-top: 5px solid var(--accent);">
+            <div class="badge badge-accent">Alternative Strategy</div>
+            <h3 style="color: var(--accent);">에이전트 실시간 카메라 도입</h3>
+            <p>가상 휴먼 대신 상담원(Agent)의 실제 카메라 기능을 활성화하여 신뢰도와 현장감 강화.</p>
+        </div>
+    </div>
+    <div class="highlight-box" style="text-align: center;">
+        "기능적 제약을 새로운 서비스 가치(신뢰 기반 응대)로 전환 완료"
+    </div>
+</div>
+
+<!-- Slide 8: Dataset & Models -->
+<div class="slide-container">
+    <h2 class="slide-title">데이터셋 및 모델 선정 상세</h2>
+    <div class="content-area">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 250px;">구분</th>
+                    <th>내용</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>데이터셋 확보</td>
+                    <td>Klook, Disney, 글로벌 CS 오픈 로그 기반 가공 및 자체 텍스트 시뮬레이션 데이터 수집</td>
+                </tr>
+                <tr>
+                    <td>모델 선정</td>
+                    <td><strong>OpenAI GPT-4o</strong> (Main) / <strong>Gemini 1.5 Pro</strong> (Sub) / <strong>Whisper</strong> (STT)</td>
+                </tr>
+                <tr>
+                    <td>관련 기술 문서</td>
+                    <td>RAG Documentation, Riva Developer Guide, Streamlit State Management Research</td>
+                </tr>
+                <tr>
+                    <td>기타 지원 사항</td>
+                    <td>NVIDIA 결제 지원 만료 대비 Google AI Studio 연동 프로토콜 구축 완료</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Slide 9: Performance Metrics -->
+<div class="slide-container">
+    <h2 class="slide-title">모델 성능 지표 및 현황</h2>
+    <div class="grid-2 flex-grow">
+        <div class="card" style="display: flex; flex-direction: column; justify-content: center; gap: 30px;">
+            <div style="display: flex; gap: 30px; justify-content: center;">
+                <div class="stat-circle"><span class="stat-value">92%</span><span class="stat-label">Response Acc.</span></div>
+                <div class="stat-circle" style="border-color: var(--secondary);"><span class="stat-value">95%</span><span class="stat-label">Trans. Acc.</span></div>
+                <div class="stat-circle" style="border-color: var(--accent);"><span class="stat-value">0.4s</span><span class="stat-label">Latency</span></div>
+            </div>
+            <p style="text-align: center;">* Confusion Matrix 분석 결과 오응답률 5% 미만 유지 및 다국어 팩 안정적 가동</p>
+        </div>
+        <div class="card">
+            <div class="card-header"><i class="fa-brands fa-github"></i> Repository & Live</div>
+            <div style="margin-top: 20px;">
+                <p><strong>Github:</strong> <a href="https://github.com/Salmonyeonwoo/Utility-convenience-for-streamlits" style="color: var(--primary); font-size: 16px;">Salmonyeonwoo/Utility-convenience...</a></p>
+                <p><strong>Streamlit:</strong> <a href="https://utility-convenience-salmonyeonwoo.streamlit.app" style="color: var(--primary); font-size: 16px;">utility-convenience-salmonyeonwoo.streamlit...</a></p>
+            </div>
+            <div class="image-box" style="height: 120px; margin-top: 20px;">
+                <img src="" style="opacity: 0.5;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 10: Roadmap -->
+<div class="slide-container">
+    <h2 class="slide-title">최종 점검 및 프레젠테이션 로드맵</h2>
+    <div class="content-area">
+        <div class="timeline">
+            <div class="timeline-node"></div>
+            <div class="timeline-node" style="background: var(--primary);"></div>
+            <div class="timeline-node" style="border-color: var(--accent);"></div>
+            <div class="timeline-node" style="border-color: #f59e0b;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <div class="timeline-content">
+                <strong>12월 2주</strong>
+                <p style="font-size: 14px;">오디오 핸들러 및 Riva 모듈 분리 완성</p>
+            </div>
+            <div class="timeline-content">
+                <strong>12월 4주</strong>
+                <p style="font-size: 14px;">최종 점검 및 프레젠테이션 리허설</p>
+            </div>
+            <div class="timeline-content">
+                <strong style="color: var(--accent);">12월 31일</strong>
+                <p style="font-size: 14px; color: var(--accent);">최종 프로젝트 프레젠테이션</p>
+            </div>
+            <div class="timeline-content">
+                <strong>1월 이후</strong>
+                <p style="font-size: 14px;">오픈소스 기여 및 고도화 버전 개발</p>
+            </div>
+        </div>
+    </div>
+    <div class="flex-grow" style="display: flex; align-items: flex-end; justify-content: center; padding-bottom: 50px;">
+        <h2 style="font-family: 'Urbanist'; font-size: 50px; opacity: 0.3;">THANK YOU</h2>
+    </div>
+</div>
+
+</body>
+</html>

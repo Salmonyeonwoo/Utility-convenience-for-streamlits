@@ -182,7 +182,7 @@ def initialize_session_state():
     
     # 전화 관련
     if "call_sim_stage" not in st.session_state:
-        st.session_state.call_sim_stage = "IDLE"
+        st.session_state.call_sim_stage = "WAITING_CALL"  # IDLE 대신 WAITING_CALL로 초기화
     if "is_on_hold" not in st.session_state:
         st.session_state.is_on_hold = False
     if "hold_start_time" not in st.session_state:

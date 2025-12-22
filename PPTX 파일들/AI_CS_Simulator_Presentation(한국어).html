@@ -1,0 +1,70 @@
+html_content = """
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 고객 응대 시뮬레이터 개발 보고서</title>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #2980b9; margin-top: 30px; }
+        h3 { color: #16a085; }
+        code { background-color: #f1f1f1; padding: 2px 5px; border-radius: 3px; font-family: monospace; }
+        pre { background-color: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .highlight { color: #e74c3c; font-weight: bold; }
+        .success { color: #27ae60; font-weight: bold; }
+        li { margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+    <h1>🚀 AI 고객 응대 시뮬레이터 개발 보고서</h1>
+    <p><strong>작성일:</strong> 2024년 5월 (발표용)</p>
+    <p><strong>주제:</strong> OpenAI & Gemini API를 활용한 다국어 고객 응대 훈련 시스템 구축</p>
+
+    <h2>1. 프로젝트 개요</h2>
+    <p>본 프로젝트는 CS 센터 상담원들의 실전 대응 능력을 향상시키기 위해 개발된 <strong>AI 기반 시뮬레이션 시스템</strong>입니다. 실제 고객과의 대화 상황을 AI가 연출하고, 상담원의 응답에 대해 실시간 피드백과 가이드라인을 제공합니다.</p>
+
+    <h2>2. 주요 개발 과정 (Cursor AI 협업)</h2>
+    <p>본 프로젝트의 약 <strong>80%</strong>는 AI 코딩 어시스턴트인 <strong>Cursor AI</strong>와의 협업을 통해 진행되었습니다. 주요 개발 단계는 다음과 같습니다.</p>
+
+    <h3>Phase 1: 핵심 기능 구축</h3>
+    <ul>
+        <li><strong>Streamlit 기반 UI 설계:</strong> 직관적인 채팅 및 전화 인터페이스 구현</li>
+        <li><strong>LLM 연동:</strong> OpenAI(GPT-4o) 및 Google Gemini API를 활용한 대화 생성 로직 구현</li>
+        <li><strong>STT/TTS 통합:</strong> 음성 인식(Whisper) 및 음성 합성(OpenAI TTS) 기능을 통해 실시간 음성 대화 구현</li>
+    </ul>
+
+    <h3>Phase 2: 영상 기능 고도화 (Video RAG)</h3>
+    <p>가상 휴먼 API(Hyperclova 등)의 비용 문제로 인해, 보유한 API 키를 활용한 독창적인 해결책을 모색했습니다.</p>
+    <ul>
+        <li><strong>문제:</strong> OpenAI/Gemini 만으로는 실시간 립싱크 영상 생성이 불가능함.</li>
+        <li><strong>해결 (<span class="success">Video RAG</span>):</strong> 사전에 준비된 감정별 비디오 클립을 DB화하고, LLM이 실시간으로 대화 맥락과 감정을 분석하여 가장 적절한 비디오를 선택·재생하는 로직을 구현했습니다.</li>
+        <li><strong>성과:</strong> 추가 비용 없이 실제 상담과 유사한 시각적 경험을 제공하는 데 성공했습니다.</li>
+    </ul>
+
+    <h3>Phase 3: 문제 해결 및 최적화</h3>
+    <ul>
+        <li><strong>비디오 업로드 오류 해결:</strong> Streamlit의 세션 초기화 문제로 비디오 파일이 사라지는 현상을 발견, <code class="highlight">st.session_state</code>에 바이너리 데이터를 직접 저장하는 방식으로 영구 해결했습니다.</li>
+        <li><strong>종료 로직 정교화:</strong> "없습니다. 감사합니다" 등의 종료 멘트를 정규표현식(Regex)으로 처리하여, 띄어쓰기나 문장 부호에 상관없이 정확하게 인식하도록 개선했습니다.</li>
+    </ul>
+
+    <h2>3. 기술적 성과</h2>
+    <ul>
+        <li><strong>비용 효율성:</strong> 고가의 전문 가상 휴먼 솔루션 없이도 높은 수준의 훈련 경험 제공</li>
+        <li><strong>확장성:</strong> 모듈화된 코드 구조로 향후 VR/AR 또는 메타휴먼 기술 도입 용이</li>
+        <li><strong>다국어 지원:</strong> 한국어, 영어, 일본어를 완벽하게 지원하며 실시간 번역 기능 탑재</li>
+    </ul>
+
+    <h2>4. 결론</h2>
+    <p>이번 프로젝트는 단순히 API를 연결하는 것을 넘어, <strong>기술적 제약(비용, API 한계)을 창의적인 아이디어(Video RAG)로 극복</strong>해낸 사례입니다. Cursor AI와의 효율적인 협업을 통해 단기간 내에 완성도 높은 시스템을 구축할 수 있었습니다.</p>
+
+</body>
+</html>
+"""
+
+with open("dev_report.html", "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+print("HTML 파일 생성 완료: dev_report.html")
