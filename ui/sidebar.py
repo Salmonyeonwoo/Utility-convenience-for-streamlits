@@ -34,18 +34,29 @@ def render_sidebar():
             "日本語": "ja"
         }
         lang_display_names = list(lang_options.keys())
+        
+        # 현재 언어에 해당하는 표시 이름 찾기
         current_lang_display = None
         for display_name, lang_code in lang_options.items():
             if lang_code == current_lang:
                 current_lang_display = display_name
                 break
+        
+        # 현재 언어가 없으면 기본값으로 설정
         if current_lang_display is None:
             current_lang_display = lang_display_names[0]
+            st.session_state.language = lang_options[current_lang_display]
+        
+        # 현재 언어에 맞는 인덱스 찾기
+        try:
+            current_index = lang_display_names.index(current_lang_display)
+        except ValueError:
+            current_index = 0
         
         selected_lang_display = st.selectbox(
             "언어 선택",
             lang_display_names,
-            index=lang_display_names.index(current_lang_display),
+            index=current_index,
             key="language_selector",
             label_visibility="collapsed"
         )
@@ -53,6 +64,7 @@ def render_sidebar():
         selected_lang_code = lang_options[selected_lang_display]
         if selected_lang_code != current_lang:
             st.session_state.language = selected_lang_code
+            st.rerun()  # 언어 변경 시 즉시 반영
         
         st.divider()
         
