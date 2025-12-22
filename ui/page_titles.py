@@ -42,3 +42,4 @@ def render_page_title():
         st.markdown(f"#### 📋 {L['company_info_tab']}")
         st.caption(L['company_info_tab_desc'])
 
+

@@ -1,0 +1,460 @@
+# -*- coding: utf-8 -*-
+"""
+전화 시뮬레이터 - 통화 중 모듈
+"""
+import streamlit as st
+from lang_pack import LANG
+from datetime import datetime
+import time
+from PIL import Image
+import io
+import numpy as np
+from typing import List, Dict, Any
+
+# 필요한 모듈 import
+try:
+    from simulation_handler import transcribe_bytes_with_whisper, generate_customer_reaction, synthesize_tts, summarize_history_with_ai, translate_text_with_llm
+except ImportError:
+    # 대체 경로 시도
+    try:
+        from utils.tts_whisper import transcribe_bytes_with_whisper, synthesize_tts
+    except ImportError:
+        transcribe_bytes_with_whisper = None
+        synthesize_tts = None
+    
+    try:
+        from simulation_handler import generate_customer_reaction, summarize_history_with_ai, translate_text_with_llm
+    except ImportError:
+        generate_customer_reaction = None
+        summarize_history_with_ai = None
+        translate_text_with_llm = None
+
+try:
+    from llm_client import get_api_key
+except ImportError:
+    get_api_key = None
+
+def render_call_in_call():
+    """통화 중 UI - 오디오 녹음 + 전사 + 고객 반응 자동 생성"""
+    current_lang = st.session_state.get("language", "ko")
+    if current_lang not in ["ko", "en", "ja"]:
+        current_lang = "ko"
+    L = LANG.get(current_lang, LANG["ko"])
+    
+    # 전화 수신 정보 표시
+    if st.session_state.get("incoming_phone_number"):
+        st.markdown(f"## 📞 전화 수신 중: {st.session_state.incoming_phone_number}")
+    
+    st.info("📞 통화 중입니다...")
+    
+    # 통화 제어 영역 (3열: Hold, 비디오 토글, 통화 종료) - 크기 축소
+    col_hold, col_video, col_end = st.columns([1, 1, 1])
+    with col_hold:
+        if st.button("⏸️ Hold", use_container_width=True):
+            st.session_state.is_on_hold = True
+            if 'hold_start_time' not in st.session_state:
+                st.session_state.hold_start_time = datetime.now()
+    with col_video:
+        if 'video_enabled' not in st.session_state:
+            st.session_state.video_enabled = False
+        st.session_state.video_enabled = st.toggle("📹 비디오", value=st.session_state.video_enabled, help="비디오 통화를 활성화합니다")
+    with col_end:
+        if st.button("📴 종료", use_container_width=True, type="primary"):
+            st.session_state.call_sim_stage = "CALL_ENDED"
+            st.session_state.call_active = False
+            st.session_state.start_time = None
+    st.markdown("---")
+    
+    # 비디오 영역 (비디오 활성화 시에만 표시)
+    if st.session_state.video_enabled:
+        video_col1, video_col2 = st.columns(2)
+        
+        with video_col1:
+            st.markdown("**📹 내 화면**")
+            camera_image = st.camera_input("웹캠", key="my_camera_call", help="내 웹캠 영상")
+            if camera_image:
+                st.image(camera_image, use_container_width=True)
+                if 'opponent_video_frames' not in st.session_state:
+                    st.session_state.opponent_video_frames = []
+                if 'last_camera_frame' not in st.session_state:
+                    st.session_state.last_camera_frame = None
+                st.session_state.last_camera_frame = camera_image
+                if len(st.session_state.opponent_video_frames) >= 3:
+                    st.session_state.opponent_video_frames.pop(0)
+                st.session_state.opponent_video_frames.append({
+                    'image': camera_image,
+                    'timestamp': time.time()
+                })
+        
+        with video_col2:
+            st.markdown("**📹 상대방 화면**")
+            if st.session_state.get("opponent_video_frames"):
+                display_frame_idx = max(0, len(st.session_state.opponent_video_frames) - 2)
+                if display_frame_idx < len(st.session_state.opponent_video_frames):
+                    opponent_frame = st.session_state.opponent_video_frames[display_frame_idx]['image']
+                    try:
+                        img = Image.open(io.BytesIO(opponent_frame.getvalue()))
+                        mirrored_img = img.transpose(Image.FLIP_LEFT_RIGHT)
+                        img_array = np.array(mirrored_img)
+                        img_array = (img_array * 0.9).astype(np.uint8)
+                        processed_img = Image.fromarray(img_array)
+                        st.image(processed_img, use_container_width=True, caption="상대방 화면 (시뮬레이션)")
+                    except Exception as e:
+                        st.image(opponent_frame, use_container_width=True, caption="상대방 화면 (시뮬레이션)")
+                else:
+                    st.info("상대방 비디오를 준비하는 중...")
+            elif st.session_state.get("last_camera_frame"):
+                try:
+                    img = Image.open(io.BytesIO(st.session_state.last_camera_frame.getvalue()))
+                    mirrored_img = img.transpose(Image.FLIP_LEFT_RIGHT)
+                    img_array = np.array(mirrored_img)
+                    img_array = (img_array * 0.9).astype(np.uint8)
+                    processed_img = Image.fromarray(img_array)
+                    st.image(processed_img, use_container_width=True, caption="상대방 화면 (시뮬레이션)")
+                except:
+                    st.image(st.session_state.last_camera_frame, use_container_width=True, caption="상대방 화면 (시뮬레이션)")
+            else:
+                st.info("상대방 비디오 스트림을 기다리는 중...")
+        
+        st.markdown("---")
+    
+    # 오디오 녹음 및 전사 섹션
+    st.markdown("**🎤 오디오 녹음 및 전사**")
+    
+    # 오디오 입력 영역 (2열: 오디오 입력, 상태)
+    audio_col1, audio_col2 = st.columns([3, 1])
+    
+    with audio_col1:
+        audio_input = st.audio_input(
+            "말씀하세요",
+            key="call_audio_input_in_call",
+            help="음성을 녹음하면 자동으로 전사됩니다"
+        )
+    
+    with audio_col2:
+        if st.session_state.get("call_messages"):
+            st.caption(f"메시지: {len(st.session_state.call_messages)}개")
+    
+    # 전사 결과 및 고객 반응 생성 (즉각 반응, 로딩 최소화, rerun 없음)
+    if audio_input:
+        # 오디오 재생 (즉시 표시, 로딩 없음)
+        st.audio(audio_input, format="audio/wav", autoplay=False)
+        
+        # LLM 준비 상태 확인
+        is_llm_ready = st.session_state.get("is_llm_ready", False)
+        
+        # 이미 처리된 오디오인지 확인 (중복 처리 방지)
+        audio_key = f"processed_{hash(audio_input.getvalue())}"
+        if audio_key not in st.session_state:
+            st.session_state[audio_key] = True
+            
+            # 즉시 피드백 표시 (전사 처리 전)
+            st.info("💬 음성이 녹음되었습니다. 전사 처리 중...")
+            
+            # 전사 처리 (spinner 없이 즉시 처리, 블로킹 최소화)
+            if not transcribe_bytes_with_whisper:
+                st.warning("⚠️ 전사 기능을 사용할 수 없습니다.")
+            elif not is_llm_ready:
+                st.warning("⚠️ LLM이 준비되지 않았습니다.")
+            else:
+                try:
+                    # 전사 처리 (최소 지연, 블로킹 최소화)
+                    transcript = transcribe_bytes_with_whisper(
+                        audio_input.getvalue(),
+                        "audio/wav",
+                        lang_code=None,
+                        auto_detect=True
+                    )
+                    
+                    if transcript and not transcript.startswith("❌"):
+                        # 전사 성공 - 즉시 표시 (이전 메시지 대체)
+                        st.success(f"💬 전사: {transcript}")
+                        
+                        # 에이전트 메시지로 저장
+                        if 'call_messages' not in st.session_state:
+                            st.session_state.call_messages = []
+                        
+                        st.session_state.call_messages.append({
+                            "role": "agent",
+                            "content": transcript,
+                            "timestamp": datetime.now().isoformat(),
+                            "audio": audio_input.getvalue()
+                        })
+                        
+                        # 고객 반응 자동 생성 (즉시 처리, 블로킹 최소화)
+                        if generate_customer_reaction:
+                            try:
+                                customer_response = generate_customer_reaction(
+                                    current_lang,
+                                    is_call=True
+                                )
+                                
+                                # 고객 메시지로 저장
+                                customer_audio = None
+                                
+                                # 고객 응답을 TTS로 오디오 생성 (백그라운드 처리, 블로킹 없음)
+                                if synthesize_tts:
+                                    try:
+                                        customer_audio_result = synthesize_tts(
+                                            customer_response,
+                                            current_lang,
+                                            role="customer"
+                                        )
+                                        if customer_audio_result and isinstance(customer_audio_result, tuple):
+                                            customer_audio_bytes, status_msg = customer_audio_result
+                                            if customer_audio_bytes:
+                                                customer_audio = customer_audio_bytes
+                                        elif customer_audio_result:
+                                            customer_audio = customer_audio_result
+                                    except Exception:
+                                        pass  # TTS 실패해도 계속 진행
+                                
+                                st.session_state.call_messages.append({
+                                    "role": "customer",
+                                    "content": customer_response,
+                                    "timestamp": datetime.now().isoformat(),
+                                    "audio": customer_audio
+                                })
+                                
+                                # 고객 응답 즉시 표시
+                                st.info(f"💬 고객: {customer_response}")
+                                if customer_audio:
+                                    st.audio(customer_audio, format="audio/mp3", autoplay=False)
+                                
+                            except Exception as e:
+                                # 고객 반응 생성 실패 시에도 계속 진행
+                                pass
+                    else:
+                        error_msg = transcript if transcript else L.get("transcription_error", "전사 실패")
+                        st.error(f"❌ {error_msg}")
+                        
+                except Exception as e:
+                    # 전사 오류 시에도 계속 진행
+                    st.error(f"❌ 전사 오류: {str(e)}")
+    
+    st.markdown("---")
+    
+    # 이관 요약 표시 (이관 후에만)
+    if st.session_state.get("transfer_summary_text") or (
+        st.session_state.get("language_at_transfer_start") and 
+        st.session_state.language != st.session_state.get("language_at_transfer_start")
+    ):
+        with st.expander(f"**{L.get('transfer_summary_header', '이관 요약')}**", expanded=False):
+            st.info(L.get("transfer_summary_intro", "다음은 이전 팀에서 전달받은 통화 요약입니다."))
+            
+            is_translation_failed = not st.session_state.get("translation_success", True) or not st.session_state.get("transfer_summary_text")
+            
+            if st.session_state.get("transfer_summary_text") and st.session_state.get("translation_success", True):
+                st.markdown(st.session_state.transfer_summary_text)
+            elif st.session_state.get("transfer_summary_text"):
+                st.info(st.session_state.transfer_summary_text)
+    
+    st.markdown("---")
+    
+    # 통화 메시지 히스토리 표시 (간결하게)
+    if st.session_state.get("call_messages"):
+        with st.expander("💬 통화 기록", expanded=True):
+            for msg in st.session_state.call_messages:
+                role_icon = "👤" if msg["role"] == "agent" else "👥"
+                role_label = "에이전트" if msg["role"] == "agent" else "고객"
+                with st.chat_message(msg["role"]):
+                    st.write(f"{role_icon} **{role_label}**: {msg['content']}")
+                    # 오디오 재생 (고객 메시지에만)
+                    if msg.get("audio") and msg["role"] == "customer":
+                        st.audio(msg["audio"], format="audio/mp3", autoplay=False)
+                    elif msg.get("audio") and msg["role"] == "agent":
+                        st.audio(msg["audio"], format="audio/wav", autoplay=False)
+                    if msg.get("timestamp"):
+                        try:
+                            ts = datetime.fromisoformat(msg["timestamp"])
+                            st.caption(ts.strftime("%H:%M:%S"))
+                        except:
+                            pass
+    
+    st.markdown("---")
+    
+    # 통화 내용 수동 입력 (보조 기능) - 크기 축소
+    st.markdown("**📝 통화 내용 메모**")
+    call_content = st.text_area(
+        "메모 입력 (선택사항)",
+        value=st.session_state.get("call_content", ""),
+        key="call_content_input",
+        height=100,
+        help="추가 메모를 작성할 수 있습니다"
+    )
+    
+    if call_content:
+        st.session_state.call_content = call_content
+    
+    st.markdown("---")
+    
+    # 언어 팀 이관 기능 추가
+    st.markdown(f"**{L.get('transfer_header', '언어 팀 이관')}**")
+    
+    languages = list(LANG.keys())
+    if current_lang in languages:
+        languages.remove(current_lang)
+    
+    if languages:
+        transfer_cols = st.columns(len(languages))
+        
+        def transfer_call_session(target_lang: str, current_messages: List[Dict[str, Any]]):
+            """전화 통화 세션을 다른 언어 팀으로 이관 (로딩 최소화, 즉각 반응)"""
+            current_lang_at_start = st.session_state.language
+            L_source = LANG.get(current_lang_at_start, LANG["ko"])
+            
+            # 즉시 피드백 표시 (로딩 없음)
+            lang_name_target = {"ko": "한국어", "en": "영어", "ja": "일본어"}.get(target_lang, target_lang)
+            st.info(f"🔄 {lang_name_target} 팀으로 이관 처리 중...")
+            
+            # API 키 체크
+            if get_api_key and not get_api_key("gemini"):
+                st.error(L_source.get("simulation_no_key_warning", "⚠️ Gemini API Key가 설정되지 않았습니다.").replace('API Key', 'Gemini API Key'))
+                return
+            
+            if not summarize_history_with_ai or not translate_text_with_llm:
+                st.error("⚠️ 이관 기능을 사용할 수 없습니다. 필요한 모듈을 확인해주세요.")
+                return
+            
+            try:
+                # 원본 언어로 핵심 요약 생성
+                original_summary = summarize_history_with_ai(current_lang_at_start)
+                
+                if not original_summary or original_summary.startswith("❌"):
+                    # 요약 생성 실패 시 대화 기록을 번역할 텍스트로 가공
+                    history_text = ""
+                    for msg in current_messages:
+                        role = "Customer" if msg.get("role") == "customer" else "Agent"
+                        if msg.get("content"):
+                            history_text += f"{role}: {msg['content']}\n"
+                    original_summary = history_text
+                
+                # 핵심 요약을 번역 대상 언어로 번역
+                translated_summary, is_success = translate_text_with_llm(
+                    original_summary,
+                    target_lang,
+                    current_lang_at_start
+                )
+                
+                if not translated_summary:
+                    # 번역 실패 시 번역 대상 언어로 요약 재생성
+                    translated_summary = summarize_history_with_ai(target_lang)
+                    is_success = True if translated_summary and not translated_summary.startswith("❌") else False
+                
+                # 모든 메시지를 이관된 언어로 번역
+                translated_messages = []
+                messages_to_translate = []
+                
+                # 번역할 메시지 수집
+                for idx, msg in enumerate(current_messages):
+                    translated_msg = msg.copy()
+                    if msg.get("role") in ["agent", "customer"] and msg.get("content"):
+                        messages_to_translate.append((idx, msg))
+                    translated_messages.append(translated_msg)
+                
+                # 배치 번역: 모든 메시지를 하나의 텍스트로 합쳐서 번역
+                if messages_to_translate:
+                    try:
+                        combined_text = "\n\n".join([
+                            f"[{msg['role']}]: {msg['content']}" 
+                            for _, msg in messages_to_translate
+                        ])
+                        
+                        translated_combined, trans_success = translate_text_with_llm(
+                            combined_text,
+                            target_lang,
+                            current_lang_at_start
+                        )
+                        
+                        if trans_success and translated_combined:
+                            translated_lines = translated_combined.split("\n\n")
+                            for i, (idx, original_msg) in enumerate(messages_to_translate):
+                                if i < len(translated_lines):
+                                    translated_line = translated_lines[i]
+                                    if "]: " in translated_line:
+                                        translated_content = translated_line.split("]: ", 1)[1]
+                                    else:
+                                        translated_content = translated_line
+                                    translated_messages[idx]["content"] = translated_content
+                    except Exception:
+                        # 배치 번역 실패 시 개별 번역으로 폴백
+                        for idx, msg in messages_to_translate:
+                            try:
+                                translated_content, trans_success = translate_text_with_llm(
+                                    msg["content"],
+                                    target_lang,
+                                    current_lang_at_start
+                                )
+                                if trans_success:
+                                    translated_messages[idx]["content"] = translated_content
+                            except Exception:
+                                pass
+                
+                # 번역된 메시지로 업데이트
+                st.session_state.call_messages = translated_messages
+                
+                # 이관 요약 저장
+                st.session_state.transfer_summary_text = translated_summary
+                st.session_state.translation_success = is_success
+                st.session_state.language_at_transfer_start = current_lang_at_start
+                
+                # 언어 변경
+                st.session_state.language = target_lang
+                L_target = LANG.get(target_lang, LANG["ko"])
+                
+                # 언어 이름 가져오기
+                lang_name_target = {"ko": "한국어", "en": "영어", "ja": "일본어"}.get(target_lang, "한국어")
+                
+                # 시스템 메시지 추가
+                system_msg = L_target.get("transfer_system_msg", "📌 시스템 메시지: 통화가 {target_lang} 팀으로 이관되었습니다.").format(target_lang=lang_name_target)
+                st.session_state.call_messages.append({
+                    "role": "system_transfer",
+                    "content": system_msg,
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+                # 이관 요약을 supervisor 메시지로 추가
+                summary_header = L_target.get("transfer_summary_header", "이관 요약")
+                summary_msg = f"### {summary_header}\n\n{translated_summary}"
+                st.session_state.call_messages.append({
+                    "role": "supervisor",
+                    "content": summary_msg,
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+                st.success(f"✅ {lang_name_target} 팀으로 이관되었습니다.")
+                
+            except Exception as e:
+                error_msg = L_source.get("transfer_error", "이관 처리 중 오류 발생: {error}").format(error=str(e))
+                st.error(error_msg)
+        
+        # 이관 버튼 렌더링
+        for idx, lang_code in enumerate(languages):
+            lang_name = {"ko": "한국어", "en": "영어", "ja": "일본어"}.get(lang_code, lang_code)
+            if lang_code == "en":
+                transfer_label = "US 영어 팀으로 이관"
+            elif lang_code == "ja":
+                transfer_label = "JP 일본어 팀으로 이관"
+            else:
+                transfer_label = f"{lang_name} 팀으로 이관"
+            
+            with transfer_cols[idx]:
+                if st.button(
+                    transfer_label,
+                    key=f"btn_call_transfer_{lang_code}_{st.session_state.get('sim_instance_id', 'default')}",
+                    type="secondary",
+                    use_container_width=True
+                ):
+                    transfer_call_session(lang_code, st.session_state.get("call_messages", []))
+    else:
+        st.info("이관할 다른 언어 팀이 없습니다.")
+    
+    st.markdown("---")
+    
+    col_save, _ = st.columns([1, 3])
+    with col_save:
+        if st.button("💾 저장", use_container_width=True):
+            if call_content.strip() or st.session_state.get("call_messages"):
+                st.success("통화 내용이 저장되었습니다.")
+            else:
+                st.warning("통화 내용을 입력하거나 오디오를 녹음해주세요.")

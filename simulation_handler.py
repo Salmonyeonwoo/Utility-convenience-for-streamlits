@@ -2252,6 +2252,7 @@ def delete_all_history_local():
 
 def export_history_to_word(histories: List[Dict[str, Any]], filename: str = None, lang: str = "ko") -> str:
     """이력을 Word 파일로 저장"""
+    import os  # 명시적으로 import하여 로컬 변수 문제 방지
     if not IS_DOCX_AVAILABLE:
         raise ImportError("Word 저장을 위해 python-docx가 필요합니다: pip install python-docx")
     
@@ -2321,6 +2322,7 @@ def export_history_to_word(histories: List[Dict[str, Any]], filename: str = None
 
 def export_history_to_pptx(histories: List[Dict[str, Any]], filename: str = None, lang: str = "ko") -> str:
     """이력을 PPTX 파일로 저장"""
+    import os  # 명시적으로 import하여 로컬 변수 문제 방지
     if not IS_PPTX_AVAILABLE:
         raise ImportError("PPTX 저장을 위해 python-pptx가 필요합니다: pip install python-pptx")
     
@@ -2393,6 +2395,7 @@ def export_history_to_pptx(histories: List[Dict[str, Any]], filename: str = None
 
 def export_history_to_pdf(histories: List[Dict[str, Any]], filename: str = None, lang: str = "ko") -> str:
     """이력을 PDF 파일로 저장 (한글/일본어 인코딩 지원 강화)"""
+    import os  # 명시적으로 import하여 로컬 변수 문제 방지
     if not IS_REPORTLAB_AVAILABLE:
         raise ImportError("PDF 저장을 위해 reportlab이 필요합니다: pip install reportlab")
     
