@@ -122,6 +122,11 @@ def render_call_simulator():
                     st.session_state.call_duration = None
                     st.session_state.transfer_summary_text = ""
                     st.session_state.language_at_transfer_start = None
+                    st.session_state.is_on_hold = False
+                    st.session_state.hold_start_time = None
+                    st.session_state.hold_total_seconds = 0
+                    st.session_state.provider_call_active = False
+                    st.session_state.call_direction = "inbound"
             except Exception as e:
                 st.error(f"❌ _call_ended 로드 오류: {e}")
                 import traceback
@@ -148,6 +153,11 @@ def render_call_simulator():
                     st.session_state.call_duration = None
                     st.session_state.transfer_summary_text = ""
                     st.session_state.language_at_transfer_start = None
+                    st.session_state.is_on_hold = False
+                    st.session_state.hold_start_time = None
+                    st.session_state.hold_total_seconds = 0
+                    st.session_state.provider_call_active = False
+                    st.session_state.call_direction = "inbound"
         else:
             # 알 수 없는 상태일 때 WAITING_CALL로 초기화하고 전화 수신 화면 표시
             st.session_state.call_sim_stage = "WAITING_CALL"

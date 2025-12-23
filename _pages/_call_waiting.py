@@ -13,12 +13,17 @@ def render_call_waiting():
     if current_lang not in ["ko", "en", "ja"]:
         current_lang = "ko"
     L = LANG.get(current_lang, LANG["ko"])
+    st.session_state.setdefault("is_on_hold", False)
+    st.session_state.setdefault("hold_start_time", None)
+    st.session_state.setdefault("hold_total_seconds", 0)
+    st.session_state.setdefault("provider_call_active", False)
+    st.session_state.setdefault("call_direction", "inbound")
     
     # ⭐ 추가: 전체 세션 초기화 버튼 (통화 기록 완전 리셋)
     if st.session_state.call_sim_stage == "WAITING_CALL":
         col_reset, _ = st.columns([1, 4])
         with col_reset:
-            if st.button("🔄 세션 초기화", key="reset_call_session", help="모든 통화 관련 데이터를 초기화합니다"):
+            if st.button(L.get("button_reset_session", "🔄 세션 초기화"), key="reset_call_session", help=L.get("button_reset_session_help", "모든 통화 관련 데이터를 초기화합니다")):
                 # 모든 통화 관련 상태 초기화
                 st.session_state.call_messages = []
                 st.session_state.inquiry_text = ""
@@ -31,15 +36,24 @@ def render_call_waiting():
                 st.session_state.transfer_summary_text = ""
                 st.session_state.language_at_transfer_start = None
                 st.session_state.current_call_id = None
+                st.session_state.is_on_hold = False
+                st.session_state.hold_start_time = None
+                st.session_state.hold_total_seconds = 0
+                st.session_state.provider_call_active = False
+                st.session_state.call_direction = "inbound"
                 st.session_state.call_sim_stage = "WAITING_CALL"
-                st.success("✅ 세션이 초기화되었습니다.")
+                st.success(L.get("session_reset_success", "✅ 세션이 초기화되었습니다."))
         
         # ⭐ 수정: elif로 변경하여 중복 표시 방지
-        st.subheader("📞 전화 수신")
-        caller_phone = st.text_input("발신자 전화번호", placeholder="010-1234-5678", key="call_waiting_phone_input")
-        col1, col2 = st.columns([3, 1])
+        st.subheader(L.get("call_receive_header", "📞 전화 수신"))
+        caller_phone = st.text_input(
+            L.get("caller_phone_label", "발신자 전화번호"),
+            placeholder=L.get("call_number_placeholder", "010-1234-5678"),
+            key="call_waiting_phone_input",
+        )
+        col1, col2, col3 = st.columns([0.9, 0.9, 1.2])
         with col1:
-            if st.button("📞 전화 수신", use_container_width=True, type="primary"):
+            if st.button(L.get("button_receive_call", "📞 통화 수신"), use_container_width=False, type="primary"):
                 if caller_phone:
                     # ⭐ 수정: 전화번호가 변경되었는지 확인하고, 변경되었으면 기록 초기화
                     previous_phone = st.session_state.get("incoming_phone_number", "")
@@ -56,48 +70,105 @@ def render_call_waiting():
                     st.session_state.call_active = True
                     st.session_state.current_call_id = str(uuid.uuid4())
                     st.session_state.incoming_phone_number = caller_phone
+                    st.session_state.call_direction = "inbound"
                     # ⭐ 수정: 통화 시간 카운팅은 통화 수신 시작과 동시에 시작
                     st.session_state.start_time = datetime.now()
+                    # Hold 상태 초기화
+                    st.session_state.is_on_hold = False
+                    st.session_state.hold_start_time = None
+                    st.session_state.hold_total_seconds = 0
+                    st.session_state.provider_call_active = False
                     st.session_state.call_sim_stage = "RINGING"
-                    st.success(f"전화 수신: {caller_phone}")
+                    st.success(L.get("inbound_call_started", "전화 수신: {number}").format(number=caller_phone))
                 else:
-                    st.warning("전화번호를 입력해주세요.")
+                    st.warning(L.get("warning_enter_phone", "전화번호를 입력해주세요."))
         with col2:
+            if st.button(L.get("button_outbound_call", "📞 통화 발신"), use_container_width=False, type="secondary"):
+                if caller_phone:
+                    previous_phone = st.session_state.get("incoming_phone_number", "")
+                    if previous_phone and previous_phone != caller_phone:
+                        st.session_state.call_messages = []
+                        st.session_state.inquiry_text = ""
+                        st.session_state.call_content = ""
+                        st.session_state.transfer_summary_text = ""
+                        st.session_state.language_at_transfer_start = None
+                        st.session_state.translation_success = True
+                    st.session_state.incoming_call = {"caller_phone": caller_phone, "direction": "outbound"}
+                    st.session_state.call_active = True
+                    st.session_state.current_call_id = str(uuid.uuid4())
+                    st.session_state.incoming_phone_number = caller_phone
+                    st.session_state.call_direction = "outbound"
+                    st.session_state.start_time = datetime.now()
+                    # Hold 상태 초기화
+                    st.session_state.is_on_hold = False
+                    st.session_state.hold_start_time = None
+                    st.session_state.hold_total_seconds = 0
+                    st.session_state.provider_call_active = False
+                    st.session_state.call_sim_stage = "RINGING"
+                    st.success(L.get("outbound_call_started", "발신을 시작했습니다: {number}").format(number=caller_phone))
+                else:
+                    st.warning(L.get("warning_enter_phone", "전화번호를 입력해주세요."))
+        with col3:
             if st.session_state.get("incoming_call"):
-                st.caption(f"수신 중: {st.session_state.incoming_call.get('caller_phone', st.session_state.get('incoming_phone_number', 'N/A'))}")
+                direction = st.session_state.get("call_direction", "inbound")
+                direction_label = L.get("call_direction_outbound", "발신") if direction == "outbound" else L.get("call_direction_inbound", "수신 중")
+                st.caption(f"{direction_label}: {st.session_state.incoming_call.get('caller_phone', st.session_state.get('incoming_phone_number', 'N/A'))}")
     # RINGING 상태일 때 문의 입력 섹션 표시 (elif로 변경하여 중복 방지)
     elif st.session_state.call_sim_stage == "RINGING":
         st.markdown("---")
-        st.subheader("📝 고객 문의 입력")
-        inquiry_text = st.text_area("고객 문의 내용을 입력하세요", value=st.session_state.get("inquiry_text", ""), key="inquiry_text_input", height=100, placeholder="예: 환불 요청, 배송 문의 등...")
+        st.subheader(L.get("call_inquiry_header", "📝 고객 문의 입력"))
+        inquiry_text = st.text_area(
+            L.get("call_inquiry_label", "고객 문의 내용을 입력하세요"),
+            value=st.session_state.get("inquiry_text", ""),
+            key="inquiry_text_input",
+            height=100,
+            placeholder=L.get("call_inquiry_placeholder", "예: 환불 요청, 배송 문의 등..."),
+        )
         # ⭐ 추가: 웹 주소 (선택) 필드 별도 추가
-        website_url = st.text_input("🌐 웹 주소 (선택)", value=st.session_state.get("call_website_url", ""), key="call_website_url_input", placeholder="https://example.com")
+        website_url = st.text_input(
+            L.get("website_url_label", "🌐 웹 주소 (선택)"),
+            value=st.session_state.get("call_website_url", ""),
+            key="call_website_url_input",
+            placeholder=L.get("website_url_placeholder", "https://example.com"),
+        )
         
         # ⭐ 추가: 고객 아바타 설정 (성별 및 감정 상태)
         st.markdown("---")
-        st.subheader("👤 고객 아바타 설정")
+        st.subheader(L.get("customer_avatar_header", "👤 고객 아바타 설정"))
         col_gender, col_emotion = st.columns(2)
         with col_gender:
             # 고객 성별 선택
-            gender_options = ["남자", "여자"]
+            gender_options = [
+                (L.get("gender_male", "남성"), "male"),
+                (L.get("gender_female", "여성"), "female"),
+            ]
             current_gender = st.session_state.customer_avatar.get("gender", "male") if "customer_avatar" in st.session_state else "male"
-            gender_display = "남자" if current_gender == "male" else "여자"
-            selected_gender_display = st.selectbox("성별", gender_options, index=0 if gender_display == "남자" else 1, key="call_customer_gender")
-            selected_gender = "male" if selected_gender_display == "남자" else "female"
+            selected_gender_display = st.selectbox(
+                L.get("customer_gender_label", "성별"),
+                [label for label, _ in gender_options],
+                index=0 if current_gender == "male" else 1,
+                key="call_customer_gender",
+            )
+            selected_gender = "male" if selected_gender_display == gender_options[0][0] else "female"
         with col_emotion:
             # 고객 감정 상태 선택
             emotion_options = {
-                "NEUTRAL": "평상시",
-                "HAPPY": "기쁜 고객",
-                "ANGRY": "화난 고객",
-                "ASKING": "진상 고객",
-                "SAD": "슬픈 고객"
+                "NEUTRAL": L.get("emotion_neutral", "평상시"),
+                "HAPPY": L.get("emotion_happy", "기쁜 고객"),
+                "ANGRY": L.get("emotion_angry", "화난 고객"),
+                "ASKING": L.get("emotion_dissatisfied", "진상 고객"),
+                "SAD": L.get("emotion_sad", "슬픈 고객")
             }
             current_emotion = st.session_state.customer_avatar.get("state", "NEUTRAL") if "customer_avatar" in st.session_state else "NEUTRAL"
             emotion_display_options = list(emotion_options.values())
             current_emotion_display = emotion_options.get(current_emotion, "평상시")
             current_emotion_idx = emotion_display_options.index(current_emotion_display) if current_emotion_display in emotion_display_options else 0
-            selected_emotion_display = st.selectbox("감정 상태", emotion_display_options, index=current_emotion_idx, key="call_customer_emotion")
+            selected_emotion_display = st.selectbox(
+                L.get("customer_emotion_label", "감정 상태"),
+                emotion_display_options,
+                index=current_emotion_idx,
+                key="call_customer_emotion",
+            )
             selected_emotion = [k for k, v in emotion_options.items() if v == selected_emotion_display][0]
         
         # customer_avatar 업데이트
@@ -108,7 +179,7 @@ def render_call_waiting():
         
         col_start, col_cancel = st.columns([1, 1])
         with col_start:
-            if st.button("✅ 통화 시작", use_container_width=True, type="primary"):
+            if st.button(L.get("button_start_call", "✅ 통화 시작"), use_container_width=True, type="primary"):
                 if inquiry_text.strip():
                     st.session_state.inquiry_text = inquiry_text.strip()
                     # ⭐ 추가: 웹 주소 저장
@@ -118,9 +189,9 @@ def render_call_waiting():
                         st.session_state.call_website_url = ""
                     st.session_state.call_sim_stage = "IN_CALL"
                 else:
-                    st.warning("문의 내용을 입력해주세요.")
+                    st.warning(L.get("warning_enter_inquiry", "문의 내용을 입력해주세요."))
         with col_cancel:
-            if st.button("❌ 취소", use_container_width=True):
+            if st.button(L.get("button_cancel", "❌ 취소"), use_container_width=True):
                 # ⭐ 수정: 취소 시 모든 통화 관련 상태 초기화
                 st.session_state.call_sim_stage = "WAITING_CALL"
                 st.session_state.incoming_call = None
@@ -129,3 +200,8 @@ def render_call_waiting():
                 st.session_state.call_messages = []
                 st.session_state.inquiry_text = ""
                 st.session_state.incoming_phone_number = None
+                st.session_state.is_on_hold = False
+                st.session_state.hold_start_time = None
+                st.session_state.hold_total_seconds = 0
+                st.session_state.provider_call_active = False
+                st.session_state.call_direction = "inbound"

@@ -34,6 +34,11 @@ def render_call_in_call():
     if current_lang not in ["ko", "en", "ja"]:
         current_lang = "ko"
     L = LANG.get(current_lang, LANG["ko"])
+    st.session_state.setdefault("is_on_hold", False)
+    st.session_state.setdefault("hold_start_time", None)
+    st.session_state.setdefault("hold_total_seconds", 0)
+    st.session_state.setdefault("provider_call_active", False)
+    st.session_state.setdefault("call_direction", "inbound")
     
     # ⭐ 수정: 통화 시작 시 call_messages 초기화 확인 (새 통화인 경우)
     if 'call_messages' not in st.session_state:
@@ -41,7 +46,9 @@ def render_call_in_call():
     
     # ⭐ 수정: 통화 수신 정보와 통화 시간을 깔끔한 UI로 표시
     # ⭐ 중요: start_time이 없으면 통화 수신 시점부터 시작 (RINGING 상태에서 설정됨)
-    if st.session_state.get("incoming_phone_number"):
+    call_number = st.session_state.get("incoming_phone_number")
+    call_direction = st.session_state.get("call_direction", "inbound")
+    if call_number:
         # 통화 시간 계산 (start_time이 없으면 통화 수신 시점부터 시작)
         call_duration = 0
         if st.session_state.get("start_time"):
@@ -59,31 +66,87 @@ def render_call_in_call():
         # 통화 정보를 깔끔한 UI로 표시
         col_info1, col_info2 = st.columns([2, 1])
         with col_info1:
-            st.markdown(f"### 📞 전화 수신 중: {st.session_state.incoming_phone_number}")
+            heading_template = L.get(
+                "call_heading_outbound" if call_direction == "outbound" else "call_heading_inbound",
+                "📞 전화 통화 중: {number}"
+            )
+            st.markdown(f"### {heading_template.format(number=call_number)}")
         with col_info2:
-            st.metric("통화 시간", duration_str)
+            st.metric(L.get("call_duration_label", "통화 시간"), duration_str)
     
-    st.info("📞 통화 중입니다...")
+    st.info(L.get("call_in_progress", "📞 통화 중입니다..."))
     
-    # 통화 제어 영역 (3열: Hold, 비디오 토글, 통화 종료) - 크기 축소
-    col_hold, col_video, col_end = st.columns([1, 1, 1])
+    # Hold 상태 및 누적 시간 계산
+    hold_elapsed = st.session_state.get("hold_total_seconds", 0)
+    if st.session_state.get("is_on_hold") and st.session_state.get("hold_start_time"):
+        hold_elapsed += (datetime.now() - st.session_state.hold_start_time).total_seconds()
+    hold_minutes = int(hold_elapsed // 60)
+    hold_seconds = int(hold_elapsed % 60)
+    hold_duration_str = f"{hold_minutes:02d}:{hold_seconds:02d}"
+
+    # 통화 제어 영역 (4열: Hold/재개, 업체 발신, 비디오, 종료)
+    col_hold, col_provider, col_video, col_end = st.columns([1, 1, 1, 1])
     with col_hold:
-        if st.button("⏸️ Hold", use_container_width=True):
-            st.session_state.is_on_hold = True
-            if 'hold_start_time' not in st.session_state:
+        if st.session_state.get("is_on_hold"):
+            st.caption(L.get("hold_status", "통화 Hold 중 (누적 Hold 시간: {duration})").format(duration=hold_duration_str))
+            if st.button(L.get("button_resume", "▶️ 통화 재개"), use_container_width=True):
+                if st.session_state.get("hold_start_time"):
+                    st.session_state.hold_total_seconds += (datetime.now() - st.session_state.hold_start_time).total_seconds()
+                st.session_state.hold_start_time = None
+                st.session_state.is_on_hold = False
+                st.session_state.provider_call_active = False
+                st.success(L.get("call_resumed", "통화를 재개했습니다."))
+        else:
+            if st.button(L.get("button_hold", "⏸️ Hold (소음 차단)"), use_container_width=True):
+                st.session_state.is_on_hold = True
                 st.session_state.hold_start_time = datetime.now()
+                st.session_state.hold_total_seconds = 0  # 새 Hold 시작 시 누적 시간 초기화
+                st.session_state.provider_call_active = False
+                # 통화 기록에 Hold 알림 추가
+                st.session_state.call_messages.append({
+                    "role": "system_hold",
+                    "content": L.get("agent_hold_message", "[에이전트: Hold 중입니다. 통화 재개 버튼을 눌러주세요.]"),
+                    "timestamp": datetime.now().isoformat()
+                })
+    with col_provider:
+        if st.button(
+            L.get("button_call_company", "📞 업체에 전화"),
+            use_container_width=True,
+            disabled=not st.session_state.get("is_on_hold")
+        ):
+            # 업체 확인 안내: Hold 상태에서만 발신 가능
+            st.session_state.provider_call_active = True
+            st.session_state.is_on_hold = True
+            if not st.session_state.get("hold_start_time"):
+                st.session_state.hold_start_time = datetime.now()
+            st.session_state.call_messages.append({
+                "role": "agent",
+                "content": L.get("provider_call_message", "업체에 확인해 보겠습니다. 잠시만 기다려 주세요."),
+                "timestamp": datetime.now().isoformat()
+            })
+            st.info(L.get("provider_call_progress", "업체에 확인 중입니다. 잠시만 기다려 주세요."))
     with col_video:
         if 'video_enabled' not in st.session_state:
             st.session_state.video_enabled = False
-        st.session_state.video_enabled = st.toggle("📹 비디오", value=st.session_state.video_enabled, help="비디오 통화를 활성화합니다")
+        st.session_state.video_enabled = st.toggle(
+            L.get("button_video_enable", "📹 비디오"),
+            value=st.session_state.video_enabled,
+            help=L.get("video_enable_help", "비디오 통화를 활성화합니다")
+        )
     with col_end:
-        if st.button("📴 종료", use_container_width=True, type="primary"):
+        if st.button(L.get("button_end_call", "📴 종료"), use_container_width=True, type="primary"):
             # ⭐ 수정: 통화 시간 계산 및 저장
             call_duration = 0
             if st.session_state.get("start_time"):
                 call_duration = (datetime.now() - st.session_state.start_time).total_seconds()
                 st.session_state.call_duration = call_duration  # 통화 시간 저장
             
+            # Hold 누적 시간 정리
+            if st.session_state.get("is_on_hold") and st.session_state.get("hold_start_time"):
+                st.session_state.hold_total_seconds += (datetime.now() - st.session_state.hold_start_time).total_seconds()
+            st.session_state.is_on_hold = False
+            st.session_state.hold_start_time = None
+            st.session_state.provider_call_active = False
             st.session_state.call_sim_stage = "CALL_ENDED"
             st.session_state.call_active = False
             st.session_state.start_time = None
@@ -94,8 +157,12 @@ def render_call_in_call():
         video_col1, video_col2 = st.columns(2)
         
         with video_col1:
-            st.markdown("**📹 내 화면**")
-            camera_image = st.camera_input("웹캠", key="my_camera_call", help="내 웹캠 영상")
+            st.markdown(f"**{L.get('my_screen', '📹 내 화면')}**")
+            camera_image = st.camera_input(
+                L.get("webcam_label", "웹캠"),
+                key="my_camera_call",
+                help=L.get("webcam_help", "내 웹캠 영상"),
+            )
             if camera_image:
                 st.image(camera_image, use_container_width=True)
                 if 'opponent_video_frames' not in st.session_state:
@@ -111,7 +178,7 @@ def render_call_in_call():
                 })
         
         with video_col2:
-            st.markdown("**📹 상대방 화면**")
+            st.markdown(f"**{L.get('opponent_screen', '📹 상대방 화면')}**")
             if st.session_state.get("opponent_video_frames"):
                 display_frame_idx = max(0, len(st.session_state.opponent_video_frames) - 2)
                 if display_frame_idx < len(st.session_state.opponent_video_frames):
@@ -122,11 +189,11 @@ def render_call_in_call():
                         img_array = np.array(mirrored_img)
                         img_array = (img_array * 0.9).astype(np.uint8)
                         processed_img = Image.fromarray(img_array)
-                        st.image(processed_img, use_container_width=True, caption="상대방 화면 (시뮬레이션)")
+                        st.image(processed_img, use_container_width=True, caption=L.get("opponent_screen_simulation", "상대방 화면 (시뮬레이션)"))
                     except Exception as e:
-                        st.image(opponent_frame, use_container_width=True, caption="상대방 화면 (시뮬레이션)")
+                        st.image(opponent_frame, use_container_width=True, caption=L.get("opponent_screen_simulation", "상대방 화면 (시뮬레이션)"))
                 else:
-                    st.info("상대방 비디오를 준비하는 중...")
+                    st.info(L.get("opponent_video_preparing", "상대방 비디오를 준비하는 중..."))
             elif st.session_state.get("last_camera_frame"):
                 try:
                     img = Image.open(io.BytesIO(st.session_state.last_camera_frame.getvalue()))
@@ -134,11 +201,11 @@ def render_call_in_call():
                     img_array = np.array(mirrored_img)
                     img_array = (img_array * 0.9).astype(np.uint8)
                     processed_img = Image.fromarray(img_array)
-                    st.image(processed_img, use_container_width=True, caption="상대방 화면 (시뮬레이션)")
+                    st.image(processed_img, use_container_width=True, caption=L.get("opponent_screen_simulation", "상대방 화면 (시뮬레이션)"))
                 except:
-                    st.image(st.session_state.last_camera_frame, use_container_width=True, caption="상대방 화면 (시뮬레이션)")
+                    st.image(st.session_state.last_camera_frame, use_container_width=True, caption=L.get("opponent_screen_simulation", "상대방 화면 (시뮬레이션)"))
             else:
-                st.info("상대방 비디오 스트림을 기다리는 중...")
+                st.info(L.get("opponent_video_waiting", "상대방 비디오 스트림을 기다리는 중..."))
         
         st.markdown("---")
     

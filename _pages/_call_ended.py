@@ -257,5 +257,11 @@ def render_call_ended():
         st.session_state.transfer_summary_text = ""
         st.session_state.language_at_transfer_start = None
         st.session_state.current_call_id = None
+        st.session_state.is_on_hold = False
+        st.session_state.hold_start_time = None
+        st.session_state.hold_total_seconds = 0
+        st.session_state.provider_call_active = False
+        st.session_state.call_direction = "inbound"
         st.success("✅ 새 통화를 시작할 수 있습니다.")
+
 
