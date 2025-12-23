@@ -85,26 +85,40 @@ except ImportError:
     def init_session_state():
         pass  # 기본 초기화는 이미 streamlit_app.py에서 수행됨
 
+# simulation_handler에서 핵심 함수들 import
 from simulation_handler import (
-    translate_text_with_llm, generate_realtime_hint,
+    generate_realtime_hint,
     generate_agent_response_draft, generate_outbound_call_summary,
-    load_simulation_histories_local, generate_chat_summary,
-    save_simulation_history_local, export_history_to_word,
-    export_history_to_pptx, export_history_to_pdf,
     get_chat_history_for_prompt, generate_customer_reaction,
     summarize_history_with_ai, generate_customer_reaction_for_call,
     generate_customer_reaction_for_first_greeting, summarize_history_for_call,
     generate_customer_closing_response, generate_agent_first_greeting,
-    detect_text_language, analyze_customer_profile, find_similar_cases,
-    generate_guideline_from_past_cases, _generate_initial_advice,
-    mask_email, verify_customer_info, check_if_login_related_inquiry,
-    check_if_customer_provided_verification_info, delete_all_history_local,
-    generate_daily_customer_guide, save_daily_customer_guide,
-    recommend_guideline_for_customer, get_daily_data_statistics,
+)
+
+# utils 모듈에서 분리된 함수들 import
+from utils.translation import translate_text_with_llm
+from utils.history_handler import (
+    load_simulation_histories_local, generate_chat_summary,
+    save_simulation_history_local, export_history_to_word,
+    export_history_to_pptx, export_history_to_pdf,
+    delete_all_history_local, generate_daily_customer_guide,
+    save_daily_customer_guide, recommend_guideline_for_customer,
+    get_daily_data_statistics,
+)
+from utils.audio_handler import (
     transcribe_bytes_with_whisper, transcribe_audio, synthesize_tts,
     render_tts_button, load_voice_records, save_voice_records,
     save_audio_record_local, delete_audio_record_local, get_audio_bytes_local,
-    TTS_VOICES
+    TTS_VOICES,
+)
+from utils.customer_verification import (
+    mask_email, verify_customer_info, check_if_login_related_inquiry,
+    check_if_customer_provided_verification_info,
+)
+from utils.customer_analysis import (
+    detect_text_language, analyze_customer_profile, find_similar_cases,
+    generate_guideline_from_past_cases, generate_initial_advice,
+    _generate_initial_advice,  # 별칭 (하위 호환성)
 )
 from rag_handler import (
     load_documents, split_documents, get_embedding_model,
@@ -331,6 +345,7 @@ os.makedirs(VIDEO_DIR, exist_ok=True)
 
 if "language" not in st.session_state:
     st.session_state.language = DEFAULT_LANG
+# is_llm_ready는 _session_init.py에서 초기화됨 (여기서는 기본값만 설정)
 if "is_llm_ready" not in st.session_state:
     st.session_state.is_llm_ready = False
 if "llm_init_error_msg" not in st.session_state:

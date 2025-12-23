@@ -66,3 +66,4 @@ with open('streamlit_app.py', 'w', encoding='utf-8') as f:
 print("All tabs replaced successfully!")
 
 
+

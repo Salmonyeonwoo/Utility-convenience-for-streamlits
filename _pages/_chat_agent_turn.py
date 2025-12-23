@@ -6,13 +6,18 @@
 import streamlit as st
 from lang_pack import LANG
 from simulation_handler import (
-    generate_chat_summary, load_simulation_histories_local,
-    recommend_guideline_for_customer, check_if_login_related_inquiry,
-    check_if_customer_provided_verification_info, verify_customer_info,
-    mask_email, transcribe_bytes_with_whisper, generate_customer_reaction,
-    save_simulation_history_local, _generate_initial_advice,
-    summarize_history_with_ai
+    generate_customer_reaction, summarize_history_with_ai
 )
+from utils.history_handler import (
+    generate_chat_summary, load_simulation_histories_local,
+    recommend_guideline_for_customer, save_simulation_history_local
+)
+from utils.customer_verification import (
+    check_if_login_related_inquiry, check_if_customer_provided_verification_info,
+    verify_customer_info, mask_email
+)
+from utils.audio_handler import transcribe_bytes_with_whisper
+from utils.customer_analysis import _generate_initial_advice
 from llm_client import get_api_key
 from datetime import datetime
 import re
@@ -298,7 +303,21 @@ def render_agent_turn(L, current_lang):
             st.session_state.agent_response_area_text = ""
         st.session_state.reset_agent_response_area = False
 
-    # 응대 초안 자동 생성 (고객 메시지 수신 시 - 5초 이내 빠른 응답)
+    # ⭐ 응대 초안 자동 생성 (고객 메시지 수신 시 즉시 생성)
+    # API Key 확인 및 is_llm_ready 설정
+    from llm_client import get_api_key
+    has_api_key = any([
+        bool(get_api_key("openai")),
+        bool(get_api_key("gemini")),
+        bool(get_api_key("claude")),
+        bool(get_api_key("groq"))
+    ])
+    
+    # API Key가 있으면 is_llm_ready를 True로 설정
+    if has_api_key:
+        st.session_state.is_llm_ready = True
+    
+    # ⭐ AGENT_TURN 단계에서 응대 초안 확인 및 생성 (더 확실하게)
     if st.session_state.is_llm_ready and st.session_state.sim_stage == "AGENT_TURN":
         # 마지막 고객 메시지 확인
         last_customer_msg = None
@@ -309,49 +328,48 @@ def render_agent_turn(L, current_lang):
                 last_customer_msg_idx = len(st.session_state.simulator_messages) - 1 - idx
                 break
         
-        # 고객 메시지가 있고, 아직 응대 초안이 생성되지 않았으면 자동 생성
-        if last_customer_msg and not st.session_state.get("auto_draft_generated", False):
-            # 이전에 생성한 응대 초안이 이 메시지에 대한 것인지 확인
-            last_draft_for_idx = st.session_state.get("last_draft_for_message_idx", -1)
-            if last_draft_for_idx != last_customer_msg_idx:
+        # 응대 초안이 이미 생성되었는지 확인
+        last_draft_for_idx = st.session_state.get("last_draft_for_message_idx", -1)
+        auto_draft_exists = st.session_state.get("auto_draft_generated", False) and st.session_state.get("auto_generated_draft_text", "")
+        
+        # ⭐ 새로운 고객 메시지가 들어왔거나, 응대 초안이 없으면 즉시 생성
+        if last_customer_msg and (last_draft_for_idx != last_customer_msg_idx or not auto_draft_exists):
+            # 응대 초안이 아직 생성되지 않았으면 즉시 생성
+            if not auto_draft_exists or last_draft_for_idx != last_customer_msg_idx:
                 try:
-                    # 응대 초안 생성 (빠른 응답을 위해 최신 대화 맥락 사용)
-                    # 전체 대화 맥락을 고려하여 응대 초안 생성
-                    conversation_context = ""
-                    for msg in st.session_state.simulator_messages[-5:]:  # 최근 5개 메시지만 사용
-                        role = msg.get("role", "")
-                        content = msg.get("content", "")
-                        if role in ["customer", "customer_rebuttal", "initial_query"]:
-                            conversation_context += f"고객: {content}\n"
-                        elif role == "agent_response":
-                            conversation_context += f"상담원: {content}\n"
-                    
-                    # 최신 고객 메시지를 주요 문의로 사용
-                    initial_query = last_customer_msg if last_customer_msg else st.session_state.get('customer_query_text_area', '')
-                    customer_type_display = st.session_state.get("customer_type_sim_select", "")
+                    from simulation_handler import generate_agent_response_draft
                     session_lang = st.session_state.get("language", "ko")
                     if session_lang not in ["ko", "en", "ja"]:
                         session_lang = "ko"
                     
-                    # 응대 초안 생성 (대화 맥락 포함)
-                    draft_text = _generate_initial_advice(
-                        initial_query,
-                        customer_type_display,
-                        st.session_state.customer_email,
-                        st.session_state.customer_phone,
-                        session_lang,
-                        st.session_state.customer_attachment_file
-                    )
+                    # ⭐ 응대 초안 즉시 생성 (백그라운드에서 조용히)
+                    draft_text = generate_agent_response_draft(session_lang)
                     
                     # 입력창에 자동으로 표시
-                    if draft_text:
-                        st.session_state.agent_response_area_text = draft_text
+                    if draft_text and draft_text.strip():
+                        # 마크다운 헤더 제거
+                        draft_text_clean = draft_text
+                        if "###" in draft_text_clean:
+                            lines = draft_text_clean.split("\n")
+                            draft_text_clean = "\n".join([line for line in lines if not line.strip().startswith("###")])
+                        draft_text_clean = draft_text_clean.strip()
+                        
+                    if draft_text_clean:
+                        # ⭐ 응대 초안 저장 (입력창에 자동 표시용)
+                        st.session_state.agent_response_area_text = draft_text_clean
                         st.session_state.auto_draft_generated = True
-                        st.session_state.auto_generated_draft_text = draft_text
+                        st.session_state.auto_generated_draft_text = draft_text_clean
                         st.session_state.last_draft_for_message_idx = last_customer_msg_idx
+                        
+                        # ⭐ 응대 초안은 입력창에만 표시 (자동 전송하지 않음)
+                        # 사용자가 수정 후 직접 전송하도록 함
+                        
+                        # 디버깅: 응대 초안 생성 확인
+                        print(f"✅ 응대 초안 생성 완료 (메시지 인덱스: {last_customer_msg_idx})")
                 except Exception as e:
                     # 오류 발생 시에도 계속 진행
                     st.session_state.auto_draft_generated = False
+                    print(f"❌ 응대 초안 자동 생성 오류: {e}")
 
     # 전사 결과 반영 (응대 초안보다 우선순위 높음)
     if st.session_state.get("last_transcript") and st.session_state.last_transcript:
@@ -381,64 +399,421 @@ def render_agent_turn(L, current_lang):
                 st.session_state.simulator_messages = st.session_state.simulator_messages + [new_message]
                 st.session_state._message_update_trigger = not st.session_state.get("_message_update_trigger", False)
 
-    # 응대 초안이 생성되었으면 표시 및 입력창에 자동 채우기
+    # 채팅 입력 UI (카카오톡 스타일)
+    # 응대 초안이 있으면 자동으로 입력창에 표시
+    initial_value = ""
+    if st.session_state.get("auto_generated_draft_text") and st.session_state.auto_generated_draft_text:
+        initial_value = st.session_state.auto_generated_draft_text
+    elif st.session_state.get("agent_response_area_text") and st.session_state.agent_response_area_text:
+        initial_value = st.session_state.agent_response_area_text
+    
+    placeholder_text = L.get("agent_response_placeholder", "고객에게 응답하세요...")
+    
+    # 카카오톡 스타일 채팅 입력창
+    st.markdown("""
+    <style>
+    .kakao-chat-input {
+        background-color: #FFFFFF;
+        border: 1px solid #E0E0E0;
+        border-radius: 24px;
+        padding: 12px 20px;
+        font-size: 15px;
+        min-height: 50px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .kakao-chat-input:focus {
+        outline: none;
+        border-color: #FEE500;
+        box-shadow: 0 2px 8px rgba(254, 229, 0, 0.3);
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Streamlit의 chat_input 사용 (자동 업데이트 지원)
+    # 응대 초안이 있으면 자동으로 입력창에 표시
+    agent_response_input = None
+    
+    # ⭐ 채팅 입력 UI (응대 초안은 입력창에 직접 채워지므로 placeholder는 기본값 사용)
+    agent_response_input = st.chat_input(placeholder_text, key="agent_chat_input_main")
+    
+    # ⭐ 응대 초안이 있으면 입력창에 자동으로 채우기 (입력창 생성 후 - 더 확실하게)
     if st.session_state.get("auto_generated_draft_text") and st.session_state.auto_generated_draft_text:
         draft_text = st.session_state.auto_generated_draft_text
-        # 응대 초안을 입력창에 자동으로 채우기 위한 JavaScript
-        draft_text_escaped = draft_text.replace('\\', '\\\\').replace('`', '\\`').replace('$', '\\$')
+        # JavaScript를 사용하여 입력창에 자동으로 채우기 (더 확실한 방법)
+        import json
+        draft_text_json = json.dumps(draft_text)
+        
         st.markdown(f"""
         <script>
         (function() {{
+            var draftText = {draft_text_json};
+            var filled = false;
+            var fillAttempts = 0;
+            var maxAttempts = 30; // 최대 30번 시도 (약 3초)
+            
             function fillChatInput() {{
-                var chatInput = document.querySelector('textarea[data-testid="stChatInputTextArea"]');
-                if (chatInput && !chatInput.value.trim()) {{
-                    chatInput.value = `{draft_text_escaped}`;
-                    // 입력 이벤트 트리거
-                    var event = new Event('input', {{ bubbles: true }});
-                    chatInput.dispatchEvent(event);
-                    // 변경 이벤트도 트리거
-                    var changeEvent = new Event('change', {{ bubbles: true }});
-                    chatInput.dispatchEvent(changeEvent);
+                fillAttempts++;
+                
+                // 여러 선택자 시도 (Streamlit 버전에 따라 다를 수 있음)
+                var selectors = [
+                    'textarea[data-testid="stChatInputTextArea"]',
+                    'textarea[aria-label*="고객"]',
+                    'textarea[placeholder*="고객"]',
+                    'textarea.stChatInputTextArea',
+                    'textarea[placeholder*="응답"]',
+                    'textarea'
+                ];
+                
+                var chatInput = null;
+                for (var i = 0; i < selectors.length; i++) {{
+                    var elements = document.querySelectorAll(selectors[i]);
+                    for (var j = 0; j < elements.length; j++) {{
+                        if (elements[j] && elements[j].offsetParent !== null) {{
+                            chatInput = elements[j];
+                            break;
+                        }}
+                    }}
+                    if (chatInput) break;
+                }}
+                
+                if (chatInput && !filled) {{
+                    var currentValue = chatInput.value || '';
+                    // 입력창이 비어있거나 이전 초안과 다를 때만 채우기
+                    if (!currentValue.trim() || currentValue.trim() !== draftText.trim()) {{
+                        // ⭐ 즉시 채우기 (타이핑 애니메이션은 선택적)
+                        chatInput.value = draftText;
+                        chatInput.focus();
+                        
+                        // 모든 이벤트 트리거
+                        var events = ['input', 'change', 'keyup', 'keydown'];
+                        events.forEach(function(eventType) {{
+                            var event = new Event(eventType, {{ bubbles: true, cancelable: true }});
+                            chatInput.dispatchEvent(event);
+                        }});
+                        
+                        // React 이벤트 (Streamlit이 React를 사용하는 경우)
+                        if (chatInput._valueTracker) {{
+                            chatInput._valueTracker.setValue('');
+                            chatInput._valueTracker.setValue(draftText);
+                        }}
+                        
+                        // React의 onChange 이벤트 트리거
+                        var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+                        nativeInputValueSetter.call(chatInput, draftText);
+                        var inputEvent = new Event('input', {{ bubbles: true }});
+                        chatInput.dispatchEvent(inputEvent);
+                        
+                        filled = true;
+                        console.log('✅ 응대 초안이 입력창에 자동으로 채워졌습니다.');
+                        
+                        // ⭐ 입력창에 실제로 채워졌을 때만 알림 표시
+                        showDraftNotification();
+                    }}
+                }} else if (!filled && fillAttempts < maxAttempts) {{
+                    // 입력창을 찾지 못했으면 계속 시도
+                    setTimeout(fillChatInput, 100);
                 }}
             }}
+            
+            // ⭐ 알림 표시 함수 (입력창에 실제로 채워졌을 때만 호출)
+            function showDraftNotification() {{
+                var notification = document.getElementById('draft-notification');
+                if (notification) {{
+                    notification.style.display = 'block';
+                    notification.style.animation = 'slideInDown 0.3s ease-out';
+                    // 5초 후 자동으로 제거
+                    setTimeout(function() {{
+                        if (notification) {{
+                            notification.style.animation = 'fadeOut 0.3s ease-in forwards';
+                            setTimeout(function() {{
+                                if (notification) notification.style.display = 'none';
+                            }}, 300);
+                        }}
+                    }}, 5000);
+                }}
+            }}
+            
             // 즉시 실행
             fillChatInput();
+            
             // DOM이 준비될 때까지 대기
             if (document.readyState === 'loading') {{
                 document.addEventListener('DOMContentLoaded', fillChatInput);
             }}
-            // 추가로 짧은 지연 후에도 시도
-            setTimeout(fillChatInput, 200);
-            setTimeout(fillChatInput, 500);
+            
+            // MutationObserver로 동적 생성된 입력창 감지
+            var observer = new MutationObserver(function(mutations) {{
+                if (!filled) {{
+                    fillChatInput();
+                }}
+            }});
+            
+            observer.observe(document.body, {{
+                childList: true,
+                subtree: true
+            }});
+            
+            // 여러 시점에 시도 (입력창이 늦게 생성될 수 있음)
+            var intervals = [50, 100, 150, 200, 300, 500, 800, 1200, 2000, 3000];
+            intervals.forEach(function(delay) {{
+                setTimeout(function() {{
+                    if (!filled) fillChatInput();
+                }}, delay);
+            }});
         }})();
         </script>
-        <div style="background-color: #E3F2FD; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
-            <strong>💡 응대 초안이 자동 생성되었습니다.</strong> 아래 입력창에 자동으로 채워집니다. 수정 후 전송하세요.
+        
+        <!-- ⭐ 응대 초안 생성 알림 (입력창에 실제로 채워졌을 때만 표시 - 기본적으로 숨김, 다국어 지원) -->
+        <div id="draft-notification" style="display: none; background: rgba(33, 150, 243, 0.08); 
+                    padding: 8px 12px; 
+                    border-radius: 8px; 
+                    margin-bottom: 8px;
+                    border-left: 3px solid #2196F3;
+                    font-size: 0.85em;
+                    color: #1976D2;">
+            <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 1.1em;">✨</span>
+                <span id="draft-notification-text"></span>
+            </span>
         </div>
+        <script>
+        // 다국어 알림 메시지 설정
+        (function() {{
+            var lang = '{current_lang}';
+            var notificationText = '';
+            if (lang === 'ko') {{
+                notificationText = '응대 초안이 자동 생성되어 입력창에 채워졌습니다';
+            }} else if (lang === 'en') {{
+                notificationText = 'Response draft has been automatically generated and filled in the input field';
+            }} else if (lang === 'ja') {{
+                notificationText = '対応草案が自動生成され、入力欄に記入されました';
+            }} else {{
+                notificationText = '응대 초안이 자동 생성되어 입력창에 채워졌습니다';
+            }}
+            var notificationElement = document.getElementById('draft-notification-text');
+            if (notificationElement) {{
+                notificationElement.textContent = notificationText;
+            }}
+        }})();
+        </script>
+        <style>
+        @keyframes slideInDown {{
+            from {{
+                opacity: 0;
+                transform: translateY(-10px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateY(0);
+            }}
+        }}
+        @keyframes fadeOut {{
+            to {{
+                opacity: 0;
+                transform: translateY(-10px);
+                height: 0;
+                margin: 0;
+                padding: 0;
+            }}
+        }}
+        </style>
         """, unsafe_allow_html=True)
+
+    # ⭐ 파일 첨부 버튼을 입력창 안쪽에 배치 (카카오톡 스타일)
+    # 입력창 생성 후 JavaScript로 '+' 아이콘을 입력창 안쪽에 추가
+    st.markdown("""
+    <style>
+    /* 입력창 컨테이너 스타일 */
+    .stChatInputContainer,
+    div[data-testid="stChatInputContainer"],
+    div[data-baseweb="input"] {
+        position: relative !important;
+    }
     
-    # 채팅 입력 UI
-    placeholder_text = L.get("agent_response_placeholder", "고객에게 응답하세요...")
-    agent_response_input = st.chat_input(placeholder_text)
+    /* '+' 아이콘 버튼 스타일 (입력창 안쪽 왼쪽) */
+    .chat-input-attach-btn {
+        position: absolute !important;
+        left: 10px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 50% !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border: none !important;
+        color: white !important;
+        font-size: 22px !important;
+        font-weight: bold !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3) !important;
+        transition: all 0.2s ease !important;
+        z-index: 1000 !important;
+        line-height: 1 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    .chat-input-attach-btn:hover {
+        transform: translateY(-50%) scale(1.1) !important;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5) !important;
+    }
+    
+    .chat-input-attach-btn:active {
+        transform: translateY(-50%) scale(0.95) !important;
+    }
+    
+    /* 입력창 텍스트 영역에 왼쪽 패딩 추가 (아이콘 공간 확보) */
+    textarea[data-testid="stChatInputTextArea"],
+    textarea[data-baseweb="textarea"],
+    textarea.stChatInputTextArea {
+        padding-left: 48px !important;
+    }
+    
+    /* 입력창 컨테이너 전체 스타일 */
+    div[data-testid="stChatInputContainer"],
+    div[data-baseweb="input"] {
+        position: relative !important;
+    }
+    
+    /* 입력 필드 래퍼 */
+    div[data-baseweb="input"] > div {
+        position: relative !important;
+    }
+    </style>
+    <script>
+    (function() {
+        function addAttachButton() {
+            // 기존 버튼이 있으면 제거
+            var existingBtn = document.getElementById('chat-attach-btn');
+            if (existingBtn) {
+                existingBtn.remove();
+            }
+            
+            // 입력창 찾기 (여러 선택자 시도)
+            var chatInput = document.querySelector('textarea[data-testid="stChatInputTextArea"]')
+                || document.querySelector('textarea[data-baseweb="textarea"]')
+                || document.querySelector('textarea.stChatInputTextArea');
+            
+            if (chatInput) {
+                // 입력창 컨테이너 찾기 (여러 선택자 시도)
+                var container = chatInput.closest('[data-testid="stChatInputContainer"]') 
+                    || chatInput.closest('[data-baseweb="input"]')
+                    || chatInput.closest('.stChatInputContainer')
+                    || chatInput.parentElement.parentElement
+                    || chatInput.parentElement;
+                
+                // '+' 아이콘 버튼 생성
+                var attachBtn = document.createElement('button');
+                attachBtn.id = 'chat-attach-btn';
+                attachBtn.className = 'chat-input-attach-btn';
+                attachBtn.innerHTML = '+';
+                attachBtn.title = '파일 첨부';
+                attachBtn.type = 'button';
+                attachBtn.setAttribute('aria-label', '파일 첨부');
+                
+                // 버튼 클릭 이벤트
+                attachBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Streamlit 버튼 찾기 (여러 방법 시도)
+                    var hiddenBtn = document.querySelector('button[data-testid*="btn_add_attachment_unified_hidden"]')
+                        || document.querySelector('button[data-baseweb="button"][aria-label*="파일"]')
+                        || Array.from(document.querySelectorAll('button')).find(function(btn) {
+                            return btn.textContent.includes('➕') || btn.textContent.includes('파일');
+                        });
+                    
+                    if (hiddenBtn) {
+                        // 버튼 클릭
+                        hiddenBtn.click();
+                        // 추가로 Streamlit 이벤트 트리거
+                        var clickEvent = new MouseEvent('click', {
+                            bubbles: true,
+                            cancelable: true,
+                            view: window
+                        });
+                        hiddenBtn.dispatchEvent(clickEvent);
+                    }
+                });
+                
+                // 컨테이너에 버튼 추가
+                if (container) {
+                    // 컨테이너 스타일 설정
+                    if (container.style) {
+                        container.style.position = 'relative';
+                    }
+                    // 기존 버튼이 있으면 제거 후 추가
+                    var oldBtn = container.querySelector('#chat-attach-btn');
+                    if (oldBtn) {
+                        oldBtn.remove();
+                    }
+                    container.appendChild(attachBtn);
+                } else {
+                    // 컨테이너를 찾지 못한 경우 입력창의 부모 요소에 추가
+                    var parent = chatInput.parentElement;
+                    if (parent) {
+                        parent.style.position = 'relative';
+                        var oldBtn = parent.querySelector('#chat-attach-btn');
+                        if (oldBtn) {
+                            oldBtn.remove();
+                        }
+                        parent.appendChild(attachBtn);
+                    }
+                }
+            }
+        }
+        
+        // 즉시 실행
+        addAttachButton();
+        
+        // DOM이 준비될 때까지 대기
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', addAttachButton);
+        }
+        
+        // MutationObserver로 동적 생성된 입력창 감지
+        var observer = new MutationObserver(function(mutations) {
+            addAttachButton();
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+        
+        // 여러 시점에 시도
+        var intervals = [50, 100, 200, 300, 500, 800, 1200];
+        intervals.forEach(function(delay) {
+            setTimeout(addAttachButton, delay);
+        });
+    })();
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # ⭐ 파일 첨부 버튼 (숨겨진 버튼으로 기능만 제공)
+    # 실제 버튼은 JavaScript로 입력창 안쪽에 '+' 아이콘으로 표시됨
+    # CSS로 버튼을 숨기고 JavaScript에서 클릭 이벤트만 트리거
+    st.markdown("""
+    <style>
+    button[data-testid*="btn_add_attachment_unified_hidden"] {
+        display: none !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    if st.button(
+            "➕",
+            key="btn_add_attachment_unified_hidden",
+            help=L.get("button_add_attachment", "➕ 파일 첨부"),
+            use_container_width=False,
+            type="secondary"):
+        st.session_state.show_agent_file_uploader = True
 
-    col_extra_features = st.columns([1, 1])
-
-    with col_extra_features[0]:
-        if st.button(
-                L.get("button_add_attachment", "➕ 파일 첨부"),
-                key="btn_add_attachment_unified",
-                use_container_width=True,
-                type="secondary"):
-            st.session_state.show_agent_file_uploader = True
-
-    with col_extra_features[1]:
-        if st.session_state.get("agent_response_area_text") and st.session_state.agent_response_area_text:
-            transcript_preview = st.session_state.agent_response_area_text[:30]
-            st.caption(
-                L.get("transcription_label", "💬 전사: {text}...").format(
-                    text=transcript_preview))
-
-    # 전송 로직
+    # ⭐ 응대 초안 자동 전송은 이미 위에서 처리됨 (AGENT_TURN 진입 시)
+    # 여기서는 수동 입력만 처리
     agent_response = None
     if agent_response_input:
         agent_response = agent_response_input.strip()
@@ -462,7 +837,7 @@ def render_agent_turn(L, current_lang):
                 )
                 final_response_content = f"{agent_response}\n\n---\n{attachment_msg}"
 
-            # 메시지 추가 및 즉시 화면 반영
+            # ⭐ 메시지 추가 및 즉시 화면 반영 (수동 전송)
             new_message = {"role": "agent_response", "content": final_response_content}
             st.session_state.simulator_messages = st.session_state.simulator_messages + [new_message]
             st.session_state._message_update_trigger = not st.session_state.get("_message_update_trigger", False)
@@ -489,6 +864,7 @@ def render_agent_turn(L, current_lang):
             st.session_state.reset_agent_response_area = True
             st.session_state.auto_draft_generated = False  # 다음 고객 메시지에서 다시 생성
             st.session_state.auto_generated_draft_text = ""
+            st.session_state.auto_draft_auto_sent = False  # 자동 전송 플래그 리셋
 
             # 고객 반응 자동 생성
             if st.session_state.is_llm_ready:
@@ -591,7 +967,7 @@ def render_agent_turn(L, current_lang):
                                 history_text += f"{role}: {msg['content']}\n"
                         original_summary = history_text
 
-                    from simulation_handler import translate_text_with_llm
+                    from utils.translation import translate_text_with_llm
                     translated_summary, is_success = translate_text_with_llm(
                         original_summary,
                         target_lang,
@@ -648,9 +1024,8 @@ def render_agent_turn(L, current_lang):
                         {"role": "system_transfer", "content": system_msg}
                     )
                     
-                    # 이관 후 언어 설정이 사이드바에 반영되도록 즉시 새로고침
-                    st.rerun()
-
+                    # ⭐ rerun 제거: 언어 이관은 상태 변경으로 자동 반영됨
+                    
                     summary_msg = f"### {L['transfer_summary_header']}\n\n{translated_summary}"
                     st.session_state.simulator_messages.append(
                         {"role": "supervisor", "content": summary_msg}

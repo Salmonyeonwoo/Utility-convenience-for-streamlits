@@ -166,3 +166,4 @@ from _pages.chat_simulator.initial_query import render_initial_query
 3. **에러 처리**: 각 모듈의 에러 처리 일관성 유지
 4. **성능**: 불필요한 import 최소화
 
+

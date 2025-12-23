@@ -183,13 +183,46 @@ def init_session_state():
 
     # LLM 준비 상태 캐싱 (API 키 변경 시에만 재확인)
     # ⭐ 수정: 초기화 시 블로킹 방지를 위해 try-except 추가
+    # ⭐ 수정: 선택된 모델의 키가 없어도 다른 사용 가능한 API Key가 있으면 True로 설정
     if "is_llm_ready" not in st.session_state or "llm_ready_checked" not in st.session_state:
+        # 먼저 사용 가능한 API Key 확인 (선택된 모델과 관계없이)
+        openai_key = get_api_key("openai")
+        gemini_key = get_api_key("gemini")
+        claude_key = get_api_key("claude")
+        groq_key = get_api_key("groq")
+        
+        has_any_key = any([
+            bool(openai_key),
+            bool(gemini_key),
+            bool(claude_key),
+            bool(groq_key)
+        ])
+        
+        # 디버깅: 어떤 키가 감지되었는지 확인
+        if has_any_key:
+            detected_keys = []
+            if openai_key:
+                detected_keys.append("OpenAI")
+            if gemini_key:
+                detected_keys.append("Gemini")
+            if claude_key:
+                detected_keys.append("Claude")
+            if groq_key:
+                detected_keys.append("Groq")
+            print(f"✅ 감지된 API Keys: {', '.join(detected_keys)}")
+        else:
+            print("⚠️ API Key가 감지되지 않았습니다. 환경변수 또는 .streamlit/secrets.toml을 확인하세요.")
+        
         try:
             probe_client, _ = get_llm_client()
-            st.session_state.is_llm_ready = probe_client is not None
+            # 선택된 모델의 클라이언트가 없어도, 사용 가능한 API Key가 하나라도 있으면 True
+            if probe_client is None:
+                st.session_state.is_llm_ready = has_any_key
+            else:
+                st.session_state.is_llm_ready = True
         except Exception as e:
-            # 초기화 실패 시에도 앱이 계속 실행되도록 False로 설정
-            st.session_state.is_llm_ready = False
+            # 예외 발생 시에도 사용 가능한 API Key 확인
+            st.session_state.is_llm_ready = has_any_key
             print(f"LLM 초기화 중 오류 (무시됨): {e}")
         st.session_state.llm_ready_checked = True
 
@@ -203,11 +236,30 @@ def init_session_state():
     elif st.session_state.api_keys_hash != current_api_keys_hash:
         # API 키가 변경된 경우만 재확인
         # ⭐ 수정: 초기화 시 블로킹 방지를 위해 try-except 추가
+        # ⭐ 수정: 선택된 모델의 키가 없어도 다른 사용 가능한 API Key가 있으면 True로 설정
+        # 먼저 사용 가능한 API Key 확인 (선택된 모델과 관계없이)
+        openai_key = get_api_key("openai")
+        gemini_key = get_api_key("gemini")
+        claude_key = get_api_key("claude")
+        groq_key = get_api_key("groq")
+        
+        has_any_key = any([
+            bool(openai_key),
+            bool(gemini_key),
+            bool(claude_key),
+            bool(groq_key)
+        ])
+        
         try:
             probe_client, _ = get_llm_client()
-            st.session_state.is_llm_ready = probe_client is not None
+            # 선택된 모델의 클라이언트가 없어도, 사용 가능한 API Key가 하나라도 있으면 True
+            if probe_client is None:
+                st.session_state.is_llm_ready = has_any_key
+            else:
+                st.session_state.is_llm_ready = True
         except Exception as e:
-            st.session_state.is_llm_ready = False
+            # 예외 발생 시에도 사용 가능한 API Key 확인
+            st.session_state.is_llm_ready = has_any_key
             print(f"LLM 재초기화 중 오류 (무시됨): {e}")
         st.session_state.api_keys_hash = current_api_keys_hash
     # OpenAI 클라이언트도 재초기화
@@ -224,12 +276,26 @@ def init_session_state():
         # 키를 찾지 못한 경우
         st.session_state.openai_init_msg = L["openai_missing"]
 
-    if not st.session_state.is_llm_ready:
-
-
-            st.session_state.llm_init_error_msg = L["simulation_no_key_warning"]
-    else:
+    # ⭐ API Key가 실제로 있는지 다시 확인 (항상 최신 상태로 확인)
+    openai_key = get_api_key("openai")
+    gemini_key = get_api_key("gemini")
+    claude_key = get_api_key("claude")
+    groq_key = get_api_key("groq")
+    
+    has_any_key_final = any([
+        bool(openai_key),
+        bool(gemini_key),
+        bool(claude_key),
+        bool(groq_key)
+    ])
+    
+    # ⭐ API Key가 있으면 is_llm_ready를 항상 True로 강제 설정
+    if has_any_key_final:
+        st.session_state.is_llm_ready = True
         st.session_state.llm_init_error_msg = ""
+    else:
+        # API Key가 없을 때만 에러 메시지 설정
+        st.session_state.llm_init_error_msg = L["simulation_no_key_warning"]
 
 
     # ----------------------------------------

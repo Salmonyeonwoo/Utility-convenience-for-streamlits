@@ -6,11 +6,12 @@
 import streamlit as st
 from lang_pack import LANG
 from simulation_handler import (
-    generate_realtime_hint, _generate_initial_advice,
-    generate_customer_reaction, save_simulation_history_local,
-    translate_text_with_llm
+    generate_realtime_hint, generate_customer_reaction
 )
-from simulation_handler import render_tts_button
+from utils.history_handler import save_simulation_history_local
+from utils.translation import translate_text_with_llm
+from utils.audio_handler import render_tts_button
+from utils.customer_analysis import _generate_initial_advice
 import re
 
 
@@ -24,73 +25,167 @@ def render_chat_messages(L, current_lang):
             if index < len(st.session_state.simulator_messages):
                 st.session_state.simulator_messages[index]["feedback"] = feedback_value
 
-    # 카카오톡 스타일 채팅 컨테이너
+    # 카카오톡 스타일 채팅 컨테이너 (더 현실적인 디자인)
     st.markdown("""
     <style>
+    /* 채팅 컨테이너 배경 */
+    .main .block-container {
+        background-color: #F5F5F5;
+        padding-top: 1rem;
+    }
+    
     .chat-container {
-        max-height: 600px;
+        max-height: 70vh;
         overflow-y: auto;
-        padding: 10px;
-        background-color: #f5f5f5;
-        border-radius: 10px;
+        padding: 15px 10px;
+        background: linear-gradient(to bottom, #F5F5F5 0%, #E8E8E8 100%);
+        border-radius: 0;
     }
+    
+    /* 메시지 말풍선 기본 스타일 */
     .message-bubble {
-        padding: 10px 15px;
+        padding: 12px 16px;
         border-radius: 18px;
-        margin: 5px 0;
-        max-width: 70%;
+        margin: 8px 0;
+        max-width: 75%;
         word-wrap: break-word;
+        line-height: 1.4;
+        font-size: 15px;
+        position: relative;
+        animation: fadeIn 0.3s ease-in;
     }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* 고객 메시지 (오른쪽, 노란색) - 카카오톡 스타일 */
     .message-customer {
-        background-color: #FEE500;
+        background: linear-gradient(135deg, #FEE500 0%, #FFD700 100%);
         margin-left: auto;
+        margin-right: 0;
         text-align: right;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px rgba(254, 229, 0, 0.3);
+        border: 1px solid rgba(255, 215, 0, 0.3);
     }
+    
+    .message-customer::after {
+        content: '';
+        position: absolute;
+        right: -8px;
+        bottom: 12px;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 8px 0 8px 8px;
+        border-color: transparent transparent transparent #FEE500;
+    }
+    
+    /* 고객 메시지 확장형 (버튼 포함) */
     .customer-bubble-expanded {
         min-width: 320px !important;
-        max-width: 80% !important;
-        padding: 15px !important;
-        padding-bottom: 70px !important;
+        max-width: 85% !important;
+        padding: 15px 18px !important;
+        padding-bottom: 75px !important;
         position: relative !important;
     }
+    
     .customer-message-content {
         text-align: right;
         margin-bottom: 12px;
         padding-bottom: 12px;
-        border-bottom: 1px solid rgba(0,0,0,0.2);
-        line-height: 1.5;
+        border-bottom: 1px solid rgba(0,0,0,0.15);
+        line-height: 1.6;
+        color: #333;
     }
+    
     .customer-button-area {
         position: absolute;
-        bottom: 10px;
-        right: 25px;
-        left: 10px;
+        bottom: 12px;
+        right: 18px;
+        left: 18px;
         display: flex;
         justify-content: flex-end;
-        gap: 4px;
+        gap: 6px;
         flex-wrap: wrap;
-        padding-top: 8px;
-        min-height: 50px;
+        padding-top: 10px;
+        min-height: 55px;
+        border-top: 1px solid rgba(0,0,0,0.1);
     }
+    
+    /* 에이전트 메시지 (왼쪽, 흰색) - 카카오톡 스타일 */
     .message-agent {
-        background-color: #FFFFFF;
+        background: #FFFFFF;
         margin-right: auto;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        margin-left: 0;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.05);
     }
+    
+    .message-agent::before {
+        content: '';
+        position: absolute;
+        left: -8px;
+        bottom: 12px;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 8px 8px 8px 0;
+        border-color: transparent #FFFFFF transparent transparent;
+    }
+    
+    /* Supervisor 메시지 (중앙, 연한 초록색) */
     .message-supervisor {
-        background-color: #E8F5E9;
-        margin: 10px auto;
+        background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+        margin: 12px auto;
         max-width: 90%;
         font-size: 0.9em;
+        border: 1px solid rgba(76, 175, 80, 0.2);
+        box-shadow: 0 2px 4px rgba(76, 175, 80, 0.1);
     }
+    
+    /* 아이콘 버튼 스타일 */
     .icon-button {
-        background: none;
-        border: none;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0,0,0,0.1);
+        border-radius: 8px;
         font-size: 1.2em;
         cursor: pointer;
-        padding: 5px;
+        padding: 6px 8px;
         margin: 0 2px;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .icon-button:hover {
+        background: rgba(255, 255, 255, 1);
+        transform: scale(1.05);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    
+    /* 스크롤바 스타일 */
+    .chat-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .chat-container::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.05);
+    }
+    
+    .chat-container::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.2);
+        border-radius: 3px;
+    }
+    
+    .chat-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(0,0,0,0.3);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -110,16 +205,46 @@ def render_chat_messages(L, current_lang):
                 # 카카오톡 스타일 말풍선
                 if role == "customer" or role == "customer_rebuttal" or role == "initial_query":
                     # 고객 메시지 (오른쪽 정렬, 노란색) - 버튼을 말풍선 안에 통합
+                    # ⭐ 더 부드러운 애니메이션 추가
+                    st.markdown("""
+                    <style>
+                    @keyframes slideInRight {
+                        from {
+                            opacity: 0;
+                            transform: translateX(20px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateX(0);
+                        }
+                    }
+                    .customer-message-wrapper {
+                        animation: slideInRight 0.4s ease-out;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
                     _render_customer_message_with_icons(L, idx, content, current_lang)
 
                 elif role == "agent_response":
-                    # 에이전트 메시지 (왼쪽 정렬, 흰색)
+                    # 에이전트 메시지 (왼쪽 정렬, 흰색) - 더 부드러운 애니메이션
                     st.markdown(f"""
-                    <div style="display: flex; justify-content: flex-start; margin: 5px 0;">
+                    <div style="display: flex; justify-content: flex-start; margin: 8px 0; animation: slideInLeft 0.4s ease-out;">
                         <div class="message-bubble message-agent">
-                            <div>{content.replace(chr(10), '<br>')}</div>
+                            <div style="line-height: 1.5;">{content.replace(chr(10), '<br>')}</div>
                         </div>
                     </div>
+                    <style>
+                    @keyframes slideInLeft {{
+                        from {{
+                            opacity: 0;
+                            transform: translateX(-20px);
+                        }}
+                        to {{
+                            opacity: 1;
+                            transform: translateX(0);
+                        }}
+                    }}
+                    </style>
                     """, unsafe_allow_html=True)
                     
                     # 에이전트 응답 아이콘 버튼들
@@ -283,10 +408,22 @@ def _render_customer_message_with_icons(L, idx, content, current_lang):
                             "content": f"💡 **{L.get('hint_label', '응대 힌트')}**: {hint}"
                         })
                 else:
-                    st.warning(
-                        L.get(
-                            "simulation_no_key_warning",
-                            "LLM이 준비되지 않았습니다."))
+                    # API Key가 실제로 있는지 확인
+                    from llm_client import get_api_key
+                    has_api_key = any([
+                        bool(get_api_key("openai")),
+                        bool(get_api_key("gemini")),
+                        bool(get_api_key("claude")),
+                        bool(get_api_key("groq"))
+                    ])
+                    if not has_api_key:
+                        st.warning(
+                            L.get(
+                                "simulation_no_key_warning",
+                                "LLM이 준비되지 않았습니다."))
+                    else:
+                        # API Key가 있으면 is_llm_ready를 True로 설정
+                        st.session_state.is_llm_ready = True
 
         # 업체에 전화 아이콘 버튼
         with btn_grid_row1[1]:
@@ -369,10 +506,22 @@ def _render_customer_message_with_icons(L, idx, content, current_lang):
 
                     st.session_state.sim_stage = "AGENT_TURN"
             else:
-                st.warning(
-                    L.get(
-                        "simulation_no_key_warning",
-                        "LLM이 준비되지 않았습니다."))
+                # API Key가 실제로 있는지 확인
+                from llm_client import get_api_key
+                has_api_key = any([
+                    bool(get_api_key("openai")),
+                    bool(get_api_key("gemini")),
+                    bool(get_api_key("claude")),
+                    bool(get_api_key("groq"))
+                ])
+                if not has_api_key:
+                    st.warning(
+                        L.get(
+                            "simulation_no_key_warning",
+                            "LLM이 준비되지 않았습니다."))
+                else:
+                    # API Key가 있으면 is_llm_ready를 True로 설정
+                    st.session_state.is_llm_ready = True
 
     # 두 번째 줄 버튼들
     # 고객 데이터 아이콘 버튼
@@ -494,10 +643,22 @@ def _render_customer_message_with_icons(L, idx, content, current_lang):
                         "content": f"✍️ **{L.get('draft_label', '응대 초안')}**:\n\n{draft_text}"
                     })
             else:
-                st.warning(
-                    L.get(
-                        "simulation_no_key_warning",
-                        "LLM이 준비되지 않았습니다."))
+                # API Key가 실제로 있는지 확인
+                from llm_client import get_api_key
+                has_api_key = any([
+                    bool(get_api_key("openai")),
+                    bool(get_api_key("gemini")),
+                    bool(get_api_key("claude")),
+                    bool(get_api_key("groq"))
+                ])
+                if not has_api_key:
+                    st.warning(
+                        L.get(
+                            "simulation_no_key_warning",
+                            "LLM이 준비되지 않았습니다."))
+                else:
+                    # API Key가 있으면 is_llm_ready를 True로 설정
+                    st.session_state.is_llm_ready = True
 
     # 고객 검증 아이콘 버튼
     with btn_grid_row2[2]:

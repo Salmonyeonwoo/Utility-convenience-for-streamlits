@@ -5,10 +5,11 @@
 
 import streamlit as st
 from lang_pack import LANG
-from simulation_handler import (
-    detect_text_language, analyze_customer_profile, find_similar_cases,
-    save_simulation_history_local, check_if_login_related_inquiry
+from utils.customer_analysis import (
+    detect_text_language, analyze_customer_profile, find_similar_cases
 )
+from utils.history_handler import save_simulation_history_local
+from utils.customer_verification import check_if_login_related_inquiry
 from visualization import visualize_customer_profile_scores, visualize_similarity_cases
 import uuid
 

@@ -5,11 +5,11 @@
 
 import streamlit as st
 from lang_pack import LANG
-from simulation_handler import (
+from simulation_handler import generate_outbound_call_summary
+from utils.history_handler import (
     load_simulation_histories_local, delete_all_history_local,
     save_simulation_history_local, generate_chat_summary,
-    export_history_to_word, export_history_to_pptx, export_history_to_pdf,
-    generate_outbound_call_summary
+    export_history_to_word, export_history_to_pptx, export_history_to_pdf
 )
 from visualization import visualize_case_trends, visualize_customer_profile_scores, visualize_customer_characteristics
 from llm_client import get_api_key
@@ -25,12 +25,50 @@ import uuid
 def render_chat_history(current_lang, L):
     """이력 관리 UI 렌더링"""
     # =========================
-    # 0. 전체 이력 삭제
+    # 0. 전체 이력 삭제 및 세션 초기화
     # =========================
-    col_del, _ = st.columns([1, 4])
+    col_del, col_reset, _ = st.columns([1, 1, 3])
     with col_del:
         if st.button(L["delete_history_button"], key="trigger_delete_hist"):
             st.session_state.show_delete_confirm = True
+    with col_reset:
+        if st.button("🔄 세션 초기화", key="reset_all_session", help="모든 채팅/통화 응대 기록을 초기화합니다"):
+            st.session_state.show_reset_confirm = True
+    
+    # 세션 초기화 확인
+    if st.session_state.get("show_reset_confirm", False):
+        with st.container():
+            st.warning("⚠️ 모든 채팅/통화 응대 기록이 초기화됩니다. 계속하시겠습니까?")
+            c_yes, c_no = st.columns(2)
+            if c_yes.button("예, 초기화합니다", key="confirm_reset_yes"):
+                # 모든 채팅/통화 관련 상태 초기화
+                st.session_state.simulator_messages = []
+                st.session_state.call_messages = []
+                st.session_state.simulator_memory.clear()
+                st.session_state.initial_advice_provided = False
+                st.session_state.is_chat_ended = False
+                st.session_state.agent_response_area_text = ""
+                st.session_state.customer_query_text_area = ""
+                st.session_state.last_transcript = ""
+                st.session_state.sim_audio_bytes = None
+                st.session_state.sim_stage = "WAIT_FIRST_QUERY"
+                st.session_state.call_sim_stage = "WAITING_CALL"
+                st.session_state.inquiry_text = ""
+                st.session_state.call_content = ""
+                st.session_state.incoming_phone_number = None
+                st.session_state.incoming_call = None
+                st.session_state.call_active = False
+                st.session_state.start_time = None
+                st.session_state.call_duration = None
+                st.session_state.transfer_summary_text = ""
+                st.session_state.language_at_transfer_start = None
+                st.session_state.customer_attachment_file = []
+                st.session_state.sim_attachment_context_for_llm = ""
+                st.session_state.agent_attachment_file = []
+                st.session_state.show_reset_confirm = False
+                st.success("✅ 모든 세션이 초기화되었습니다.")
+            if c_no.button("취소", key="confirm_reset_no"):
+                st.session_state.show_reset_confirm = False
 
     if st.session_state.show_delete_confirm:
         with st.container():
@@ -511,8 +549,20 @@ def render_outbound_call(L, current_lang):
     st.warning(L["call_outbound_loading"])
 
     with st.spinner(L["call_outbound_loading"]):
+        # ⭐ 수정: 고객 문의 이력이 메시지로 온 경우 처리
+        customer_inquiry_from_message = None
+        if st.session_state.simulator_messages:
+            # 최근 고객 메시지에서 문의 내용 추출
+            for msg in reversed(st.session_state.simulator_messages):
+                if msg.get("role") in ["customer", "initial_query", "customer_rebuttal"]:
+                    customer_inquiry_from_message = msg.get("content", "")
+                    break
+        
+        # 고객 문의 내용 (메시지에서 추출하거나 초기 문의 사용)
+        inquiry_text = customer_inquiry_from_message or st.session_state.customer_query_text_area
+        
         summary = generate_outbound_call_summary(
-            st.session_state.customer_query_text_area,
+            inquiry_text,
             st.session_state.language,
             target
         )
@@ -533,7 +583,7 @@ def render_outbound_call(L, current_lang):
         customer_type_display = st.session_state.get(
             "customer_type_sim_select", "")
         save_simulation_history_local(
-            st.session_state.customer_query_text_area,
+            inquiry_text,  # ⭐ 수정: 메시지에서 추출한 문의 내용 사용
             customer_type_display +
             f" (Outbound Call to {target})",
             st.session_state.simulator_messages,
@@ -543,4 +593,5 @@ def render_outbound_call(L, current_lang):
 
     st.success(
         f"✅ {L['call_outbound_simulation_header']}가 완료되었습니다. 요약을 확인하고 고객에게 회신하세요.")
+
 

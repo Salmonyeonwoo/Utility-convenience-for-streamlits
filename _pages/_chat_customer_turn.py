@@ -5,9 +5,8 @@
 
 import streamlit as st
 from lang_pack import LANG
-from simulation_handler import (
-    generate_customer_reaction, save_simulation_history_local
-)
+from simulation_handler import generate_customer_reaction
+from utils.history_handler import save_simulation_history_local
 
 # 응대 초안 자동 생성을 위한 플래그 초기화
 # 고객 메시지가 생성되면 다음 AGENT_TURN에서 자동으로 응대 초안 생성
@@ -38,6 +37,58 @@ def render_customer_turn(L, current_lang):
         
         # 상태 변경을 명시적으로 트리거하여 즉시 화면 업데이트
         st.session_state._message_update_trigger = not st.session_state.get("_message_update_trigger", False)
+        
+        # ⭐ 응대초안 즉시 자동 생성 (고객 메시지 수신 시 - 백그라운드에서 조용히)
+        # ⭐ API Key 확인
+        from llm_client import get_api_key
+        has_api_key = any([
+            bool(get_api_key("openai")),
+            bool(get_api_key("gemini")),
+            bool(get_api_key("claude")),
+            bool(get_api_key("groq"))
+        ])
+        
+        if has_api_key:
+            st.session_state.is_llm_ready = True
+            
+            try:
+                from simulation_handler import generate_agent_response_draft
+                session_lang = st.session_state.get("language", "ko")
+                if session_lang not in ["ko", "en", "ja"]:
+                    session_lang = "ko"
+                
+                # ⭐ 응대 초안 즉시 생성 (백그라운드에서 조용히 - spinner 없이)
+                draft_text = generate_agent_response_draft(session_lang)
+                
+                if draft_text and draft_text.strip():
+                    # 마크다운 헤더 제거
+                    draft_text_clean = draft_text
+                    if "###" in draft_text_clean:
+                        lines = draft_text_clean.split("\n")
+                        draft_text_clean = "\n".join([line for line in lines if not line.strip().startswith("###")])
+                    draft_text_clean = draft_text_clean.strip()
+                    
+                    if draft_text_clean:
+                        # ⭐ 응대 초안 즉시 저장 (AGENT_TURN에서 바로 사용)
+                        st.session_state.agent_response_area_text = draft_text_clean
+                        st.session_state.auto_draft_generated = True
+                        st.session_state.auto_generated_draft_text = draft_text_clean
+                        st.session_state.last_draft_for_message_idx = len(st.session_state.simulator_messages) - 1
+                        
+                        # ⭐ 응대 초안은 입력창에만 표시 (자동 전송하지 않음)
+                        # 사용자가 수정 후 직접 전송하도록 함
+                        
+                        # 디버깅: 응대 초안 생성 확인
+                        print(f"✅ 고객 메시지 수신 시 응대 초안 생성 완료 (메시지 인덱스: {len(st.session_state.simulator_messages) - 1})")
+            except Exception as e:
+                # 오류 발생 시에도 계속 진행 (조용히)
+                print(f"❌ 응대 초안 자동 생성 오류: {e}")
+                st.session_state.auto_draft_generated = False
+        else:
+            # 응대초안 자동 생성을 위한 플래그 리셋
+            st.session_state.auto_draft_generated = False
+            st.session_state.auto_generated_draft_text = ""
+            st.session_state.last_draft_for_message_idx = -1
 
         # 다음 단계 결정
         escaped_no_more = re.escape(L["customer_no_more_inquiries"])

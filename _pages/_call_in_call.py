@@ -12,22 +12,16 @@ import numpy as np
 from typing import List, Dict, Any
 
 # 필요한 모듈 import
-try:
-    from simulation_handler import transcribe_bytes_with_whisper, generate_customer_reaction, synthesize_tts, summarize_history_with_ai, translate_text_with_llm
-except ImportError:
-    # 대체 경로 시도
-    try:
-        from utils.tts_whisper import transcribe_bytes_with_whisper, synthesize_tts
-    except ImportError:
-        transcribe_bytes_with_whisper = None
-        synthesize_tts = None
-    
-    try:
-        from simulation_handler import generate_customer_reaction, summarize_history_with_ai, translate_text_with_llm
-    except ImportError:
-        generate_customer_reaction = None
-        summarize_history_with_ai = None
-        translate_text_with_llm = None
+from simulation_handler import (
+    generate_customer_reaction, 
+    generate_customer_reaction_for_first_greeting,
+    generate_customer_reaction_for_call,
+    summarize_history_with_ai
+)
+from utils.audio_handler import (
+    transcribe_bytes_with_whisper, synthesize_tts
+)
+from utils.translation import translate_text_with_llm
 
 try:
     from llm_client import get_api_key
@@ -41,9 +35,33 @@ def render_call_in_call():
         current_lang = "ko"
     L = LANG.get(current_lang, LANG["ko"])
     
-    # 전화 수신 정보 표시
+    # ⭐ 수정: 통화 시작 시 call_messages 초기화 확인 (새 통화인 경우)
+    if 'call_messages' not in st.session_state:
+        st.session_state.call_messages = []
+    
+    # ⭐ 수정: 통화 수신 정보와 통화 시간을 깔끔한 UI로 표시
+    # ⭐ 중요: start_time이 없으면 통화 수신 시점부터 시작 (RINGING 상태에서 설정됨)
     if st.session_state.get("incoming_phone_number"):
-        st.markdown(f"## 📞 전화 수신 중: {st.session_state.incoming_phone_number}")
+        # 통화 시간 계산 (start_time이 없으면 통화 수신 시점부터 시작)
+        call_duration = 0
+        if st.session_state.get("start_time"):
+            call_duration = (datetime.now() - st.session_state.start_time).total_seconds()
+        else:
+            # ⭐ 수정: start_time이 없으면 현재 시점부터 시작 (통화 수신 시작과 동시에 카운팅)
+            # RINGING 상태에서 이미 설정되어야 하지만, 혹시 모를 경우를 대비
+            st.session_state.start_time = datetime.now()
+            call_duration = 0
+        
+        minutes = int(call_duration // 60)
+        seconds = int(call_duration % 60)
+        duration_str = f"{minutes:02d}:{seconds:02d}"
+        
+        # 통화 정보를 깔끔한 UI로 표시
+        col_info1, col_info2 = st.columns([2, 1])
+        with col_info1:
+            st.markdown(f"### 📞 전화 수신 중: {st.session_state.incoming_phone_number}")
+        with col_info2:
+            st.metric("통화 시간", duration_str)
     
     st.info("📞 통화 중입니다...")
     
@@ -60,6 +78,12 @@ def render_call_in_call():
         st.session_state.video_enabled = st.toggle("📹 비디오", value=st.session_state.video_enabled, help="비디오 통화를 활성화합니다")
     with col_end:
         if st.button("📴 종료", use_container_width=True, type="primary"):
+            # ⭐ 수정: 통화 시간 계산 및 저장
+            call_duration = 0
+            if st.session_state.get("start_time"):
+                call_duration = (datetime.now() - st.session_state.start_time).total_seconds()
+                st.session_state.call_duration = call_duration  # 통화 시간 저장
+            
             st.session_state.call_sim_stage = "CALL_ENDED"
             st.session_state.call_active = False
             st.session_state.start_time = None
@@ -182,12 +206,46 @@ def render_call_in_call():
                         })
                         
                         # 고객 반응 자동 생성 (즉시 처리, 블로킹 최소화)
+                        # ⭐ 수정: 통화 시작 시 첫 메시지인 경우 초기 문의를 고려한 반응 생성
                         if generate_customer_reaction:
                             try:
-                                customer_response = generate_customer_reaction(
-                                    current_lang,
-                                    is_call=True
-                                )
+                                # 통화 시작 시 첫 에이전트 메시지인지 확인
+                                is_first_agent_message = len(st.session_state.call_messages) == 1
+                                initial_inquiry = st.session_state.get("inquiry_text", "")
+                                
+                                # ⭐ 수정: customer_avatar 초기화 확인
+                                if "customer_avatar" not in st.session_state:
+                                    st.session_state.customer_avatar = {"gender": "male", "state": "NEUTRAL"}
+                                
+                                if is_first_agent_message and initial_inquiry and generate_customer_reaction_for_first_greeting:
+                                    # 첫 인사말에 대한 맞춤형 반응 생성 (초기 문의 고려)
+                                    # ⭐ 중요: 초기 문의가 비어있지 않은 경우에만 사용
+                                    if initial_inquiry.strip():
+                                        customer_response = generate_customer_reaction_for_first_greeting(
+                                            current_lang,
+                                            transcript,  # 에이전트 인사말
+                                            initial_inquiry  # 초기 문의
+                                        )
+                                    else:
+                                        # 초기 문의가 없으면 일반 반응 생성
+                                        customer_response = generate_customer_reaction(
+                                            current_lang,
+                                            is_call=True
+                                        )
+                                else:
+                                    # ⭐ 수정: 일반 고객 반응 생성 시 에이전트 응답을 반영하여 적절히 답변
+                                    # generate_customer_reaction_for_call을 사용하여 에이전트의 질문에 직접 답변
+                                    if generate_customer_reaction_for_call:
+                                        customer_response = generate_customer_reaction_for_call(
+                                            current_lang,
+                                            transcript  # 에이전트의 전사 결과를 전달
+                                        )
+                                    else:
+                                        # 폴백: generate_customer_reaction_for_call이 없으면 일반 함수 사용
+                                        customer_response = generate_customer_reaction(
+                                            current_lang,
+                                            is_call=True
+                                        )
                                 
                                 # 고객 메시지로 저장
                                 customer_audio = None
@@ -254,6 +312,57 @@ def render_call_in_call():
     # 통화 메시지 히스토리 표시 (간결하게)
     if st.session_state.get("call_messages"):
         with st.expander("💬 통화 기록", expanded=True):
+            # ⭐ 추가: 기록 초기화 버튼 및 데이터 가져오기 버튼
+            col_clear, col_load, _ = st.columns([1, 1, 3])
+            with col_clear:
+                if st.button("🗑️ 기록 초기화", key="clear_call_history", help="현재 통화 기록을 초기화합니다"):
+                    st.session_state.call_messages = []
+                    st.success("통화 기록이 초기화되었습니다.")
+            with col_load:
+                if st.button("📥 데이터 가져오기", key="load_call_history", help="고객/전화번호별 이전 기록 불러오기"):
+                    # ⭐ 추가: 고객/전화번호별 이전 기록 불러오기 기능
+                    phone_number = st.session_state.get("incoming_phone_number", "")
+                    if phone_number:
+                        # 다운로드된 파일에서 해당 전화번호의 이전 기록 검색
+                        try:
+                            from utils.history_handler import load_simulation_histories_local
+                            all_histories = load_simulation_histories_local(current_lang)
+                            
+                            # 해당 전화번호와 관련된 이전 기록 찾기
+                            matching_histories = []
+                            for history in all_histories:
+                                # 전화 이력이고, 전화번호가 일치하는 경우
+                                if history.get("is_call", False):
+                                    # 초기 문의나 요약에서 전화번호 검색
+                                    initial_query = history.get("initial_query", "")
+                                    summary = history.get("summary", {})
+                                    if isinstance(summary, dict):
+                                        main_inquiry = summary.get("main_inquiry", "")
+                                    else:
+                                        main_inquiry = ""
+                                    
+                                    if phone_number in initial_query or phone_number in main_inquiry:
+                                        matching_histories.append(history)
+                            
+                            if matching_histories:
+                                st.info(f"📋 {len(matching_histories)}개의 이전 기록을 찾았습니다.")
+                                # 가장 최근 기록 표시
+                                latest_history = matching_histories[0]
+                                with st.expander("📋 가장 최근 기록", expanded=True):
+                                    if latest_history.get("summary"):
+                                        summary = latest_history.get("summary", {})
+                                        if isinstance(summary, dict):
+                                            st.markdown(f"**초기 문의**: {latest_history.get('initial_query', 'N/A')}")
+                                            st.markdown(f"**고객 유형**: {latest_history.get('customer_type', 'N/A')}")
+                                            st.markdown(f"**주요 문의**: {summary.get('main_inquiry', 'N/A')}")
+                                            st.markdown(f"**고객 감정 점수**: {summary.get('customer_sentiment_score', 'N/A')}")
+                            else:
+                                st.info("📋 이전 기록이 없습니다. 새로운 고객입니다.")
+                        except Exception as e:
+                            st.warning(f"기록 불러오기 오류: {e}")
+                    else:
+                        st.warning("전화번호를 먼저 입력해주세요.")
+            
             for msg in st.session_state.call_messages:
                 role_icon = "👤" if msg["role"] == "agent" else "👥"
                 role_label = "에이전트" if msg["role"] == "agent" else "고객"

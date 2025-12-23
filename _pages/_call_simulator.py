@@ -43,17 +43,9 @@ def render_call_simulator():
     col_cc = st.columns([1])[0]
 
     with col_cc:
-        # ⭐ 수정: "전화 수신 중" 메시지를 더 깔끔한 위치로 이동
-        if st.session_state.call_sim_stage == "IN_CALL":
-            if st.session_state.call_sim_mode == "INBOUND":
-                st.markdown(
-                    f"## {L['call_status_ringing'].format(number=st.session_state.incoming_phone_number)}"
-                )
-            else:
-                st.markdown(
-                    f"## {L['button_call_outbound']} ({st.session_state.incoming_phone_number})"
-                )
-        st.markdown("---")
+        # ⭐ 수정: "전화 수신 중" 메시지는 _call_in_call.py에서 표시하므로 여기서는 제거
+        # (중복 표시 방지)
+        pass
 
     # ⭐ 왼쪽 비디오 섹션 제거 (비디오 업로드 내용은 상대방 화면 밑으로 이동)
 
@@ -91,6 +83,13 @@ def render_call_simulator():
                 st.code(traceback.format_exc())
                 st.info("📞 통화 중입니다...")
                 if st.button("📴 통화 종료", use_container_width=True, type="primary"):
+                    # ⭐ 수정: 통화 시간 계산 및 저장
+                    from datetime import datetime
+                    call_duration = 0
+                    if st.session_state.get("start_time"):
+                        call_duration = (datetime.now() - st.session_state.start_time).total_seconds()
+                        st.session_state.call_duration = call_duration  # 통화 시간 저장
+                    
                     st.session_state.call_sim_stage = "CALL_ENDED"
                     st.session_state.call_active = False
                     st.session_state.start_time = None
@@ -101,16 +100,54 @@ def render_call_simulator():
                 render_call_ended()
             except ImportError:
                 # call_ended 모듈이 없으면 기본 종료 화면 표시
-                st.success(L.get("call_ended_message", "통화가 종료되었습니다."))
+                # ⭐ 수정: 통화 시간 표시 (몇 분 몇 초 형식)
+                call_duration = st.session_state.get("call_duration", 0)
+                minutes = int(call_duration // 60)
+                seconds = int(call_duration % 60)
+                if minutes > 0:
+                    duration_msg = f"통화가 종료되었습니다. (통화 시간: {minutes}분 {seconds}초)"
+                else:
+                    duration_msg = f"통화가 종료되었습니다. (통화 시간: {seconds}초)"
+                st.success(duration_msg)
                 if st.button(L.get("new_call_button", "새 통화 시작"), key="btn_new_call"):
+                    # ⭐ 수정: 새 통화 시작 시 모든 통화 관련 상태 완전 초기화
                     st.session_state.call_sim_stage = "WAITING_CALL"
+                    st.session_state.call_messages = []
+                    st.session_state.inquiry_text = ""
+                    st.session_state.call_content = ""
+                    st.session_state.incoming_phone_number = None
+                    st.session_state.incoming_call = None
+                    st.session_state.call_active = False
+                    st.session_state.start_time = None
+                    st.session_state.call_duration = None
+                    st.session_state.transfer_summary_text = ""
+                    st.session_state.language_at_transfer_start = None
             except Exception as e:
                 st.error(f"❌ _call_ended 로드 오류: {e}")
                 import traceback
                 st.code(traceback.format_exc())
-                st.success("통화가 종료되었습니다.")
+                # ⭐ 수정: 통화 시간 표시 (몇 분 몇 초 형식)
+                call_duration = st.session_state.get("call_duration", 0)
+                minutes = int(call_duration // 60)
+                seconds = int(call_duration % 60)
+                if minutes > 0:
+                    duration_msg = f"통화가 종료되었습니다. (통화 시간: {minutes}분 {seconds}초)"
+                else:
+                    duration_msg = f"통화가 종료되었습니다. (통화 시간: {seconds}초)"
+                st.success(duration_msg)
                 if st.button("새 통화 시작", key="btn_new_call_fallback"):
+                    # ⭐ 수정: 새 통화 시작 시 모든 통화 관련 상태 완전 초기화
                     st.session_state.call_sim_stage = "WAITING_CALL"
+                    st.session_state.call_messages = []
+                    st.session_state.inquiry_text = ""
+                    st.session_state.call_content = ""
+                    st.session_state.incoming_phone_number = None
+                    st.session_state.incoming_call = None
+                    st.session_state.call_active = False
+                    st.session_state.start_time = None
+                    st.session_state.call_duration = None
+                    st.session_state.transfer_summary_text = ""
+                    st.session_state.language_at_transfer_start = None
         else:
             # 알 수 없는 상태일 때 WAITING_CALL로 초기화하고 전화 수신 화면 표시
             st.session_state.call_sim_stage = "WAITING_CALL"

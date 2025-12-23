@@ -15,7 +15,7 @@ from rag_handler import (
     build_rag_index, get_embedding_function, split_documents,
     rag_answer
 )
-from simulation_handler import (
+from utils.history_handler import (
     load_simulation_histories_local,
     generate_daily_customer_guide, save_daily_customer_guide
 )

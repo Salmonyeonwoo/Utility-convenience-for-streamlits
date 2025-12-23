@@ -5,7 +5,7 @@
 
 import streamlit as st
 from lang_pack import LANG
-from simulation_handler import get_daily_data_statistics
+from utils.history_handler import get_daily_data_statistics
 from datetime import datetime
 
 # 하위 모듈 import
@@ -59,7 +59,21 @@ def render_chat_simulator():
     # =========================
     # LLM 준비 체크 & 채팅 종료 상태
     # =========================
-    if not st.session_state.is_llm_ready:
+    # ⭐ API Key가 실제로 있는지 확인 (항상 최신 상태로 확인)
+    from llm_client import get_api_key
+    has_api_key = any([
+        bool(get_api_key("openai")),
+        bool(get_api_key("gemini")),
+        bool(get_api_key("claude")),
+        bool(get_api_key("groq"))
+    ])
+    
+    # ⭐ API Key가 있으면 is_llm_ready를 강제로 True로 설정
+    if has_api_key:
+        st.session_state.is_llm_ready = True
+    
+    # ⭐ API Key가 없을 때만 경고 표시
+    if not has_api_key:
         st.warning(L["simulation_no_key_warning"])
 
     if st.session_state.sim_stage == "CLOSING":

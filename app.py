@@ -112,7 +112,7 @@ def show_call_tab():
                 st.session_state.call_active = True
                 st.session_state.current_call_id = result["call_id"]
                 st.success(f"전화 수신: {caller_phone}")
-                st.rerun()
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
             else:
                 st.warning("전화번호를 입력해주세요.")
     
@@ -135,7 +135,7 @@ def show_call_tab():
                 st.session_state.call_active = True
                 st.session_state.current_call_id = call_id
                 st.success("통화가 시작되었습니다!")
-                st.rerun()
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
         else:
             if st.button("📴 통화 종료", use_container_width=True, type="secondary"):
                 duration = st.session_state.call_handler.end_call(
@@ -145,8 +145,15 @@ def show_call_tab():
                 st.session_state.call_active = False
                 st.session_state.current_call_id = None
                 st.session_state.incoming_call = None
-                st.success(f"통화가 종료되었습니다. (통화 시간: {duration:.1f}초)")
-                st.rerun()
+                # ⭐ 수정: 통화 시간 표시 (몇 분 몇 초 형식)
+                minutes = int(duration // 60)
+                seconds = int(duration % 60)
+                if minutes > 0:
+                    duration_msg = f"통화가 종료되었습니다. (통화 시간: {minutes}분 {seconds}초)"
+                else:
+                    duration_msg = f"통화가 종료되었습니다. (통화 시간: {seconds}초)"
+                st.success(duration_msg)
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
     
     with col2:
         if st.session_state.call_active:
@@ -185,7 +192,7 @@ def show_call_tab():
                     if result:
                         st.success("문의가 저장되었습니다!")
                         st.session_state.inquiry_text = ""
-                        st.rerun()
+                        # st.rerun()  # 주석 처리: 과도한 rerun 방지
                     else:
                         st.error("문의 저장에 실패했습니다.")
                 else:
@@ -194,7 +201,7 @@ def show_call_tab():
         with col2:
             if st.button("🗑️ 초기화", use_container_width=True):
                 st.session_state.inquiry_text = ""
-                st.rerun()
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
     
     st.divider()
     
@@ -263,7 +270,7 @@ def show_call_tab():
                     response = st.session_state.call_handler.simulate_response(my_audio)
                     st.info(f"💬 상대방: {response['text']}")
                     st.session_state.call_handler.add_audio_chunk(None, "assistant")
-                    st.rerun()
+                    # st.rerun()  # 주석 처리: 과도한 rerun 방지
         
         with audio_col2:
             st.markdown("**상대방 음성**")
@@ -288,7 +295,7 @@ def show_call_tab():
         current_time = time.time()
         if current_time - st.session_state.last_refresh > 5:
             st.session_state.last_refresh = current_time
-            st.rerun()
+            # st.rerun()  # 주석 처리: 과도한 rerun 방지 (5초마다 자동 업데이트 비활성화)
     
     else:
         st.info("""
@@ -317,7 +324,7 @@ def main():
         
         if tab_option != st.session_state.current_tab:
             st.session_state.current_tab = tab_option
-            st.rerun()
+            # st.rerun()  # 주석 처리: 과도한 rerun 방지
         
         st.divider()
         st.title("💬 채팅 설정")
@@ -328,16 +335,16 @@ def main():
             if st.button("일반 모드로 전환", use_container_width=True):
                 st.session_state.admin_logged_in = False
                 st.session_state.is_admin = False
-                st.rerun()
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
             
             st.divider()
             if st.button("관리자 대시보드", use_container_width=True):
                 st.session_state.show_admin = True
-                st.rerun()
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
         else:
             if st.button("관리자 로그인", use_container_width=True):
                 st.session_state.show_admin_login = True
-                st.rerun()
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
         
         st.divider()
         
@@ -349,7 +356,7 @@ def main():
         # 채팅 초기화
         if st.button("채팅 초기화", use_container_width=True):
             st.session_state.messages = []
-            st.rerun()
+            # st.rerun()  # 주석 처리: 과도한 rerun 방지
         
         st.divider()
         
@@ -431,13 +438,13 @@ def main():
                     "content": info_message,
                     "timestamp": timestamp
                 })
-                st.rerun()
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
             else:
                 st.session_state.customer_data_manager.create_sample_data(
                     st.session_state.user_id
                 )
                 st.info("고객 데이터가 없어 샘플 데이터를 생성했습니다. 다시 시도해주세요.")
-                st.rerun()
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
     
     with col3:
         if st.button("🤖 AI 답변", use_container_width=True, type="primary"):
@@ -473,7 +480,7 @@ def main():
                 })
                 
                 save_chat_log(st.session_state.user_id, ai_response, "assistant")
-                st.rerun()
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
             else:
                 st.warning("대화 내용이 없습니다. 먼저 메시지를 입력해주세요.")
     
@@ -518,7 +525,7 @@ def main():
             })
             
             save_chat_log(st.session_state.user_id, bot_response, "assistant")
-            st.rerun()
+            # st.rerun()  # 주석 처리: 과도한 rerun 방지
     
     else:  # 오디오 입력
         st.subheader("🎤 오디오 입력")
@@ -564,7 +571,7 @@ def main():
             })
             
             save_chat_log(st.session_state.user_id, bot_response, "assistant")
-            st.rerun()
+            # st.rerun()  # 주석 처리: 과도한 rerun 방지
 
 if __name__ == "__main__":
     main()

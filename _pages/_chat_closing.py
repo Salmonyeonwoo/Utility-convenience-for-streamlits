@@ -5,9 +5,8 @@
 
 import streamlit as st
 from lang_pack import LANG
-from simulation_handler import (
-    generate_customer_closing_response, save_simulation_history_local
-)
+from simulation_handler import generate_customer_closing_response
+from utils.history_handler import save_simulation_history_local
 import re
 import time
 
@@ -342,4 +341,5 @@ def render_final_closing_action(L, current_lang):
             )
 
             st.session_state.realtime_hint_text = ""
+
 

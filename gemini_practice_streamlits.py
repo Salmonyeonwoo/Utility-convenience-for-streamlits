@@ -839,7 +839,7 @@ if st.session_state.sim_stage == "AGENT_TURN":
 
         # 다음 단계: 고객 반응 생성 요청
         st.session_state.sim_stage = "CUSTOMER_TURN"
-        st.rerun()
+        # st.rerun()  # 주석 처리: 과도한 rerun 방지
 
     # --- 언어 이관 버튼 ---
     st.markdown("---")
@@ -878,7 +878,7 @@ if st.session_state.sim_stage == "AGENT_TURN":
 
             if translated_summary.startswith("❌"):
                 st.session_state.transfer_summary_text = translated_summary
-                st.rerun()
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
                 return
 
             # 4. 세션 상태 업데이트
@@ -907,7 +907,7 @@ if st.session_state.sim_stage == "AGENT_TURN":
 
         # 6. UI 재실행 (언어 변경 적용)
         st.success(f"✅ {LANG[target_lang]['transfer_summary_header']}가 준비되었습니다. 새로운 응대를 시작하세요.")
-        st.rerun()
+        # st.rerun()  # 주석 처리: 과도한 rerun 방지
 
 
     for i, target_lang in enumerate(languages):
@@ -979,7 +979,7 @@ if st.session_state.sim_stage == "CUSTOMER_TURN":
                 st.session_state.simulator_messages, is_chat_ended=False,
             )
 
-        st.rerun()
+        # st.rerun()  # 주석 처리: 과도한 rerun 방지
 
 # =========================
 # 7. 종료 확인 메시지 대기 (WAIT_CLOSING_CONFIRMATION_FROM_AGENT)
@@ -1005,7 +1005,7 @@ if st.session_state.sim_stage == "WAIT_CLOSING_CONFIRMATION_FROM_AGENT":
             st.session_state.customer_query_text_area, customer_type_display,
             st.session_state.simulator_messages, is_chat_ended=False,
         )
-        st.rerun()
+        # st.rerun()  # 주석 처리: 과도한 rerun 방지
 
 # =========================
 # 8. 고객 최종 응답 생성 및 처리 (WAIT_CUSTOMER_CLOSING_RESPONSE)
@@ -1062,7 +1062,8 @@ elif feature_selection == L["lstm_tab"]:
     st.markdown(L["lstm_desc"])
 
     if st.button(L["lstm_rerun_button"]):
-        st.rerun()
+        # st.rerun()  # 주석 처리: 과도한 rerun 방지
+        pass
 
     try:
         data = load_or_train_lstm()
@@ -1153,7 +1154,7 @@ elif feature_selection == L["voice_rec_header"]:
                 )
                 st.success(L["saved_success"])
                 st.session_state.last_transcript = ""
-                st.rerun()
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
             except Exception as e:
                 st.error(f"{L['error']} {e}")
 
@@ -1216,7 +1217,7 @@ elif feature_selection == L["voice_rec_header"]:
                                             break
                                     save_voice_records(records)
                                     st.success(L["retranscribe"] + " " + L["saved_success"])
-                                    st.rerun()
+                                    # st.rerun()  # 주석 처리: 과도한 rerun 방지
                                 except Exception as e:
                                     st.error(f"{L['error']} {e}")
 
@@ -1228,7 +1229,7 @@ elif feature_selection == L["voice_rec_header"]:
                             else:
                                 st.error(L["delete_fail"])
                             st.session_state[f"confirm_del_{rec_id}"] = False
-                            st.rerun()
+                            # st.rerun()  # 주석 처리: 과도한 rerun 방지
                         else:
                             st.session_state[f"confirm_del_{rec_id}"] = True
                             st.warning(L["delete_confirm_rec"])
@@ -1246,7 +1247,7 @@ elif feature_selection == L["voice_rec_header"]:
         with col_chat_end:
             if st.button(L["send_closing_confirm_button"], key="btn_send_closing_confirm"):
                 # ... (기존 채팅 종료 확인 로직 유지)
-                st.rerun()
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
 
         # [2] 이메일 - 상담 종료 버튼 (요청 2 반영: 즉시 종료)
         with col_email_end:
@@ -1256,7 +1257,7 @@ elif feature_selection == L["voice_rec_header"]:
                 st.session_state.simulator_messages.append(
                     {"role": "system_end", "content": "(시스템: 이메일 특성상, 즉시 최종 종료 단계로 진입합니다.)"}
                 )
-                st.rerun()
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
 
                 current_hold_duration = (now - st.session_state.hold_start_time) if st.session_state.is_on_hold and st.session_state.hold_start_time else timedelta(0)
     # =========================
@@ -1304,7 +1305,7 @@ elif feature_selection == L["rag_tab"]:
                     st.session_state.is_rag_ready = True
                     st.success(L["embed_success"].format(count=count))
                     # ⭐ 재실행
-                    st.rerun()
+                    # st.rerun()  # 주석 처리: 과도한 rerun 방지
                 else:
                     st.session_state.is_rag_ready = False
     elif not files_to_process:
@@ -1515,7 +1516,7 @@ elif st.session_state.sim_stage == "WAIT_CLOSING_CONFIRMATION_FROM_AGENT":
                 attachment_context=st.session_state.sim_attachment_context_for_llm,
             )
             # ⭐ 재실행
-            st.rerun()
+            # st.rerun()  # 주석 처리: 과도한 rerun 방지
 
     # [2] 이메일 - 상담 종료 버튼 (즉시 종료)
     with col_email_end:
@@ -1541,7 +1542,7 @@ elif st.session_state.sim_stage == "WAIT_CLOSING_CONFIRMATION_FROM_AGENT":
                 attachment_context=st.session_state.sim_attachment_context_for_llm,
             )
             # ⭐ 재실행
-            st.rerun()
+            # st.rerun()  # 주석 처리: 과도한 rerun 방지
 
     # =========================
     # 8. 고객 최종 응답 생성 및 처리 (WAIT_CUSTOMER_CLOSING_RESPONSE)
@@ -1582,14 +1583,14 @@ elif st.session_state.sim_stage == "WAIT_CUSTOMER_CLOSING_RESPONSE":
 
         st.session_state.realtime_hint_text = ""  # 힌트 초기화
         # ⭐ 필수 수정: 상태 변경 후 UI 업데이트를 위해 st.rerun() 추가
-        st.rerun()
+        # st.rerun()  # 주석 처리: 과도한 rerun 방지 (필요시 주석 해제)
 
     else:
         st.warning("LLM Key가 없어 고객 반응 자동 생성이 불가합니다. 수동으로 '고객 반응 생성' 버튼을 클릭하거나 AGENT_TURN으로 돌아가세요.")
         if st.button(L["customer_generate_response_button"], key="btn_generate_final_response"):
             # 수동 처리 시 AGENT_TURN으로 넘어가도록 처리
             st.session_state.sim_stage = "AGENT_TURN"
-            st.rerun()
+            # st.rerun()  # 주석 처리: 과도한 rerun 방지
 
     # =========================
     # 9. 최종 종료 행동 (FINAL_CLOSING_ACTION)
@@ -1616,7 +1617,7 @@ if st.session_state.sim_stage == "FINAL_CLOSING_ACTION":
         )
 
         # ⭐ 재실행
-        st.rerun()
+        # st.rerun()  # 주석 처리: 과도한 rerun 방지
 
 elif feature_selection == L["sim_tab_phone"]:
     st.header(L["phone_header"])
@@ -1674,7 +1675,7 @@ elif feature_selection == L["sim_tab_phone"]:
             # 통화 중이고, Hold 상태가 아닐 때만 1초마다 업데이트하여 실시간성을 확보
             if not st.session_state.is_on_hold and total_seconds < 1000:
                 time.sleep(1)
-                st.rerun()  # 매 초마다 재실행하여 AHT 갱신
+                # st.rerun()  # 주석 처리: 매 초마다 재실행은 성능 문제 유발 (과도한 rerun 방지)
 
     # ------------------
     # WAIT_FIRST_QUERY / WAITING_CALL 상태
@@ -1760,7 +1761,7 @@ elif feature_selection == L["sim_tab_phone"]:
                     st.session_state.customer_initial_audio_bytes = None
 
             # ✅ 상태 변경 후 재실행하여 IN_CALL 상태로 전환
-            st.rerun()
+            # st.rerun()  # 주석 처리: 과도한 rerun 방지 (필요시 주석 해제)
 
     for idx, msg in enumerate(st.session_state.simulator_messages):
         role = msg["role"]
@@ -1947,7 +1948,7 @@ elif feature_selection == L["content_tab"]:
                     st.session_state.quiz_type_key = str(uuid.uuid4())
 
                     st.success(f"**{topic}** - {content_display} 생성 완료")
-                    st.rerun()  # 퀴즈 UI로 전환
+                    # st.rerun()  # 주석 처리: 과도한 rerun 방지 (필요시 주석 해제)
 
                 except (json.JSONDecodeError, ValueError) as e:
                     # 4. 파싱 실패 또는 데이터 구조 문제 시 에러 메시지 출력
@@ -1995,7 +1996,7 @@ elif feature_selection == L["content_tab"]:
                 st.session_state.quiz_score = 0
                 st.session_state.quiz_answers = []
                 st.session_state.show_explanation = False
-                st.rerun()  # 상태 초기화 후 즉시 재실행
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지 (필요시 주석 해제)
             st.stop()  # 퀴즈 완료 후 스크립트 실행을 완전히 중단
 
         # 퀴즈 진행 (현재 문항)
@@ -2041,7 +2042,7 @@ elif feature_selection == L["content_tab"]:
                         st.error(L["incorrect_answer"])
 
                 st.session_state.show_explanation = True
-                st.rerun()
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
 
         # 정답 및 해설 표시
         if st.session_state.show_explanation:
@@ -2058,7 +2059,7 @@ elif feature_selection == L["content_tab"]:
             if next_col.button(L["next_question"], key=f"next_question_btn_{idx}"):
                 st.session_state.current_question_index += 1
                 st.session_state.show_explanation = False
-                st.rerun()
+                # st.rerun()  # 주석 처리: 과도한 rerun 방지
 
         else:
             # 사용자가 이미 정답을 체크했고 (다시 로드된 경우), 다음 버튼을 바로 표시
@@ -2067,7 +2068,7 @@ elif feature_selection == L["content_tab"]:
                 if next_col.button(L["next_question"], key=f"next_question_btn_after_check_{idx}"):
                     st.session_state.current_question_index += 1
                     st.session_state.show_explanation = False
-                    st.rerun()
+                    # st.rerun()  # 주석 처리: 과도한 rerun 방지
 
     else:
         # 일반 콘텐츠 (핵심 요약 노트, 실습 예제 아이디어) 출력

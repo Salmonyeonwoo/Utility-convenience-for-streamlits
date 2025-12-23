@@ -547,7 +547,7 @@ LANG: Dict[str, Dict[str, str]] = {
         "button_end_call": "📴 통화 종료",
         "button_video_enable": "📹 비디오 활성화",
         "video_enable_help": "비디오 통화를 활성화합니다",
-        "call_ended_message": "통화가 종료되었습니다. (통화 시간: {duration:.1f}초)",
+        "call_ended_message": "통화가 종료되었습니다. (통화 시간: {duration})",  # duration은 "몇 분 몇 초" 형식으로 전달
         "phone_call_instructions": """
             ### 📞 전화 통화 기능 사용 방법
             
