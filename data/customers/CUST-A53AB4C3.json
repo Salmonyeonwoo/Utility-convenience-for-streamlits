@@ -1,0 +1,32 @@
+{
+    "basic_info": {
+        "customer_id": "CUST-A53AB4C3",
+        "name": "yeonwoopark40",
+        "phone": "+6010-968-1392",
+        "email": "yeonwoopark40@gmail.com",
+        "identity_hash": "bd722d662fdac9a0a4f6cc6989a82843",
+        "created_at": "2025-12-24T15:53:48.754238",
+        "last_access_at": "2025-12-24T15:53:48.754238"
+    },
+    "crm_profile": {
+        "trait": "일반",
+        "total_consultations": 0,
+        "avg_satisfaction": 0.0,
+        "tags": []
+    },
+    "consultation_history": [],
+    "agent_manual_responses": [
+        {
+            "response": "はい。お客様。ご連絡頂き、ありがとうございます。私は、お客様のお問合せを相談させて頂くエージェントであるパクヨンウーと申します。Eurostarの事に関して、どの様な用件で音愛わせを戴きましたか、確認したいと思いますが、宜しいでしょうか",
+            "timestamp": "2025-12-24T15:53:48.803130",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "안녕하세요 고객님 문의 주셔서 감사드립니다. 위의 내용이 해결되셨다면, 다른 문의 사항 있으실까요?",
+            "timestamp": "2025-12-24T21:17:57.008151",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        }
+    ]
+}

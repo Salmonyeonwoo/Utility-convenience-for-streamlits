@@ -51,7 +51,8 @@ def render_chat_history(current_lang, L):
                 st.session_state.customer_query_text_area = ""
                 st.session_state.last_transcript = ""
                 st.session_state.sim_audio_bytes = None
-                st.session_state.sim_stage = "WAIT_FIRST_QUERY"
+                st.session_state.sim_stage = "WAIT_ROLE_SELECTION"
+                st.session_state.user_role_selected = None
                 st.session_state.call_sim_stage = "WAITING_CALL"
                 st.session_state.inquiry_text = ""
                 st.session_state.call_content = ""
@@ -81,7 +82,8 @@ def render_chat_history(current_lang, L):
                     st.session_state.simulator_memory.clear()
                     st.session_state.show_delete_confirm = False
                     st.session_state.is_chat_ended = False
-                    st.session_state.sim_stage = "WAIT_FIRST_QUERY"
+                    st.session_state.sim_stage = "WAIT_ROLE_SELECTION"
+                    st.session_state.user_role_selected = None
                     st.session_state.customer_attachment_file = []
                     st.session_state.sim_attachment_context_for_llm = ""
                     st.session_state.agent_attachment_file = []
@@ -379,7 +381,7 @@ def render_closing_downloads(L, current_lang):
     st.info(L["new_simulation_ready"])
 
     st.markdown("---")
-    st.markdown("**📥 현재 세션 이력 다운로드**")
+    st.markdown(f"**{L.get('download_current_session', '📥 현재 세션 이력 다운로드')}**")
     download_col1, download_col2, download_col3, download_col4, download_col5 = st.columns(
         5)
 

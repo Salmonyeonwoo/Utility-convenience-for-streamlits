@@ -394,8 +394,8 @@ if "openai_client" not in st.session_state:
 if "openai_init_msg" not in st.session_state:
     st.session_state.openai_init_msg = ""
 if "sim_stage" not in st.session_state:
-    st.session_state.sim_stage = "WAIT_FIRST_QUERY"
-    # WAIT_FIRST_QUERY (초기 문의 입력)
+    st.session_state.sim_stage = "WAIT_ROLE_SELECTION"  # 역할 선택 단계부터 시작
+    # WAIT_ROLE_SELECTION (역할 선택) -> WAIT_FIRST_QUERY (초기 문의 입력)
     # AGENT_TURN (에이전트 응답 입력)
     # CUSTOMER_TURN (고객 반응 생성 요청)
     # WAIT_CLOSING_CONFIRMATION_FROM_AGENT (고객이 감사, 에이전트가 종료 확인 메시지 보내기 대기)
@@ -460,6 +460,15 @@ if "verification_stage" not in st.session_state:
     st.session_state.verification_stage = "WAIT_VERIFICATION"
 if "sim_instance_id" not in st.session_state:  # FIX: DuplicateWidgetID 방지용 인스턴스 ID 초기화
     st.session_state.sim_instance_id = str(uuid.uuid4())
+# ⭐ 시뮬레이션 입장(상담원 vs 고객) 상태 초기화
+if "sim_perspective" not in st.session_state:
+    st.session_state.sim_perspective = "AGENT"  # 기본값: 상담원 테스트 모드
+if "user_role_selected" not in st.session_state:
+    st.session_state.user_role_selected = None
+if "sim_stage" not in st.session_state:
+    st.session_state.sim_stage = "WAIT_ROLE_SELECTION"  # 기본값: 역할 선택 단계
+if "is_auto_playing" not in st.session_state:
+    st.session_state.is_auto_playing = False
 if "sim_attachment_context_for_llm" not in st.session_state:
     st.session_state.sim_attachment_context_for_llm = ""
 if "realtime_hint_text" not in st.session_state:

@@ -16,13 +16,41 @@ from _pages._chat_agent_turn import render_agent_turn
 from _pages._chat_customer_turn import render_customer_turn
 from _pages._chat_closing import render_closing_stages
 
+# ⭐ 시뮬레이션 입장 모드 관련
+try:
+    from simulation_perspective_logic import init_perspective_state, render_perspective_toggle
+    PERSPECTIVE_LOGIC_AVAILABLE = True
+except ImportError:
+    PERSPECTIVE_LOGIC_AVAILABLE = False
+    def init_perspective_state():
+        if "sim_perspective" not in st.session_state:
+            st.session_state.sim_perspective = "AGENT"
+        if "is_auto_playing" not in st.session_state:
+            st.session_state.is_auto_playing = False
+    def render_perspective_toggle():
+        pass  # 사이드바 토글 비활성화
+
 
 def render_chat_simulator():
     """채팅/이메일 시뮬레이터 렌더링 함수"""
+    # ⭐ 시뮬레이션 입장 상태 초기화
+    if PERSPECTIVE_LOGIC_AVAILABLE:
+        init_perspective_state()
+    else:
+        # 기본 초기화
+        if "sim_perspective" not in st.session_state:
+            st.session_state.sim_perspective = "AGENT"
+        if "is_auto_playing" not in st.session_state:
+            st.session_state.is_auto_playing = False
+    
     current_lang = st.session_state.get("language", "ko")
     if current_lang not in ["ko", "en", "ja"]:
         current_lang = "ko"
     L = LANG.get(current_lang, LANG["ko"])
+    
+    # ⭐ 시뮬레이션 모드 선택 UI를 탭 내부 상단에 표시
+    if PERSPECTIVE_LOGIC_AVAILABLE:
+        render_perspective_toggle(L)
     
     # =========================
     # 0-1. 일일 데이터 수집 통계 표시
@@ -30,16 +58,16 @@ def render_chat_simulator():
     daily_stats = get_daily_data_statistics(st.session_state.language)
     col_stat1, col_stat2, col_stat3, col_stat4 = st.columns(4)
     with col_stat1:
-        st.metric("오늘 수집된 케이스", daily_stats["total_cases"])
+        st.metric(L.get("daily_stats_cases_collected", "오늘 수집된 케이스"), daily_stats["total_cases"])
     with col_stat2:
-        st.metric("고유 고객 수", daily_stats["unique_customers"],
-                  delta="목표: 5인 이상" if daily_stats["target_met"] else "목표 미달")
+        st.metric(L.get("daily_stats_unique_customers", "고유 고객 수"), daily_stats["unique_customers"],
+                  delta=L.get("daily_stats_target_met", "목표: 5인 이상") if daily_stats["target_met"] else L.get("daily_stats_target_not_met", "목표 미달"))
     with col_stat3:
-        st.metric("요약 완료 케이스", daily_stats["cases_with_summary"])
+        st.metric(L.get("daily_stats_summary_completed", "요약 완료 케이스"), daily_stats["cases_with_summary"])
     with col_stat4:
         status_icon = "✅" if daily_stats["target_met"] else "⚠️"
-        st.metric("목표 달성", status_icon,
-                  delta="달성" if daily_stats["target_met"] else "미달성")
+        st.metric(L.get("daily_stats_goal_achievement", "목표 달성"), status_icon,
+                  delta=L.get("daily_stats_achieved", "달성") if daily_stats["target_met"] else L.get("daily_stats_not_achieved", "미달성"))
 
     st.markdown("---")
 
@@ -88,34 +116,45 @@ def render_chat_simulator():
         render_outbound_call(L, current_lang)
 
     # =========================
-    # 초기 문의 입력 (WAIT_FIRST_QUERY)
+    # ⭐ 핵심 수정: 로직 처리를 메시지 렌더링보다 먼저 수행
     # =========================
-    if st.session_state.sim_stage == "WAIT_FIRST_QUERY":
+    # 0. 역할 선택 (WAIT_ROLE_SELECTION) - 새로운 단계
+    # =========================
+    if st.session_state.sim_stage == "WAIT_ROLE_SELECTION":
+        from _pages._chat_role_selection import render_role_selection
+        render_role_selection(L, current_lang)
+    
+    # =========================
+    # 1. 초기 문의 입력 (WAIT_FIRST_QUERY)
+    # =========================
+    elif st.session_state.sim_stage == "WAIT_FIRST_QUERY":
         render_initial_query(L, current_lang)
 
     # =========================
-    # 대화 로그 표시 (공통)
-    # =========================
-    render_chat_messages(L, current_lang)
-
-    # =========================
-    # 에이전트 입력 단계 (AGENT_TURN)
+    # 2. 에이전트 입력 단계 (AGENT_TURN) - 로직 처리 먼저
     # =========================
     if st.session_state.sim_stage == "AGENT_TURN":
         render_agent_turn(L, current_lang)
 
     # =========================
-    # 에스컬레이션 요청 단계 (ESCALATION_REQUIRED)
+    # 3. 에스컬레이션 요청 단계 (ESCALATION_REQUIRED)
     # =========================
     elif st.session_state.sim_stage == "ESCALATION_REQUIRED":
         from _pages._chat_closing import render_escalation
         render_escalation(L, current_lang)
 
     # =========================
-    # 고객 반응 생성 단계 (CUSTOMER_TURN)
+    # 4. 고객 반응 생성 단계 (CUSTOMER_TURN) - 로직 처리 먼저
     # =========================
     elif st.session_state.sim_stage == "CUSTOMER_TURN":
         render_customer_turn(L, current_lang)
+
+    # =========================
+    # 5. 대화 로그 표시 (공통) - 로직 처리 후 메시지 렌더링
+    # =========================
+    # ⭐ 이 순서로 변경: 로직 처리(위) -> 메시지 렌더링(아래)
+    # 이렇게 하면 메시지가 추가되어도 바로 화면에 반영됨
+    render_chat_messages(L, current_lang)
 
     # =========================
     # 종료 관련 단계들

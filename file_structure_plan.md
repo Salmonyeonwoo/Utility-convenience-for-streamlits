@@ -167,3 +167,6 @@ from _pages.chat_simulator.initial_query import render_initial_query
 4. **성능**: 불필요한 import 최소화
 
 
+
+
+

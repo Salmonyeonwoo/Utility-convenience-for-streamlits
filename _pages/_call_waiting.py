@@ -113,10 +113,52 @@ def render_call_waiting():
                 direction = st.session_state.get("call_direction", "inbound")
                 direction_label = L.get("call_direction_outbound", "발신") if direction == "outbound" else L.get("call_direction_inbound", "수신 중")
                 st.caption(f"{direction_label}: {st.session_state.incoming_call.get('caller_phone', st.session_state.get('incoming_phone_number', 'N/A'))}")
-    # RINGING 상태일 때 문의 입력 섹션 표시 (elif로 변경하여 중복 방지)
+    # RINGING 상태일 때 역할 선택 또는 문의 입력 섹션 표시
     elif st.session_state.call_sim_stage == "RINGING":
-        st.markdown("---")
-        st.subheader(L.get("call_inquiry_header", "📝 고객 문의 입력"))
+        # ⭐ 역할 선택이 아직 안 된 경우 역할 선택 먼저 표시
+        if "user_role_selected" not in st.session_state or st.session_state.user_role_selected is None:
+            st.markdown("---")
+            st.subheader(L.get("role_selection_header", "당신은 어느 분이십니까?"))
+            
+            role_options = {
+                "CUSTOMER": L.get("role_selection_customer", "A. 고객"),
+                "AGENT": L.get("role_selection_agent", "B. 에이전트")
+            }
+            
+            selected_role = st.radio(
+                L.get("role_selection_help", "고객으로 문의하시거나, 에이전트로 응대하실 역할을 선택해주세요."),
+                options=list(role_options.keys()),
+                format_func=lambda x: role_options[x],
+                index=0 if st.session_state.get("user_role_selected") == "CUSTOMER" else (1 if st.session_state.get("user_role_selected") == "AGENT" else 0),
+                help=L.get("role_selection_help", "고객으로 문의하시거나, 에이전트로 응대하실 역할을 선택해주세요."),
+                horizontal=True,
+                key="call_role_selection_radio"
+            )
+            
+            if selected_role != st.session_state.get("user_role_selected"):
+                st.session_state.user_role_selected = selected_role
+                if selected_role == "CUSTOMER":
+                    st.session_state.sim_perspective = "CUSTOMER"
+                else:
+                    st.session_state.sim_perspective = "AGENT"
+            
+            st.markdown("---")
+            
+            if st.button(
+                L.get("button_continue_role", "계속하기"),
+                key="call_role_selection_continue",
+                use_container_width=True,
+                type="primary"
+            ):
+                if st.session_state.user_role_selected:
+                    # 역할 선택 완료 후 문의 입력 단계로 진행 (RINGING 상태 유지)
+                    pass  # RINGING 상태 유지하여 다음 렌더링에서 문의 입력 표시
+                else:
+                    st.warning(L.get("warning_select_role", "역할을 선택해주세요."))
+        else:
+            # 역할 선택 완료 후 문의 입력 표시
+            st.markdown("---")
+            st.subheader(L.get("call_inquiry_header", "📝 고객 문의 입력"))
         inquiry_text = st.text_area(
             L.get("call_inquiry_label", "고객 문의 내용을 입력하세요"),
             value=st.session_state.get("inquiry_text", ""),

@@ -94,6 +94,39 @@ def render_initial_query(L, current_lang):
             st.session_state.show_customer_data_ui = False
             st.session_state.show_agent_response_ui = False
 
+            # ⭐ 고객 데이터 자동 검색 및 불러오기 (이전 응대 이력 확인)
+            if hasattr(st.session_state, 'customer_data_manager') and st.session_state.customer_data_manager:
+                try:
+                    customer_name = st.session_state.get("customer_name", "").strip()
+                    customer_phone = st.session_state.customer_phone.strip()
+                    customer_email = st.session_state.customer_email.strip()
+                    
+                    # 고객 정보로 이전 응대 이력 검색
+                    found_customer = st.session_state.customer_data_manager.find_customer_by_info(
+                        name=customer_name if customer_name else None,
+                        phone=customer_phone if customer_phone else None,
+                        email=customer_email if customer_email else None
+                    )
+                    
+                    if found_customer:
+                        st.session_state.customer_data = found_customer
+                        customer_id = found_customer.get("basic_info", {}).get("customer_id", "")
+                        consultation_count = found_customer.get("crm_profile", {}).get("total_consultations", 0)
+                        
+                        # 이전 응대 이력이 있다는 정보를 메시지에 추가
+                        history_info = f"📋 **고객 기억**: 이전 응대 이력이 확인되었습니다. (고객 ID: {customer_id}, 이전 상담 건수: {consultation_count}회)"
+                        st.session_state.simulator_messages.append({
+                            "role": "system",
+                            "content": history_info
+                        })
+                        print(f"✅ 고객 데이터 자동 불러오기 성공: {customer_id} (상담 건수: {consultation_count}회)")
+                    else:
+                        st.session_state.customer_data = None
+                        print("ℹ️ 이전 응대 이력이 없는 신규 고객입니다.")
+                except Exception as e:
+                    print(f"⚠️ 고객 데이터 자동 검색 중 오류: {e}")
+                    st.session_state.customer_data = None
+
             # 고객 검증 상태 초기화
             is_login_inquiry = check_if_login_related_inquiry(customer_query)
             if is_login_inquiry:
@@ -121,6 +154,8 @@ def render_initial_query(L, current_lang):
             st.session_state.simulator_messages.append(
                 {"role": "customer", "content": customer_query}
             )
+            # ⭐ 초기 메시지 추가 시 즉시 화면 업데이트
+            # st.rerun()  # 주석 처리: 렌더링 순서 변경으로 자동 반영됨
 
             # 언어 자동 감지
             try:
@@ -218,8 +253,27 @@ def render_initial_query(L, current_lang):
                 attachment_context=st.session_state.sim_attachment_context_for_llm,
                 is_chat_ended=False,
             )
-            st.session_state.sim_stage = "CUSTOMER_TURN"
+            # ⭐ 고객 체험 모드일 때는 AGENT_TURN으로 이동하여 AI가 자동 응답
+            # ⭐ 상담원 테스트 모드일 때도 AGENT_TURN으로 이동하여 자동 응답 전송
+            perspective = st.session_state.get("sim_perspective", "AGENT")
+            st.session_state.sim_stage = "AGENT_TURN"
+            
             # 응대 초안 자동 생성을 위한 플래그 초기화
             st.session_state.auto_draft_generated = False
             st.session_state.auto_generated_draft_text = ""
+            st.session_state.auto_draft_auto_sent = False
+            st.session_state.pending_customer_reaction = False
+            # ⭐ 자동 응답 비활성화 플래그 초기화 (새로운 채팅 시작 시)
+            st.session_state.auto_response_disabled = False
+            st.session_state.requires_agent_response = False
+            
+            # ⭐ 고객 모드일 때는 AI 응답 생성 플래그 설정
+            if perspective == "CUSTOMER":
+                st.session_state.ai_agent_response_generated = False
+            else:
+                # ⭐ 상담원 모드: 초기 문의 입력 시 자동 응답 즉시 생성 및 전송 플래그 설정
+                st.session_state.need_auto_response_on_agent_turn = True
+            
+            # ⭐ 화면 즉시 업데이트하여 자동 응답 생성 및 전송 트리거
+            # st.rerun()  # 주석 처리: 버튼 클릭 후 Streamlit이 자동 rerun함
 

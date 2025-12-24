@@ -31,18 +31,18 @@ def render_call_ended():
     minutes = int(call_duration // 60)
     seconds = int(call_duration % 60)
     if minutes > 0:
-        duration_msg = f"통화가 종료되었습니다. (통화 시간: {minutes}분 {seconds}초)"
+        duration_msg = L.get("call_ended_with_duration", "통화가 종료되었습니다. (통화 시간: {minutes}분 {seconds}초)").format(minutes=minutes, seconds=seconds)
     else:
-        duration_msg = f"통화가 종료되었습니다. (통화 시간: {seconds}초)"
+        duration_msg = L.get("call_ended_with_seconds", "통화가 종료되었습니다. (통화 시간: {seconds}초)").format(seconds=seconds)
     st.success(duration_msg)
     
     # 통화 이력 저장 (자동)
     if st.session_state.get("call_messages"):
         try:
             inquiry_text = st.session_state.get("inquiry_text", "")
-            customer_type = st.session_state.get("customer_type_sim_select", "일반 고객")
+            customer_type = st.session_state.get("customer_type_sim_select", L.get("default_customer_type", "일반 고객"))
             if not customer_type:
-                customer_type = "일반 고객"
+                customer_type = L.get("default_customer_type", "일반 고객")
             
             # 통화 이력을 채팅 형식으로 변환
             call_messages = st.session_state.get("call_messages", [])
@@ -59,7 +59,7 @@ def render_call_ended():
             
             # 이력 저장
             save_simulation_history_local(
-                initial_query=inquiry_text or "전화 통화",
+                initial_query=inquiry_text or L.get("phone_call_default", "전화 통화"),
                 customer_type=customer_type,
                 messages=converted_messages,
                 is_chat_ended=True,
@@ -67,20 +67,20 @@ def render_call_ended():
                 is_call=True
             )
         except Exception as e:
-            st.warning(f"통화 이력 저장 중 오류 발생: {e}")
+            st.warning(L.get("call_history_save_error", "통화 이력 저장 중 오류 발생: {error}").format(error=e))
     
     # 이력 다운로드 섹션 (채팅 탭과 동일한 기능)
     st.markdown("---")
-    st.markdown("**📥 현재 통화 이력 다운로드**")
+    st.markdown(f"**{L.get('download_current_call_history', '📥 현재 통화 이력 다운로드')}**")
     download_col1, download_col2, download_col3, download_col4, download_col5 = st.columns(5)
     
     current_session_history = None
     if st.session_state.get("call_messages"):
         try:
             inquiry_text = st.session_state.get("inquiry_text", "")
-            customer_type = st.session_state.get("customer_type_sim_select", "일반 고객")
+            customer_type = st.session_state.get("customer_type_sim_select", L.get("default_customer_type", "일반 고객"))
             if not customer_type:
-                customer_type = "일반 고객"
+                customer_type = L.get("default_customer_type", "일반 고객")
             
             # 통화 메시지를 채팅 형식으로 변환
             call_messages = st.session_state.get("call_messages", [])
@@ -98,7 +98,7 @@ def render_call_ended():
             # 요약 생성
             current_session_summary = generate_chat_summary(
                 converted_messages,
-                inquiry_text or "전화 통화",
+                inquiry_text or L.get("phone_call_default", "전화 통화"),
                 customer_type,
                 st.session_state.language
             )
@@ -106,7 +106,7 @@ def render_call_ended():
             current_session_history = [{
                 "id": f"call_{st.session_state.get('current_call_id', 'unknown')}",
                 "timestamp": datetime.now().isoformat(),
-                "initial_query": inquiry_text or "전화 통화",
+                "initial_query": inquiry_text or L.get("phone_call_default", "전화 통화"),
                 "customer_type": customer_type,
                 "language_key": st.session_state.language,
                 "messages": converted_messages,
@@ -262,6 +262,7 @@ def render_call_ended():
         st.session_state.hold_total_seconds = 0
         st.session_state.provider_call_active = False
         st.session_state.call_direction = "inbound"
-        st.success("✅ 새 통화를 시작할 수 있습니다.")
+        st.success(L.get("new_call_ready", "✅ 새 통화를 시작할 수 있습니다."))
+
 
 

@@ -29,10 +29,26 @@ import io
 
 def render_call_simulator():
     """전화 시뮬레이터 렌더링 (전화 수신, 문의 입력 포함)"""
+    # ⭐ 시뮬레이션 입장 상태 초기화
+    try:
+        from simulation_perspective_logic import init_perspective_state, render_perspective_toggle
+        init_perspective_state()
+        PERSPECTIVE_LOGIC_AVAILABLE = True
+    except ImportError:
+        PERSPECTIVE_LOGIC_AVAILABLE = False
+        if "sim_perspective" not in st.session_state:
+            st.session_state.sim_perspective = "AGENT"
+        if "is_auto_playing" not in st.session_state:
+            st.session_state.is_auto_playing = False
+    
     current_lang = st.session_state.get("language", "ko")
     if current_lang not in ["ko", "en", "ja"]:
         current_lang = "ko"
     L = LANG.get(current_lang, LANG["ko"])
+    
+    # ⭐ 시뮬레이션 모드 선택 UI를 탭 내부 상단에 표시
+    if PERSPECTIVE_LOGIC_AVAILABLE:
+        render_perspective_toggle(L)
     
     # AHT 타이머는 streamlit_app.py의 우측 상단에서 표시됨 (제거됨)
 
@@ -105,9 +121,9 @@ def render_call_simulator():
                 minutes = int(call_duration // 60)
                 seconds = int(call_duration % 60)
                 if minutes > 0:
-                    duration_msg = f"통화가 종료되었습니다. (통화 시간: {minutes}분 {seconds}초)"
+                    duration_msg = L.get("call_ended_with_duration", "통화가 종료되었습니다. (통화 시간: {minutes}분 {seconds}초)").format(minutes=minutes, seconds=seconds)
                 else:
-                    duration_msg = f"통화가 종료되었습니다. (통화 시간: {seconds}초)"
+                    duration_msg = L.get("call_ended_with_seconds", "통화가 종료되었습니다. (통화 시간: {seconds}초)").format(seconds=seconds)
                 st.success(duration_msg)
                 if st.button(L.get("new_call_button", "새 통화 시작"), key="btn_new_call"):
                     # ⭐ 수정: 새 통화 시작 시 모든 통화 관련 상태 완전 초기화
@@ -136,11 +152,11 @@ def render_call_simulator():
                 minutes = int(call_duration // 60)
                 seconds = int(call_duration % 60)
                 if minutes > 0:
-                    duration_msg = f"통화가 종료되었습니다. (통화 시간: {minutes}분 {seconds}초)"
+                    duration_msg = L.get("call_ended_with_duration", "통화가 종료되었습니다. (통화 시간: {minutes}분 {seconds}초)").format(minutes=minutes, seconds=seconds)
                 else:
-                    duration_msg = f"통화가 종료되었습니다. (통화 시간: {seconds}초)"
+                    duration_msg = L.get("call_ended_with_seconds", "통화가 종료되었습니다. (통화 시간: {seconds}초)").format(seconds=seconds)
                 st.success(duration_msg)
-                if st.button("새 통화 시작", key="btn_new_call_fallback"):
+                if st.button(L.get("new_call_button", "새 통화 시작"), key="btn_new_call_fallback"):
                     # ⭐ 수정: 새 통화 시작 시 모든 통화 관련 상태 완전 초기화
                     st.session_state.call_sim_stage = "WAITING_CALL"
                     st.session_state.call_messages = []

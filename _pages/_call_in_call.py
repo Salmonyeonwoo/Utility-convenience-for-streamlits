@@ -84,8 +84,8 @@ def render_call_in_call():
     hold_seconds = int(hold_elapsed % 60)
     hold_duration_str = f"{hold_minutes:02d}:{hold_seconds:02d}"
 
-    # 통화 제어 영역 (4열: Hold/재개, 업체 발신, 비디오, 종료)
-    col_hold, col_provider, col_video, col_end = st.columns([1, 1, 1, 1])
+    # 통화 제어 영역 (5열: Hold/재개, 업체 발신, 응대 힌트, 비디오, 종료)
+    col_hold, col_provider, col_hint, col_video, col_end = st.columns([1, 1, 1, 1, 1])
     with col_hold:
         if st.session_state.get("is_on_hold"):
             st.caption(L.get("hold_status", "통화 Hold 중 (누적 Hold 시간: {duration})").format(duration=hold_duration_str))
@@ -125,6 +125,44 @@ def render_call_in_call():
                 "timestamp": datetime.now().isoformat()
             })
             st.info(L.get("provider_call_progress", "업체에 확인 중입니다. 잠시만 기다려 주세요."))
+    with col_hint:
+        # ⭐ 응대 힌트 버튼 추가
+        if st.button(
+            L.get("button_hint", "💡 응대 힌트"),
+            use_container_width=True,
+            help=L.get("button_hint_help", "현재 대화 맥락을 기반으로 실시간 응대 힌트를 제공합니다"),
+            key="call_hint_button"
+        ):
+            if st.session_state.is_llm_ready:
+                try:
+                    from simulation_handler import generate_realtime_hint
+                    session_lang = st.session_state.get("language", current_lang)
+                    if session_lang not in ["ko", "en", "ja"]:
+                        session_lang = current_lang
+                    
+                    with st.spinner(L.get("generating_hint", "응대 힌트 생성 중...")):
+                        hint = generate_realtime_hint(session_lang, is_call=True)
+                        if hint:
+                            # 힌트를 시스템 메시지로 추가
+                            st.session_state.call_messages.append({
+                                "role": "supervisor",
+                                "content": f"💡 **{L.get('hint_label', '응대 힌트')}**: {hint}",
+                                "timestamp": datetime.now().isoformat()
+                            })
+                            st.session_state.realtime_hint_text = hint
+                except Exception as e:
+                    st.error(f"응대 힌트 생성 오류: {e}")
+            else:
+                has_api_key = any([
+                    bool(get_api_key("openai")) if get_api_key else False,
+                    bool(get_api_key("gemini")) if get_api_key else False,
+                    bool(get_api_key("claude")) if get_api_key else False,
+                    bool(get_api_key("groq")) if get_api_key else False
+                ])
+                if not has_api_key:
+                    st.warning(L.get("simulation_no_key_warning", "LLM이 준비되지 않았습니다."))
+                else:
+                    st.session_state.is_llm_ready = True
     with col_video:
         if 'video_enabled' not in st.session_state:
             st.session_state.video_enabled = False
@@ -224,7 +262,7 @@ def render_call_in_call():
     
     with audio_col2:
         if st.session_state.get("call_messages"):
-            st.caption(f"메시지: {len(st.session_state.call_messages)}개")
+            st.caption(L.get("messages_count", "메시지: {count}개").format(count=len(st.session_state.call_messages)))
     
     # 전사 결과 및 고객 반응 생성 (즉각 반응, 로딩 최소화, rerun 없음)
     if audio_input:
@@ -378,15 +416,21 @@ def render_call_in_call():
     
     # 통화 메시지 히스토리 표시 (간결하게)
     if st.session_state.get("call_messages"):
-        with st.expander("💬 통화 기록", expanded=True):
+        with st.expander(L.get("call_history_label", "💬 통화 기록"), expanded=True):
             # ⭐ 추가: 기록 초기화 버튼 및 데이터 가져오기 버튼
             col_clear, col_load, _ = st.columns([1, 1, 3])
             with col_clear:
-                if st.button("🗑️ 기록 초기화", key="clear_call_history", help="현재 통화 기록을 초기화합니다"):
+                if st.button(
+                    L.get("clear_call_history", "🗑️ 기록 초기화"),
+                    key="clear_call_history",
+                    help=L.get("clear_call_history_help", "현재 통화 기록을 초기화합니다")):
                     st.session_state.call_messages = []
-                    st.success("통화 기록이 초기화되었습니다.")
+                    st.success(L.get("call_history_cleared", "통화 기록이 초기화되었습니다."))
             with col_load:
-                if st.button("📥 데이터 가져오기", key="load_call_history", help="고객/전화번호별 이전 기록 불러오기"):
+                if st.button(
+                    L.get("load_call_history", "📥 데이터 가져오기"),
+                    key="load_call_history",
+                    help=L.get("load_call_history_help", "고객/전화번호별 이전 기록 불러오기")):
                     # ⭐ 추가: 고객/전화번호별 이전 기록 불러오기 기능
                     phone_number = st.session_state.get("incoming_phone_number", "")
                     if phone_number:
@@ -431,32 +475,37 @@ def render_call_in_call():
                         st.warning("전화번호를 먼저 입력해주세요.")
             
             for msg in st.session_state.call_messages:
-                role_icon = "👤" if msg["role"] == "agent" else "👥"
-                role_label = "에이전트" if msg["role"] == "agent" else "고객"
-                with st.chat_message(msg["role"]):
-                    st.write(f"{role_icon} **{role_label}**: {msg['content']}")
-                    # 오디오 재생 (고객 메시지에만)
-                    if msg.get("audio") and msg["role"] == "customer":
-                        st.audio(msg["audio"], format="audio/mp3", autoplay=False)
-                    elif msg.get("audio") and msg["role"] == "agent":
-                        st.audio(msg["audio"], format="audio/wav", autoplay=False)
-                    if msg.get("timestamp"):
-                        try:
-                            ts = datetime.fromisoformat(msg["timestamp"])
-                            st.caption(ts.strftime("%H:%M:%S"))
-                        except:
-                            pass
+                role = msg.get("role", "")
+                # supervisor 메시지는 별도로 표시
+                if role == "supervisor" or role == "system_hold":
+                    st.info(msg.get("content", ""))
+                else:
+                    role_icon = "👤" if role == "agent" else "👥"
+                    role_label = L.get("agent_label", "에이전트") if role == "agent" else L.get("customer_label", "고객")
+                    with st.chat_message(role):
+                        st.write(f"{role_icon} **{role_label}**: {msg.get('content', '')}")
+                        # 오디오 재생 (고객 메시지에만)
+                        if msg.get("audio") and role == "customer":
+                            st.audio(msg["audio"], format="audio/mp3", autoplay=False)
+                        elif msg.get("audio") and role == "agent":
+                            st.audio(msg["audio"], format="audio/wav", autoplay=False)
+                        if msg.get("timestamp"):
+                            try:
+                                ts = datetime.fromisoformat(msg["timestamp"])
+                                st.caption(ts.strftime("%H:%M:%S"))
+                            except:
+                                pass
     
     st.markdown("---")
     
     # 통화 내용 수동 입력 (보조 기능) - 크기 축소
-    st.markdown("**📝 통화 내용 메모**")
+    st.markdown(f"**{L.get('call_content_memo', '📝 통화 내용 메모')}**")
     call_content = st.text_area(
-        "메모 입력 (선택사항)",
+        L.get("memo_input_placeholder", "메모 입력 (선택사항)"),
         value=st.session_state.get("call_content", ""),
         key="call_content_input",
         height=100,
-        help="추가 메모를 작성할 수 있습니다"
+        help=L.get("memo_input_help", "추가 메모를 작성할 수 있습니다")
     )
     
     if call_content:

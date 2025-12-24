@@ -145,3 +145,6 @@ def translate_text_with_llm_chunk(text_content: str, target_lang_code: str, sour
     print(f"Translation failed: {last_error or 'No active API key found.'}. Returning original text.")
     return text_content, False
 
+
+
+

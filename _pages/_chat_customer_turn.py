@@ -15,6 +15,24 @@ import re
 
 def render_customer_turn(L, current_lang):
     """고객 반응 생성 단계 UI 렌더링"""
+    # ⭐ 고객 체험 모드일 때 사용자가 직접 입력
+    perspective = st.session_state.get("sim_perspective", "AGENT")
+    if perspective == "CUSTOMER" and st.session_state.sim_stage == "CUSTOMER_TURN":
+        st.info("👤 고객 입장에서 AI 상담원에게 응답을 입력하세요.")
+        user_customer_input = st.chat_input("문의 사항을 입력하세요 (고객 입장)...")
+        
+        if user_customer_input:
+            # 메시지 추가
+            new_msg = {"role": "customer", "content": user_customer_input}
+            st.session_state.simulator_messages.append(new_msg)
+            
+            # 다음 단계로 이동 (AI 상담원이 답변할 차례)
+            st.session_state.sim_stage = "AGENT_TURN"
+            st.session_state.ai_agent_response_generated = False  # AI 응답 생성 플래그 리셋
+            # st.rerun()  # 주석 처리: 버튼 클릭 후 Streamlit이 자동 rerun함
+        return  # 고객 모드일 때는 기존 AI 고객 반응 생성 로직을 실행하지 않음
+    
+    # ⭐ 상담원 테스트 모드: 기존 로직 (AI가 고객 반응 자동 생성)
     customer_type_display = st.session_state.get(
         "customer_type_sim_select", L["customer_type_options"][0])
     st.info(L["customer_turn_info"])
@@ -35,8 +53,10 @@ def render_customer_turn(L, current_lang):
         new_message = {"role": "customer", "content": customer_response}
         st.session_state.simulator_messages = st.session_state.simulator_messages + [new_message]
         
-        # 상태 변경을 명시적으로 트리거하여 즉시 화면 업데이트
+        # ⭐ 상태 변경을 명시적으로 트리거하여 즉시 화면 업데이트
         st.session_state._message_update_trigger = not st.session_state.get("_message_update_trigger", False)
+        # ⭐ 고객 메시지 추가 시 즉시 화면 업데이트를 위한 rerun
+        # st.rerun()  # 주석 처리: 렌더링 순서 변경으로 자동 반영됨
         
         # ⭐ 응대초안 즉시 자동 생성 (고객 메시지 수신 시 - 백그라운드에서 조용히)
         # ⭐ API Key 확인
@@ -51,39 +71,44 @@ def render_customer_turn(L, current_lang):
         if has_api_key:
             st.session_state.is_llm_ready = True
             
-            try:
-                from simulation_handler import generate_agent_response_draft
-                session_lang = st.session_state.get("language", "ko")
-                if session_lang not in ["ko", "en", "ja"]:
-                    session_lang = "ko"
-                
-                # ⭐ 응대 초안 즉시 생성 (백그라운드에서 조용히 - spinner 없이)
-                draft_text = generate_agent_response_draft(session_lang)
-                
-                if draft_text and draft_text.strip():
-                    # 마크다운 헤더 제거
-                    draft_text_clean = draft_text
-                    if "###" in draft_text_clean:
-                        lines = draft_text_clean.split("\n")
-                        draft_text_clean = "\n".join([line for line in lines if not line.strip().startswith("###")])
-                    draft_text_clean = draft_text_clean.strip()
+            # ⭐ 응대 초안 생성 중 플래그로 중복 생성 방지
+            if not st.session_state.get("draft_generation_in_progress", False):
+                st.session_state.draft_generation_in_progress = True
+                try:
+                    from simulation_handler import generate_agent_response_draft
+                    session_lang = st.session_state.get("language", "ko")
+                    if session_lang not in ["ko", "en", "ja"]:
+                        session_lang = "ko"
                     
-                    if draft_text_clean:
-                        # ⭐ 응대 초안 즉시 저장 (AGENT_TURN에서 바로 사용)
-                        st.session_state.agent_response_area_text = draft_text_clean
-                        st.session_state.auto_draft_generated = True
-                        st.session_state.auto_generated_draft_text = draft_text_clean
-                        st.session_state.last_draft_for_message_idx = len(st.session_state.simulator_messages) - 1
+                    # ⭐ 응대 초안 즉시 생성 (백그라운드에서 조용히 - spinner 없이)
+                    draft_text = generate_agent_response_draft(session_lang)
+                    
+                    if draft_text and draft_text.strip():
+                        # 마크다운 헤더 제거
+                        draft_text_clean = draft_text
+                        if "###" in draft_text_clean:
+                            lines = draft_text_clean.split("\n")
+                            draft_text_clean = "\n".join([line for line in lines if not line.strip().startswith("###")])
+                        draft_text_clean = draft_text_clean.strip()
                         
-                        # ⭐ 응대 초안은 입력창에만 표시 (자동 전송하지 않음)
-                        # 사용자가 수정 후 직접 전송하도록 함
-                        
-                        # 디버깅: 응대 초안 생성 확인
-                        print(f"✅ 고객 메시지 수신 시 응대 초안 생성 완료 (메시지 인덱스: {len(st.session_state.simulator_messages) - 1})")
-            except Exception as e:
-                # 오류 발생 시에도 계속 진행 (조용히)
-                print(f"❌ 응대 초안 자동 생성 오류: {e}")
-                st.session_state.auto_draft_generated = False
+                        if draft_text_clean:
+                            # ⭐ 응대 초안 즉시 저장 (AGENT_TURN에서 바로 사용)
+                            st.session_state.agent_response_area_text = draft_text_clean
+                            st.session_state.auto_draft_generated = True
+                            st.session_state.auto_generated_draft_text = draft_text_clean
+                            st.session_state.last_draft_for_message_idx = len(st.session_state.simulator_messages) - 1
+                            
+                            # ⭐ 응대 초안은 입력창에만 표시 (자동 전송하지 않음)
+                            # 사용자가 수정 후 직접 전송하도록 함
+                            
+                            # 디버깅: 응대 초안 생성 확인
+                            print(f"✅ 고객 메시지 수신 시 응대 초안 생성 완료 (메시지 인덱스: {len(st.session_state.simulator_messages) - 1})")
+                except Exception as e:
+                    # 오류 발생 시에도 계속 진행 (조용히)
+                    print(f"❌ 응대 초안 자동 생성 오류: {e}")
+                    st.session_state.auto_draft_generated = False
+                finally:
+                    st.session_state.draft_generation_in_progress = False
         else:
             # 응대초안 자동 생성을 위한 플래그 리셋
             st.session_state.auto_draft_generated = False
