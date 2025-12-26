@@ -12,7 +12,7 @@ from _pages._chat_transfer import render_transfer_summary
 
 
 def render_chat_messages(L, current_lang):
-    """대화 로그 표시 및 메시지 렌더링 (카카오톡 스타일)"""
+    """대화 로그 표시 및 메시지 렌더링 (스크린샷 스타일 - 깔끔한 채팅 창)"""
     # 피드백 저장 콜백 함수
     def save_feedback(index):
         feedback_key = f"feedback_{st.session_state.sim_instance_id}_{index}"
@@ -24,31 +24,34 @@ def render_chat_messages(L, current_lang):
     # CSS 스타일 적용
     st.markdown(get_chat_styles(), unsafe_allow_html=True)
 
-    # 메시지 표시
-    if st.session_state.simulator_messages:
-        for idx, msg in enumerate(st.session_state.simulator_messages):
-            role = msg["role"]
-            content = msg["content"]
+    # 스크롤 가능한 채팅 컨테이너 (가운데 대화 창 안에서만 스크롤) - 스크린샷 스타일
+    chat_container = st.container(height=450)
+    with chat_container:
+        # 메시지 표시
+        if st.session_state.simulator_messages:
+            for idx, msg in enumerate(st.session_state.simulator_messages):
+                role = msg["role"]
+                content = msg["content"]
 
-            # 시스템 메시지는 제외
-            if role in ["system_end", "system_transfer"]:
-                continue
+                # 시스템 메시지는 제외
+                if role in ["system_end", "system_transfer"]:
+                    continue
 
-            # 메시지 타입별 렌더링
-            if role == "customer" or role == "customer_rebuttal" or role == "initial_query":
-                render_customer_message_with_icons(L, idx, content, current_lang)
+                # 메시지 타입별 렌더링
+                if role == "customer" or role == "customer_rebuttal" or role == "initial_query":
+                    render_customer_message_with_icons(L, idx, content, current_lang)
 
-            elif role == "agent_response":
-                _render_agent_message(L, idx, content, save_feedback)
+                elif role == "agent_response":
+                    _render_agent_message(L, idx, content, save_feedback)
 
-            elif role == "supervisor":
-                _render_supervisor_message(content)
+                elif role == "supervisor":
+                    _render_supervisor_message(content)
 
-            # 고객 첨부 파일 표시
-            if idx == 0 and role == "customer" and st.session_state.customer_attachment_b64:
-                _render_attachment(L)
-    else:
-        st.info(L.get("no_messages", "아직 메시지가 없습니다."))
+                # 고객 첨부 파일 표시
+                if idx == 0 and role == "customer" and st.session_state.customer_attachment_b64:
+                    _render_attachment(L)
+        else:
+            st.info(L.get("no_messages", "아직 메시지가 없습니다."))
 
     # 이관 요약 표시
     actual_current_lang = st.session_state.get("language", current_lang)
@@ -66,23 +69,28 @@ def render_chat_messages(L, current_lang):
 
 
 def _render_agent_message(L, idx, content, save_feedback):
-    """에이전트 메시지 렌더링 (sim_perspective에 따라 방향 동적 변경)"""
-    # sim_perspective에 따라 말풍선 방향 결정
-    perspective = st.session_state.get("sim_perspective", "AGENT")
-    # AGENT 입장: agent → 오른쪽, CUSTOMER 입장: agent → 왼쪽
-    if perspective == "AGENT":
-        justify_content = "flex-end"  # 오른쪽
-        message_class = "message-agent-right"
-        animation = "slideInRight"
-    else:  # CUSTOMER 입장
-        justify_content = "flex-start"  # 왼쪽
-        message_class = "message-agent"
-        animation = "slideInLeft"
+    """에이전트 메시지 렌더링 (스크린샷 스타일 - 상담원 메시지는 오른쪽 파란색)"""
+    # 스크린샷 스타일: 상담원 메시지는 항상 오른쪽, 파란색
+    justify_content = "flex-end"  # 오른쪽
+    message_class = "message-agent-right"
+    animation = "slideInRight"
+    
+    # 타임스탬프 추가 (스크린샷 스타일)
+    from datetime import datetime
+    timestamp = ""
+    if idx < len(st.session_state.simulator_messages):
+        msg = st.session_state.simulator_messages[idx]
+        if "timestamp" in msg:
+            timestamp = msg["timestamp"]
+        else:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     st.markdown(f"""
     <div style="display: flex; justify-content: {justify_content}; margin: 8px 0; animation: {animation} 0.4s ease-out;">
-        <div class="message-bubble {message_class}">
-            <div style="line-height: 1.5;">{content.replace(chr(10), '<br>')}</div>
+        <div class="message-bubble {message_class}" style="max-width: 70%;">
+            <div style="font-weight: 600; margin-bottom: 4px; font-size: 14px;">상담원</div>
+            <div style="line-height: 1.5; margin-bottom: 4px;">{content.replace(chr(10), '<br>')}</div>
+            <div style="font-size: 11px; color: #666; text-align: right; margin-top: 4px;">{timestamp}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)

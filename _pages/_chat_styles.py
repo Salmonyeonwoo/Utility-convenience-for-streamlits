@@ -4,13 +4,41 @@
 # ========================================
 
 def get_chat_styles():
-    """채팅 UI를 위한 CSS 스타일 반환"""
+    """채팅 UI를 위한 CSS 스타일 반환 (스크린샷 스타일 - 깔끔한 채팅 창)"""
     return """
     <style>
     /* 채팅 컨테이너 배경 */
     .main .block-container {
-        background-color: #F5F5F5;
+        background-color: #FFFFFF;
         padding-top: 1rem;
+    }
+    
+    /* 채팅 메시지 컨테이너 스크롤 스타일 (가운데 대화 창 안에서만 스크롤) */
+    div[data-testid="stVerticalBlock"] > div[style*="height"] {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        max-height: 450px !important;
+        padding: 10px;
+        background-color: #FFFFFF;
+    }
+    
+    /* 스크롤바 스타일링 (스크린샷 스타일) */
+    div[data-testid="stVerticalBlock"] > div[style*="height"]::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    div[data-testid="stVerticalBlock"] > div[style*="height"]::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    div[data-testid="stVerticalBlock"] > div[style*="height"]::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+    
+    div[data-testid="stVerticalBlock"] > div[style*="height"]::-webkit-scrollbar-thumb:hover {
+        background: #555;
     }
     
     /* 메시지 말풍선 기본 스타일 */
@@ -81,14 +109,15 @@ def get_chat_styles():
         border-color: transparent #FFFFFF transparent transparent;
     }
     
-    /* 에이전트 메시지 (오른쪽, 파란색) - 상담원 입장일 때 */
+    /* 에이전트 메시지 (오른쪽, 파란색) - 상담원 입장일 때 - 스크린샷 스타일 */
     .message-agent-right {
         background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
         margin-left: auto;
         margin-right: 0;
-        text-align: right;
-        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
-        border: 1px solid rgba(33, 150, 243, 0.3);
+        text-align: left;
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+        border: 1px solid rgba(33, 150, 243, 0.2);
+        color: #333;
     }
     
     .message-agent-right::after {

@@ -111,8 +111,16 @@ def render_chat_simulator():
             _render_customer_list_panel(L, current_lang)
             render_history_management_panel(L, current_lang)
 
-        # 대화 로그 표시 (col2에 배치)
+        # 대화 로그 표시 (col2에 배치) - 스크린샷 스타일
         with col2:
+            # 채팅 제목 표시
+            if st.session_state.get("customer_data"):
+                customer_name = st.session_state.customer_data.get("basic_info", {}).get("customer_name", "고객")
+            else:
+                customer_name = st.session_state.get("customer_name", "고객") or "고객"
+            st.subheader(f"💬 {customer_name}님과의 대화")
+            
+            # 스크롤 가능한 채팅 영역 (스크린샷 스타일)
             render_chat_messages(L, current_lang)
 
         # 고객 정보 표시 (col3에 배치)

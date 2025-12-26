@@ -20,22 +20,32 @@ def render_customer_message_with_icons(L, idx, content, current_lang):
     L = actual_L
     current_lang = actual_current_lang
     
-    # 고객 메시지 말풍선 (sim_perspective에 따라 방향 동적 변경)
-    perspective = st.session_state.get("sim_perspective", "AGENT")
-    # AGENT 입장: customer → 왼쪽, CUSTOMER 입장: customer → 오른쪽
-    if perspective == "AGENT":
-        justify_content = "flex-start"  # 왼쪽
-        message_class = "message-customer-left"
-        animation = "slideInLeft"
-    else:  # CUSTOMER 입장
-        justify_content = "flex-end"  # 오른쪽
-        message_class = "message-customer"
-        animation = "slideInRight"
+    # 고객 메시지 말풍선 (스크린샷 스타일 - 고객 메시지는 왼쪽 회색)
+    justify_content = "flex-start"  # 왼쪽
+    message_class = "message-customer-left"
+    animation = "slideInLeft"
+    
+    # 타임스탬프 추가 (스크린샷 스타일)
+    from datetime import datetime
+    timestamp = ""
+    if idx < len(st.session_state.simulator_messages):
+        msg = st.session_state.simulator_messages[idx]
+        if "timestamp" in msg:
+            timestamp = msg["timestamp"]
+        else:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # 고객 이름 가져오기
+    customer_name = st.session_state.get("customer_name", "고객") or "고객"
+    if st.session_state.get("customer_data"):
+        customer_name = st.session_state.customer_data.get("basic_info", {}).get("customer_name", customer_name)
     
     st.markdown(f"""
     <div style="display: flex; justify-content: {justify_content}; margin: 8px 0; animation: {animation} 0.4s ease-out;">
-        <div class="message-bubble {message_class}">
-            <div style="line-height: 1.5;">{content.replace(chr(10), '<br>')}</div>
+        <div class="message-bubble {message_class}" style="max-width: 70%;">
+            <div style="font-weight: 600; margin-bottom: 4px; font-size: 14px;">{customer_name}</div>
+            <div style="line-height: 1.5; margin-bottom: 4px;">{content.replace(chr(10), '<br>')}</div>
+            <div style="font-size: 11px; color: #666; text-align: left; margin-top: 4px;">{timestamp}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
