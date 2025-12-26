@@ -80,8 +80,15 @@ def render_wait_closing_confirmation(L, current_lang):
     col_chat_end, col_email_end = st.columns(2)
 
     with col_chat_end:
+        # 언어별 기본값 설정
+        default_texts = {
+            "ko": "✅ 추가 문의 있나요?",
+            "en": "✅ Any Additional Questions?",
+            "ja": "✅ 追加のご質問はありますか？"
+        }
+        button_text = L.get("send_closing_confirm_button", default_texts.get(current_lang, default_texts["ko"]))
         if st.button(
-                L.get("send_closing_confirm_button", "✅ 추가 문의 있나요?"),
+                button_text,
                 key=f"btn_send_closing_confirm_{st.session_state.sim_instance_id}",
                 use_container_width=True):
             agent_name = st.session_state.get("agent_name", "000")
@@ -99,8 +106,15 @@ def render_wait_closing_confirmation(L, current_lang):
             st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
 
     with col_email_end:
+        # 언어별 기본값 설정
+        default_end_texts = {
+            "ko": "응대 종료 (설문 요청)",
+            "en": "End Support (Survey Request)",
+            "ja": "応対終了（アンケート）"
+        }
+        button_text_end = L.get("button_email_end_chat", default_end_texts.get(current_lang, default_end_texts["ko"]))
         if st.button(
-                L.get("button_email_end_chat", "📋 설문 조사 전송 및 종료"),
+                button_text_end,
                 key=f"btn_email_end_chat_{st.session_state.sim_instance_id}",
                 use_container_width=True,
                 type="primary"):
