@@ -67,14 +67,18 @@ def render_history_management_panel(L, current_lang):
         st.warning("⚠️ 모든 세션이 초기화됩니다. 계속하시겠습니까?")
         if st.button("예, 초기화합니다", key="confirm_reset_yes_compact", use_container_width=True):
             st.session_state.simulator_messages = []
-            st.session_state.simulator_memory.clear()
+            if hasattr(st.session_state, 'simulator_memory') and st.session_state.simulator_memory:
+                if hasattr(st.session_state.simulator_memory, 'clear'):
+                    st.session_state.simulator_memory.clear()
+                else:
+                    st.session_state.simulator_memory = {}
             st.session_state.initial_advice_provided = False
-            st.session_state.is_chat_ended = False
+            st.session_state.is_chat_ended = True  # 세션 초기화 시 자동으로 closing 상태로 설정
             st.session_state.agent_response_area_text = ""
             st.session_state.customer_query_text_area = ""
-            st.session_state.sim_stage = "WAIT_ROLE_SELECTION"
+            st.session_state.sim_stage = "CLOSING"  # 세션 초기화 시 자동으로 CLOSING 단계로 이동
             st.session_state.show_reset_confirm = False
-            st.success("✅ 모든 세션이 초기화되었습니다.")
+            st.success("✅ 모든 세션이 초기화되었습니다. 채팅이 종료되었습니다.")
         if st.button("취소", key="confirm_reset_no_compact", use_container_width=True):
             st.session_state.show_reset_confirm = False
 
