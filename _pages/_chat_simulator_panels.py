@@ -329,8 +329,8 @@ def _render_customer_list_panel(L, current_lang):
                         st.markdown(f'<div style="text-align: center; margin-top: 8px;"><span class="customer-badge">{consultation_count}개</span></div>', unsafe_allow_html=True)
         else:
             st.info(L.get("no_customers_registered", "등록된 고객이 없습니다."))
-        except ImportError as e:
-            st.info(f"{L.get('cannot_load_customer_extractor', '고객 목록 추출 모듈을 불러올 수 없습니다')}: {e}")
+    except ImportError as e:
+        st.info(f"{L.get('cannot_load_customer_extractor', '고객 목록 추출 모듈을 불러올 수 없습니다')}: {e}")
     except Exception as e:
         st.info(f"{L.get('cannot_load_customer_list', '고객 목록을 불러올 수 없습니다')}: {e}")
 
