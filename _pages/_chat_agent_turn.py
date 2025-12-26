@@ -128,7 +128,7 @@ def render_agent_turn(L, current_lang):
                     satisfaction_keywords = [
                         "감사합니다", "감사해요", "해결됐어요", "해결되었습니다", "알겠습니다", "좋아요",
                         "thank you", "thanks", "resolved", "solved", "ok", "okay", "good",
-                        "ありがとう", "解決しました", "了解しました"
+                        "ありがとうございます", "解決しました", "了解しました"
                     ]
                     is_satisfied = any(keyword in customer_response.lower() for keyword in satisfaction_keywords)
                     
@@ -152,7 +152,7 @@ def render_agent_turn(L, current_lang):
                     if st.session_state.get("has_email_closing", False):
                         positive_keywords = [
                             "No, that will be all", "no more", "없습니다", "감사합니다",
-                            "Thank you", "ありがとう", "추가 문의 사항 없습니다",
+                            "Thank you", "ありがとうございます", "추가 문의 사항 없습니다",
                             "no additional", "追加の質問はありません", "알겠습니다", "ok", "네", "yes"]
                         is_positive = any(
                             keyword.lower() in customer_response.lower() for keyword in positive_keywords)

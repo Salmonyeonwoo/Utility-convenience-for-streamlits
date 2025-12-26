@@ -194,7 +194,7 @@ def _process_customer_closing_response(L, current_lang, final_customer_reaction,
     no_more_keywords = [
         L['customer_no_more_inquiries'],
         "No, that will be all", "no more", "없습니다", "감사합니다",
-        "結構です", "ありがとう", "추가 문의 사항 없습니다",
+        "結構です", "ありがとうございます", "추가 문의 사항 없습니다",
         "no additional", "追加の質問はありません"]
     has_no_more_inquiry = False
     for keyword in no_more_keywords:
@@ -207,7 +207,7 @@ def _process_customer_closing_response(L, current_lang, final_customer_reaction,
 
     positive_keywords = [
         "알겠습니다", "알겠어요", "네", "yes", "ok", "okay",
-        "감사합니다", "thank you", "ありがとう"]
+        "감사합니다", "thank you", "ありがとうございます"]
     is_positive_response = any(keyword.lower(
     ) in final_customer_reaction.lower() for keyword in positive_keywords)
 

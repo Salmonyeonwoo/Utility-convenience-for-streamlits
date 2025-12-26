@@ -100,7 +100,7 @@ def render_chat_simulator():
     # 3-column 레이아웃 적용
     use_3column = st.session_state.sim_stage not in [
         "WAIT_ROLE_SELECTION", "WAIT_FIRST_QUERY", "CLOSING", 
-        "OUTBOUND_CALL_IN_PROGRESS", "idle"
+        "OUTBOUND_CALL_IN_PROGRESS", "idle", "ESCALATION_REQUIRED"
     ]
     
     if use_3column:

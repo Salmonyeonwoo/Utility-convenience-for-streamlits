@@ -121,7 +121,7 @@ def _render_additional_buttons(L, idx, content):
     if is_solution_given:
         positive_response_keywords = [
             "알겠습니다", "알겠어요", "감사합니다", "감사해요", "감사드립니다",
-            "ok", "okay", "yes", "thank", "thanks", "ありがとう", "承知しました",
+            "ok", "okay", "yes", "thank", "thanks", "ありがとうございます", "承知致しました", "承知いたしました", "了解しました",
             "네", "예", "좋습니다", "좋아요", "괜찮습니다", "괜찮아요",
             "이해했습니다", "이해했어요", "확인했습니다", "확인했어요"
         ]

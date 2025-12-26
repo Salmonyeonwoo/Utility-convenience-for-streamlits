@@ -26,9 +26,73 @@ def render_customer_turn(L, current_lang):
             new_msg = {"role": "customer", "content": user_customer_input}
             st.session_state.simulator_messages.append(new_msg)
             
-            # 다음 단계로 이동 (AI 상담원이 답변할 차례)
-            st.session_state.sim_stage = "AGENT_TURN"
-            st.session_state.ai_agent_response_generated = False  # AI 응답 생성 플래그 리셋
+            # ⭐ 고객 모드일 때도 closing 단계 전환 로직 적용
+            customer_response = user_customer_input
+            
+            # 다국어 지원: 고객의 긍정적 종료 응답 감지 (존경어 표현 포함)
+            positive_response_keywords = [
+                L["customer_positive_response"],  # 다국어 키 사용
+                "알겠습니다", "알겠어요", "네", "yes", "ok", "okay", 
+                "承知致しました", "承知いたしました", "了解しました",
+                "감사합니다", "thank you", "ありがとうございます", "thanks", "thank"
+            ]
+            has_positive_response = any(
+                keyword.lower() in customer_response.lower() 
+                for keyword in positive_response_keywords
+            )
+            # "알겠습니다" + "감사합니다" 조합도 감지 (다국어, 일본어는 존경어 표현)
+            # 마침표, 공백 등을 고려하여 감지
+            has_positive_combination = (
+                ("알겠습니다" in customer_response or "알겠어요" in customer_response or 
+                 "承知致しました" in customer_response or "承知いたしました" in customer_response or
+                 "了解しました" in customer_response or
+                 "yes" in customer_response.lower() or "ok" in customer_response.lower() or "okay" in customer_response.lower() or
+                 "承知" in customer_response or "了解" in customer_response) and
+                ("감사합니다" in customer_response or "ありがとうございます" in customer_response or 
+                 "ありがとう" in customer_response or
+                 "thank you" in customer_response.lower() or "thanks" in customer_response.lower() or "thank" in customer_response.lower())
+            ) or (
+                # 단독으로도 감지: "ありがとうございます"만 있어도 감지
+                "ありがとうございます" in customer_response or 
+                "ありがとう" in customer_response or
+                "감사합니다" in customer_response or
+                "thank you" in customer_response.lower() or "thanks" in customer_response.lower()
+            )
+            
+            # 종료 조건 검토
+            escaped_no_more = re.escape(L["customer_no_more_inquiries"])
+            no_more_pattern = escaped_no_more.replace(
+                r'\.', r'[.\\s]*').replace(r'\ ', r'[.\\s]*')
+            no_more_regex = re.compile(no_more_pattern, re.IGNORECASE)
+            escaped_positive = re.escape(L["customer_positive_response"])
+            positive_pattern = escaped_positive.replace(
+                r'\.', r'[.\\s]*').replace(r'\ ', r'[.\\s]*')
+            positive_regex = re.compile(positive_pattern, re.IGNORECASE)
+            is_positive_closing = no_more_regex.search(
+                customer_response) is not None or positive_regex.search(customer_response) is not None
+            
+            # 솔루션이 제공되었고 고객이 긍정적으로 응답한 경우 closing 단계로 전환
+            # ⭐ 고객 모드에서는 에이전트가 응답을 했다면 솔루션이 제공된 것으로 간주
+            has_agent_response = any(
+                msg.get("role") == "agent_response" 
+                for msg in st.session_state.simulator_messages
+            )
+            is_solution_provided = st.session_state.get("is_solution_provided", False) or has_agent_response
+            
+            if (L["customer_positive_response"] in customer_response or 
+                has_positive_response or has_positive_combination or is_positive_closing):
+                if is_solution_provided:
+                    st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
+                else:
+                    # 솔루션이 제공되지 않았으면 일반 응대 계속
+                    st.session_state.sim_stage = "AGENT_TURN"
+                    st.session_state.ai_agent_response_generated = False
+            elif customer_response.startswith(L["customer_escalation_start"]):
+                st.session_state.sim_stage = "ESCALATION_REQUIRED"
+            else:
+                # 다음 단계로 이동 (AI 상담원이 답변할 차례)
+                st.session_state.sim_stage = "AGENT_TURN"
+                st.session_state.ai_agent_response_generated = False  # AI 응답 생성 플래그 리셋
             # st.rerun()  # 주석 처리: 버튼 클릭 후 Streamlit이 자동 rerun함
         return  # 고객 모드일 때는 기존 AI 고객 반응 생성 로직을 실행하지 않음
     
@@ -190,7 +254,7 @@ def render_customer_turn(L, current_lang):
         no_more_keywords = [
             L['customer_no_more_inquiries'],
             "No, that will be all", "no more", "없습니다", "감사합니다",
-            "Thank you", "ありがとう", "추가 문의 사항 없습니다",
+            "Thank you", "ありがとうございます", "추가 문의 사항 없습니다",
             "no additional", "追加の質問はありません", "알겠습니다", "ok", "네", "yes"]
         has_no_more_inquiry = False
         for keyword in no_more_keywords:
@@ -206,7 +270,7 @@ def render_customer_turn(L, current_lang):
 
         positive_keywords = [
             "알겠습니다", "알겠어요", "네", "yes", "ok", "okay",
-            "감사합니다", "thank you", "ありがとう", "좋습니다", "good", "fine", "괜찮습니다"]
+            "감사합니다", "thank you", "ありがとうございます", "좋습니다", "good", "fine", "괜찮습니다"]
         is_positive_response = any(
             keyword.lower() in customer_response.lower() for keyword in positive_keywords)
 
@@ -240,7 +304,40 @@ def render_customer_turn(L, current_lang):
             st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
         else:
             st.session_state.sim_stage = "AGENT_TURN"
-    elif L["customer_positive_response"] in customer_response or ("알겠습니다" in customer_response and "감사합니다" in customer_response):
+    # 다국어 지원: 고객의 긍정적 종료 응답 감지 (일본어는 존경어 표현 사용)
+    positive_response_keywords = [
+        L["customer_positive_response"],  # 다국어 키 사용
+        "알겠습니다", "알겠어요", "네", "yes", "ok", "okay", 
+        "承知致しました", "承知いたしました", "了解しました",
+        "감사합니다", "thank you", "ありがとうございます", "thanks", "thank"
+    ]
+    # 마침표, 공백 등을 제거하여 정확한 매칭
+    customer_response_clean = customer_response.replace("。", "").replace(".", "").replace(" ", "").strip()
+    has_positive_response = any(
+        keyword.lower() in customer_response.lower() or 
+        keyword.replace("。", "").replace(".", "").replace(" ", "").lower() in customer_response_clean.lower()
+        for keyword in positive_response_keywords
+    )
+    # "알겠습니다" + "감사합니다" 조합도 감지 (다국어, 일본어는 존경어 표현)
+    # 단독으로도 감지: "ありがとうございます"만 있어도 감지
+    has_positive_combination = (
+        ("알겠습니다" in customer_response or "알겠어요" in customer_response or 
+         "承知致しました" in customer_response or "承知いたしました" in customer_response or
+         "了解しました" in customer_response or
+         "yes" in customer_response.lower() or "ok" in customer_response.lower() or "okay" in customer_response.lower() or
+         "承知" in customer_response or "了解" in customer_response) and
+        ("감사합니다" in customer_response or "ありがとうございます" in customer_response or 
+         "ありがとう" in customer_response or
+         "thank you" in customer_response.lower() or "thanks" in customer_response.lower() or "thank" in customer_response.lower())
+    ) or (
+        # 단독 감사 표현도 감지
+        "ありがとうございます" in customer_response or 
+        "ありがとう" in customer_response or
+        "감사합니다" in customer_response or
+        "thank you" in customer_response.lower() or "thanks" in customer_response.lower()
+    )
+    
+    if L["customer_positive_response"] in customer_response or has_positive_response or has_positive_combination:
         if st.session_state.is_solution_provided:
             st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
         else:
