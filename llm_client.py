@@ -33,19 +33,26 @@ def get_api_key(api):
     # ⭐ 1. Streamlit Secrets (.streamlit/secrets.toml) - 최우선
     try:
         if hasattr(st, "secrets") and cfg["secret_key"] in st.secrets:
-            return st.secrets[cfg["secret_key"]]
+            key = st.secrets[cfg["secret_key"]]
+            if key and key.strip():
+                return key.strip()
     except Exception:
         pass
 
-    # 2. Environment Variable (os.environ)
+    # 2. Environment Variable (os.environ) - 대소문자 구분 없이 확인
     env_key = os.environ.get(cfg["secret_key"])
-    if env_key:
-        return env_key
+    if not env_key:
+        # 대소문자 변형도 확인
+        env_key = os.environ.get(cfg["secret_key"].upper())
+    if not env_key:
+        env_key = os.environ.get(cfg["secret_key"].lower())
+    if env_key and env_key.strip():
+        return env_key.strip()
 
     # 3. User Input (Session State)
     user_key = st.session_state.get(cfg["session_key"], "")
-    if user_key:
-        return user_key
+    if user_key and user_key.strip():
+        return user_key.strip()
 
     return ""
 

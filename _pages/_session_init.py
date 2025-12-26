@@ -7,6 +7,7 @@ import streamlit as st
 from datetime import datetime, timedelta
 import uuid
 import hashlib
+import os  # ⭐ 환경변수 직접 확인을 위해 추가
 from lang_pack import LANG, DEFAULT_LANG as LANG_DEFAULT
 from config import SUPPORTED_APIS, DEFAULT_LANG
 from llm_client import get_api_key, get_llm_client, init_openai_audio_client
@@ -277,25 +278,43 @@ def init_session_state():
         st.session_state.openai_init_msg = L["openai_missing"]
 
     # ⭐ API Key가 실제로 있는지 다시 확인 (항상 최신 상태로 확인)
+    # os.environ을 직접 확인하여 최신 환경변수 반영
     openai_key = get_api_key("openai")
     gemini_key = get_api_key("gemini")
     claude_key = get_api_key("claude")
     groq_key = get_api_key("groq")
     
+    # 환경변수를 직접 확인 (대소문자 변형 포함)
+    if not openai_key:
+        openai_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("openai_api_key") or ""
+    if not gemini_key:
+        gemini_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("gemini_api_key") or ""
+    
     has_any_key_final = any([
-        bool(openai_key),
-        bool(gemini_key),
-        bool(claude_key),
-        bool(groq_key)
+        bool(openai_key and openai_key.strip()),
+        bool(gemini_key and gemini_key.strip()),
+        bool(claude_key and claude_key.strip()),
+        bool(groq_key and groq_key.strip())
     ])
     
     # ⭐ API Key가 있으면 is_llm_ready를 항상 True로 강제 설정
     if has_any_key_final:
         st.session_state.is_llm_ready = True
         st.session_state.llm_init_error_msg = ""
+        # 디버깅 정보
+        detected = []
+        if openai_key: detected.append("OpenAI")
+        if gemini_key: detected.append("Gemini")
+        if claude_key: detected.append("Claude")
+        if groq_key: detected.append("Groq")
+        print(f"✅ API Keys 감지됨: {', '.join(detected)}")
     else:
         # API Key가 없을 때만 에러 메시지 설정
+        st.session_state.is_llm_ready = False
         st.session_state.llm_init_error_msg = L["simulation_no_key_warning"]
+        print("⚠️ API Key가 감지되지 않았습니다. 환경변수를 확인하세요:")
+        print(f"  - OPENAI_API_KEY: {'설정됨' if os.environ.get('OPENAI_API_KEY') else '없음'}")
+        print(f"  - GEMINI_API_KEY: {'설정됨' if os.environ.get('GEMINI_API_KEY') else '없음'}")
 
 
     # ----------------------------------------

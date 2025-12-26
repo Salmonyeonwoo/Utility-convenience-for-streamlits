@@ -66,10 +66,22 @@ def render_chat_messages(L, current_lang):
 
 
 def _render_agent_message(L, idx, content, save_feedback):
-    """에이전트 메시지 렌더링"""
+    """에이전트 메시지 렌더링 (sim_perspective에 따라 방향 동적 변경)"""
+    # sim_perspective에 따라 말풍선 방향 결정
+    perspective = st.session_state.get("sim_perspective", "AGENT")
+    # AGENT 입장: agent → 오른쪽, CUSTOMER 입장: agent → 왼쪽
+    if perspective == "AGENT":
+        justify_content = "flex-end"  # 오른쪽
+        message_class = "message-agent-right"
+        animation = "slideInRight"
+    else:  # CUSTOMER 입장
+        justify_content = "flex-start"  # 왼쪽
+        message_class = "message-agent"
+        animation = "slideInLeft"
+    
     st.markdown(f"""
-    <div style="display: flex; justify-content: flex-start; margin: 8px 0; animation: slideInLeft 0.4s ease-out;">
-        <div class="message-bubble message-agent">
+    <div style="display: flex; justify-content: {justify_content}; margin: 8px 0; animation: {animation} 0.4s ease-out;">
+        <div class="message-bubble {message_class}">
             <div style="line-height: 1.5;">{content.replace(chr(10), '<br>')}</div>
         </div>
     </div>

@@ -20,10 +20,21 @@ def render_customer_message_with_icons(L, idx, content, current_lang):
     L = actual_L
     current_lang = actual_current_lang
     
-    # 고객 메시지 말풍선 (일반 크기)
+    # 고객 메시지 말풍선 (sim_perspective에 따라 방향 동적 변경)
+    perspective = st.session_state.get("sim_perspective", "AGENT")
+    # AGENT 입장: customer → 왼쪽, CUSTOMER 입장: customer → 오른쪽
+    if perspective == "AGENT":
+        justify_content = "flex-start"  # 왼쪽
+        message_class = "message-customer-left"
+        animation = "slideInLeft"
+    else:  # CUSTOMER 입장
+        justify_content = "flex-end"  # 오른쪽
+        message_class = "message-customer"
+        animation = "slideInRight"
+    
     st.markdown(f"""
-    <div style="display: flex; justify-content: flex-end; margin: 8px 0;">
-        <div class="message-bubble message-customer">
+    <div style="display: flex; justify-content: {justify_content}; margin: 8px 0; animation: {animation} 0.4s ease-out;">
+        <div class="message-bubble {message_class}">
             <div style="line-height: 1.5;">{content.replace(chr(10), '<br>')}</div>
         </div>
     </div>

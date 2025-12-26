@@ -81,6 +81,49 @@ def get_chat_styles():
         border-color: transparent #FFFFFF transparent transparent;
     }
     
+    /* 에이전트 메시지 (오른쪽, 파란색) - 상담원 입장일 때 */
+    .message-agent-right {
+        background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+        margin-left: auto;
+        margin-right: 0;
+        text-align: right;
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+        border: 1px solid rgba(33, 150, 243, 0.3);
+    }
+    
+    .message-agent-right::after {
+        content: '';
+        position: absolute;
+        right: -8px;
+        bottom: 12px;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 8px 0 8px 8px;
+        border-color: transparent transparent transparent #E3F2FD;
+    }
+    
+    /* 고객 메시지 (왼쪽, 회색) - 상담원 입장일 때 */
+    .message-customer-left {
+        background: #F5F5F5;
+        margin-right: auto;
+        margin-left: 0;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .message-customer-left::before {
+        content: '';
+        position: absolute;
+        left: -8px;
+        bottom: 12px;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 8px 8px 8px 0;
+        border-color: transparent #F5F5F5 transparent transparent;
+    }
+    
     /* Supervisor 메시지 (중앙, 연한 초록색) */
     .message-supervisor {
         background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);

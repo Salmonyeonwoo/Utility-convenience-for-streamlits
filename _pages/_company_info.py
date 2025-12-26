@@ -56,28 +56,53 @@ def render_company_info():
 
     # 검색 버튼 클릭 시 LLM으로 회사 정보 생성
     if search_button and company_search_input:
-        with st.spinner(f"{company_search_input} {L['generating_company_info']}"):
-            generated_data = generate_company_info_with_llm(
-                company_search_input, current_lang)
-            st.session_state.searched_company = company_search_input
-            st.session_state.searched_company_data = generated_data
-            searched_company = company_search_input
-            searched_company_data = generated_data
+        # API 키 확인
+        openai_key = get_api_key("openai")
+        gemini_key = get_api_key("gemini")
+        if not openai_key and not gemini_key:
+            # 환경변수 직접 확인
+            import os
+            openai_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("openai_api_key") or ""
+            gemini_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("gemini_api_key") or ""
+        
+        if not openai_key and not gemini_key:
+            st.error("❌ OpenAI 또는 Gemini API Key가 필요합니다. 환경변수로 설정해주세요.")
+            st.info("💡 PowerShell에서 설정:\n`$env:OPENAI_API_KEY=\"sk-...\"`\n또는\n`$env:GEMINI_API_KEY=\"AIza...\"`")
+        else:
+            with st.spinner(f"{company_search_input} {L['generating_company_info']}"):
+                try:
+                    generated_data = generate_company_info_with_llm(
+                        company_search_input, current_lang)
+                    st.session_state.searched_company = company_search_input
+                    st.session_state.searched_company_data = generated_data
+                    searched_company = company_search_input
+                    searched_company_data = generated_data
 
-            # 생성된 데이터를 데이터베이스에 저장
-            if company_search_input not in faq_data.get("companies", {}):
-                faq_data.setdefault("companies", {})[company_search_input] = {
-                    f"info_{current_lang}": generated_data.get("company_info", ""),
-                    "info_ko": generated_data.get("company_info", ""),
-                    "info_en": "",
-                    "info_ja": "",
-                    "popular_products": generated_data.get("popular_products", []),
-                    "trending_topics": generated_data.get("trending_topics", []),
-                    "faqs": generated_data.get("faqs", []),
-                    "interview_questions": generated_data.get("interview_questions", []),
-                    "ceo_info": generated_data.get("ceo_info", {})
-                }
-                save_faq_database(faq_data)
+                    # 생성된 데이터를 데이터베이스에 저장
+                    if company_search_input not in faq_data.get("companies", {}):
+                        faq_data.setdefault("companies", {})[company_search_input] = {
+                            f"info_{current_lang}": generated_data.get("company_info", ""),
+                            "info_ko": generated_data.get("company_info", ""),
+                            "info_en": "",
+                            "info_ja": "",
+                            "popular_products": generated_data.get("popular_products", []),
+                            "trending_topics": generated_data.get("trending_topics", []),
+                            "faqs": generated_data.get("faqs", []),
+                            "interview_questions": generated_data.get("interview_questions", []),
+                            "ceo_info": generated_data.get("ceo_info", {})
+                        }
+                        save_faq_database(faq_data)
+                    st.success(f"✅ {company_search_input} 회사 정보를 생성했습니다!")
+                except Exception as e:
+                    st.error(f"❌ 회사 정보 생성 중 오류: {str(e)}")
+                    import traceback
+                    st.code(traceback.format_exc())
+                    searched_company = st.session_state.get("searched_company", "")
+                    searched_company_data = st.session_state.get("searched_company_data", None)
+    else:
+        # 검색 결과 표시 (이전 검색 결과 또는 세션 상태에서)
+        searched_company = st.session_state.get("searched_company", "")
+        searched_company_data = st.session_state.get("searched_company_data", None)
 
     # 검색된 회사가 있으면 해당 데이터 사용, 없으면 기존 회사 선택
     if searched_company and searched_company_data:

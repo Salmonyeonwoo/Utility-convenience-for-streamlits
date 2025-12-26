@@ -162,7 +162,7 @@ def render_crm_app():
                     }
                     tid = manager.save_ticket(cust_info, tkt_info)
                     st.success(f"티켓 {tid} 저장 완료! 대시보드 수치가 갱신되었습니다.")
-                    st.rerun()
+                    # st.rerun()  # 주석 처리: 폼 제출 후 Streamlit이 자동 rerun함
                 else:
                     st.warning("고객명과 연락처는 필수입니다.")
         
@@ -190,7 +190,7 @@ def render_crm_app():
                     imported_count = import_from_file(temp_path, manager)
                     if imported_count > 0:
                         st.success(f"✅ {imported_count}건의 데이터가 성공적으로 임포트되었습니다!")
-                        st.rerun()
+                        # st.rerun()  # 주석 처리: 버튼 클릭 후 Streamlit이 자동 rerun함
                     else:
                         st.warning("임포트된 데이터가 없습니다. 파일 형식을 확인해주세요.")
                 
@@ -286,7 +286,7 @@ def render_crm_app():
                     folder_info = " | ".join([f"{os.path.basename(f[0])}: {f[1]}건" for f in scanned_folders])
                     st.success(f"✅ 총 {total_imported}건의 데이터가 성공적으로 임포트되었습니다! ({folder_info})")
                     st.balloons()
-                    st.rerun()
+                    # st.rerun()  # 주석 처리: 버튼 클릭 후 Streamlit이 자동 rerun함
                 else:
                     st.warning("⚠️ 임포트된 데이터가 없습니다. 다음을 확인해주세요:")
                     st.write("1. 폴더 내에 지원되는 파일 형식(PDF, Word, PPTX, JSON, CSV)이 있는지 확인")
@@ -302,7 +302,7 @@ def render_crm_app():
                         if st.button("🗑️ 스캔 기록 초기화 (모든 파일 다시 스캔)", type="secondary"):
                             manager.save_scanned_files({})
                             st.success("✅ 스캔 기록이 초기화되었습니다. 다음 스캔 시 모든 파일이 다시 스캔됩니다.")
-                            st.rerun()
+                            # st.rerun()  # 주석 처리: 버튼 클릭 후 Streamlit이 자동 rerun함
         
         else:  # 개별 폴더 스캔
             col_folder1, col_folder2 = st.columns([3, 1])
@@ -335,7 +335,7 @@ def render_crm_app():
                         if imported_count > 0:
                             st.success(f"✅ 총 {imported_count}건의 데이터가 성공적으로 임포트되었습니다!")
                             st.balloons()
-                            st.rerun()
+                            # st.rerun()  # 주석 처리: 버튼 클릭 후 Streamlit이 자동 rerun함
                         else:
                             st.info("임포트된 데이터가 없습니다. 폴더 내에 지원되는 파일 형식(PDF, Word, PPTX, JSON, CSV)이 있는지 확인해주세요.")
                 else:

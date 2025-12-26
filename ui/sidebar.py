@@ -74,16 +74,13 @@ def render_sidebar():
         
         st.divider()
         
-        # 기능 선택 (app.py 스타일 - 라디오 버튼)
+        # 기능 선택 (app.py 스타일 - 참고용 구조 추가)
         st.subheader("기능 선택")
         feature_options = [
-            L.get("sim_tab_chat_email", "AI 고객 응대 시뮬레이터 (채팅/이메일)"),
-            L.get("sim_tab_phone", "AI 고객 응대 시뮬레이터 (전화)"),
-            L.get("company_info_tab", "회사 정보 및 FAQ"),
-            L.get("rag_tab", "RAG 지식 챗봇"),
-            L.get("content_tab", "맞춤형 학습 콘텐츠 생성"),
-            L.get("lstm_tab", "LSTM 성취도 예측 대시보드"),
-            L.get("voice_rec_header", "음성 기록 & 관리")
+            L.get("home_tab", "홈"),
+            L.get("chat_email_tab", "채팅/이메일"),
+            L.get("phone_tab", "전화"),
+            L.get("customer_data_tab", "고객 데이터")
         ]
         
         current_feature = st.session_state.get("feature_selection", feature_options[0])
@@ -102,16 +99,19 @@ def render_sidebar():
         
         if selected_feature != current_feature:
             st.session_state.feature_selection = selected_feature
+            # st.rerun()  # 주석 처리: Streamlit이 자동으로 rerun함
         
         st.divider()
         
         # API Key 상태 표시
         st.subheader("🔑 API Key 상태")
         if get_api_key:
-            openai_key = get_api_key("openai")
-            gemini_key = get_api_key("gemini")
-            claude_key = get_api_key("claude")
-            groq_key = get_api_key("groq")
+            # 환경변수 직접 확인 (대소문자 변형 포함)
+            import os
+            openai_key = get_api_key("openai") or os.environ.get("OPENAI_API_KEY") or os.environ.get("openai_api_key") or ""
+            gemini_key = get_api_key("gemini") or os.environ.get("GEMINI_API_KEY") or os.environ.get("gemini_api_key") or ""
+            claude_key = get_api_key("claude") or os.environ.get("CLAUDE_API_KEY") or os.environ.get("claude_api_key") or ""
+            groq_key = get_api_key("groq") or os.environ.get("GROQ_API_KEY") or os.environ.get("groq_api_key") or ""
             
             api_status = []
             if openai_key:

@@ -47,7 +47,18 @@ def render_rag_page():
         if not st.session_state.get("is_rag_ready", False):
             if st.button(L["button_start_analysis"]):
                 if not st.session_state.get("is_llm_ready", False):
-                    st.error(L["simulation_no_key_warning"])
+                    # API 키가 실제로 있는지 확인
+                    from llm_client import get_api_key
+                    has_any_key = any([
+                        bool(get_api_key("openai")),
+                        bool(get_api_key("gemini")),
+                        bool(get_api_key("claude")),
+                        bool(get_api_key("groq"))
+                    ])
+                    if not has_any_key:
+                        st.error(L["simulation_no_key_warning"])
+                    else:
+                        st.session_state.is_llm_ready = True
                 else:
                     with st.spinner(L["data_analysis_progress"]):
                         vectorstore, count = build_rag_index(uploaded_files)

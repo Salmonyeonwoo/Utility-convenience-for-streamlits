@@ -15,54 +15,84 @@ import uuid
 
 
 def render_initial_query(L, current_lang):
-    """초기 문의 입력 UI 렌더링"""
-    customer_query = st.text_area(
-        L["customer_query_label"],
-        key="customer_query_text_area",
-        height=150,
-        placeholder=L["initial_query_sample"],
-    )
-
-    st.divider()
-
-    # 필수 입력 필드
-    col_email, col_phone = st.columns(2)
-    with col_email:
-        customer_email = st.text_input(
-            L["customer_email_label"],
-            key="customer_email_input",
-            value=st.session_state.customer_email,
+    """초기 문의 입력 UI 렌더링 (간소화된 버전)"""
+    # app.py 스타일의 3-column 레이아웃 적용
+    col1, col2, col3 = st.columns([1, 2, 1.5])
+    
+    # col1은 비워둠 (고객 목록이 없으므로)
+    with col1:
+        pass
+    
+    # col3에 입력된 고객 정보 미리보기 표시
+    with col3:
+        st.subheader("고객 정보")
+        if st.session_state.get('customer_name') or st.session_state.get('customer_email') or st.session_state.get('customer_phone'):
+            if st.session_state.get('customer_name'):
+                st.markdown(f"**성함:** {st.session_state.customer_name}")
+            if st.session_state.get('customer_email'):
+                st.markdown(f"**이메일:** {st.session_state.customer_email}")
+            if st.session_state.get('customer_phone'):
+                st.markdown(f"**연락처:** {st.session_state.customer_phone}")
+            if st.session_state.get('customer_type_sim_select'):
+                st.markdown(f"**고객 유형:** {st.session_state.customer_type_sim_select}")
+        else:
+            st.info("고객 정보를 입력하면 여기에 표시됩니다.")
+    
+    with col2:
+        st.markdown("### 💬 고객 문의 입력")
+        
+        # 문의 내용 입력 (크기 축소)
+        customer_query = st.text_area(
+            L["customer_query_label"],
+            key="customer_query_text_area",
+            height=100,  # 150 -> 100으로 축소
+            placeholder=L["initial_query_sample"],
+            label_visibility="visible"
         )
-    with col_phone:
-        customer_phone = st.text_input(
-            L["customer_phone_label"],
-            key="customer_phone_input",
-            value=st.session_state.customer_phone,
+
+        # 고객 이름 입력 필드
+        customer_name = st.text_input(
+            L.get("customer_name_label", "고객님 성함"),
+            key="customer_name_input",
+            value=st.session_state.get("customer_name", ""),
+            placeholder=L.get("customer_name_placeholder", "예: 홍길동")
         )
-    st.session_state.customer_email = customer_email
-    st.session_state.customer_phone = customer_phone
+        st.session_state.customer_name = customer_name
 
-    # 고객 유형 선택
-    customer_type_options = L["customer_type_options"]
-    default_idx = customer_type_options.index(
-        st.session_state.customer_type_sim_select) if st.session_state.customer_type_sim_select in customer_type_options else 0
+        # 필수 입력 필드 (컴팩트하게)
+        col_email, col_phone = st.columns(2)
+        with col_email:
+            customer_email = st.text_input(
+                L["customer_email_label"],
+                key="customer_email_input",
+                value=st.session_state.customer_email,
+            )
+        with col_phone:
+            customer_phone = st.text_input(
+                L["customer_phone_label"],
+                key="customer_phone_input",
+                value=st.session_state.customer_phone,
+            )
+        st.session_state.customer_email = customer_email
+        st.session_state.customer_phone = customer_phone
 
-    st.session_state.customer_type_sim_select = st.selectbox(
-        L["customer_type_label"],
-        customer_type_options,
-        index=default_idx,
-        key="customer_type_sim_select_widget",
-    )
+        # 고객 유형 선택 (컴팩트하게)
+        customer_type_options = L["customer_type_options"]
+        default_idx = customer_type_options.index(
+            st.session_state.customer_type_sim_select) if st.session_state.customer_type_sim_select in customer_type_options else 0
 
-    # 첨부 파일 관련 상태 초기화
-    st.session_state.customer_attachment_file = None
-    st.session_state.sim_attachment_context_for_llm = ""
+        st.session_state.customer_type_sim_select = st.selectbox(
+            L["customer_type_label"],
+            customer_type_options,
+            index=default_idx,
+            key="customer_type_sim_select_widget",
+        )
 
-    st.divider()
+        # 첨부 파일 관련 상태 초기화
+        st.session_state.customer_attachment_file = None
+        st.session_state.sim_attachment_context_for_llm = ""
 
-    # 채팅 시작 버튼
-    col_btn, _ = st.columns([1, 3])
-    with col_btn:
+        # 채팅 시작 버튼 (크기 축소)
         if st.button(
                 L.get("button_start_chat", "채팅 시작"),
                 key=f"btn_start_chat_{st.session_state.sim_instance_id}",
@@ -171,78 +201,75 @@ def render_initial_query(L, current_lang):
                 print(f"Language detection failed: {e}")
                 detected_lang = current_lang
 
-            # 고객 프로필 분석
+            # 고객 프로필 분석 (컴팩트하게)
             customer_profile = analyze_customer_profile(
                 customer_query, detected_lang)
             similar_cases = find_similar_cases(
                 customer_query, customer_profile, detected_lang, limit=5)
 
-            # 시각화 차트 표시
-            st.markdown("---")
-            st.subheader("📊 고객 프로필 분석")
+            # 프로필 분석을 expander로 감싸서 기본적으로 접힘
+            with st.expander("📊 고객 프로필 분석", expanded=False):
+                profile_chart = visualize_customer_profile_scores(
+                    customer_profile, detected_lang)
+                if profile_chart:
+                    st.plotly_chart(profile_chart, use_container_width=True, height=250)  # 높이 제한
+                else:
+                    col1, col2, col3, col4 = st.columns(4)
+                    with col1:
+                        gender_display = customer_profile.get("gender", "unknown")
+                        if gender_display == "male":
+                            gender_display = "남자"
+                        elif gender_display == "female":
+                            gender_display = "여자"
+                        else:
+                            gender_display = "알 수 없음"
+                        st.metric("성별", gender_display)
+                    with col2:
+                        st.metric(
+                            L.get("sentiment_score_label", "감정 점수"),
+                            f"{customer_profile.get('sentiment_score', 50)}/100"
+                        )
+                    with col3:
+                        urgency_map = {"low": 25, "medium": 50, "high": 75}
+                        urgency_score = urgency_map.get(
+                            customer_profile.get(
+                                "urgency_level", "medium").lower(), 50)
+                        st.metric(
+                            L.get("urgency_score_label", "긴급도"),
+                            f"{urgency_score}/100"
+                        )
+                    with col4:
+                        st.metric(
+                            L.get(
+                                "customer_type_label", "고객 유형"), customer_profile.get(
+                                "predicted_customer_type", "normal"))
 
-            profile_chart = visualize_customer_profile_scores(
-                customer_profile, detected_lang)
-            if profile_chart:
-                st.plotly_chart(profile_chart, use_container_width=True)
-            else:
-                col1, col2, col3, col4 = st.columns(4)
-                with col1:
-                    gender_display = customer_profile.get("gender", "unknown")
-                    if gender_display == "male":
-                        gender_display = "남자"
-                    elif gender_display == "female":
-                        gender_display = "여자"
-                    else:
-                        gender_display = "알 수 없음"
-                    st.metric("성별", gender_display)
-                with col2:
-                    st.metric(
-                        L.get("sentiment_score_label", "감정 점수"),
-                        f"{customer_profile.get('sentiment_score', 50)}/100"
-                    )
-                with col3:
-                    urgency_map = {"low": 25, "medium": 50, "high": 75}
-                    urgency_score = urgency_map.get(
-                        customer_profile.get(
-                            "urgency_level", "medium").lower(), 50)
-                    st.metric(
-                        L.get("urgency_score_label", "긴급도"),
-                        f"{urgency_score}/100"
-                    )
-                with col4:
-                    st.metric(
-                        L.get(
-                            "customer_type_label", "고객 유형"), customer_profile.get(
-                            "predicted_customer_type", "normal"))
-
-            # 유사 케이스 시각화
+            # 유사 케이스 시각화 (컴팩트하게)
             if similar_cases:
-                st.markdown("---")
-                st.subheader("🔍 유사 케이스 추천")
-                similarity_chart = visualize_similarity_cases(
-                    similar_cases, detected_lang)
-                if similarity_chart:
-                    st.plotly_chart(similarity_chart, use_container_width=True)
+                with st.expander(f"🔍 유사 케이스 추천 ({len(similar_cases)}개)", expanded=False):
+                    similarity_chart = visualize_similarity_cases(
+                        similar_cases, detected_lang)
+                    if similarity_chart:
+                        st.plotly_chart(similarity_chart, use_container_width=True, height=250)  # 높이 제한
 
-                with st.expander(f"💡 {len(similar_cases)}개 유사 케이스 상세 정보"):
-                    for idx, similar_case in enumerate(similar_cases, 1):
-                        case = similar_case["case"]
-                        summary = similar_case["summary"]
-                        similarity = similar_case["similarity_score"]
-                        st.markdown(f"### 케이스 {idx} (유사도: {similarity:.1f}%)")
-                        st.markdown(
-                            f"**문의 내용:** {summary.get('main_inquiry', 'N/A')}")
-                        st.markdown(
-                            f"**감정 점수:** {summary.get('customer_sentiment_score', 50)}/100")
-                        st.markdown(
-                            f"**만족도 점수:** {summary.get('customer_satisfaction_score', 50)}/100")
-                        if summary.get("key_responses"):
-                            st.markdown("**핵심 응답:**")
-                            for response in summary.get(
-                                    "key_responses", [])[:3]:
-                                st.markdown(f"- {response[:100]}...")
-                        st.markdown("---")
+                    with st.expander(f"💡 {len(similar_cases)}개 유사 케이스 상세 정보", expanded=False):
+                        for idx, similar_case in enumerate(similar_cases, 1):
+                            case = similar_case["case"]
+                            summary = similar_case["summary"]
+                            similarity = similar_case["similarity_score"]
+                            st.markdown(f"### 케이스 {idx} (유사도: {similarity:.1f}%)")
+                            st.markdown(
+                                f"**문의 내용:** {summary.get('main_inquiry', 'N/A')}")
+                            st.markdown(
+                                f"**감정 점수:** {summary.get('customer_sentiment_score', 50)}/100")
+                            st.markdown(
+                                f"**만족도 점수:** {summary.get('customer_satisfaction_score', 50)}/100")
+                            if summary.get("key_responses"):
+                                st.markdown("**핵심 응답:**")
+                                for response in summary.get(
+                                        "key_responses", [])[:3]:
+                                    st.markdown(f"- {response[:100]}...")
+                            st.markdown("---")
 
             st.session_state.initial_advice_provided = False
 
