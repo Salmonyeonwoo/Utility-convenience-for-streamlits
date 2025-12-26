@@ -10,8 +10,34 @@ from datetime import datetime
 import os
 
 def _render_customer_list_panel(L, current_lang):
-    """고객 목록 패널 렌더링 (col1) - app.py 스타일 + 파일 자동 로드"""
+    """고객 목록 패널 렌더링 (col1) - 스크린샷 스타일 + 파일 자동 로드"""
     st.subheader("고객 목록")
+    
+    # 스크린샷 스타일: 고객 목록 버튼 스타일 개선
+    st.markdown("""
+    <style>
+    /* 고객 목록 버튼 스타일 (스크린샷 스타일) */
+    div[data-testid="stButton"] > button[kind="primary"] {
+        border: 2px solid #FF69B4;
+        background-color: #FFFFFF;
+        color: #333;
+        font-weight: 500;
+    }
+    div[data-testid="stButton"] > button[kind="primary"]:hover {
+        background-color: #FFF0F5;
+        border-color: #FF1493;
+    }
+    div[data-testid="stButton"] > button[kind="secondary"] {
+        border: 1px solid #E0E0E0;
+        background-color: #FFFFFF;
+        color: #333;
+    }
+    div[data-testid="stButton"] > button[kind="secondary"]:hover {
+        background-color: #F5F5F5;
+        border-color: #BDBDBD;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     
     # 파일 자동 인식 및 로드 기능
     try:
@@ -166,32 +192,147 @@ def _render_customer_list_panel(L, current_lang):
     except Exception:
         pass
     
-    # 고객 데이터 관리자에서 고객 목록 가져오기
+    # 데이터 디렉토리에서 고객 목록 추출
     try:
-        if hasattr(st.session_state, 'customer_data_manager') and st.session_state.customer_data_manager:
-            all_customers = st.session_state.customer_data_manager.load_all_customers()
-            
-            if all_customers:
-                current_customer_id = None
-                if st.session_state.get("customer_data"):
-                    current_customer_id = st.session_state.customer_data.get("basic_info", {}).get("customer_id")
-                
-                for customer in all_customers[:10]:
-                    customer_id = customer.get("basic_info", {}).get("customer_id", "")
-                    customer_name = customer.get("basic_info", {}).get("customer_name", "고객")
-                    is_selected = current_customer_id == customer_id
+        from utils.customer_list_extractor import extract_customers_from_data_directories
+        from utils.history_handler import load_simulation_histories_local
+        from utils.customer_list_extractor import extract_customers_from_histories
+        
+        # 데이터 디렉토리 경로 설정
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        data_dirs = [
+            os.path.join(base_dir, "data"),
+            r"C:\Users\Admin\Downloads\Updated_streamlit_app_files\data",
+            r"C:\Users\Admin\Downloads\Updated_streamlit_app_files\customer data histories via streamlits",
+        ]
+        
+        # 실제 존재하는 디렉토리만 필터링
+        existing_dirs = [d for d in data_dirs if os.path.exists(d)]
+        
+        # 데이터 디렉토리에서 고객 정보 추출
+        customers_from_files = extract_customers_from_data_directories(existing_dirs)
+        
+        # 시뮬레이션 이력에서도 고객 정보 추출
+        histories = load_simulation_histories_local(current_lang)
+        customers_from_histories = extract_customers_from_histories(histories)
+        
+        # 두 소스의 고객 정보 병합
+        all_customers_dict = {}
+        for customer in customers_from_files:
+            name = customer.get('customer_name', '')
+            if name:
+                if name not in all_customers_dict:
+                    all_customers_dict[name] = customer
+                else:
+                    # 상담 횟수 합산
+                    all_customers_dict[name]['consultation_count'] += customer.get('consultation_count', 0)
+        
+        for customer in customers_from_histories:
+            name = customer.get('customer_name', '')
+            if name:
+                if name not in all_customers_dict:
+                    all_customers_dict[name] = customer
+                else:
+                    # 상담 횟수 합산
+                    all_customers_dict[name]['consultation_count'] += customer.get('consultation_count', 0)
+        
+        # 고객 데이터 관리자에서도 가져오기
+        try:
+            if hasattr(st.session_state, 'customer_data_manager') and st.session_state.customer_data_manager:
+                manager_customers = st.session_state.customer_data_manager.load_all_customers()
+                for customer in manager_customers:
+                    basic_info = customer.get("basic_info", {})
+                    customer_name = basic_info.get("customer_name", "")
+                    customer_id = basic_info.get("customer_id", "")
                     
+                    if customer_name:
+                        if customer_name not in all_customers_dict:
+                            # 상담 이력에서 횟수 계산
+                            consultation_history = customer.get("data", {}).get("consultation_history", [])
+                            consultation_count = len(consultation_history) if consultation_history else 1
+                            
+                            all_customers_dict[customer_name] = {
+                                'customer_name': customer_name,
+                                'customer_id': customer_id,
+                                'consultation_count': consultation_count,
+                                'last_consultation_date': '',
+                                'customer_data': customer
+                            }
+                        else:
+                            # 상담 횟수 추가
+                            consultation_history = customer.get("data", {}).get("consultation_history", [])
+                            if consultation_history:
+                                all_customers_dict[customer_name]['consultation_count'] += len(consultation_history)
+        except Exception:
+            pass
+        
+        # 고객 목록을 리스트로 변환하고 정렬
+        all_customers_list = list(all_customers_dict.values())
+        all_customers_list.sort(key=lambda x: x.get('last_consultation_date', ''), reverse=True)
+        
+        # 현재 선택된 고객 확인
+        current_customer_name = None
+        if st.session_state.get("customer_data"):
+            basic_info = st.session_state.customer_data.get("basic_info", {})
+            current_customer_name = basic_info.get("customer_name", "")
+        if not current_customer_name:
+            current_customer_name = st.session_state.get('customer_name', '')
+        
+        # 고객 목록 표시 (두 번째 스크린샷 스타일)
+        if all_customers_list:
+            # 고객 목록 스타일 추가
+            st.markdown("""
+            <style>
+            .customer-badge {
+                background-color: #FFB6C1;
+                color: #333;
+                border-radius: 12px;
+                padding: 2px 8px;
+                font-size: 0.85em;
+                font-weight: 500;
+                display: inline-block;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            
+            for customer in all_customers_list[:20]:  # 최대 20명 표시
+                customer_name = customer.get('customer_name', '고객')
+                consultation_count = customer.get('consultation_count', 0)
+                is_selected = current_customer_name == customer_name
+                
+                # 고객 이름과 배지를 한 줄에 표시
+                col_name, col_badge = st.columns([4, 1])
+                
+                with col_name:
                     if st.button(f"👤 {customer_name}", 
-                               key=f"customer_list_{customer_id}_{st.session_state.sim_instance_id}",
+                               key=f"customer_list_{customer_name}_{st.session_state.sim_instance_id}",
                                use_container_width=True, 
                                type="primary" if is_selected else "secondary"):
-                        st.session_state.customer_data = customer
-            else:
-                st.info("등록된 고객이 없습니다.")
+                        # 고객 데이터 설정
+                        customer_data = customer.get('customer_data', {})
+                        if customer_data:
+                            st.session_state.customer_data = customer_data
+                        else:
+                            # customer_data가 없으면 기본 구조 생성
+                            st.session_state.customer_data = {
+                                "basic_info": {
+                                    "customer_name": customer_name,
+                                    "customer_id": customer.get('customer_id', '')
+                                },
+                                "data": {}
+                            }
+                        st.session_state.customer_name = customer_name
+                
+                with col_badge:
+                    if consultation_count > 0:
+                        # 배지를 버튼 옆에 표시
+                        st.markdown(f'<div style="text-align: center; margin-top: 8px;"><span class="customer-badge">{consultation_count}개</span></div>', unsafe_allow_html=True)
         else:
-            st.info("고객 데이터 관리자를 불러올 수 없습니다.")
-    except Exception:
-        st.info("고객 목록을 불러올 수 없습니다.")
+            st.info("등록된 고객이 없습니다.")
+    except ImportError as e:
+        st.info(f"고객 목록 추출 모듈을 불러올 수 없습니다: {e}")
+    except Exception as e:
+        st.info(f"고객 목록을 불러올 수 없습니다: {e}")
 
 
 def _render_customer_info_panel(L, current_lang):
