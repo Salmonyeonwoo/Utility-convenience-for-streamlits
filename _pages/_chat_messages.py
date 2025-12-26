@@ -42,7 +42,7 @@ def render_chat_messages(L, current_lang):
                     render_customer_message_with_icons(L, idx, content, current_lang)
 
                 elif role == "agent_response":
-                    _render_agent_message(L, idx, content, save_feedback)
+                    _render_agent_message(L, current_lang, idx, content, save_feedback)
 
                 elif role == "supervisor":
                     _render_supervisor_message(content)
@@ -68,7 +68,7 @@ def render_chat_messages(L, current_lang):
         render_transfer_summary(actual_L, actual_current_lang)
 
 
-def _render_agent_message(L, idx, content, save_feedback):
+def _render_agent_message(L, current_lang, idx, content, save_feedback):
     """에이전트 메시지 렌더링 (스크린샷 스타일 - 사용자 모드에 따라 방향 변경)"""
     # 사용자 모드 확인
     perspective = st.session_state.get("sim_perspective", "AGENT")
@@ -99,7 +99,7 @@ def _render_agent_message(L, idx, content, save_feedback):
     st.markdown(f"""
     <div style="display: flex; justify-content: {justify_content}; margin: 8px 0; animation: {animation} 0.4s ease-out;">
         <div class="message-bubble {message_class}" style="max-width: 70%;">
-            <div style="font-weight: 600; margin-bottom: 4px; font-size: 14px;">상담원</div>
+            <div style="font-weight: 600; margin-bottom: 4px; font-size: 14px;">{L.get('agent_label', '상담원')}</div>
             <div style="line-height: 1.5; margin-bottom: 4px;">{content.replace(chr(10), '<br>')}</div>
             <div style="font-size: 11px; color: #666; text-align: right; margin-top: 4px;">{timestamp}</div>
         </div>

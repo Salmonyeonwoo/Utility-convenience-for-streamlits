@@ -118,7 +118,14 @@ def render_chat_simulator():
                 customer_name = st.session_state.customer_data.get("basic_info", {}).get("customer_name", "고객")
             else:
                 customer_name = st.session_state.get("customer_name", "고객") or "고객"
-            st.subheader(f"💬 {customer_name}님과의 대화")
+            # 고객 이름에 "님" 추가 (한국어만)
+            if current_lang == "ko":
+                customer_display = f"{customer_name}님과의 대화"
+            elif current_lang == "ja":
+                customer_display = f"{customer_name}様との会話"
+            else:
+                customer_display = f"Conversation with {customer_name}"
+            st.subheader(f"💬 {customer_display}")
             
             # 스크롤 가능한 채팅 영역 (스크린샷 스타일)
             render_chat_messages(L, current_lang)

@@ -11,7 +11,7 @@ import os
 
 def _render_customer_list_panel(L, current_lang):
     """고객 목록 패널 렌더링 (col1) - 스크린샷 스타일 + 파일 자동 로드"""
-    st.subheader("고객 목록")
+    st.subheader(L.get("customer_list", "고객 목록"))
     
     # 스크린샷 스타일: 고객 목록 버튼 스타일 개선
     st.markdown("""
@@ -77,14 +77,14 @@ def _render_customer_list_panel(L, current_lang):
             pass
         
         if scanned_files:
-            with st.expander("📁 파일에서 이력 불러오기", expanded=False):
+            with st.expander(f"📁 {L.get('load_history_from_file', '파일에서 이력 불러오기')}", expanded=False):
                 local_files = [f for f in scanned_files if f.get("source") == "local"]
                 github_files = [f for f in scanned_files if f.get("source") in ["github", "github_api"]]
                 
                 if local_files:
-                    st.markdown("**📂 로컬 파일**")
+                    st.markdown(f"**📂 {L.get('local_files', '로컬 파일')}**")
                 elif github_files:
-                    st.markdown("**🌐 GitHub 파일**")
+                    st.markdown(f"**🌐 {L.get('github_files', 'GitHub 파일')}**")
                 
                 file_groups = {}
                 for file_meta in scanned_files[:30]:
@@ -126,9 +126,9 @@ def _render_customer_list_panel(L, current_lang):
                         with col_file1:
                             st.caption(f"{file_name} ({size_str})")
                         with col_file2:
-                            if st.button("로드", key=f"load_file_{file_name}_{st.session_state.sim_instance_id}", 
+                            if st.button(L.get("load", "로드"), key=f"load_file_{file_name}_{st.session_state.sim_instance_id}", 
                                        use_container_width=True):
-                                with st.spinner(f"파일 로드 중: {file_name}..."):
+                                with st.spinner(f"{L.get('file_loading', '파일 로드 중')}: {file_name}..."):
                                     try:
                                         github_token = None
                                         if file_meta.get("source") == "github_api":
@@ -142,9 +142,9 @@ def _render_customer_list_panel(L, current_lang):
                                             
                                             if history:
                                                 if "parse_error" in history:
-                                                    st.warning(f"⚠️ 파일 파싱 중 일부 오류가 발생했습니다: {history.get('parse_error', '')}")
+                                                    st.warning(f"⚠️ {L.get('file_parse_warning', '파일 파싱 중 일부 오류가 발생했습니다')}: {history.get('parse_error', '')}")
                                                 if "raw_data" in history:
-                                                    st.info(f"ℹ️ 원본 데이터가 보관되었습니다. 필요시 확인하세요.")
+                                                    st.info(f"ℹ️ {L.get('raw_data_stored', '원본 데이터가 보관되었습니다. 필요시 확인하세요')}.")
                                                 
                                                 if "initial_query" in history:
                                                     st.session_state.customer_query_text_area = history["initial_query"]
@@ -177,15 +177,15 @@ def _render_customer_list_panel(L, current_lang):
                                                     else:
                                                         st.session_state.sim_stage = "AGENT_TURN"
                                                 
-                                                st.success(f"✅ 파일 로드 완료: {file_name}")
+                                                st.success(f"✅ {L.get('file_loaded_success', '파일 로드 완료')}: {file_name}")
                                             else:
-                                                st.warning(f"⚠️ 파일을 이력 형식으로 변환할 수 없습니다: {file_name}")
+                                                st.warning(f"⚠️ {L.get('file_parse_error', '파일을 이력 형식으로 변환할 수 없습니다')}: {file_name}")
                                         else:
-                                            st.error(f"❌ 파일 로드 실패: {file_name}")
+                                            st.error(f"❌ {L.get('file_load_failed', '파일 로드 실패')}: {file_name}")
                                     except Exception as e:
                                         st.error(f"❌ 파일 로드 오류: {str(e)}")
                         
-                        st.caption(f"수정: {time_str}")
+                        st.caption(f"{L.get('modified', '수정')}: {time_str}")
                         st.markdown("---")
     except ImportError:
         pass
@@ -328,16 +328,16 @@ def _render_customer_list_panel(L, current_lang):
                         # 배지를 버튼 옆에 표시
                         st.markdown(f'<div style="text-align: center; margin-top: 8px;"><span class="customer-badge">{consultation_count}개</span></div>', unsafe_allow_html=True)
         else:
-            st.info("등록된 고객이 없습니다.")
-    except ImportError as e:
-        st.info(f"고객 목록 추출 모듈을 불러올 수 없습니다: {e}")
+            st.info(L.get("no_customers_registered", "등록된 고객이 없습니다."))
+        except ImportError as e:
+            st.info(f"{L.get('cannot_load_customer_extractor', '고객 목록 추출 모듈을 불러올 수 없습니다')}: {e}")
     except Exception as e:
-        st.info(f"고객 목록을 불러올 수 없습니다: {e}")
+        st.info(f"{L.get('cannot_load_customer_list', '고객 목록을 불러올 수 없습니다')}: {e}")
 
 
 def _render_customer_info_panel(L, current_lang):
     """고객 정보 패널 렌더링 (col3) - app.py 스타일로 간소화"""
-    st.subheader("고객 정보")
+    st.subheader(L.get("customer_info", "고객 정보"))
     
     customer_data = st.session_state.get("customer_data", None)
     
@@ -357,19 +357,19 @@ def _render_customer_info_panel(L, current_lang):
         email = customer_info.get('email', st.session_state.get('customer_email', 'N/A'))
         phone = customer_info.get('phone', st.session_state.get('customer_phone', 'N/A'))
         
-        st.markdown(f"**고객 ID:** {customer_id}")
+        st.markdown(f"**{L.get('customer_id_label', '고객 ID')}:** {customer_id}")
         if customer_name and customer_name != '고객':
-            st.markdown(f"**성함:** {customer_name}")
-        st.markdown(f"**연락처:** {phone}")
-        st.markdown(f"**이메일:** {email}")
+            st.markdown(f"**{L.get('name_label', '성함')}:** {customer_name}")
+        st.markdown(f"**{L.get('contact_label', '연락처')}:** {phone}")
+        st.markdown(f"**{L.get('email_label', '이메일')}:** {email}")
         
         crm_profile = customer_info.get("crm_profile", {})
         if crm_profile:
             personality = crm_profile.get('personality', 'N/A')
-            st.markdown(f"**성향:** {personality}")
+            st.markdown(f"**{L.get('personality_label', '성향')}:** {personality}")
             
             survey_score = crm_profile.get('survey_score', 4.5)
-            st.metric("설문 점수", f"{survey_score:.1f} / 5.0")
+            st.metric(L.get("survey_score_label", "설문 점수"), f"{survey_score:.1f} / 5.0")
     else:
         initial_query_msg = None
         for msg in st.session_state.get("simulator_messages", []):
@@ -387,14 +387,14 @@ def _render_customer_info_panel(L, current_lang):
             if st.session_state.get('customer_phone'):
                 st.markdown(f"**연락처:** {st.session_state.customer_phone}")
         elif initial_query_msg:
-            st.info("고객 정보를 불러오려면 고객 데이터 버튼을 클릭하세요.")
+            st.info(L.get("click_customer_data_button", "고객 정보를 불러오려면 고객 데이터 버튼을 클릭하세요."))
         else:
-            st.info("고객을 선택하면 상세 정보가 표시됩니다.")
+            st.info(L.get("select_customer_to_view_details", "고객을 선택하면 상세 정보가 표시됩니다."))
     
     # 일일 통계를 col3 하단에 배치 (축소된 버전)
     if st.session_state.sim_stage not in ["WAIT_ROLE_SELECTION", "WAIT_FIRST_QUERY", "idle"]:
         st.markdown("---")
-        st.markdown("**📊 일일 통계**")
+        st.markdown(f"**📊 {L.get('daily_statistics', '일일 통계')}**")
         daily_stats = get_daily_data_statistics(st.session_state.language)
         
         col_stat1, col_stat2 = st.columns(2)
