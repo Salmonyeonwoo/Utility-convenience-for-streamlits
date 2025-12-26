@@ -415,7 +415,6 @@ RULES:
         else:
             return L_local['customer_has_additional_inquiries']
     except Exception as e:
-        import streamlit as st
-        st.error(f"고객 최종 반응 생성 오류: {e}")
+        print(f"고객 최종 반응 생성 오류: {e}")
         return L_local['customer_has_additional_inquiries']
 
