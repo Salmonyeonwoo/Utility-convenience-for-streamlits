@@ -1153,52 +1153,9 @@ def render_agent_turn(L, current_lang):
                 # ⭐ 고객 반응 추가 시 즉시 화면 업데이트
                 # st.rerun()  # 주석 처리: 렌더링 순서 변경으로 자동 반영됨
 
-                # 다음 단계 결정
-                if st.session_state.get("has_email_closing", False):
-                    positive_keywords = [
-                        "No, that will be all", "no more", "없습니다", "감사합니다",
-                        "Thank you", "ありがとう", "추가 문의 사항 없습니다",
-                        "no additional", "追加の質問はありません", "알겠습니다", "ok", "네", "yes"]
-                    is_positive = any(
-                        keyword.lower() in customer_response.lower() for keyword in positive_keywords)
-
-                    escaped = re.escape(L.get('customer_no_more_inquiries', ''))
-                    no_more_pattern = escaped.replace(
-                        r'\.', r'[.\\s]*').replace(r'\ ', r'[.\\s]*')
-                    no_more_regex = re.compile(no_more_pattern, re.IGNORECASE)
-                    if is_positive or no_more_regex.search(customer_response):
-                        st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
-                    else:
-                        st.session_state.sim_stage = "AGENT_TURN"
-                else:
-                    escaped_no_more = re.escape(L.get("customer_no_more_inquiries", ""))
-                    no_more_pattern = escaped_no_more.replace(
-                        r'\.', r'[.\\s]*').replace(r'\ ', r'[.\\s]*')
-                    no_more_regex = re.compile(no_more_pattern, re.IGNORECASE)
-                    escaped_positive = re.escape(L.get("customer_positive_response", ""))
-                    positive_pattern = escaped_positive.replace(
-                        r'\.', r'[.\\s]*').replace(r'\ ', r'[.\\s]*')
-                    positive_regex = re.compile(positive_pattern, re.IGNORECASE)
-                    is_positive_closing = no_more_regex.search(
-                        customer_response) is not None or positive_regex.search(customer_response) is not None
-
-                    if L.get("customer_positive_response", "") in customer_response:
-                        if st.session_state.get("is_solution_provided", False):
-                            st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
-                        else:
-                            st.session_state.sim_stage = "AGENT_TURN"
-                    elif is_positive_closing:
-                        if no_more_regex.search(customer_response):
-                            st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
-                        else:
-                            if st.session_state.get("is_solution_provided", False):
-                                st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
-                            else:
-                                st.session_state.sim_stage = "AGENT_TURN"
-                    elif customer_response.startswith(L.get("customer_escalation_start", "")):
-                        st.session_state.sim_stage = "ESCALATION_REQUIRED"
-                    else:
-                        st.session_state.sim_stage = "AGENT_TURN"
+                # 다음 단계 결정 (고객 반응이 아직 생성되지 않았으므로 기본적으로 CUSTOMER_TURN으로 설정)
+                # 고객 반응이 생성된 후에는 pending_customer_reaction 블록에서 처리됨
+                st.session_state.sim_stage = "CUSTOMER_TURN"
             else:
                 st.session_state.need_customer_response = True
                 st.session_state.sim_stage = "CUSTOMER_TURN"
