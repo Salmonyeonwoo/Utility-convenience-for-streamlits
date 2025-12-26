@@ -135,7 +135,10 @@ def render_home_page():
                     if content_topic and api_key:
                         try:
                             from langchain_openai import ChatOpenAI
-                            from langchain.schema import HumanMessage
+                            try:
+                                from langchain.schema import HumanMessage
+                            except ImportError:
+                                from langchain_core.messages import HumanMessage
                             with st.spinner("콘텐츠 생성 중..."):
                                 llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.7, openai_api_key=api_key)
                                 prompt = f"""여행사 상담원을 위한 {content_type}를 작성해주세요.\n\n주제: {content_topic}\n\n친절하고 전문적인 톤으로 작성해주세요."""

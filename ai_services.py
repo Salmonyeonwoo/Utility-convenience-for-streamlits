@@ -4,7 +4,14 @@ import re
 from datetime import datetime
 from typing import Dict, List
 from langchain_openai import ChatOpenAI
-from langchain.schema import HumanMessage, SystemMessage, AIMessage
+# LangChain schema import (다양한 버전 지원)
+try:
+    from langchain.schema import HumanMessage, SystemMessage, AIMessage
+except ImportError:
+    try:
+        from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+    except ImportError:
+        from langchain_core.schema.messages import HumanMessage, SystemMessage, AIMessage
 
 
 def get_api_key(api_name="openai"):

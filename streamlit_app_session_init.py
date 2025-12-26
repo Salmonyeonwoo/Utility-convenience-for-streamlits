@@ -19,7 +19,22 @@ streamlit_app.py의 세션 상태 초기화 로직을 관리하는 모듈
 import streamlit as st
 import uuid
 from config import DEFAULT_LANG
-from langchain.memory import ConversationBufferMemory
+
+# LangChain Memory import (다양한 버전 지원)
+try:
+    try:
+        from langchain.memory import ConversationBufferMemory
+    except ImportError:
+        try:
+            from langchain_classic.memory import ConversationBufferMemory
+        except ImportError:
+            try:
+                from langchain_core.memory import ConversationBufferMemory
+            except ImportError:
+                # LangChain이 없으면 None으로 설정 (선택적 기능)
+                ConversationBufferMemory = None
+except ImportError:
+    ConversationBufferMemory = None
 
 def init_all_session_state():
     """모든 세션 상태를 초기화"""
@@ -48,8 +63,12 @@ def init_all_session_state():
     if "simulator_messages" not in st.session_state:
         st.session_state.simulator_messages = []
     if "simulator_memory" not in st.session_state:
-        st.session_state.simulator_memory = ConversationBufferMemory(
-            memory_key="chat_history")
+        if ConversationBufferMemory is not None:
+            st.session_state.simulator_memory = ConversationBufferMemory(
+                memory_key="chat_history")
+        else:
+            # LangChain이 없으면 빈 딕셔너리로 대체
+            st.session_state.simulator_memory = {}
     if "simulator_chain" not in st.session_state:
         st.session_state.simulator_chain = None
     if "initial_advice_provided" not in st.session_state:
