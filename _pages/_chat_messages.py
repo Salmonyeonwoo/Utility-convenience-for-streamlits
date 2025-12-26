@@ -69,11 +69,22 @@ def render_chat_messages(L, current_lang):
 
 
 def _render_agent_message(L, idx, content, save_feedback):
-    """에이전트 메시지 렌더링 (스크린샷 스타일 - 상담원 메시지는 오른쪽 파란색)"""
-    # 스크린샷 스타일: 상담원 메시지는 항상 오른쪽, 파란색
-    justify_content = "flex-end"  # 오른쪽
-    message_class = "message-agent-right"
-    animation = "slideInRight"
+    """에이전트 메시지 렌더링 (스크린샷 스타일 - 사용자 모드에 따라 방향 변경)"""
+    # 사용자 모드 확인
+    perspective = st.session_state.get("sim_perspective", "AGENT")
+    user_role = st.session_state.get("user_role_selected", None)
+    is_customer_mode = (user_role == "CUSTOMER" or perspective == "CUSTOMER")
+    
+    # 고객 모드일 때: 상담원 메시지는 왼쪽 (흰색)
+    # 상담원 모드일 때: 상담원 메시지는 오른쪽 (파란색)
+    if is_customer_mode:
+        justify_content = "flex-start"  # 왼쪽
+        message_class = "message-agent"  # 왼쪽 흰색
+        animation = "slideInLeft"
+    else:
+        justify_content = "flex-end"  # 오른쪽
+        message_class = "message-agent-right"  # 오른쪽 파란색
+        animation = "slideInRight"
     
     # 타임스탬프 추가 (스크린샷 스타일)
     from datetime import datetime

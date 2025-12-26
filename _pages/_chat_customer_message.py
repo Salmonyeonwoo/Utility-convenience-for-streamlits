@@ -20,10 +20,21 @@ def render_customer_message_with_icons(L, idx, content, current_lang):
     L = actual_L
     current_lang = actual_current_lang
     
-    # 고객 메시지 말풍선 (스크린샷 스타일 - 고객 메시지는 왼쪽 회색)
-    justify_content = "flex-start"  # 왼쪽
-    message_class = "message-customer-left"
-    animation = "slideInLeft"
+    # 사용자 모드 확인
+    perspective = st.session_state.get("sim_perspective", "AGENT")
+    user_role = st.session_state.get("user_role_selected", None)
+    is_customer_mode = (user_role == "CUSTOMER" or perspective == "CUSTOMER")
+    
+    # 고객 모드일 때: 고객 메시지는 오른쪽 (노란색)
+    # 상담원 모드일 때: 고객 메시지는 왼쪽 (회색)
+    if is_customer_mode:
+        justify_content = "flex-end"  # 오른쪽
+        message_class = "message-customer"  # 오른쪽 노란색
+        animation = "slideInRight"
+    else:
+        justify_content = "flex-start"  # 왼쪽
+        message_class = "message-customer-left"  # 왼쪽 회색
+        animation = "slideInLeft"
     
     # 타임스탬프 추가 (스크린샷 스타일)
     from datetime import datetime
