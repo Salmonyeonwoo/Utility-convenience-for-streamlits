@@ -115,16 +115,17 @@ def render_chat_simulator():
         with col2:
             # 채팅 제목 표시
             if st.session_state.get("customer_data"):
-                customer_name = st.session_state.customer_data.get("basic_info", {}).get("customer_name", "고객")
+                customer_name = st.session_state.customer_data.get("basic_info", {}).get("customer_name", L.get("customer_label", "고객"))
             else:
-                customer_name = st.session_state.get("customer_name", "고객") or "고객"
-            # 고객 이름에 "님" 추가 (한국어만)
+                customer_name = st.session_state.get("customer_name", L.get("customer_label", "고객")) or L.get("customer_label", "고객")
+            # 다국어 지원: 고객 이름과 대화 제목
+            conversation_title = L.get("conversation_with", "님과의 대화")
             if current_lang == "ko":
-                customer_display = f"{customer_name}님과의 대화"
+                customer_display = f"{customer_name}{conversation_title}"
             elif current_lang == "ja":
-                customer_display = f"{customer_name}様との会話"
-            else:
-                customer_display = f"Conversation with {customer_name}"
+                customer_display = f"{customer_name}{conversation_title}"
+            else:  # 영어
+                customer_display = f"{conversation_title} {customer_name}"
             st.subheader(f"💬 {customer_display}")
             
             # 스크롤 가능한 채팅 영역 (스크린샷 스타일)

@@ -1,0 +1,20 @@
+{
+  "CUST001": [
+    {
+      "analysis_id": "RAG001",
+      "timestamp": "2024-12-25 10:15:00",
+      "customer_message": "안녕하세요, 유럽 여행 패키지에 대해 문의드리고 싶습니다.",
+      "sentiment": "neutral",
+      "intent": "패키지 문의",
+      "keywords": ["유럽", "여행", "패키지"],
+      "suggested_response": "유럽 여행 패키지에 관심을 가져주셔서 감사합니다. 어떤 국가나 도시를 방문하고 싶으신가요?",
+      "confidence": 0.85
+    }
+  ],
+  "CUST002": [],
+  "CUST003": [],
+  "CUST004": [],
+  "CUST005": [],
+  "CUST006": []
+}
+

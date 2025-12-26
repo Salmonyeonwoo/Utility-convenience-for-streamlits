@@ -20,43 +20,11 @@ def render_customer_message_with_icons(L, idx, content, current_lang):
     L = actual_L
     current_lang = actual_current_lang
     
-    # 사용자 모드 확인
-    perspective = st.session_state.get("sim_perspective", "AGENT")
-    user_role = st.session_state.get("user_role_selected", None)
-    is_customer_mode = (user_role == "CUSTOMER" or perspective == "CUSTOMER")
-    
-    # 고객 모드일 때: 고객 메시지는 오른쪽 (노란색)
-    # 상담원 모드일 때: 고객 메시지는 왼쪽 (회색)
-    if is_customer_mode:
-        justify_content = "flex-end"  # 오른쪽
-        message_class = "message-customer"  # 오른쪽 노란색
-        animation = "slideInRight"
-    else:
-        justify_content = "flex-start"  # 왼쪽
-        message_class = "message-customer-left"  # 왼쪽 회색
-        animation = "slideInLeft"
-    
-    # 타임스탬프 추가 (스크린샷 스타일)
-    from datetime import datetime
-    timestamp = ""
-    if idx < len(st.session_state.simulator_messages):
-        msg = st.session_state.simulator_messages[idx]
-        if "timestamp" in msg:
-            timestamp = msg["timestamp"]
-        else:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    # 고객 이름 가져오기
-    customer_name = st.session_state.get("customer_name", L.get("customer_label", "고객")) or L.get("customer_label", "고객")
-    if st.session_state.get("customer_data"):
-        customer_name = st.session_state.customer_data.get("basic_info", {}).get("customer_name", customer_name)
-    
+    # 고객 메시지 말풍선 (일반 크기)
     st.markdown(f"""
-    <div style="display: flex; justify-content: {justify_content}; margin: 8px 0; animation: {animation} 0.4s ease-out;">
-        <div class="message-bubble {message_class}" style="max-width: 70%;">
-            <div style="font-weight: 600; margin-bottom: 4px; font-size: 14px;">{customer_name}</div>
-            <div style="line-height: 1.5; margin-bottom: 4px;">{content.replace(chr(10), '<br>')}</div>
-            <div style="font-size: 11px; color: #666; text-align: left; margin-top: 4px;">{timestamp}</div>
+    <div style="display: flex; justify-content: flex-end; margin: 8px 0;">
+        <div class="message-bubble message-customer">
+            <div style="line-height: 1.5;">{content.replace(chr(10), '<br>')}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)

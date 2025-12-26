@@ -102,7 +102,7 @@ def _render_customer_list_panel(L, current_lang):
                         "csv": "📋 CSV"
                     }.get(file_type, f"📎 {file_type.upper()}")
                     
-                    st.markdown(f"**{file_type_label} 파일**")
+                    st.markdown(f"**{file_type_label} {L.get('file_label', '파일')}**")
                     for file_meta in files:
                         file_name = file_meta.get("file_name", "")
                         file_path = file_meta.get("file_path", "")
@@ -183,7 +183,7 @@ def _render_customer_list_panel(L, current_lang):
                                         else:
                                             st.error(f"❌ {L.get('file_load_failed', '파일 로드 실패')}: {file_name}")
                                     except Exception as e:
-                                        st.error(f"❌ 파일 로드 오류: {str(e)}")
+                                        st.error(f"❌ {L.get('file_load_error', '파일 로드 오류')}: {str(e)}")
                         
                         st.caption(f"{L.get('modified', '수정')}: {time_str}")
                         st.markdown("---")
@@ -296,7 +296,7 @@ def _render_customer_list_panel(L, current_lang):
             """, unsafe_allow_html=True)
             
             for customer in all_customers_list[:20]:  # 최대 20명 표시
-                customer_name = customer.get('customer_name', '고객')
+                customer_name = customer.get('customer_name', L.get('customer_label', '고객'))
                 consultation_count = customer.get('consultation_count', 0)
                 is_selected = current_customer_name == customer_name
                 
@@ -326,7 +326,7 @@ def _render_customer_list_panel(L, current_lang):
                 with col_badge:
                     if consultation_count > 0:
                         # 배지를 버튼 옆에 표시
-                        st.markdown(f'<div style="text-align: center; margin-top: 8px;"><span class="customer-badge">{consultation_count}개</span></div>', unsafe_allow_html=True)
+                        st.markdown(f'<div style="text-align: center; margin-top: 8px;"><span class="customer-badge">{consultation_count}{L.get("items", "개")}</span></div>', unsafe_allow_html=True)
         else:
             st.info(L.get("no_customers_registered", "등록된 고객이 없습니다."))
     except ImportError as e:
@@ -348,7 +348,7 @@ def _render_customer_info_panel(L, current_lang):
         customer_name = (
             basic_info.get('customer_name', '') or 
             customer_info.get('name', '') or 
-            st.session_state.get('customer_name', '고객')
+            st.session_state.get('customer_name', L.get('customer_label', '고객'))
         )
         
         st.markdown(f"### 👤 {customer_name}")
@@ -358,7 +358,7 @@ def _render_customer_info_panel(L, current_lang):
         phone = customer_info.get('phone', st.session_state.get('customer_phone', 'N/A'))
         
         st.markdown(f"**{L.get('customer_id_label', '고객 ID')}:** {customer_id}")
-        if customer_name and customer_name != '고객':
+        if customer_name and customer_name != L.get('customer_label', '고객'):
             st.markdown(f"**{L.get('name_label', '성함')}:** {customer_name}")
         st.markdown(f"**{L.get('contact_label', '연락처')}:** {phone}")
         st.markdown(f"**{L.get('email_label', '이메일')}:** {email}")
@@ -378,7 +378,7 @@ def _render_customer_info_panel(L, current_lang):
                 break
         
         if st.session_state.get('customer_name') or st.session_state.get('customer_email') or st.session_state.get('customer_phone'):
-            customer_display_name = st.session_state.get('customer_name', '고객')
+            customer_display_name = st.session_state.get('customer_name', L.get('customer_label', '고객'))
             st.markdown(f"### 👤 {customer_display_name}")
             if st.session_state.get('customer_name'):
                 st.markdown(f"**성함:** {st.session_state.customer_name}")

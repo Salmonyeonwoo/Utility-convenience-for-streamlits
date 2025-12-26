@@ -10,8 +10,6 @@ from utils.history_handler import delete_all_history_local, load_simulation_hist
 def render_history_management_panel(L, current_lang):
     """이력 관리 패널 렌더링 (col1 하단)"""
     st.markdown("---")
-    from lang_pack import LANG
-    L = LANG.get(current_lang, LANG["ko"])
     
     st.markdown(f"**📋 {L.get('history_management', '이력 관리')}**")
     if st.button(f"🗑️ {L.get('delete_all_history', '모든 이력 삭제')}", key="trigger_delete_hist_compact", use_container_width=True):

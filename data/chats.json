@@ -1,0 +1,214 @@
+{
+  "CUST001": [
+    {
+      "message_id": "MSG001",
+      "sender": "customer",
+      "sender_name": "김민수",
+      "message": "안녕하세요, 유럽 여행 패키지에 대해 문의드리고 싶습니다.",
+      "timestamp": "2024-12-25 10:15:00"
+    },
+    {
+      "message_id": "MSG002",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요, 김민수님! 유럽 여행 패키지에 관심을 가져주셔서 감사합니다. 어떤 국가나 도시를 방문하고 싶으신가요?",
+      "timestamp": "2024-12-25 10:16:00"
+    },
+    {
+      "message_id": "MSG003",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "고객님 추가 문의 없으신가요?",
+      "timestamp": "2025-12-25 15:05:09"
+    },
+    {
+      "message_id": "MSG004",
+      "sender": "customer",
+      "sender_name": "김민수",
+      "message": "안녕하세요",
+      "timestamp": "2025-12-25 15:17:15"
+    },
+    {
+      "message_id": "MSG005",
+      "sender": "customer",
+      "sender_name": "김민수",
+      "message": "안녕하세요",
+      "timestamp": "2025-12-25 17:42:48"
+    },
+    {
+      "message_id": "MSG006",
+      "sender": "customer",
+      "sender_name": "김민수",
+      "message": "안녕하세요",
+      "timestamp": "2025-12-25 17:42:50"
+    },
+    {
+      "message_id": "MSG007",
+      "sender": "customer",
+      "sender_name": "김민수",
+      "message": "안녕하세요",
+      "timestamp": "2025-12-25 17:42:52"
+    },
+    {
+      "message_id": "MSG008",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요 김민수님",
+      "timestamp": "2025-12-25 17:43:54"
+    },
+    {
+      "message_id": "MSG009",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요 김민수님",
+      "timestamp": "2025-12-25 17:43:58"
+    },
+    {
+      "message_id": "MSG010",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요 김민수님",
+      "timestamp": "2025-12-25 17:44:01"
+    },
+    {
+      "message_id": "MSG011",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요 김민수님",
+      "timestamp": "2025-12-25 17:44:02"
+    },
+    {
+      "message_id": "MSG012",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요",
+      "timestamp": "2025-12-25 20:26:19"
+    },
+    {
+      "message_id": "MSG013",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요",
+      "timestamp": "2025-12-25 20:26:23"
+    },
+    {
+      "message_id": "MSG014",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요 반갑습니다",
+      "timestamp": "2025-12-25 20:26:41"
+    },
+    {
+      "message_id": "MSG015",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요 반갑습니다",
+      "timestamp": "2025-12-25 20:26:45"
+    },
+    {
+      "message_id": "MSG016",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요 반갑습니다",
+      "timestamp": "2025-12-25 20:26:46"
+    },
+    {
+      "message_id": "MSG017",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요 반갑습니다",
+      "timestamp": "2025-12-25 20:26:47"
+    },
+    {
+      "message_id": "MSG018",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요 반갑습니다",
+      "timestamp": "2025-12-25 20:26:50"
+    },
+    {
+      "message_id": "MSG019",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요 반갑습니다",
+      "timestamp": "2025-12-25 20:26:51"
+    },
+    {
+      "message_id": "MSG020",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요",
+      "timestamp": "2025-12-25 21:01:37"
+    },
+    {
+      "message_id": "MSG021",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요 반가워요",
+      "timestamp": "2025-12-25 21:25:59"
+    },
+    {
+      "message_id": "MSG022",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요 반가워요",
+      "timestamp": "2025-12-25 21:26:07"
+    },
+    {
+      "message_id": "MSG023",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요 반가워요",
+      "timestamp": "2025-12-25 21:26:28"
+    },
+    {
+      "message_id": "MSG024",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요",
+      "timestamp": "2025-12-26 00:39:20"
+    }
+  ],
+  "CUST002": [
+    {
+      "message_id": "MSG003",
+      "sender": "customer",
+      "sender_name": "이지은",
+      "message": "태국 여행 혼자 가려고 하는데, 추천해주실 만한 곳이 있을까요?",
+      "timestamp": "2024-12-25 14:20:00"
+    },
+    {
+      "message_id": "MSG002",
+      "sender": "customer",
+      "sender_name": "이지은",
+      "message": "https://www.klook.com/ko/activity/3407-universal-studios-japan-express-pass-osaka/?spm=Activity.Good_to_know.Link&clickId=6178885762   https://www.klook.com/ko/activity/46604-universal-studios-japan-e-ticket-osaka-qr-code-direct-entry/?spm=Activity.SearchSuggest_LIST&clickId=3cf3a8b9e1 오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의",
+      "timestamp": "2025-12-25 15:06:47"
+    },
+    {
+      "message_id": "MSG003",
+      "sender": "customer",
+      "sender_name": "이지은",
+      "message": "추가 문의 하려면 어떡하나요?",
+      "timestamp": "2025-12-25 15:07:14"
+    }
+  ],
+  "CUST003": [
+    {
+      "message_id": "MSG004",
+      "sender": "customer",
+      "sender_name": "박준호",
+      "message": "가족 여행으로 일본 오사카 가려고 합니다. 아이가 7살인데 괜찮을까요?",
+      "timestamp": "2024-12-25 09:30:00"
+    },
+    {
+      "message_id": "MSG005",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "박준호님, 오사카는 가족 여행에 최적의 도시입니다! 유니버셜 스튜디오 재팬과 오사카 수족관 등 아이들이 좋아할 만한 곳이 많아요.",
+      "timestamp": "2024-12-25 09:31:00"
+    }
+  ],
+  "CUST004": [],
+  "CUST005": [],
+  "CUST006": []
+}

@@ -1,0 +1,27 @@
+{
+  "CUST001": [
+    {
+      "call_id": "CALL001",
+      "call_type": "outgoing",
+      "start_time": "2024-12-25 10:00:00",
+      "end_time": "2024-12-25 10:15:00",
+      "duration": "15분",
+      "status": "completed",
+      "notes": "유럽 여행 패키지 상담"
+    },
+    {
+      "call_id": "CALL002",
+      "call_type": "outgoing",
+      "start_time": "2025-12-25 16:36:01",
+      "end_time": null,
+      "duration": null,
+      "status": "in_progress",
+      "notes": ""
+    }
+  ],
+  "CUST002": [],
+  "CUST003": [],
+  "CUST004": [],
+  "CUST005": [],
+  "CUST006": []
+}

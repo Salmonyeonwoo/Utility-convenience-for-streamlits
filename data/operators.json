@@ -1,0 +1,24 @@
+[
+  {
+    "operator_id": "OP001",
+    "operator_name": "김상담",
+    "department": "Sales",
+    "status": "online",
+    "current_customers": 2
+  },
+  {
+    "operator_id": "OP002",
+    "operator_name": "이상담",
+    "department": "Sales",
+    "status": "online",
+    "current_customers": 1
+  },
+  {
+    "operator_id": "OP003",
+    "operator_name": "박상담",
+    "department": "Support",
+    "status": "online",
+    "current_customers": 0
+  }
+]
+

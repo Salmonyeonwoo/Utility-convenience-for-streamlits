@@ -1,0 +1,16 @@
+[
+  {
+    "customer_id": "CUST001",
+    "from_lang": "ko",
+    "to_lang": "en",
+    "summary": "요약을 생성할 수 없습니다. API 키를 설정해주세요.",
+    "timestamp": "2025-12-25 17:07:08"
+  },
+  {
+    "customer_id": "CUST001",
+    "from_lang": "ko",
+    "to_lang": "en",
+    "summary": "요약을 생성할 수 없습니다. API 키를 설정해주세요.",
+    "timestamp": "2025-12-25 17:28:35"
+  }
+]

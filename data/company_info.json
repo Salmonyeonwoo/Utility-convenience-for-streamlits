@@ -1,0 +1,44 @@
+{
+  "companies": [
+    {
+      "company_id": "COMP001",
+      "company_name": "한국여행사",
+      "industry": "여행/관광",
+      "address": "서울특별시 강남구 테헤란로 123",
+      "phone": "02-1234-5678",
+      "email": "info@koreatravel.com",
+      "website": "https://www.koreatravel.com",
+      "description": "국내외 패키지 여행 전문 여행사",
+      "services": ["패키지 여행", "자유여행", "호텔 예약", "항공권 예약"],
+      "popular_destinations": ["일본", "유럽", "동남아시아"],
+      "established": "2010-01-15"
+    },
+    {
+      "company_id": "COMP002",
+      "company_name": "글로벌투어",
+      "industry": "여행/관광",
+      "address": "서울특별시 서초구 서초대로 456",
+      "phone": "02-2345-6789",
+      "email": "contact@globaltour.com",
+      "website": "https://www.globaltour.com",
+      "description": "프리미엄 해외 여행 전문 여행사",
+      "services": ["럭셔리 여행", "맞춤형 여행", "VIP 서비스"],
+      "popular_destinations": ["유럽", "미국", "호주"],
+      "established": "2015-03-20"
+    },
+    {
+      "company_id": "COMP003",
+      "company_name": "에코투어",
+      "industry": "여행/관광",
+      "address": "서울특별시 마포구 홍대로 789",
+      "phone": "02-3456-7890",
+      "email": "info@ecotour.com",
+      "website": "https://www.ecotour.com",
+      "description": "친환경 및 모험 여행 전문 여행사",
+      "services": ["에코투어", "트레킹", "배낭여행", "자전거 여행"],
+      "popular_destinations": ["네팔", "베트남", "태국"],
+      "established": "2018-06-10"
+    }
+  ]
+}
+

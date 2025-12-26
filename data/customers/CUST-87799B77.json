@@ -1,0 +1,26 @@
+{
+    "basic_info": {
+        "customer_id": "CUST-87799B77",
+        "name": "yeonwoopark40",
+        "phone": "+60109681392",
+        "email": "yeonwoopark40@gmail.com",
+        "identity_hash": "fefd062572b2aa69f4ce035125db4a71",
+        "created_at": "2025-12-26T00:55:44.980879",
+        "last_access_at": "2025-12-26T00:55:44.980879"
+    },
+    "crm_profile": {
+        "trait": "일반",
+        "total_consultations": 0,
+        "avg_satisfaction": 0.0,
+        "tags": []
+    },
+    "consultation_history": [],
+    "agent_manual_responses": [
+        {
+            "response": "다른 문의 사항은 없으신가요?",
+            "timestamp": "2025-12-26T00:55:45.086063",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        }
+    ]
+}

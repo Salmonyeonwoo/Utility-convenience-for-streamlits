@@ -1,0 +1,9 @@
+{
+  "today_cases": 30,
+  "assigned_customers": 6,
+  "goal_achievements": 8,
+  "daily_goal": 10,
+  "completion_rate": 80.0,
+  "average_response_time": "2분 30초",
+  "customer_satisfaction": 4.5
+}

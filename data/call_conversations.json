@@ -1,0 +1,25 @@
+{
+  "CUST001": [
+    {
+      "call_id": "CALL001",
+      "message_id": "CALLMSG001",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요, 전화 상담을 시작하겠습니다.",
+      "timestamp": "2024-12-25 10:00:00"
+    },
+    {
+      "call_id": "CALL002",
+      "message_id": "CALLMSG001",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "안녕하세요, 전화 상담을 시작하겠습니다.",
+      "timestamp": "2025-12-25 16:36:01"
+    }
+  ],
+  "CUST002": [],
+  "CUST003": [],
+  "CUST004": [],
+  "CUST005": [],
+  "CUST006": []
+}
