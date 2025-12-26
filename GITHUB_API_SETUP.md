@@ -119,3 +119,4 @@ GITHUB_API_KEY = "ghp_여기에_생성한_토큰_붙여넣기"
 - GitHub Personal Access Token을 설정하면 rate limit이 증가합니다
 - 토큰 없이는 시간당 60회 제한이 있습니다
 
+

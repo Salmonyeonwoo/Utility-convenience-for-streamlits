@@ -128,3 +128,4 @@ HINT:
         except Exception as e:
             return f"❌ Hint Generation Error. (Try again or check API Key: {e})"
 
+

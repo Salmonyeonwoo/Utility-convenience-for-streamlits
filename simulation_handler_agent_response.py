@@ -342,3 +342,4 @@ def generate_agent_first_greeting(lang_key: str, initial_query: str) -> str:
         return f"お電話ありがとうございます。{topic}の件ですね。担当の000と申します。どのようなご用件でしょうか?"
     return "Hello, how may I help you?"
 
+

@@ -30,3 +30,4 @@ def get_chat_history_for_prompt(include_attachment=False):
             history_str += f"Agent: {content}\n"
     return history_str
 
+
