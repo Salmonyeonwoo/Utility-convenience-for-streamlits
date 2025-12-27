@@ -80,7 +80,7 @@ def render_sidebar():
             L.get("home_tab", "홈"),
             L.get("chat_email_tab", "채팅/이메일"),
             L.get("phone_tab", "전화"),
-            L.get("customer_data_tab", "고객 데이터")
+            L.get("customer_data_inquiry_tab", "고객 데이터 조회")
         ]
         
         current_feature = st.session_state.get("feature_selection", feature_options[0])

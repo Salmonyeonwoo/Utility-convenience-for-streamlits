@@ -258,3 +258,4 @@ streamlit run streamlit_app.py
 - CSS 파일 확인 (`_pages/_chat_styles.py`)
 - Streamlit 버전 확인 및 업데이트
 
+

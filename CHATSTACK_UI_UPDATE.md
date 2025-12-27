@@ -103,3 +103,4 @@
 - UI 레이아웃만 Chatstack 스타일로 변경
 - 샘플 고객 데이터는 `data/customers.json`에 저장됨
 
+

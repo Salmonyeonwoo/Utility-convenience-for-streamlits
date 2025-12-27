@@ -50,6 +50,16 @@ def render_call_simulator():
     if PERSPECTIVE_LOGIC_AVAILABLE:
         render_perspective_toggle(L)
     
+    # ⭐ 고객 모드일 경우 별도 렌더링
+    if st.session_state.get("sim_perspective", "AGENT") == "CUSTOMER":
+        try:
+            from _pages._call_customer_mode import render_call_customer_mode
+            render_call_customer_mode()
+            return
+        except ImportError:
+            st.warning("고객 모드 전화 시뮬레이터 모듈을 찾을 수 없습니다. 에이전트 모드로 전환합니다.")
+            st.session_state.sim_perspective = "AGENT"
+    
     # AHT 타이머는 streamlit_app.py의 우측 상단에서 표시됨 (제거됨)
 
     # ========================================

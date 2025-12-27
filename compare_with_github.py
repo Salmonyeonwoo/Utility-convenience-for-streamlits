@@ -109,3 +109,4 @@ if __name__ == "__main__":
     result = compare_directories()
     print(f"\n최종 결과: {result}")
 
+

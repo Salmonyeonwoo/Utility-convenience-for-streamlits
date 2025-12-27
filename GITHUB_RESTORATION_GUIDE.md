@@ -162,3 +162,4 @@ from utils.history_handler import save_simulation_history_local
 - CSS 파일 확인 (`_pages/_chat_styles.py`)
 - Streamlit 버전 확인
 
+

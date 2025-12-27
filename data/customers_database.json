@@ -1,0 +1,61 @@
+{
+  "customers": [
+    {
+      "customer_id": "CUST768C544A",
+      "customer_name": "渡辺健太郎",
+      "phone": "+8190-1234-5678",
+      "email": "kentaro.watanabe50@gmail.com",
+      "identity_hash": "d0c1be805f245cc8103f3f97dec805b3",
+      "account_created": "2025-12-27",
+      "last_login": "2025-12-27",
+      "last_consultation": "2025-12-27",
+      "consultation_history": [],
+      "personality": "일반",
+      "personality_summary": "",
+      "preferred_destination": "",
+      "travel_budget": "",
+      "survey_score": 0.0,
+      "service_rating": 0.0,
+      "evaluation_data": [],
+      "sentiment_analysis": []
+    },
+    {
+      "customer_id": "CUSTE25E026E",
+      "customer_name": "김성수",
+      "phone": "010-1234-567",
+      "email": " kimseongsu@example.com",
+      "identity_hash": "262ecdd9d4fe18d22d4ea01c4481a73f",
+      "account_created": "2025-12-28",
+      "last_login": "2025-12-28",
+      "last_consultation": "2025-12-28",
+      "consultation_history": [],
+      "personality": "일반",
+      "personality_summary": "",
+      "preferred_destination": "도쿄, 오사카",
+      "travel_budget": "",
+      "survey_score": 0.0,
+      "service_rating": 0.0,
+      "evaluation_data": [],
+      "sentiment_analysis": []
+    },
+    {
+      "customer_id": "CUST56CDDADB",
+      "customer_name": "홍길동",
+      "phone": "+8210-1234-5678",
+      "email": "honggildong@example.com",
+      "identity_hash": "a2c8d895986136e38e3ce00b48fea94d",
+      "account_created": "2025-12-28",
+      "last_login": "2025-12-28",
+      "last_consultation": "2025-12-28",
+      "consultation_history": [],
+      "personality": "일반",
+      "personality_summary": "",
+      "preferred_destination": "",
+      "travel_budget": "",
+      "survey_score": 0.0,
+      "service_rating": 0.0,
+      "evaluation_data": [],
+      "sentiment_analysis": []
+    }
+  ]
+}

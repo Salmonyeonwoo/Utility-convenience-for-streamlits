@@ -48,3 +48,4 @@ streamlit run streamlit_app.py
 4. 고객 데이터 관리 탭 작동 확인
 5. Import 오류 없이 실행되는지 확인
 
+

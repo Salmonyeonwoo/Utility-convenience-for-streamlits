@@ -349,3 +349,4 @@ def render_modern_chat_page():
         else:
             st.info("고객을 선택하면 상세 정보가 표시됩니다.")
 
+

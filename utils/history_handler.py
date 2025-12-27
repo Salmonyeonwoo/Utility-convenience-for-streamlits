@@ -65,6 +65,113 @@ def load_simulation_histories_local(lang_key: str) -> List[Dict[str, Any]]:
     ]
 
 
+def generate_call_summary(messages: List[Dict[str, Any]], initial_query: str, customer_type: str,
+                          current_lang_key: str) -> Dict[str, Any]:
+    """전화 통화 이력 요약 생성 (문의 내용 + 솔루션 요점만, 다국어 지원)"""
+    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
+    
+    # 고객 문의 내용 추출
+    customer_inquiries = []
+    agent_solutions = []
+    
+    for msg in messages:
+        role = msg.get("role", "")
+        content = msg.get("content", "")
+        if role in ["customer", "customer_rebuttal"]:
+            customer_inquiries.append(content)
+        elif role in ["agent", "agent_response"]:
+            agent_solutions.append(content)
+    
+    # 요약 프롬프트 (문의 내용 + 솔루션 요점만)
+    summary_prompt = f"""
+You are an AI analyst summarizing a phone call customer support conversation. Generate a concise summary focusing ONLY on:
+1. Customer inquiry/inquiries (what the customer asked about)
+2. Key solutions provided by the agent (main points only, not full scripts)
+
+The summary MUST be in {lang_name} language.
+
+Conversation:
+Initial Query: {initial_query}
+
+Customer Messages:
+{chr(10).join([f"- {inq}" for inq in customer_inquiries[:5]])}
+
+Agent Responses:
+{chr(10).join([f"- {sol}" for sol in agent_solutions[:5]])}
+
+Generate a JSON summary with the following structure (ONLY JSON, no markdown):
+{{
+    "customer_inquiry": "Brief summary of what the customer asked about",
+    "key_solutions": ["Solution point 1", "Solution point 2", "Solution point 3"],
+    "summary": "Brief overall summary in {lang_name}"
+}}
+
+IMPORTANT:
+- Keep it concise (not full scripts)
+- Focus on main inquiry and solution points
+- Use {lang_name} language
+- Maximum 3 solution points
+"""
+    
+    try:
+        if get_api_key("gemini") or get_api_key("openai"):
+            summary_json = run_llm(summary_prompt)
+            # JSON 추출
+            if summary_json.strip().startswith("```"):
+                summary_json = summary_json.strip().split("```")[1]
+                if summary_json.startswith("json"):
+                    summary_json = summary_json[4:]
+            summary_json = summary_json.strip()
+            
+            import json
+            summary_data = json.loads(summary_json)
+            
+            # 다국어 번역 추가
+            summary_data["summary_ko"] = summary_data.get("summary", "")
+            summary_data["summary_en"] = ""
+            summary_data["summary_ja"] = ""
+            
+            # 영어 번역
+            if current_lang_key != "en":
+                try:
+                    from utils.translation import translate_text_with_llm
+                    summary_data["summary_en"] = translate_text_with_llm(
+                        summary_data.get("summary", ""), "en", current_lang_key
+                    ) or ""
+                except:
+                    pass
+            
+            # 일본어 번역
+            if current_lang_key != "ja":
+                try:
+                    from utils.translation import translate_text_with_llm
+                    summary_data["summary_ja"] = translate_text_with_llm(
+                        summary_data.get("summary", ""), "ja", current_lang_key
+                    ) or ""
+                except:
+                    pass
+            
+            return summary_data
+        else:
+            return {
+                "customer_inquiry": initial_query,
+                "key_solutions": [],
+                "summary": f"Phone call conversation about {initial_query}",
+                "summary_ko": "",
+                "summary_en": "",
+                "summary_ja": ""
+            }
+    except Exception as e:
+        return {
+            "customer_inquiry": initial_query,
+            "key_solutions": [],
+            "summary": f"Error generating summary: {str(e)}",
+            "summary_ko": "",
+            "summary_en": "",
+            "summary_ja": ""
+        }
+
+
 def generate_chat_summary(messages: List[Dict[str, Any]], initial_query: str, customer_type: str,
                           current_lang_key: str) -> Dict[str, Any]:
     """채팅 내용을 AI로 요약하여 주요 정보와 점수를 추출"""
@@ -231,15 +338,22 @@ JSON Output:
 
 
 def save_simulation_history_local(initial_query: str, customer_type: str, messages: List[Dict[str, Any]],
-                                  is_chat_ended: bool, attachment_context: str, is_call: bool = False):
-    """AI 요약 데이터를 중심으로 이력을 저장"""
+                                  is_chat_ended: bool, attachment_context: str, is_call: bool = False,
+                                  customer_name: str = "", customer_phone: str = "", customer_email: str = "",
+                                  customer_id: str = ""):
+    """AI 요약 데이터를 중심으로 이력을 저장 (고객 정보 포함)"""
     histories = _load_json(SIM_META_FILE, [])
     doc_id = str(uuid.uuid4())
     ts = datetime.utcnow().isoformat()
 
     summary_data = None
     if is_chat_ended or len(messages) > 4 or is_call:
-        summary_data = generate_chat_summary(messages, initial_query, customer_type, st.session_state.language)
+        # 전화 통화의 경우 요약 생성 (문의 내용 + 솔루션 요점만)
+        if is_call:
+            summary_data = generate_call_summary(messages, initial_query, customer_type, st.session_state.language)
+        else:
+            # 채팅의 경우 기존 요약 함수 사용
+            summary_data = generate_chat_summary(messages, initial_query, customer_type, st.session_state.language)
 
     if summary_data:
         data = {

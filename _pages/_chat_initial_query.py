@@ -92,6 +92,53 @@ def render_initial_query(L, current_lang):
         st.session_state.customer_attachment_file = None
         st.session_state.sim_attachment_context_for_llm = ""
 
+        # 고객 등록 폼 (채팅 시작 버튼 왼쪽에 배치)
+        st.markdown("---")
+        st.subheader(L.get("new_customer_registration", "새 고객 등록"))
+        with st.form("customer_registration_form_chat"):
+            col_reg1, col_reg2 = st.columns(2)
+            with col_reg1:
+                reg_customer_name = st.text_input(L.get("customer_name_required", "고객명 *"), key="reg_customer_name_chat")
+                reg_phone = st.text_input(L.get("contact_required", "연락처 *"), key="reg_phone_chat")
+                reg_email = st.text_input(L.get("email_required", "이메일 *"), key="reg_email_chat")
+            with col_reg2:
+                reg_personality = st.selectbox(
+                    L.get("customer_personality", "고객 성향"), 
+                    ["일반", "신중형", "활발형", "가족형", "프리미엄형", "절약형", "자유형"], 
+                    key="reg_personality_chat"
+                )
+                reg_destination = st.text_input(L.get("preferred_destination", "선호 여행지"), key="reg_destination_chat")
+            
+            col_reg_btn1, col_reg_btn2 = st.columns([1, 1])
+            with col_reg_btn1:
+                if st.form_submit_button(L.get("customer_registration", "고객 등록"), type="primary", use_container_width=True):
+                    if reg_customer_name and reg_phone and reg_email:
+                        if hasattr(st.session_state, 'customer_data_manager') and st.session_state.customer_data_manager:
+                            try:
+                                customer_data = {
+                                    'customer_name': reg_customer_name, 
+                                    'phone': reg_phone, 
+                                    'email': reg_email,
+                                    'personality': reg_personality, 
+                                    'preferred_destination': reg_destination
+                                }
+                                customer_id = st.session_state.customer_data_manager.create_customer(customer_data)
+                                st.success(L.get("customer_registered_success", "고객이 등록되었습니다! 고객 ID: {customer_id}").format(customer_id=customer_id))
+                                # 등록된 고객 정보를 세션 상태에 저장
+                                st.session_state.customer_name = reg_customer_name
+                                st.session_state.customer_phone = reg_phone
+                                st.session_state.customer_email = reg_email
+                            except Exception as e:
+                                st.error(f"고객 등록 오류: {str(e)}")
+                        else:
+                            st.error("고객 데이터 관리자가 초기화되지 않았습니다.")
+                    else:
+                        st.error(L.get("customer_registration_required_fields", "고객명, 연락처, 이메일은 필수 항목입니다."))
+            with col_reg_btn2:
+                st.form_submit_button(L.get("button_cancel", "취소"), use_container_width=True)
+        
+        st.markdown("---")
+
         # 채팅 시작 버튼 (크기 축소)
         if st.button(
                 L.get("button_start_chat", "채팅 시작"),

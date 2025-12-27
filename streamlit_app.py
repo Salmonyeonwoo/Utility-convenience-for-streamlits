@@ -115,11 +115,11 @@ elif feature_selection == L.get("phone_tab", "전화"):
     else:
         st.error("전화 시뮬레이터 탭 모듈을 찾을 수 없습니다.")
 
-elif feature_selection == L.get("customer_data_tab", "고객 데이터"):
-    st.markdown(f"### 📋 고객 데이터 관리")
-    st.caption("고객 정보를 등록, 수정, 조회하고 JSON/CSV 형식으로 관리합니다.")
+elif feature_selection == L.get("customer_data_inquiry_tab", "고객 데이터 조회"):
+    st.markdown(f"### 📋 {L.get('customer_data_inquiry_tab', '고객 데이터 조회')}")
+    st.caption("고객 정보를 조회하고 이전 응대 이력을 확인합니다.")
     try:
         from _pages._customer_data import render_customer_data_page
         render_customer_data_page()
     except ImportError:
-        st.error("고객 데이터 관리 모듈을 찾을 수 없습니다.")
+        st.error("고객 데이터 조회 모듈을 찾을 수 없습니다.")
