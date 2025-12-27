@@ -72,8 +72,7 @@ def _render_agent_message(L, current_lang, idx, content, save_feedback):
     """에이전트 메시지 렌더링 (스크린샷 스타일 - 사용자 모드에 따라 방향 변경)"""
     # 사용자 모드 확인
     perspective = st.session_state.get("sim_perspective", "AGENT")
-    user_role = st.session_state.get("user_role_selected", None)
-    is_customer_mode = (user_role == "CUSTOMER" or perspective == "CUSTOMER")
+    is_customer_mode = (perspective == "CUSTOMER")
     
     # 고객 모드일 때: 상담원 메시지는 왼쪽 (흰색)
     # 상담원 모드일 때: 상담원 메시지는 오른쪽 (파란색)

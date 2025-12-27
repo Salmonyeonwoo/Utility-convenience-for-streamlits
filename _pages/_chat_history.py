@@ -51,8 +51,7 @@ def render_chat_history(current_lang, L):
                 st.session_state.customer_query_text_area = ""
                 st.session_state.last_transcript = ""
                 st.session_state.sim_audio_bytes = None
-                st.session_state.sim_stage = "WAIT_ROLE_SELECTION"
-                st.session_state.user_role_selected = None
+                st.session_state.sim_stage = "WAIT_FIRST_QUERY"
                 st.session_state.call_sim_stage = "WAITING_CALL"
                 st.session_state.inquiry_text = ""
                 st.session_state.call_content = ""
@@ -82,8 +81,7 @@ def render_chat_history(current_lang, L):
                     st.session_state.simulator_memory.clear()
                     st.session_state.show_delete_confirm = False
                     st.session_state.is_chat_ended = False
-                    st.session_state.sim_stage = "WAIT_ROLE_SELECTION"
-                    st.session_state.user_role_selected = None
+                    st.session_state.sim_stage = "WAIT_FIRST_QUERY"
                     st.session_state.customer_attachment_file = []
                     st.session_state.sim_attachment_context_for_llm = ""
                     st.session_state.agent_attachment_file = []

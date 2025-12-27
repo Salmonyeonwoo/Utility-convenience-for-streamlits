@@ -124,10 +124,20 @@ def _extract_customer_info(data: Dict[str, Any], file_path: str) -> Optional[Dic
                 for msg in messages:
                     if msg.get('role') == 'customer':
                         content = msg.get('content', '')
-                        # 간단한 이름 추출 시도 (예: "김민수님의 문의" -> "김민수")
+                        # 다국어 이름 추출 시도
                         import re
-                        # "XXX님" 패턴 찾기
+                        # 한국어: "XXX님" 패턴
                         match = re.search(r'([가-힣]{2,4})님', content)
+                        if match:
+                            customer_name = match.group(1)
+                            break
+                        # 일본어: "XXX様" 또는 "XXXさん" 패턴
+                        match = re.search(r'([ぁ-ゖァ-ヶー一-龯]{2,6})[様さん]', content)
+                        if match:
+                            customer_name = match.group(1)
+                            break
+                        # 영어: "XXX's" 또는 "XXX" 패턴 (대문자로 시작하는 단어)
+                        match = re.search(r'\b([A-Z][a-z]{2,15})\b', content)
                         if match:
                             customer_name = match.group(1)
                             break
@@ -140,8 +150,8 @@ def _extract_customer_info(data: Dict[str, Any], file_path: str) -> Optional[Dic
             
             # customer_name이 없으면 파일명에서 추출 시도
             if not customer_name and customer_id:
-                # customer_id를 기반으로 고객 이름 생성 (임시)
-                customer_name = f"고객-{customer_id[:8]}"
+                # customer_id를 기반으로 고객 이름 생성 (임시 - 언어 팩 사용 불가하므로 기본값)
+                customer_name = f"Customer-{customer_id[:8]}"
             
             if customer_name:
                 return {

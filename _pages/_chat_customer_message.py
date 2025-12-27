@@ -22,8 +22,7 @@ def render_customer_message_with_icons(L, idx, content, current_lang):
     
     # 사용자 모드 확인
     perspective = st.session_state.get("sim_perspective", "AGENT")
-    user_role = st.session_state.get("user_role_selected", None)
-    is_customer_mode = (user_role == "CUSTOMER" or perspective == "CUSTOMER")
+    is_customer_mode = (perspective == "CUSTOMER")
     
     # 고객 모드일 때: 고객 메시지는 오른쪽 (노란색)
     # 상담원 모드일 때: 고객 메시지는 왼쪽 (회색)
@@ -99,9 +98,8 @@ def render_customer_message_with_icons(L, idx, content, current_lang):
 def _render_additional_buttons(L, idx, content):
     """추가 문의 및 설문 조사 버튼 렌더링"""
     # ⭐ 고객 모드일 때는 추가 문의 사항 버튼 제외
-    user_role = st.session_state.get("user_role_selected", None)
     perspective = st.session_state.get("sim_perspective", "AGENT")
-    is_customer_mode = (user_role == "CUSTOMER" or perspective == "CUSTOMER")
+    is_customer_mode = (perspective == "CUSTOMER")
     
     # 솔루션 제공 여부 확인
     last_agent_response_idx = None

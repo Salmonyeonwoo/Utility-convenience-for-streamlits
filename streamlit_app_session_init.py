@@ -94,7 +94,7 @@ def init_all_session_state():
     if "openai_init_msg" not in st.session_state:
         st.session_state.openai_init_msg = ""
     if "sim_stage" not in st.session_state:
-        st.session_state.sim_stage = "WAIT_ROLE_SELECTION"
+        st.session_state.sim_stage = "WAIT_FIRST_QUERY"
     if "start_time" not in st.session_state:
         st.session_state.start_time = None
     if "is_solution_provided" not in st.session_state:

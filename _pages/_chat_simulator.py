@@ -75,11 +75,6 @@ def render_chat_simulator():
         from _pages._chat_history import render_outbound_call
         render_outbound_call(L, current_lang)
 
-    # 역할 선택 (WAIT_ROLE_SELECTION)
-    if st.session_state.sim_stage == "WAIT_ROLE_SELECTION":
-        from _pages._chat_role_selection import render_role_selection
-        render_role_selection(L, current_lang)
-    
     # 초기 문의 입력 (WAIT_FIRST_QUERY)
     elif st.session_state.sim_stage == "WAIT_FIRST_QUERY":
         render_initial_query(L, current_lang)
@@ -99,7 +94,7 @@ def render_chat_simulator():
 
     # 3-column 레이아웃 적용
     use_3column = st.session_state.sim_stage not in [
-        "WAIT_ROLE_SELECTION", "WAIT_FIRST_QUERY", "CLOSING", 
+        "WAIT_FIRST_QUERY", "CLOSING", 
         "OUTBOUND_CALL_IN_PROGRESS", "idle", "ESCALATION_REQUIRED"
     ]
     

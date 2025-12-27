@@ -59,7 +59,7 @@ def render_history_management_panel(L, current_lang):
             st.session_state.simulator_memory.clear()
             st.session_state.show_delete_confirm = False
             st.session_state.is_chat_ended = False
-            st.session_state.sim_stage = "WAIT_ROLE_SELECTION"
+            st.session_state.sim_stage = "WAIT_FIRST_QUERY"
             st.success(L.get("all_history_deleted", "✅ 모든 이력이 삭제되었습니다."))
         if st.button(L.get("cancel", "취소"), key="confirm_del_no_compact", use_container_width=True):
             st.session_state.show_delete_confirm = False

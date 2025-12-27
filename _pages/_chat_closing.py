@@ -121,8 +121,9 @@ def render_wait_closing_confirmation(L, current_lang):
             st.session_state.start_time = None
 
             end_msg = L.get("prompt_survey", "설문 조사 링크를 전송했습니다.")
+            system_msg_prefix = L.get("email_end_system_msg", "시스템: 이메일 상담 종료")
             st.session_state.simulator_messages.append(
-                {"role": "system_end", "content": "(시스템: 이메일 상담 종료) " + end_msg}
+                {"role": "system_end", "content": f"({system_msg_prefix}) {end_msg}"}
             )
 
             time.sleep(0.1)

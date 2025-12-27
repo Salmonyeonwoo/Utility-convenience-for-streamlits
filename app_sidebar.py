@@ -50,3 +50,4 @@ def render_operator_sidebar():
         st.session_state.auto_refresh = st.checkbox("🔄 자동 새로고침", value=st.session_state.auto_refresh)
 
 
+

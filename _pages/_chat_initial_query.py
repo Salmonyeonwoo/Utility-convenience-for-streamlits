@@ -25,21 +25,21 @@ def render_initial_query(L, current_lang):
     
     # col3에 입력된 고객 정보 미리보기 표시
     with col3:
-        st.subheader("고객 정보")
+        st.subheader(L.get("customer_info", "고객 정보"))
         if st.session_state.get('customer_name') or st.session_state.get('customer_email') or st.session_state.get('customer_phone'):
             if st.session_state.get('customer_name'):
-                st.markdown(f"**성함:** {st.session_state.customer_name}")
+                st.markdown(f"**{L.get('name_label', '성함')}:** {st.session_state.customer_name}")
             if st.session_state.get('customer_email'):
-                st.markdown(f"**이메일:** {st.session_state.customer_email}")
+                st.markdown(f"**{L.get('email_label', '이메일')}:** {st.session_state.customer_email}")
             if st.session_state.get('customer_phone'):
-                st.markdown(f"**연락처:** {st.session_state.customer_phone}")
+                st.markdown(f"**{L.get('contact_label', '연락처')}:** {st.session_state.customer_phone}")
             if st.session_state.get('customer_type_sim_select'):
-                st.markdown(f"**고객 유형:** {st.session_state.customer_type_sim_select}")
+                st.markdown(f"**{L.get('customer_type_label', '고객 유형')}:** {st.session_state.customer_type_sim_select}")
         else:
-            st.info("고객 정보를 입력하면 여기에 표시됩니다.")
+            st.info(L.get("customer_info_preview_placeholder", "고객 정보를 입력하면 여기에 표시됩니다."))
     
     with col2:
-        st.markdown("### 💬 고객 문의 입력")
+        st.markdown(f"### 💬 {L.get('customer_inquiry_input_header', '고객 문의 입력')}")
         
         # 문의 내용 입력 (크기 축소)
         customer_query = st.text_area(
