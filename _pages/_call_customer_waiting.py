@@ -237,8 +237,12 @@ def render_customer_waiting():
                         st.session_state.agent_search_attempts = 0
                         st.session_state.agent_search_start_time = datetime.now()
                     
-                    # 경과 시간 계산
-                    elapsed_time = (datetime.now() - st.session_state.agent_search_start_time).total_seconds()
+                    # 경과 시간 계산 (agent_search_start_time이 None이 아닌지 확인)
+                    if st.session_state.agent_search_start_time is None:
+                        st.session_state.agent_search_start_time = datetime.now()
+                        elapsed_time = 0
+                    else:
+                        elapsed_time = (datetime.now() - st.session_state.agent_search_start_time).total_seconds()
                     
                     if elapsed_time < st.session_state.agent_search_max_duration:
                         # 재시도 중 로딩 화면 표시
