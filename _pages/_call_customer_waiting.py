@@ -82,12 +82,13 @@ def render_customer_waiting():
             st.session_state.outbound_customer_phone = customer_phone
             st.session_state.outbound_call_reason_idx = ["주문 확인", "배송 안내", "환불 처리", "상품 추천", 
                 "이벤트 안내", "고객 만족도 조사", "기타"].index(call_reason)
-                    st.session_state.outbound_agent_skill_idx = ["자동 할당", "주문/결제 전문가", "환불/취소 전문가", 
+            st.session_state.outbound_agent_skill_idx = ["자동 할당", "주문/결제 전문가", "환불/취소 전문가", 
                 "기술 지원 전문가", "일반 문의 전문가", "VIP 고객 전문가"].index(agent_skill)
-                    st.session_state.outbound_agent_gender_idx = ["남성", "여성"].index(agent_gender)
-                    
-                    # 에이전트 성별을 session_state에 저장
-                    st.session_state.agent_gender = "male" if agent_gender == "남성" else "female"
+            st.session_state.outbound_agent_gender_idx = ["남성", "여성"].index(agent_gender)
+            
+            # 에이전트 성별을 session_state에 저장
+            st.session_state.selected_agent_gender = agent_gender
+            st.session_state.agent_gender = "male" if agent_gender == "남성" else "female"
             
             if not customer_phone or customer_phone.strip() == "":
                 st.error("⚠️ 전화번호를 입력해주세요.")
