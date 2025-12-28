@@ -587,6 +587,18 @@ LANG: Dict[str, Dict[str, str]] = {
         "call_target_select_label": "발신 대상 선택",
         "call_target_customer": "고객에게 발신",
         "call_target_partner": "현지 업체 발신",
+        
+        # --- 아웃바운드 발신 콜 관련 ---
+        "outbound_call_header": "아웃바운드 발신 콜",
+        "call_reason_label": "통화 사유",
+        "required_agent_skill_label": "필요한 에이전트 스킬",
+        "agent_gender_label": "에이전트 성별",
+        "make_call_button": "전화 걸기",
+        "call_status_header": "발신 상태",
+        "customer_info_registration_header": "고객 정보 등록",
+        "memo_optional_label": "메모 (선택사항)",
+        "regenerate_summary": "요약 재생성",
+        "save_history_button": "이력 저장",
 
         # --- 음성 기록 ---
         "voice_rec_header": "음성 기록 & 관리",
@@ -1346,6 +1358,18 @@ LANG: Dict[str, Dict[str, str]] = {
         "call_target_select_label": "Select Call Target",
         "call_target_customer": "Call Customer",
         "call_target_partner": "Call Local Partner",
+        
+        # --- Outbound Call Related ---
+        "outbound_call_header": "Outbound Call",
+        "call_reason_label": "Call Reason",
+        "required_agent_skill_label": "Required Agent Skill",
+        "agent_gender_label": "Agent Gender",
+        "make_call_button": "Make Call",
+        "call_status_header": "Call Status",
+        "customer_info_registration_header": "Customer Information Registration",
+        "memo_optional_label": "Memo (Optional)",
+        "regenerate_summary": "Regenerate Summary",
+        "save_history_button": "Save History",
 
         # --- 음성 기록 ---
         "voice_rec_header": "Voice Record & Management",
@@ -2083,6 +2107,18 @@ LANG: Dict[str, Dict[str, str]] = {
         "call_target_select_label": "発信先選択",
         "call_target_customer": "顧客へ電話発信",
         "call_target_partner": "現地業者へ電話発信",
+        
+        # --- アウトバウンド発信コール関連 ---
+        "outbound_call_header": "アウトバウンド発信コール",
+        "call_reason_label": "通話理由",
+        "required_agent_skill_label": "必要なエージェントスキル",
+        "agent_gender_label": "エージェント性別",
+        "make_call_button": "電話をかける",
+        "call_status_header": "発信状態",
+        "customer_info_registration_header": "顧客情報登録",
+        "memo_optional_label": "メモ（任意）",
+        "regenerate_summary": "要約再生成",
+        "save_history_button": "履歴保存",
 
         # --- Voice ---
         "voice_rec_header": "音声記録＆管理",
