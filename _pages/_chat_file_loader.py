@@ -178,3 +178,4 @@ def _handle_file_load(L, file_meta, file_path, file_type):
             st.error(f"❌ {L.get('file_load_error', '파일 로드 오류')}: {str(e)}")
 
 
+

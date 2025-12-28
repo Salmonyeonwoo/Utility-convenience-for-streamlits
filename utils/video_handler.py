@@ -133,13 +133,32 @@ JSON만 응답하세요:"""
         if st.session_state.is_llm_ready:
             response_text = run_llm(prompt)
             
-            # JSON 파싱 시도
+            # JSON 파싱 시도 (강화된 오류 처리)
             try:
                 # JSON 부분만 추출 (코드 블록 제거)
                 import re
-                json_match = re.search(r'\{[^{}]*\}', response_text, re.DOTALL)
+                import json
+                
+                # 마크다운 코드 블록 제거
+                if "```" in response_text:
+                    json_match_block = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', response_text, re.DOTALL)
+                    if json_match_block:
+                        json_text = json_match_block.group(1)
+                    else:
+                        json_text = response_text
+                else:
+                    json_text = response_text
+                
+                # JSON 객체 찾기 (중첩 중괄호 지원)
+                json_match = re.search(r'\{.*\}', json_text, re.DOTALL)
                 if json_match:
-                    result = json.loads(json_match.group())
+                    try:
+                        result = json.loads(json_match.group())
+                    except json.JSONDecodeError as json_err:
+                        # 파싱 실패 시 기본값으로 계속 진행
+                        print(f"비디오 핸들러 JSON 파싱 오류: {json_err}")
+                        raise  # 외부 except로 전달
+                    
                     # 유효성 검사
                     valid_emotions = ["NEUTRAL", "HAPPY", "ANGRY", "ASKING", "SAD"]
                     valid_gestures = ["NONE", "HAND_WAVE", "NOD", "SHAKE_HEAD", "POINT"]
@@ -652,6 +671,7 @@ def get_virtual_human_config() -> Dict[str, Any]:
         "provider": st.session_state.get("virtual_human_provider", "hyperclova"),
         "api_key": get_api_key("hyperclova") if st.session_state.get("virtual_human_provider", "hyperclova") == "hyperclova" else None
     }
+
 
 
 

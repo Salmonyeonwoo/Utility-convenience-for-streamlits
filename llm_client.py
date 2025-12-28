@@ -167,31 +167,42 @@ def run_llm(prompt: str) -> str:
             if provider == "gemini":
                 genai.configure(api_key=key)
                 gen_model = genai.GenerativeModel(model)
-                resp = gen_model.generate_content(prompt)
+                # 전화 응답은 짧게 (빠른 응답)
+                generation_config = {
+                    "max_output_tokens": 200,
+                    "temperature": 0.7,
+                }
+                resp = gen_model.generate_content(prompt, generation_config=generation_config)
                 return resp.text
 
             elif provider == "openai":
-                o_client = OpenAI(api_key=key)
+                o_client = OpenAI(api_key=key, timeout=10.0)  # 10초 timeout
                 resp = o_client.chat.completions.create(
                     model=model,
                     messages=[{"role": "user", "content": prompt}],
+                    max_tokens=200,  # 전화 응답은 짧게 (빠른 응답)
+                    temperature=0.7,
                 )
                 return resp.choices[0].message.content
 
             elif provider == "claude":
-                c_client = Anthropic(api_key=key)
+                c_client = Anthropic(api_key=key, timeout=10.0)  # 10초 timeout
                 resp = c_client.messages.create(
                     model=model,
                     messages=[{"role": "user", "content": prompt}],
+                    max_tokens=200,  # 전화 응답은 짧게 (빠른 응답)
+                    temperature=0.7,
                 )
                 return resp.content[0].text
 
             elif provider == "groq":
                 from groq import Groq
-                g_client = Groq(api_key=key)
+                g_client = Groq(api_key=key, timeout=10.0)  # 10초 timeout
                 resp = g_client.chat.completions.create(
                     model=model,
                     messages=[{"role": "user", "content": prompt}],
+                    max_tokens=200,  # 전화 응답은 짧게 (빠른 응답)
+                    temperature=0.7,
                 )
                 return resp.choices[0].message.content
 

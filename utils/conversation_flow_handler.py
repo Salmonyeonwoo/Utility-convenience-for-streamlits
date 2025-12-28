@@ -172,3 +172,4 @@ def generate_after_waiting_message(current_lang: str) -> str:
     }
     return messages.get(current_lang, messages["ko"])
 
+

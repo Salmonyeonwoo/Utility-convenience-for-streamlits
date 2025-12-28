@@ -61,10 +61,18 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/we
     tmp.flush()
     tmp.close()
     
-    # OpenAI Whisper API 시도
+    # OpenAI Whisper API 시도 (timeout 설정으로 빠른 응답)
     client = st.session_state.openai_client
     if client is not None:
         try:
+            from openai import OpenAI
+            # timeout 설정으로 빠른 응답
+            if not hasattr(client, '_client') or not hasattr(client._client, 'timeout'):
+                # timeout이 설정되지 않은 경우 새 클라이언트 생성
+                api_key = get_api_key("openai")
+                if api_key:
+                    client = OpenAI(api_key=api_key, timeout=8.0)  # 8초 timeout
+            
             with open(tmp.name, "rb") as f:
                 if auto_detect or lang_code is None:
                     res = client.audio.transcriptions.create(
@@ -192,6 +200,13 @@ def synthesize_tts(text: str, lang_key: str, role: str = "agent"):
             voice_name = TTS_VOICES[voice_key]["voice"]
         else:
             voice_name = TTS_VOICES["customer"]["voice"]
+    elif role == "agent":
+        # 에이전트 성별에 따라 음성 선택
+        agent_gender = st.session_state.get("agent_gender", "female")  # 기본값: 여성
+        if agent_gender == "male":
+            voice_name = "alloy"  # 남성 음성
+        else:
+            voice_name = "shimmer"  # 여성 음성
     elif role in TTS_VOICES:
         voice_name = TTS_VOICES[role]["voice"]
     else:

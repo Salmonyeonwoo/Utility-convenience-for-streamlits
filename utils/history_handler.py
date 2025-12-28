@@ -82,11 +82,9 @@ def generate_call_summary(messages: List[Dict[str, Any]], initial_query: str, cu
         elif role in ["agent", "agent_response"]:
             agent_solutions.append(content)
     
-    # 요약 프롬프트 (문의 내용 + 솔루션 요점만)
+    # 요약 프롬프트 (더 상세하고 긴 요약)
     summary_prompt = f"""
-You are an AI analyst summarizing a phone call customer support conversation. Generate a concise summary focusing ONLY on:
-1. Customer inquiry/inquiries (what the customer asked about)
-2. Key solutions provided by the agent (main points only, not full scripts)
+You are an AI analyst summarizing a phone call customer support conversation. Generate a DETAILED and COMPREHENSIVE summary.
 
 The summary MUST be in {lang_name} language.
 
@@ -94,37 +92,120 @@ Conversation:
 Initial Query: {initial_query}
 
 Customer Messages:
-{chr(10).join([f"- {inq}" for inq in customer_inquiries[:5]])}
+{chr(10).join([f"- {inq}" for inq in customer_inquiries])}
 
 Agent Responses:
-{chr(10).join([f"- {sol}" for sol in agent_solutions[:5]])}
+{chr(10).join([f"- {sol}" for sol in agent_solutions])}
 
-Generate a JSON summary with the following structure (ONLY JSON, no markdown):
+Generate a JSON summary with the following structure (ONLY VALID JSON, no markdown, no code blocks):
 {{
-    "customer_inquiry": "Brief summary of what the customer asked about",
-    "key_solutions": ["Solution point 1", "Solution point 2", "Solution point 3"],
-    "summary": "Brief overall summary in {lang_name}"
+    "customer_inquiry": "EXTREMELY DETAILED and COMPREHENSIVE description (at least 6-8 sentences) of what the customer asked about. Include: all specific questions asked in detail, concerns expressed with context, requirements mentioned with specifics, exact locations/products/services referenced with full names, any constraints or limitations mentioned, the context and background of their inquiry, and any related information they shared. Be extremely thorough and include all nuances, details, and context.",
+    "key_solutions": [
+        "EXTREMELY DETAILED solution point 1 (at least 3-4 sentences): Provide comprehensive explanation including all specific information provided by the agent, detailed step-by-step guidance if applicable, all important details and specifics, any limitations or exceptions mentioned with full context, follow-up actions required, and any additional relevant information shared",
+        "EXTREMELY DETAILED solution point 2 (at least 3-4 sentences): Provide comprehensive explanation including all specific information provided by the agent, detailed step-by-step guidance if applicable, all important details and specifics, any limitations or exceptions mentioned with full context, follow-up actions required, and any additional relevant information shared",
+        "EXTREMELY DETAILED solution point 3 (at least 3-4 sentences): Provide comprehensive explanation including all specific information provided by the agent, detailed step-by-step guidance if applicable, all important details and specifics, any limitations or exceptions mentioned with full context, follow-up actions required, and any additional relevant information shared",
+        "Additional extremely detailed solution points if applicable (each at least 3-4 sentences with full context and specifics)"
+    ],
+    "summary": "EXTREMELY COMPREHENSIVE overall summary in {lang_name} (at least 12-15 sentences, preferably more). Must be a detailed narrative covering: 1) The customer's main inquiry in full detail with all context, 2) All specific questions asked by the customer with their exact wording and intent, 3) Extremely detailed solutions provided by the agent with all specific information, step-by-step explanations, and complete context, 4) All important clarifications or follow-up information shared with full details, 5) Any limitations, exceptions, or important notes mentioned with complete context, 6) The resolution status and next steps if applicable with specifics, 7) All specific details like exact locations (with full names), product names (with full names), service types (with full descriptions), procedures (with step-by-step details), dates, prices, or any other concrete information mentioned. Write as a comprehensive, flowing narrative that tells the complete, detailed story of the entire conversation with all nuances and specifics."
 }}
 
-IMPORTANT:
-- Keep it concise (not full scripts)
-- Focus on main inquiry and solution points
+CRITICAL JSON FORMATTING REQUIREMENTS:
+- Output ONLY valid JSON (no markdown, no code blocks, no explanations)
+- Escape all special characters in strings (quotes as \\", newlines as \\n, etc.)
+- Ensure all strings are properly closed with quotes
+- Do NOT include any text before or after the JSON object
+- Be EXTREMELY DETAILED and COMPREHENSIVE (not brief at all, provide extensive information)
+- Include ALL specific information mentioned (exact locations with full names, product names with full names, service types with full descriptions, procedures with step-by-step details, dates, prices, limitations, exceptions, etc.)
+- key_solutions MUST be extremely detailed explanations (each should be 3-4 sentences minimum, provide comprehensive information, not just brief points)
+- summary MUST be an extremely comprehensive narrative (12-15 sentences minimum, preferably 15-20 sentences)
 - Use {lang_name} language
-- Maximum 3 solution points
+- Include ALL relevant details, nuances, context, and specifics from the conversation
+- Do NOT summarize - provide EXTENSIVE detailed information
+- Write as if you are providing a complete, detailed report of the conversation
 """
     
     try:
         if get_api_key("gemini") or get_api_key("openai"):
             summary_json = run_llm(summary_prompt)
-            # JSON 추출
-            if summary_json.strip().startswith("```"):
-                summary_json = summary_json.strip().split("```")[1]
-                if summary_json.startswith("json"):
-                    summary_json = summary_json[4:]
-            summary_json = summary_json.strip()
             
             import json
-            summary_data = json.loads(summary_json)
+            import re
+            
+            # JSON 추출 (더 강력한 방법)
+            # 1. 마크다운 코드 블록 제거
+            if "```" in summary_json:
+                # ```json ... ``` 패턴 찾기
+                json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', summary_json, re.DOTALL)
+                if json_match:
+                    summary_json = json_match.group(1)
+                else:
+                    # ```로 시작하는 부분만 제거
+                    summary_json = re.sub(r'```(?:json)?\s*', '', summary_json)
+                    summary_json = re.sub(r'\s*```', '', summary_json)
+            
+            # 2. JSON 객체 찾기 (중괄호로 시작하고 끝나는 부분)
+            json_match = re.search(r'\{.*\}', summary_json, re.DOTALL)
+            if json_match:
+                summary_json = json_match.group(0)
+            
+            summary_json = summary_json.strip()
+            
+            # 3. JSON 파싱 시도 (오류 처리 강화)
+            try:
+                summary_data = json.loads(summary_json)
+            except json.JSONDecodeError as json_err:
+                # JSON 파싱 실패 시 여러 방법으로 재시도
+                try:
+                    # 방법 1: 문자열 내 따옴표 이스케이프 처리
+                    # JSON 문자열 값 내의 따옴표를 이스케이프
+                    def fix_json_string(match):
+                        key = match.group(1)
+                        value = match.group(2)
+                        # 값 내의 따옴표를 이스케이프 (단, 이미 이스케이프된 것은 제외)
+                        value = re.sub(r'(?<!\\)"(?![,\s}])', '\\"', value)
+                        return f'"{key}": "{value}"'
+                    
+                    # "key": "value" 패턴 찾아서 수정
+                    summary_json_fixed = re.sub(r'"([^"]+)":\s*"([^"]*)"', fix_json_string, summary_json)
+                    
+                    summary_data = json.loads(summary_json_fixed)
+                except (json.JSONDecodeError, Exception):
+                    try:
+                        # 방법 2: ast.literal_eval 시도 (더 관대한 파싱)
+                        import ast
+                        # JSON을 Python dict로 변환 시도
+                        summary_json_py = summary_json.replace('true', 'True').replace('false', 'False').replace('null', 'None')
+                        summary_data = ast.literal_eval(summary_json_py)
+                        # None을 null로 변환 (JSON 호환)
+                        if isinstance(summary_data, dict):
+                            summary_data = {k: (None if v is None else v) for k, v in summary_data.items()}
+                    except Exception:
+                        # 방법 3: 수동으로 필수 필드만 추출
+                        customer_inquiry_match = re.search(r'"customer_inquiry"\s*:\s*"([^"]*)"', summary_json)
+                        summary_match = re.search(r'"summary"\s*:\s*"([^"]*)"', summary_json)
+                        key_solutions_matches = re.findall(r'"key_solutions"\s*:\s*\[(.*?)\]', summary_json, re.DOTALL)
+                        
+                        customer_inquiry = customer_inquiry_match.group(1) if customer_inquiry_match else initial_query
+                        summary_text = summary_match.group(1) if summary_match else f"Phone call conversation about {initial_query}"
+                        
+                        key_solutions = []
+                        if key_solutions_matches:
+                            solutions_text = key_solutions_matches[0]
+                            solution_matches = re.findall(r'"([^"]*)"', solutions_text)
+                            key_solutions = solution_matches[:5]  # 최대 5개
+                        
+                        summary_data = {
+                            "customer_inquiry": customer_inquiry,
+                            "key_solutions": key_solutions,
+                            "summary": summary_text,
+                            "summary_ko": "",
+                            "summary_en": "",
+                            "summary_ja": ""
+                        }
+                        
+                        # 오류 로깅
+                        print(f"JSON 파싱 오류 (모든 재시도 실패): {json_err}")
+                        print(f"원본 JSON (처음 1000자): {summary_json[:1000]}")
             
             # 다국어 번역 추가
             summary_data["summary_ko"] = summary_data.get("summary", "")
@@ -293,12 +374,94 @@ JSON Output:
 
     try:
         summary_text = run_llm(summary_prompt).strip()
-        if "```json" in summary_text:
-            summary_text = summary_text.split("```json")[1].split("```")[0].strip()
-        elif "```" in summary_text:
-            summary_text = summary_text.split("```")[1].split("```")[0].strip()
-
-        summary_data = json.loads(summary_text)
+        
+        import re
+        
+        # JSON 추출 (더 강력한 방법)
+        # 1. 마크다운 코드 블록 제거
+        if "```" in summary_text:
+            # ```json ... ``` 패턴 찾기
+            json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', summary_text, re.DOTALL)
+            if json_match:
+                summary_text = json_match.group(1)
+            else:
+                # ```로 시작하는 부분만 제거
+                summary_text = re.sub(r'```(?:json)?\s*', '', summary_text)
+                summary_text = re.sub(r'\s*```', '', summary_text)
+        
+        # 2. JSON 객체 찾기 (중괄호로 시작하고 끝나는 부분)
+        json_match = re.search(r'\{.*\}', summary_text, re.DOTALL)
+        if json_match:
+            summary_text = json_match.group(0)
+        
+        summary_text = summary_text.strip()
+        
+        # 3. JSON 파싱 시도 (오류 처리 강화)
+        try:
+            summary_data = json.loads(summary_text)
+        except json.JSONDecodeError as json_err:
+            # JSON 파싱 실패 시 여러 방법으로 재시도
+            try:
+                # 방법 1: ast.literal_eval 시도 (더 관대한 파싱)
+                import ast
+                summary_text_py = summary_text.replace('true', 'True').replace('false', 'False').replace('null', 'None')
+                summary_data = ast.literal_eval(summary_text_py)
+                # None을 null로 변환 (JSON 호환)
+                if isinstance(summary_data, dict):
+                    summary_data = {k: (None if v is None else v) for k, v in summary_data.items()}
+            except Exception:
+                # 방법 2: 수동으로 필수 필드만 추출
+                main_inquiry_match = re.search(r'"main_inquiry"\s*:\s*"([^"]*)"', summary_text)
+                summary_match = re.search(r'"summary"\s*:\s*"([^"]*)"', summary_text)
+                key_responses_matches = re.findall(r'"key_responses"\s*:\s*\[(.*?)\]', summary_text, re.DOTALL)
+                
+                main_inquiry = main_inquiry_match.group(1) if main_inquiry_match else initial_query[:100]
+                summary_text_val = summary_match.group(1) if summary_match else f"Customer inquiry about: {initial_query[:100]}"
+                
+                key_responses = []
+                if key_responses_matches:
+                    responses_text = key_responses_matches[0]
+                    response_matches = re.findall(r'"([^"]*)"', responses_text)
+                    key_responses = response_matches[:3]  # 최대 3개
+                
+                summary_data = {
+                    "main_inquiry": main_inquiry,
+                    "key_responses": key_responses,
+                    "customer_sentiment_score": 50,
+                    "customer_satisfaction_score": 50,
+                    "customer_characteristics": {
+                        "language": current_lang_key,
+                        "cultural_hints": "unknown",
+                        "cultural_score": 0,
+                        "region": "unknown",
+                        "communication_style": "unknown",
+                        "formality_score": 50,
+                        "detail_level_score": 50,
+                        "personality_traits": {
+                            "patience_level": 50,
+                            "assertiveness": 50,
+                            "politeness_level": 50,
+                            "technical_proficiency": 50
+                        }
+                    },
+                    "privacy_info": {
+                        "has_email": False,
+                        "has_phone": False,
+                        "has_address": False,
+                        "region_hint": "unknown"
+                    },
+                    "behavior_patterns": {
+                        "response_time": "moderate",
+                        "question_complexity": "moderate",
+                        "escalation_tendency": 50
+                    },
+                    "summary": summary_text_val
+                }
+                
+                # 오류 로깅
+                print(f"JSON 파싱 오류 (모든 재시도 실패): {json_err}")
+                print(f"원본 JSON (처음 1000자): {summary_text[:1000]}")
+        
         return summary_data
     except Exception as e:
         st.warning(f"요약 생성 중 오류 발생: {e}")

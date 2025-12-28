@@ -111,10 +111,22 @@ JSON 형식으로만 응답해주세요."""
         
         response = llm.invoke([HumanMessage(content=analysis_prompt)])
         
-        # JSON 파싱 시도
+        # JSON 파싱 시도 (강화된 오류 처리)
+        import json
         json_match = re.search(r'\{.*\}', response.content, re.DOTALL)
         if json_match:
-            return json.loads(json_match.group())
+            try:
+                return json.loads(json_match.group())
+            except json.JSONDecodeError as json_err:
+                # 파싱 실패 시 기본값 반환
+                print(f"AI 서비스 JSON 파싱 오류: {json_err}")
+                return {
+                    "sentiment": "neutral",
+                    "intent": "일반 문의",
+                    "keywords": customer_message.split()[:5],
+                    "suggested_response": response.content,
+                    "confidence": 0.7
+                }
         else:
             # 파싱 실패 시 기본값 반환
             return {

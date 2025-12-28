@@ -137,12 +137,41 @@ JSON Output:
     try:
         analysis_text = run_llm(analysis_prompt).strip()
         # JSON 추출
-        if "```json" in analysis_text:
-            analysis_text = analysis_text.split("```json")[1].split("```")[0].strip()
-        elif "```" in analysis_text:
-            analysis_text = analysis_text.split("```")[1].split("```")[0].strip()
-
-        analysis_data = json.loads(analysis_text)
+        import re
+        
+        # JSON 추출 (더 강력한 방법)
+        if "```" in analysis_text:
+            json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', analysis_text, re.DOTALL)
+            if json_match:
+                analysis_text = json_match.group(1)
+            else:
+                analysis_text = re.sub(r'```(?:json)?\s*', '', analysis_text)
+                analysis_text = re.sub(r'\s*```', '', analysis_text)
+        
+        # JSON 객체 찾기
+        json_match = re.search(r'\{.*\}', analysis_text, re.DOTALL)
+        if json_match:
+            analysis_text = json_match.group(0)
+        
+        analysis_text = analysis_text.strip()
+        
+        # JSON 파싱 시도 (오류 처리 강화)
+        try:
+            analysis_data = json.loads(analysis_text)
+        except json.JSONDecodeError as json_err:
+            # 파싱 실패 시 기본값 반환
+            print(f"고객 분석 JSON 파싱 오류: {json_err}")
+            analysis_data = {
+                "gender": "unknown",
+                "sentiment_score": 50,
+                "communication_style": "unknown",
+                "urgency_level": "medium",
+                "predicted_customer_type": "normal",
+                "cultural_hints": "unknown",
+                "key_concerns": [],
+                "tone_analysis": f"Analysis error: {str(json_err)}"
+            }
+        
         return analysis_data
     except Exception as e:
         return {

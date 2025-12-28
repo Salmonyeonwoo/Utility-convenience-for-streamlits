@@ -181,10 +181,46 @@ def summarize_and_score_conversation(
     
     try:
         summary_result = llm_summarize_func(prompt)
-        # JSON 파싱 시도
+        # JSON 파싱 시도 (강화된 오류 처리)
         import json
-        if summary_result.strip().startswith('{'):
-            summary_data = json.loads(summary_result)
+        import re
+        
+        summary_text = summary_result.strip()
+        
+        # JSON 추출 (더 강력한 방법)
+        if "```" in summary_text:
+            json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', summary_text, re.DOTALL)
+            if json_match:
+                summary_text = json_match.group(1)
+            else:
+                summary_text = re.sub(r'```(?:json)?\s*', '', summary_text)
+                summary_text = re.sub(r'\s*```', '', summary_text)
+        
+        # JSON 객체 찾기
+        json_match = re.search(r'\{.*\}', summary_text, re.DOTALL)
+        if json_match:
+            summary_text = json_match.group(0)
+        
+        summary_text = summary_text.strip()
+        
+        if summary_text.startswith('{'):
+            try:
+                summary_data = json.loads(summary_text)
+            except json.JSONDecodeError as json_err:
+                # 파싱 실패 시 기본 구조 생성
+                print(f"요약 JSON 파싱 오류: {json_err}")
+                summary_data = {
+                    "summary": summary_result[:500],  # 처음 500자만
+                    "customer_tendency_score": {
+                        "불만도": 50,
+                        "긴급도": 50,
+                        "복잡도": 50,
+                        "만족도": 50
+                    },
+                    "inquiry_category": customer_type,
+                    "solution_status": "진행중",
+                    "key_points": []
+                }
         else:
             # JSON이 아닌 경우 기본 구조 생성
             summary_data = {

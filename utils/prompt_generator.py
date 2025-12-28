@@ -309,12 +309,33 @@ Respond ONLY with valid JSON in this format:
     
     try:
         response = run_llm(prompt).strip()
-        # JSON 파싱
+        # JSON 파싱 (강화된 오류 처리)
         import json
-        if response.startswith("```"):
-            response = response.strip("```json").strip("```").strip()
-        profile = json.loads(response)
-        return profile
+        import re
+        
+        # JSON 추출 (더 강력한 방법)
+        if "```" in response:
+            json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', response, re.DOTALL)
+            if json_match:
+                response = json_match.group(1)
+            else:
+                response = re.sub(r'```(?:json)?\s*', '', response)
+                response = re.sub(r'\s*```', '', response)
+        
+        # JSON 객체 찾기
+        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        if json_match:
+            response = json_match.group(0)
+        
+        response = response.strip()
+        
+        try:
+            profile = json.loads(response)
+            return profile
+        except json.JSONDecodeError as json_err:
+            # 파싱 실패 시 기본값 반환
+            print(f"프롬프트 생성 JSON 파싱 오류: {json_err}")
+            return {"sentiment_score": 50, "urgency_score": 50, "customer_type": "general"}
     except Exception as e:
         return {"sentiment_score": 50, "urgency_score": 50, "customer_type": "general"}
 
