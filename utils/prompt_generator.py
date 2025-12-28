@@ -218,34 +218,28 @@ def generate_customer_closing_response(current_lang_key: str) -> str:
     return random.choice(responses.get(current_lang_key, responses["en"]))
 
 
-def generate_agent_first_greeting(lang_key: str, initial_query: str) -> str:
+def generate_agent_first_greeting(lang_key: str, initial_query: str, agent_name: str = None) -> str:
     """에이전트의 첫 인사말 생성"""
-    lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[lang_key]
-    L = LANG[lang_key]
+    L = LANG.get(lang_key, LANG["ko"])
     
-    prompt = f"""
-Generate a professional greeting for a customer support agent starting a conversation.
-
-Customer's initial query: {initial_query}
-
-Requirements:
-1. Response MUST be in {lang_name}
-2. Be warm, professional, and empathetic
-3. Acknowledge the customer's query
-4. Show willingness to help
-5. Keep it concise (2-3 sentences)
-
-Generate the greeting:
-"""
+    # 에이전트 이름 가져오기
+    if not agent_name:
+        # session_state에서 에이전트 이름 찾기
+        if "selected_agent_for_customer" in st.session_state and st.session_state.selected_agent_for_customer:
+            agent_name = st.session_state.selected_agent_for_customer.get("name", "상담원")
+        elif "current_call" in st.session_state and st.session_state.current_call:
+            agent_name = st.session_state.current_call.get("agent", "상담원")
+        else:
+            agent_name = "상담원"
     
-    if not st.session_state.is_llm_ready:
-        return L.get("simulator_header", "안녕하세요. 고객 지원팀입니다.")
+    # 번역된 첫 인사말 템플릿 사용
+    greeting_key = f"agent_first_greeting_{lang_key}"
+    greeting_template = L.get(greeting_key, L.get("agent_first_greeting_ko", "안녕하세요. 고객님 고객 센터에 연락 주셔서 감사드립니다. 저는 상담원 {agent_name}라고 합니다. 무엇을 도와드릴까요?"))
     
-    try:
-        greeting = run_llm(prompt).strip()
-        return greeting
-    except Exception as e:
-        return L.get("simulator_header", "안녕하세요. 고객 지원팀입니다.")
+    # {agent_name} 플레이스홀더를 실제 이름으로 교체
+    greeting = greeting_template.format(agent_name=agent_name)
+    
+    return greeting
 
 
 def generate_outbound_call_summary(customer_query: str, current_lang_key: str, target: str) -> str:

@@ -381,8 +381,8 @@ def render_customer_in_call():
     st.markdown("---")
     
     # 고객 정보 등록 섹션 (대화 기록 대신)
-    st.markdown("### 📝 고객 정보 등록")
-    st.caption("통화 이력을 저장하기 위해 고객 정보를 입력해주세요.")
+    st.markdown(f"### 📝 {L.get('customer_info_registration_header', '고객 정보 등록')}")
+    st.caption(L.get("customer_info_registration_note", "통화 이력을 저장하기 위해 고객 정보를 입력해주세요."))
     
     if "call_customer_info" not in st.session_state:
         st.session_state.call_customer_info = {
@@ -395,29 +395,29 @@ def render_customer_in_call():
         col_info1, col_info2 = st.columns(2)
         with col_info1:
             customer_name = st.text_input(
-                "고객 이름",
+                L.get("customer_name_label", "고객 이름"),
                 value=st.session_state.call_customer_info.get("name", ""),
                 placeholder="예: 홍길동"
             )
             customer_phone = st.text_input(
-                "전화번호",
+                L.get("phone_label", "전화번호"),
                 value=st.session_state.call_customer_info.get("phone", ""),
                 placeholder="예: 010-1234-5678"
             )
         with col_info2:
             customer_email = st.text_input(
-                "이메일",
+                L.get("email_label", "이메일"),
                 value=st.session_state.call_customer_info.get("email", ""),
                 placeholder="예: customer@example.com"
             )
             customer_memo = st.text_area(
-                "메모 (선택사항)",
+                L.get("memo_optional_label", "메모 (선택사항)"),
                 value=st.session_state.call_customer_info.get("memo", ""),
                 placeholder="추가 메모를 입력하세요",
                 height=80
             )
         
-        if st.form_submit_button("💾 고객 정보 저장", type="primary", use_container_width=True):
+        if st.form_submit_button(f"💾 {L.get('customer_info_save_button', '고객 정보 저장')}", type="primary", use_container_width=True):
             if customer_name and customer_phone:
                 st.session_state.call_customer_info = {
                     "name": customer_name,
@@ -425,7 +425,7 @@ def render_customer_in_call():
                     "email": customer_email,
                     "memo": customer_memo
                 }
-                st.success(f"✅ 고객 정보가 저장되었습니다: {customer_name} ({customer_phone})")
+                st.success(f"✅ {L.get('customer_info_saved_message', '고객 정보가 저장되었습니다: {name} ({phone})').format(name=customer_name, phone=customer_phone)}")
                 
                 # CustomerDataManager에 저장 (선택사항)
                 try:
@@ -434,11 +434,11 @@ def render_customer_in_call():
                         # 고객 정보를 찾거나 생성
                         customer_id = f"CUST_{customer_phone.replace('-', '').replace(' ', '')}"
                         st.session_state.call_customer_id = customer_id
-                        st.info(f"고객 정보가 저장되었습니다. (고객 ID: {customer_id})")
+                        st.info(L.get("customer_info_saved_with_id", "고객 정보가 저장되었습니다. (고객 ID: {id})").format(id=customer_id))
                 except Exception as e:
-                    st.warning(f"고객 데이터 저장 중 오류 (이력은 저장됩니다): {str(e)}")
+                    st.warning(L.get("customer_data_save_error", "고객 데이터 저장 중 오류 (이력은 저장됩니다): {error}").format(error=str(e)))
             else:
-                st.warning("⚠️ 고객 이름과 전화번호는 필수입니다.")
+                st.warning(f"⚠️ {L.get('customer_info_required_fields', '고객 이름과 전화번호는 필수입니다.')}")
     
     st.markdown("---")
     

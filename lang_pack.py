@@ -616,6 +616,40 @@ LANG: Dict[str, Dict[str, str]] = {
         "generating_call_summary": "통화 요약 생성 중...",
         "summary_generation_error": "요약 생성 오류",
         "save_history_error": "이력 저장 오류",
+        
+        # --- 드롭다운 옵션 (통화 사유) ---
+        "call_reason_order_confirmation": "주문 확인",
+        "call_reason_delivery_info": "배송 안내",
+        "call_reason_refund": "환불 처리",
+        "call_reason_product_recommendation": "상품 추천",
+        "call_reason_event_info": "이벤트 안내",
+        "call_reason_satisfaction_survey": "고객 만족도 조사",
+        "call_reason_other": "기타",
+        
+        # --- 드롭다운 옵션 (에이전트 스킬) ---
+        "agent_skill_auto_assign": "자동 할당",
+        "agent_skill_order_payment": "주문/결제 전문가",
+        "agent_skill_refund_cancel": "환불/취소 전문가",
+        "agent_skill_tech_support": "기술 지원 전문가",
+        "agent_skill_general_inquiry": "일반 문의 전문가",
+        "agent_skill_vip": "VIP 고객 전문가",
+        
+        # --- 드롭다운 옵션 (성별) ---
+        "gender_male_option": "남성",
+        "gender_female_option": "여성",
+        
+        # --- 고객 정보 등록 ---
+        "customer_info_registration_note": "통화 이력을 저장하기 위해 고객 정보를 입력해주세요.",
+        "customer_info_save_button": "고객 정보 저장",
+        "customer_info_saved_message": "고객 정보가 저장되었습니다: {name} ({phone})",
+        "customer_info_required_fields": "고객 이름과 전화번호는 필수입니다.",
+        "customer_info_saved_with_id": "고객 정보가 저장되었습니다. (고객 ID: {id})",
+        "customer_data_save_error": "고객 데이터 저장 중 오류 (이력은 저장됩니다): {error}",
+        
+        # --- AI 에이전트 첫 인사말 ---
+        "agent_first_greeting_ko": "안녕하세요. 고객님 고객 센터에 연락 주셔서 감사드립니다. 저는 상담원 {agent_name}라고 합니다. 무엇을 도와드릴까요?",
+        "agent_first_greeting_en": "Thank you for contacting our customer support call center. This is Mr./Mrs. {agent_name} speaking. How may I help you?",
+        "agent_first_greeting_ja": "本日もカスタマーコールセンターにご連絡頂き、有難う御座います。お客様のエージェントである{agent_name}と申します。どの用件で御座いますでしょうか。",
 
         # --- 음성 기록 ---
         "voice_rec_header": "음성 기록 & 관리",
@@ -1396,6 +1430,40 @@ LANG: Dict[str, Dict[str, str]] = {
         "memo_optional_label": "Memo (Optional)",
         "regenerate_summary": "Regenerate Summary",
         "save_history_button": "Save History",
+        
+        # --- Dropdown Options (Call Reason) ---
+        "call_reason_order_confirmation": "Order Confirmation",
+        "call_reason_delivery_info": "Delivery Information",
+        "call_reason_refund": "Refund Processing",
+        "call_reason_product_recommendation": "Product Recommendation",
+        "call_reason_event_info": "Event Information",
+        "call_reason_satisfaction_survey": "Customer Satisfaction Survey",
+        "call_reason_other": "Other",
+        
+        # --- Dropdown Options (Agent Skill) ---
+        "agent_skill_auto_assign": "Auto Assign",
+        "agent_skill_order_payment": "Order/Payment Specialist",
+        "agent_skill_refund_cancel": "Refund/Cancellation Specialist",
+        "agent_skill_tech_support": "Technical Support Specialist",
+        "agent_skill_general_inquiry": "General Inquiry Specialist",
+        "agent_skill_vip": "VIP Customer Specialist",
+        
+        # --- Dropdown Options (Gender) ---
+        "gender_male_option": "Male",
+        "gender_female_option": "Female",
+        
+        # --- Customer Information Registration ---
+        "customer_info_registration_note": "Please enter customer information to save call history.",
+        "customer_info_save_button": "Save Customer Information",
+        "customer_info_saved_message": "Customer information saved: {name} ({phone})",
+        "customer_info_required_fields": "Customer name and phone number are required.",
+        "customer_info_saved_with_id": "Customer information saved. (Customer ID: {id})",
+        "customer_data_save_error": "Error saving customer data (history will be saved): {error}",
+        
+        # --- AI Agent First Greeting ---
+        "agent_first_greeting_ko": "안녕하세요. 고객님 고객 센터에 연락 주셔서 감사드립니다. 저는 상담원 {agent_name}라고 합니다. 무엇을 도와드릴까요?",
+        "agent_first_greeting_en": "Thank you for contacting our customer support call center. This is Mr./Mrs. {agent_name} speaking. How may I help you?",
+        "agent_first_greeting_ja": "本日もカスタマーコールセンターにご連絡頂き、有難う御座います。お客様のエージェントである{agent_name}と申します。どの用件で御座いますでしょうか。",
 
         # --- 음성 기록 ---
         "voice_rec_header": "Voice Record & Management",
@@ -2162,6 +2230,40 @@ LANG: Dict[str, Dict[str, str]] = {
         "generating_call_summary": "通話要約生成中...",
         "summary_generation_error": "要約生成エラー",
         "save_history_error": "履歴保存エラー",
+        
+        # --- ドロップダウンオプション (通話理由) ---
+        "call_reason_order_confirmation": "注文確認",
+        "call_reason_delivery_info": "配送案内",
+        "call_reason_refund": "返金処理",
+        "call_reason_product_recommendation": "商品推奨",
+        "call_reason_event_info": "イベント案内",
+        "call_reason_satisfaction_survey": "顧客満足度調査",
+        "call_reason_other": "その他",
+        
+        # --- ドロップダウンオプション (エージェントスキル) ---
+        "agent_skill_auto_assign": "自動割り当て",
+        "agent_skill_order_payment": "注文/決済専門家",
+        "agent_skill_refund_cancel": "返金/キャンセル専門家",
+        "agent_skill_tech_support": "技術サポート専門家",
+        "agent_skill_general_inquiry": "一般問い合わせ専門家",
+        "agent_skill_vip": "VIP顧客専門家",
+        
+        # --- ドロップダウンオプション (性別) ---
+        "gender_male_option": "男性",
+        "gender_female_option": "女性",
+        
+        # --- 顧客情報登録 ---
+        "customer_info_registration_note": "通話履歴を保存するために顧客情報を入力してください。",
+        "customer_info_save_button": "顧客情報保存",
+        "customer_info_saved_message": "顧客情報が保存されました: {name} ({phone})",
+        "customer_info_required_fields": "顧客名と電話番号は必須です。",
+        "customer_info_saved_with_id": "顧客情報が保存されました。 (顧客ID: {id})",
+        "customer_data_save_error": "顧客データ保存中にエラーが発生しました (履歴は保存されます): {error}",
+        
+        # --- AIエージェント最初の挨拶 ---
+        "agent_first_greeting_ko": "안녕하세요. 고객님 고객 센터에 연락 주셔서 감사드립니다. 저는 상담원 {agent_name}라고 합니다. 무엇을 도와드릴까요?",
+        "agent_first_greeting_en": "Thank you for contacting our customer support call center. This is Mr./Mrs. {agent_name} speaking. How may I help you?",
+        "agent_first_greeting_ja": "本日もカスタマーコールセンターにご連絡頂き、有難う御座います。お客様のエージェントである{agent_name}と申します。どの用件で御座いますでしょうか。",
 
         # --- Voice ---
         "voice_rec_header": "音声記録＆管理",

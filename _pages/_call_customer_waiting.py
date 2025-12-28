@@ -61,19 +61,33 @@ def render_customer_waiting():
         with st.form("outbound_call_form", clear_on_submit=False):
             customer_name = st.text_input(L.get("customer_name_label", "고객 이름"), placeholder="예: 홍길동", value=st.session_state.get('outbound_customer_name', ''))
             customer_phone = st.text_input(L.get("phone_label", "전화번호"), placeholder="예: 010-1234-5678", value=st.session_state.get('outbound_customer_phone', ''))
-            call_reason = st.selectbox(L.get("call_reason_label", "통화 사유"), [
-                "주문 확인", "배송 안내", "환불 처리", "상품 추천", 
-                "이벤트 안내", "고객 만족도 조사", "기타"
-            ], index=st.session_state.get('outbound_call_reason_idx', 0))
-            agent_skill = st.selectbox(L.get("required_agent_skill_label", "필요한 에이전트 스킬"), [
-                "자동 할당", "주문/결제 전문가", "환불/취소 전문가", 
-                "기술 지원 전문가", "일반 문의 전문가", "VIP 고객 전문가"
-            ], index=st.session_state.get('outbound_agent_skill_idx', 0))
+            call_reason_options = [
+                L.get("call_reason_order_confirmation", "주문 확인"),
+                L.get("call_reason_delivery_info", "배송 안내"),
+                L.get("call_reason_refund", "환불 처리"),
+                L.get("call_reason_product_recommendation", "상품 추천"),
+                L.get("call_reason_event_info", "이벤트 안내"),
+                L.get("call_reason_satisfaction_survey", "고객 만족도 조사"),
+                L.get("call_reason_other", "기타")
+            ]
+            call_reason = st.selectbox(L.get("call_reason_label", "통화 사유"), call_reason_options, index=st.session_state.get('outbound_call_reason_idx', 0))
+            
+            agent_skill_options = [
+                L.get("agent_skill_auto_assign", "자동 할당"),
+                L.get("agent_skill_order_payment", "주문/결제 전문가"),
+                L.get("agent_skill_refund_cancel", "환불/취소 전문가"),
+                L.get("agent_skill_tech_support", "기술 지원 전문가"),
+                L.get("agent_skill_general_inquiry", "일반 문의 전문가"),
+                L.get("agent_skill_vip", "VIP 고객 전문가")
+            ]
+            agent_skill = st.selectbox(L.get("required_agent_skill_label", "필요한 에이전트 스킬"), agent_skill_options, index=st.session_state.get('outbound_agent_skill_idx', 0))
             
             # 에이전트 성별 선택 추가
-            agent_gender = st.selectbox(L.get("agent_gender_label", "에이전트 성별"), [
-                "남성", "여성"
-            ], index=st.session_state.get('outbound_agent_gender_idx', 0))
+            agent_gender_options = [
+                L.get("gender_male_option", "남성"),
+                L.get("gender_female_option", "여성")
+            ]
+            agent_gender = st.selectbox(L.get("agent_gender_label", "에이전트 성별"), agent_gender_options, index=st.session_state.get('outbound_agent_gender_idx', 0))
             
             col_btn_out1, col_btn_out2 = st.columns(2)
             with col_btn_out1:
@@ -86,15 +100,15 @@ def render_customer_waiting():
             st.session_state.outbound_form_submitted = True
             st.session_state.outbound_customer_name = customer_name
             st.session_state.outbound_customer_phone = customer_phone
-            st.session_state.outbound_call_reason_idx = ["주문 확인", "배송 안내", "환불 처리", "상품 추천", 
-                "이벤트 안내", "고객 만족도 조사", "기타"].index(call_reason)
-            st.session_state.outbound_agent_skill_idx = ["자동 할당", "주문/결제 전문가", "환불/취소 전문가", 
-                "기술 지원 전문가", "일반 문의 전문가", "VIP 고객 전문가"].index(agent_skill)
-            st.session_state.outbound_agent_gender_idx = ["남성", "여성"].index(agent_gender)
+            st.session_state.outbound_call_reason_idx = call_reason_options.index(call_reason)
+            st.session_state.outbound_agent_skill_idx = agent_skill_options.index(agent_skill)
+            st.session_state.outbound_agent_gender_idx = agent_gender_options.index(agent_gender)
             
             # 에이전트 성별을 session_state에 저장
             st.session_state.selected_agent_gender = agent_gender
-            st.session_state.agent_gender = "male" if agent_gender == "남성" else "female"
+            # 번역된 텍스트를 원래 값으로 변환
+            male_text = L.get("gender_male_option", "남성")
+            st.session_state.agent_gender = "male" if agent_gender == male_text else "female"
             
             if not customer_phone or customer_phone.strip() == "":
                 st.error(f"⚠️ {L.get('phone_number_required', '전화번호를 입력해주세요.')}")
@@ -106,10 +120,13 @@ def render_customer_waiting():
                     selected_agent = find_agent_by_skill(agent_skill, st.session_state.available_agents)
                 except ImportError:
                     # agents 모듈이 없으면 직접 찾기
-                    if agent_skill == "자동 할당":
+                    auto_assign_text = L.get("agent_skill_auto_assign", "자동 할당")
+                    if agent_skill == auto_assign_text:
                         available = [a for a in st.session_state.available_agents if a['status'] == 'available']
                     else:
-                        skill_keyword = agent_skill.replace(" 전문가", "")
+                        # 번역된 텍스트에서 "전문가" 또는 "Specialist" 등을 제거
+                        skill_keyword = agent_skill.replace(L.get("agent_skill_order_payment", "주문/결제 전문가").split("/")[0] if "/" in agent_skill else "", "")
+                        skill_keyword = skill_keyword.replace(" 전문가", "").replace(" Specialist", "").replace("専門家", "")
                         available = [a for a in st.session_state.available_agents 
                                     if a['status'] == 'available' and skill_keyword in a['skill']]
                     if available:
@@ -156,12 +173,13 @@ def render_customer_waiting():
                     
                     # 첫 인사말 생성
                     try:
-                        from simulation_handler import generate_agent_first_greeting
+                        from utils.prompt_generator import generate_agent_first_greeting
                         from utils.audio_handler import synthesize_tts
                         
                         greeting = generate_agent_first_greeting(
                             lang_key=st.session_state.get("language", "ko"),
-                            initial_query=call_reason
+                            initial_query=call_reason,
+                            agent_name=selected_agent['name']
                         )
                         
                         # 메시지에 추가
