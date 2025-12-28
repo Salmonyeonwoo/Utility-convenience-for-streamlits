@@ -47,8 +47,10 @@ def render_customer_waiting():
         st.session_state.agent_search_in_progress = False
     if "agent_search_attempts" not in st.session_state:
         st.session_state.agent_search_attempts = 0
-    if "agent_search_max_attempts" not in st.session_state:
-        st.session_state.agent_search_max_attempts = 20  # 최대 20회 시도 (약 10초)
+    if "agent_search_start_time" not in st.session_state:
+        st.session_state.agent_search_start_time = None
+    if "agent_search_max_duration" not in st.session_state:
+        st.session_state.agent_search_max_duration = 60  # 최대 60초 (1분)
     
     # 헤더
     st.markdown(f"### 📞 {L.get('outbound_call_header', '아웃바운드 발신 콜')}")
@@ -233,14 +235,24 @@ def render_customer_waiting():
                     if not st.session_state.agent_search_in_progress:
                         st.session_state.agent_search_in_progress = True
                         st.session_state.agent_search_attempts = 0
+                        st.session_state.agent_search_start_time = datetime.now()
                     
-                    st.session_state.agent_search_attempts += 1
+                    # 경과 시간 계산
+                    elapsed_time = (datetime.now() - st.session_state.agent_search_start_time).total_seconds()
                     
-                    if st.session_state.agent_search_attempts < st.session_state.agent_search_max_attempts:
-                        # 재시도 중 메시지 표시
-                        with st.spinner(f"🔍 {L.get('searching_agents', '사용 가능한 에이전트를 찾는 중...')} ({st.session_state.agent_search_attempts}/{st.session_state.agent_search_max_attempts})"):
-                            import time
-                            time.sleep(0.5)  # 0.5초 대기
+                    if elapsed_time < st.session_state.agent_search_max_duration:
+                        # 재시도 중 로딩 화면 표시
+                        st.session_state.agent_search_attempts += 1
+                        progress = min(elapsed_time / st.session_state.agent_search_max_duration, 1.0)
+                        
+                        # 로딩 화면 표시
+                        st.markdown("---")
+                        with st.spinner(f"🔍 {L.get('searching_agents', '사용 가능한 에이전트를 찾는 중...')}"):
+                            st.progress(progress, text=f"{L.get('searching_agents', '사용 가능한 에이전트를 찾는 중...')} ({int(elapsed_time)}초 / {st.session_state.agent_search_max_duration}초)")
+                        
+                        # 에이전트 찾기 시도
+                        import time
+                        time.sleep(0.5)  # 0.5초 대기
                         
                         # 다시 에이전트 찾기 시도
                         try:
@@ -261,7 +273,7 @@ def render_customer_waiting():
                                 selected_agent_retry = None
                         
                         if selected_agent_retry:
-                            # 에이전트를 찾았으므로 연결 처리 (위의 selected_agent 처리 로직과 동일)
+                            # 에이전트를 찾았으므로 연결 처리
                             call_id = f"call_{datetime.now().strftime('%Y%m%d%H%M%S')}"
                             st.session_state.current_call = {
                                 'id': call_id,
@@ -298,6 +310,10 @@ def render_customer_waiting():
                             # 에이전트 찾기 상태 초기화
                             st.session_state.agent_search_in_progress = False
                             st.session_state.agent_search_attempts = 0
+                            st.session_state.agent_search_start_time = None
+                            
+                            # 연결 성공 메시지 표시
+                            st.success(f"✅ {L.get('agent_connected', '에이전트에 연결되었습니다!')} {selected_agent_retry['name']} ({selected_agent_retry['skill']})")
                             
                             # 통화 시작
                             st.session_state.call_sim_stage = "IN_CALL"
@@ -339,15 +355,18 @@ def render_customer_waiting():
                                 }]
                             
                             st.session_state.outbound_form_submitted = False
+                            time.sleep(1)  # 연결 메시지를 보여주기 위해 1초 대기
                             st.rerun()  # IN_CALL 상태로 전환
                         else:
                             # 아직 에이전트를 찾지 못함 - 계속 재시도
                             st.session_state.outbound_form_submitted = True  # 계속 재시도하기 위해 유지
+                            time.sleep(0.5)  # 0.5초 대기 후 재시도
                             st.rerun()  # 재시도를 위해 rerun
                     else:
-                        # 최대 시도 횟수 초과
+                        # 최대 대기 시간 초과
                         st.session_state.agent_search_in_progress = False
                         st.session_state.agent_search_attempts = 0
+                        st.session_state.agent_search_start_time = None
                         st.error(f"❌ {L.get('agent_search_failed', '사용 가능한 에이전트를 찾을 수 없습니다. 잠시 후 다시 시도해주세요.')}")
                         st.session_state.outbound_form_submitted = False
         
