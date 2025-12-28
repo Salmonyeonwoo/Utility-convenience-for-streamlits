@@ -5,9 +5,15 @@
 """
 import streamlit as st
 from datetime import datetime
+from lang_pack import LANG
 
 def render_customer_waiting():
     """WAITING_CALL 상태 렌더링 - 아웃바운드 발신 콜"""
+    current_lang = st.session_state.get("language", "ko")
+    if current_lang not in ["ko", "en", "ja"]:
+        current_lang = "ko"
+    L = LANG.get(current_lang, LANG["ko"])
+    
     # 세션 상태 초기화 (available agents 관련)
     if "available_agents" not in st.session_state:
         try:
@@ -39,41 +45,41 @@ def render_customer_waiting():
         st.session_state.call_history = []
     
     # 헤더
-    st.markdown("### 📞 아웃바운드 발신 콜")
-    st.caption("고객에게 전화를 걸어 빠르게 연결합니다.")
+    st.markdown(f"### 📞 {L.get('outbound_call_header', '아웃바운드 발신 콜')}")
+    st.caption(L.get("outbound_call_description", "고객에게 전화를 걸어 빠르게 연결합니다."))
     
     # 두 개의 컬럼으로 레이아웃 구성 (왼쪽: 고객 정보 입력, 오른쪽: 발신 상태)
     col_out1, col_out2 = st.columns([2, 1])
     
     with col_out1:
-        st.subheader("고객 정보 입력")
+        st.subheader(L.get("customer_info_input_header", "고객 정보 입력"))
         
         # form 제출 플래그 초기화
         if 'outbound_form_submitted' not in st.session_state:
             st.session_state.outbound_form_submitted = False
         
         with st.form("outbound_call_form", clear_on_submit=False):
-            customer_name = st.text_input("고객 이름", placeholder="예: 홍길동", value=st.session_state.get('outbound_customer_name', ''))
-            customer_phone = st.text_input("전화번호", placeholder="예: 010-1234-5678", value=st.session_state.get('outbound_customer_phone', ''))
-            call_reason = st.selectbox("통화 사유", [
+            customer_name = st.text_input(L.get("customer_name_label", "고객 이름"), placeholder="예: 홍길동", value=st.session_state.get('outbound_customer_name', ''))
+            customer_phone = st.text_input(L.get("phone_label", "전화번호"), placeholder="예: 010-1234-5678", value=st.session_state.get('outbound_customer_phone', ''))
+            call_reason = st.selectbox(L.get("call_reason_label", "통화 사유"), [
                 "주문 확인", "배송 안내", "환불 처리", "상품 추천", 
                 "이벤트 안내", "고객 만족도 조사", "기타"
             ], index=st.session_state.get('outbound_call_reason_idx', 0))
-            agent_skill = st.selectbox("필요한 에이전트 스킬", [
+            agent_skill = st.selectbox(L.get("required_agent_skill_label", "필요한 에이전트 스킬"), [
                 "자동 할당", "주문/결제 전문가", "환불/취소 전문가", 
                 "기술 지원 전문가", "일반 문의 전문가", "VIP 고객 전문가"
             ], index=st.session_state.get('outbound_agent_skill_idx', 0))
             
             # 에이전트 성별 선택 추가
-            agent_gender = st.selectbox("에이전트 성별", [
+            agent_gender = st.selectbox(L.get("agent_gender_label", "에이전트 성별"), [
                 "남성", "여성"
             ], index=st.session_state.get('outbound_agent_gender_idx', 0))
             
             col_btn_out1, col_btn_out2 = st.columns(2)
             with col_btn_out1:
-                call_button = st.form_submit_button("📞 전화 걸기", type="primary", use_container_width=True)
+                call_button = st.form_submit_button(f"📞 {L.get('make_call_button', '전화 걸기')}", type="primary", use_container_width=True)
             with col_btn_out2:
-                cancel_button = st.form_submit_button("취소", use_container_width=True)
+                cancel_button = st.form_submit_button(L.get("cancel", "취소"), use_container_width=True)
         
         # 전화 걸기 처리
         if call_button:
@@ -91,7 +97,7 @@ def render_customer_waiting():
             st.session_state.agent_gender = "male" if agent_gender == "남성" else "female"
             
             if not customer_phone or customer_phone.strip() == "":
-                st.error("⚠️ 전화번호를 입력해주세요.")
+                st.error(f"⚠️ {L.get('phone_number_required', '전화번호를 입력해주세요.')}")
                 st.session_state.outbound_form_submitted = False
             else:
                 # 에이전트 찾기
@@ -193,7 +199,7 @@ def render_customer_waiting():
                     
                     st.session_state.outbound_form_submitted = False
                 else:
-                    st.warning("⚠️ 사용 가능한 에이전트가 없습니다.")
+                    st.warning(f"⚠️ {L.get('no_available_agents', '사용 가능한 에이전트가 없습니다.')}")
                     st.session_state.outbound_form_submitted = False
         
         # 취소 버튼 처리
@@ -203,16 +209,16 @@ def render_customer_waiting():
             st.session_state.outbound_customer_phone = ""
     
     with col_out2:
-        st.subheader("📊 발신 상태")
+        st.subheader(f"📊 {L.get('call_status_header', '발신 상태')}")
         if st.session_state.current_call:
             call = st.session_state.current_call
-            st.info(f"**통화 중:** {call['customer_name']}")
-            st.write(f"**전화번호:** {call['customer_phone']}")
-            st.write(f"**에이전트:** {call['agent']}")
-            st.write(f"**스킬:** {call['agent_skill']}")
-            st.write(f"**시작 시간:** {call['start_time']}")
+            st.info(f"**{L.get('calling_label', '통화 중')}:** {call['customer_name']}")
+            st.write(f"**{L.get('phone_label', '전화번호')}:** {call['customer_phone']}")
+            st.write(f"**{L.get('agent_label', '에이전트')}:** {call['agent']}")
+            st.write(f"**{L.get('skill_label', '스킬')}:** {call['agent_skill']}")
+            st.write(f"**{L.get('start_time_label', '시작 시간')}:** {call['start_time']}")
             
-            if st.button("📞 통화 종료", type="secondary", use_container_width=True, key="end_call_outbound"):
+            if st.button(f"📞 {L.get('call_end_button', '통화 종료')}", type="secondary", use_container_width=True, key="end_call_outbound"):
                 call['end_time'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 call['status'] = 'ended'
                 for record in st.session_state.call_history:
@@ -224,7 +230,7 @@ def render_customer_waiting():
                 st.session_state.conversation_history = []
                 st.session_state.call_sim_stage = "WAITING_CALL"
                 st.session_state.call_messages = []
-                st.success("통화가 종료되었습니다.")
+                st.success(L.get("call_ended_message", "통화가 종료되었습니다."))
         else:
-            st.info("현재 진행 중인 통화가 없습니다.")
+            st.info(L.get("no_active_call", "현재 진행 중인 통화가 없습니다."))
 
