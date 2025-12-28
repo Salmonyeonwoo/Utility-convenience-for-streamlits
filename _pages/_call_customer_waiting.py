@@ -244,7 +244,15 @@ def render_customer_waiting():
                     else:
                         elapsed_time = (datetime.now() - st.session_state.agent_search_start_time).total_seconds()
                     
-                    if elapsed_time < st.session_state.agent_search_max_duration:
+                    # 최대 대기 시간 초과 확인 (먼저 체크)
+                    if elapsed_time >= st.session_state.agent_search_max_duration:
+                        # 최대 대기 시간 초과 - 재시도 중단
+                        st.session_state.agent_search_in_progress = False
+                        st.session_state.agent_search_attempts = 0
+                        st.session_state.agent_search_start_time = None
+                        st.session_state.outbound_form_submitted = False
+                        st.error(f"❌ {L.get('agent_search_failed', '사용 가능한 에이전트를 찾을 수 없습니다. 잠시 후 다시 시도해주세요.')}")
+                    elif elapsed_time < st.session_state.agent_search_max_duration:
                         # 재시도 중 로딩 화면 표시
                         st.session_state.agent_search_attempts += 1
                         progress = min(elapsed_time / st.session_state.agent_search_max_duration, 1.0)
@@ -366,13 +374,6 @@ def render_customer_waiting():
                             st.session_state.outbound_form_submitted = True  # 계속 재시도하기 위해 유지
                             time.sleep(0.5)  # 0.5초 대기 후 재시도
                             st.rerun()  # 재시도를 위해 rerun
-                    else:
-                        # 최대 대기 시간 초과
-                        st.session_state.agent_search_in_progress = False
-                        st.session_state.agent_search_attempts = 0
-                        st.session_state.agent_search_start_time = None
-                        st.error(f"❌ {L.get('agent_search_failed', '사용 가능한 에이전트를 찾을 수 없습니다. 잠시 후 다시 시도해주세요.')}")
-                        st.session_state.outbound_form_submitted = False
         
         # 취소 버튼 처리
         if cancel_button:
