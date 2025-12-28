@@ -63,12 +63,23 @@ def render_customer_waiting():
         
         # 최대 대기 시간 초과 확인
         if elapsed_time >= st.session_state.agent_search_max_duration:
-            # 최대 대기 시간 초과 - 재시도 중단
+            # 최대 대기 시간 초과 - 재시도 중단 (최대 1회만)
             st.session_state.agent_search_in_progress = False
             st.session_state.agent_search_attempts = 0
             st.session_state.agent_search_start_time = None
             st.session_state.outbound_form_submitted = False
+            
+            # 디버깅 정보 표시
+            available_agents_list = st.session_state.get("available_agents", [])
+            available_count = len([a for a in available_agents_list if a.get('status') == 'available'])
+            agent_skill = st.session_state.get("outbound_agent_skill", "")
+            
             st.error(f"❌ {L.get('agent_search_failed', '사용 가능한 에이전트를 찾을 수 없습니다. 잠시 후 다시 시도해주세요.')}")
+            st.warning(f"디버깅 정보: 사용 가능한 에이전트 수 = {available_count}, 요청 스킬 = {agent_skill}")
+            if available_agents_list:
+                st.write("전체 에이전트 목록:")
+                for agent in available_agents_list:
+                    st.write(f"- {agent.get('name', 'N/A')}: {agent.get('skill', 'N/A')} (상태: {agent.get('status', 'N/A')})")
         else:
             # 재시도 중 - 로딩 화면 표시
             st.session_state.agent_search_attempts += 1
@@ -85,27 +96,49 @@ def render_customer_waiting():
             customer_phone = st.session_state.get("outbound_customer_phone", "")
             call_reason = st.session_state.get("outbound_call_reason", "")
             
+            # 디버깅: available_agents 확인
+            available_agents_list = st.session_state.get("available_agents", [])
+            available_count = len([a for a in available_agents_list if a.get('status') == 'available'])
+            
             # 에이전트 찾기 시도
             import time
             time.sleep(0.5)  # 0.5초 대기
             
             # 다시 에이전트 찾기 시도
+            selected_agent_retry = None
             try:
                 from agents import find_agent_by_skill
                 selected_agent_retry = find_agent_by_skill(agent_skill, st.session_state.available_agents)
             except ImportError:
+                # agents 모듈이 없으면 직접 찾기
                 auto_assign_text = L.get("agent_skill_auto_assign", "자동 할당")
                 if agent_skill == auto_assign_text:
-                    available = [a for a in st.session_state.available_agents if a['status'] == 'available']
+                    available = [a for a in st.session_state.available_agents if a.get('status') == 'available']
                 else:
-                    skill_keyword = agent_skill.replace(L.get("agent_skill_order_payment", "주문/결제 전문가").split("/")[0] if "/" in agent_skill else "", "")
-                    skill_keyword = skill_keyword.replace(" 전문가", "").replace(" Specialist", "").replace("専門家", "")
+                    # 번역된 텍스트를 원래 한글 skill로 매핑
+                    skill_mapping = {
+                        L.get("agent_skill_order_payment", "주문/결제 전문가"): "주문/결제",
+                        L.get("agent_skill_refund_cancel", "환불/취소 전문가"): "환불/취소",
+                        L.get("agent_skill_tech_support", "기술 지원 전문가"): "기술 지원",
+                        L.get("agent_skill_general_inquiry", "일반 문의 전문가"): "일반 문의",
+                        L.get("agent_skill_vip", "VIP 고객 전문가"): "VIP 고객"
+                    }
+                    skill_keyword = skill_mapping.get(agent_skill, "")
+                    if not skill_keyword:
+                        # 매핑이 없으면 텍스트에서 추출 시도
+                        skill_keyword = agent_skill.replace(" 전문가", "").replace(" Specialist", "").replace("専門家", "")
+                        if "/" in skill_keyword:
+                            skill_keyword = skill_keyword.split("/")[0]
+                    
                     available = [a for a in st.session_state.available_agents 
-                                if a['status'] == 'available' and skill_keyword in a['skill']]
+                                if a.get('status') == 'available' and skill_keyword in a.get('skill', '')]
                 if available:
-                    selected_agent_retry = max(available, key=lambda x: x['rating'])
+                    selected_agent_retry = max(available, key=lambda x: x.get('rating', 0))
                 else:
                     selected_agent_retry = None
+            except Exception as e:
+                print(f"에이전트 찾기 오류: {e}")
+                selected_agent_retry = None
             
             if selected_agent_retry:
                 # 에이전트를 찾았으므로 연결 처리
@@ -193,9 +226,28 @@ def render_customer_waiting():
                 time.sleep(1)  # 연결 메시지를 보여주기 위해 1초 대기
                 st.rerun()  # IN_CALL 상태로 전환
             else:
-                # 아직 에이전트를 찾지 못함 - 계속 재시도
-                time.sleep(0.5)  # 0.5초 대기 후 재시도
-                st.rerun()  # 재시도를 위해 rerun
+                # 아직 에이전트를 찾지 못함 - 계속 재시도 (최대 1회만 - 시간 제한 내에서)
+                # 재시도 횟수 체크 (최대 1회만 추가 재시도)
+                if st.session_state.agent_search_attempts <= 1:
+                    time.sleep(0.5)  # 0.5초 대기 후 재시도
+                    st.rerun()  # 재시도를 위해 rerun
+                else:
+                    # 재시도 횟수 초과 - 중단
+                    st.session_state.agent_search_in_progress = False
+                    st.session_state.agent_search_attempts = 0
+                    st.session_state.agent_search_start_time = None
+                    st.session_state.outbound_form_submitted = False
+                    
+                    # 디버깅 정보 표시
+                    available_agents_list = st.session_state.get("available_agents", [])
+                    available_count = len([a for a in available_agents_list if a.get('status') == 'available'])
+                    
+                    st.error(f"❌ {L.get('agent_search_failed', '사용 가능한 에이전트를 찾을 수 없습니다. 잠시 후 다시 시도해주세요.')}")
+                    st.warning(f"디버깅 정보: 사용 가능한 에이전트 수 = {available_count}, 요청 스킬 = {agent_skill}")
+                    if available_agents_list:
+                        st.write("전체 에이전트 목록:")
+                        for agent in available_agents_list:
+                            st.write(f"- {agent.get('name', 'N/A')}: {agent.get('skill', 'N/A')} (상태: {agent.get('status', 'N/A')})")
     
     # 헤더
     st.markdown(f"### 📞 {L.get('outbound_call_header', '아웃바운드 발신 콜')}")
@@ -270,6 +322,7 @@ def render_customer_waiting():
                 st.session_state.outbound_form_submitted = False
             else:
                 # 에이전트 찾기
+                selected_agent = None
                 try:
                     from agents import find_agent_by_skill
                     selected_agent = find_agent_by_skill(agent_skill, st.session_state.available_agents)
@@ -277,17 +330,32 @@ def render_customer_waiting():
                     # agents 모듈이 없으면 직접 찾기
                     auto_assign_text = L.get("agent_skill_auto_assign", "자동 할당")
                     if agent_skill == auto_assign_text:
-                        available = [a for a in st.session_state.available_agents if a['status'] == 'available']
+                        available = [a for a in st.session_state.available_agents if a.get('status') == 'available']
                     else:
-                        # 번역된 텍스트에서 "전문가" 또는 "Specialist" 등을 제거
-                        skill_keyword = agent_skill.replace(L.get("agent_skill_order_payment", "주문/결제 전문가").split("/")[0] if "/" in agent_skill else "", "")
-                        skill_keyword = skill_keyword.replace(" 전문가", "").replace(" Specialist", "").replace("専門家", "")
+                        # 번역된 텍스트를 원래 한글 skill로 매핑
+                        skill_mapping = {
+                            L.get("agent_skill_order_payment", "주문/결제 전문가"): "주문/결제",
+                            L.get("agent_skill_refund_cancel", "환불/취소 전문가"): "환불/취소",
+                            L.get("agent_skill_tech_support", "기술 지원 전문가"): "기술 지원",
+                            L.get("agent_skill_general_inquiry", "일반 문의 전문가"): "일반 문의",
+                            L.get("agent_skill_vip", "VIP 고객 전문가"): "VIP 고객"
+                        }
+                        skill_keyword = skill_mapping.get(agent_skill, "")
+                        if not skill_keyword:
+                            # 매핑이 없으면 텍스트에서 추출 시도
+                            skill_keyword = agent_skill.replace(" 전문가", "").replace(" Specialist", "").replace("専門家", "")
+                            if "/" in skill_keyword:
+                                skill_keyword = skill_keyword.split("/")[0]
+                        
                         available = [a for a in st.session_state.available_agents 
-                                    if a['status'] == 'available' and skill_keyword in a['skill']]
+                                    if a.get('status') == 'available' and skill_keyword in a.get('skill', '')]
                     if available:
-                        selected_agent = max(available, key=lambda x: x['rating'])
+                        selected_agent = max(available, key=lambda x: x.get('rating', 0))
                     else:
                         selected_agent = None
+                except Exception as e:
+                    print(f"에이전트 찾기 오류: {e}")
+                    selected_agent = None
                 
                 if selected_agent:
                     # 에이전트 찾기 성공 - 연결 처리

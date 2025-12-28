@@ -42,15 +42,44 @@ def find_best_agent(customer_insight, available_agents):
 
 def find_agent_by_skill(agent_skill, available_agents):
     """스킬 기반 에이전트 찾기 (아웃바운드용)"""
-    if agent_skill == "자동 할당":
-        available = [a for a in available_agents if a['status'] == 'available']
+    # 번역된 텍스트를 원래 한글 skill로 매핑
+    skill_mapping = {
+        # 한국어
+        "자동 할당": "자동 할당",
+        "주문/결제 전문가": "주문/결제 전문가",
+        "환불/취소 전문가": "환불/취소 전문가",
+        "기술 지원 전문가": "기술 지원 전문가",
+        "일반 문의 전문가": "일반 문의 전문가",
+        "VIP 고객 전문가": "VIP 고객 전문가",
+        # 영어
+        "Automatic Assignment": "자동 할당",
+        "Order/Payment Specialist": "주문/결제 전문가",
+        "Refund/Cancellation Specialist": "환불/취소 전문가",
+        "Technical Support Specialist": "기술 지원 전문가",
+        "General Inquiry Specialist": "일반 문의 전문가",
+        "VIP Customer Specialist": "VIP 고객 전문가",
+        # 일본어
+        "自動割り当て": "자동 할당",
+        "注文/決済専門家": "주문/결제 전문가",
+        "払い戻し/キャンセル専門家": "환불/취소 전문가",
+        "技術サポート専門家": "기술 지원 전문가",
+        "一般問い合わせ専門家": "일반 문의 전문가",
+        "VIP顧客専門家": "VIP 고객 전문가",
+    }
+    
+    # 매핑된 skill 가져오기
+    mapped_skill = skill_mapping.get(agent_skill, agent_skill)
+    
+    if mapped_skill == "자동 할당":
+        available = [a for a in available_agents if a.get('status') == 'available']
     else:
-        skill_keyword = agent_skill.replace(" 전문가", "")
+        # " 전문가" 제거하여 키워드 추출
+        skill_keyword = mapped_skill.replace(" 전문가", "")
         available = [a for a in available_agents 
-                    if a['status'] == 'available' and skill_keyword in a['skill']]
+                    if a.get('status') == 'available' and skill_keyword in a.get('skill', '')]
     
     if available:
         # 가장 높은 평점의 에이전트 선택
-        return max(available, key=lambda x: x['rating'])
+        return max(available, key=lambda x: x.get('rating', 0))
     return None
 
