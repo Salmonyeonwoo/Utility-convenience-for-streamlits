@@ -68,7 +68,7 @@ def render_call_customer_mode():
         
         # 통화 요약 생성 및 표시
         st.markdown("---")
-        st.markdown("### 📋 통화 요약")
+        st.markdown(f"### 📋 {L.get('call_summary_header', '통화 요약')}")
         
         if st.session_state.call_messages:
             # 요약 생성
@@ -96,13 +96,13 @@ def render_call_customer_mode():
             # 요약 표시 및 재생성 버튼
             col_summary1, col_summary2 = st.columns([3, 1])
             with col_summary2:
-                if st.button("🔄 요약 재생성", key="regenerate_summary"):
+                if st.button(f"🔄 {L.get('regenerate_summary', '요약 재생성')}", key="regenerate_summary"):
                     st.session_state.call_summary_generated = False
                     st.session_state.call_summary = None
             
             # 재생성 요청 시 즉시 생성
             if not st.session_state.call_summary_generated:
-                with st.spinner("통화 요약 생성 중..."):
+                with st.spinner(L.get("generating_call_summary", "통화 요약 생성 중...")):
                     try:
                         from utils.history_handler import generate_call_summary
                         call_summary = generate_call_summary(
@@ -115,35 +115,35 @@ def render_call_customer_mode():
                             st.session_state.call_summary = call_summary
                             st.session_state.call_summary_generated = True
                     except Exception as e:
-                        st.error(f"요약 생성 오류: {e}")
+                        st.error(f"{L.get('summary_generation_error', '요약 생성 오류')}: {e}")
                         st.session_state.call_summary = None
                         st.session_state.call_summary_generated = True
             
             if st.session_state.get("call_summary"):
                 summary = st.session_state.call_summary
                 if isinstance(summary, dict):
-                    st.markdown("#### 주요 문의")
-                    st.info(summary.get("customer_inquiry", "요약 정보 없음"))
+                    st.markdown(f"#### {L.get('customer_inquiry_label', '주요 문의')}")
+                    st.info(summary.get("customer_inquiry", L.get("no_summary_info", "요약 정보 없음")))
                     
-                    st.markdown("#### 핵심 솔루션")
+                    st.markdown(f"#### {L.get('key_solutions', '핵심 솔루션')}")
                     key_solutions = summary.get("key_solutions", [])
                     if key_solutions:
                         for i, solution in enumerate(key_solutions, 1):
                             st.write(f"{i}. {solution}")
                     else:
-                        st.info("솔루션 정보 없음")
+                        st.info(L.get("no_solution_info", "솔루션 정보 없음"))
                     
-                    st.markdown("#### 전체 요약")
-                    st.write(summary.get("summary", "요약 정보 없음"))
+                    st.markdown(f"#### {L.get('overall_summary_label', '전체 요약')}")
+                    st.write(summary.get("summary", L.get("no_summary_info", "요약 정보 없음")))
                 else:
                     st.write(summary)
             else:
-                st.info("요약 정보가 없습니다.")
+                st.info(L.get("no_summary_available", "요약 정보가 없습니다."))
         
         st.markdown("---")
         
         # 이력 다운로드 기능 추가 (Word, PDF, PPTX, JSON, CSV)
-        st.markdown("### 📥 통화 이력 다운로드")
+        st.markdown(f"### 📥 {L.get('download_current_call_history', '통화 이력 다운로드')}")
         
         if st.session_state.call_messages:
             # 통화 메시지를 채팅 형식으로 변환
@@ -192,7 +192,7 @@ def render_call_customer_mode():
                     "call_summary": st.session_state.get("call_summary", {})
                 }]
             except Exception as e:
-                st.warning(f"이력 생성 중 오류: {e}")
+                st.warning(f"{L.get('history_generation_error', '이력 생성 중 오류')}: {e}")
                 current_session_history = None
             
             # 다운로드 버튼들 (5개 컬럼: Word, PPTX, PDF, JSON, CSV)
@@ -207,14 +207,14 @@ def render_call_customer_mode():
                         filepath_word = export_history_to_word(current_session_history, lang=current_lang)
                         with open(filepath_word, "rb") as f:
                             st.download_button(
-                                label="📄 Word 다운로드",
+                                label=f"📄 {L.get('download_history_word', 'Word 다운로드')}",
                                 data=f.read(),
                                 file_name=os.path.basename(filepath_word),
                                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                                 key="download_call_word"
                             )
                     except Exception as e:
-                        st.error(f"Word 다운로드 오류: {e}")
+                        st.error(f"{L.get('word_download_error', 'Word 다운로드 오류')}: {e}")
                 
                 # PPTX 다운로드
                 with download_col2:
@@ -224,14 +224,14 @@ def render_call_customer_mode():
                         filepath_pptx = export_history_to_pptx(current_session_history, lang=current_lang)
                         with open(filepath_pptx, "rb") as f:
                             st.download_button(
-                                label="📊 PPTX 다운로드",
+                                label=f"📊 {L.get('download_history_pptx', 'PPTX 다운로드')}",
                                 data=f.read(),
                                 file_name=os.path.basename(filepath_pptx),
                                 mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
                                 key="download_call_pptx"
                             )
                     except Exception as e:
-                        st.error(f"PPTX 다운로드 오류: {e}")
+                        st.error(f"{L.get('pptx_download_error', 'PPTX 다운로드 오류')}: {e}")
                 
                 # PDF 다운로드
                 with download_col3:
@@ -241,14 +241,14 @@ def render_call_customer_mode():
                         filepath_pdf = export_history_to_pdf(current_session_history, lang=current_lang)
                         with open(filepath_pdf, "rb") as f:
                             st.download_button(
-                                label="📑 PDF 다운로드",
+                                label=f"📑 {L.get('download_history_pdf', 'PDF 다운로드')}",
                                 data=f.read(),
                                 file_name=os.path.basename(filepath_pdf),
                                 mime="application/pdf",
                                 key="download_call_pdf"
                             )
                     except Exception as e:
-                        st.error(f"PDF 다운로드 오류: {e}")
+                        st.error(f"{L.get('pdf_download_error', 'PDF 다운로드 오류')}: {e}")
                 
                 # JSON 다운로드
                 with download_col4:
@@ -268,14 +268,14 @@ def render_call_customer_mode():
                         }
                         history_json = json.dumps(history_data, ensure_ascii=False, indent=2)
                         st.download_button(
-                            label="📋 JSON 다운로드",
+                            label=f"📋 {L.get('download_history_json', 'JSON 다운로드')}",
                             data=history_json.encode('utf-8'),
                             file_name=f"call_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
                             mime="application/json",
                             key="download_call_json"
                         )
                     except Exception as e:
-                        st.error(f"JSON 다운로드 오류: {e}")
+                        st.error(f"{L.get('json_download_error', 'JSON 다운로드 오류')}: {e}")
                 
                 # CSV 다운로드
                 with download_col5:
@@ -298,20 +298,20 @@ def render_call_customer_mode():
                         
                         csv_data = output.getvalue()
                         st.download_button(
-                            label="📊 CSV 다운로드",
+                            label=f"📊 {L.get('download_history_csv', 'CSV 다운로드')}",
                             data=csv_data.encode('utf-8-sig'),
                             file_name=f"call_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                             mime="text/csv",
                             key="download_call_csv"
                         )
                     except Exception as e:
-                        st.error(f"CSV 다운로드 오류: {e}")
+                        st.error(f"{L.get('csv_download_error', 'CSV 다운로드 오류')}: {e}")
             else:
-                st.warning("다운로드할 이력이 없습니다.")
+                st.warning(L.get("no_history_to_download", "다운로드할 이력이 없습니다."))
             
             # 이력 저장 버튼 (별도 행)
             st.markdown("---")
-            if st.button("💾 이력 저장", key="save_call_history", use_container_width=True):
+            if st.button(f"💾 {L.get('save_history_button', '이력 저장')}", key="save_call_history", use_container_width=True):
                 try:
                     from utils.history_handler import save_simulation_history_local
                     save_simulation_history_local(
@@ -326,9 +326,9 @@ def render_call_customer_mode():
                         customer_email=st.session_state.get("call_customer_info", {}).get("email", ""),
                         customer_id=st.session_state.get("call_customer_id", "")
                     )
-                    st.success("✅ 통화 이력이 저장되었습니다.")
+                    st.success(L.get("call_history_saved_success", "✅ 통화 이력이 저장되었습니다."))
                 except Exception as e:
-                    st.error(f"이력 저장 오류: {e}")
+                    st.error(f"{L.get('save_history_error', '이력 저장 오류')}: {e}")
         
         st.markdown("---")
         
