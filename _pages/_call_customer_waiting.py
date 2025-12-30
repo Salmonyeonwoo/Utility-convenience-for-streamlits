@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 전화 시뮬레이터 - 고객 모드: WAITING_CALL 상태
-아웃바운드 발신 콜 화면
+고객이 상담원에게 전화를 거는 화면 (문의 입력 후 바로 AI 인사말 생성)
 """
 import streamlit as st
 from datetime import datetime
 from lang_pack import LANG
 
 def render_customer_waiting():
-    """WAITING_CALL 상태 렌더링 - 아웃바운드 발신 콜"""
+    """WAITING_CALL 상태 렌더링 - 고객이 상담원에게 전화를 거는 화면"""
     current_lang = st.session_state.get("language", "ko")
     if current_lang not in ["ko", "en", "ja"]:
         current_lang = "ko"
@@ -223,14 +223,11 @@ def render_customer_waiting():
                     }]
                 
                 st.session_state.outbound_form_submitted = False
-                time.sleep(1)  # 연결 메시지를 보여주기 위해 1초 대기
-                st.rerun()  # IN_CALL 상태로 전환
             else:
                 # 아직 에이전트를 찾지 못함 - 계속 재시도 (최대 1회만 - 시간 제한 내에서)
                 # 재시도 횟수 체크 (최대 1회만 추가 재시도)
                 if st.session_state.agent_search_attempts <= 1:
-                    time.sleep(0.5)  # 0.5초 대기 후 재시도
-                    st.rerun()  # 재시도를 위해 rerun
+                    pass  # 재시도 로직 제거됨
                 else:
                     # 재시도 횟수 초과 - 중단
                     st.session_state.agent_search_in_progress = False
@@ -249,244 +246,103 @@ def render_customer_waiting():
                         for agent in available_agents_list:
                             st.write(f"- {agent.get('name', 'N/A')}: {agent.get('skill', 'N/A')} (상태: {agent.get('status', 'N/A')})")
     
-    # 헤더
-    st.markdown(f"### 📞 {L.get('outbound_call_header', '아웃바운드 발신 콜')}")
-    st.caption(L.get("outbound_call_description", "고객에게 전화를 걸어 빠르게 연결합니다."))
+    # 헤더 - 고객 모드: 고객이 상담원에게 전화를 거는 화면
+    st.markdown(f"### 📞 {L.get('call_make_header', '전화 발신')}")
+    st.caption(L.get("call_make_description", "상담원에게 전화를 걸어 상담을 시작합니다."))
     
-    # 두 개의 컬럼으로 레이아웃 구성 (왼쪽: 고객 정보 입력, 오른쪽: 발신 상태)
-    col_out1, col_out2 = st.columns([2, 1])
+    # 문의 입력 및 전화 발신
+    st.markdown("---")
+    st.subheader(L.get("call_inquiry_header", "📝 고객 문의 입력"))
     
-    with col_out1:
-        st.subheader(L.get("customer_info_input_header", "고객 정보 입력"))
-        
-        # form 제출 플래그 초기화
-        if 'outbound_form_submitted' not in st.session_state:
-            st.session_state.outbound_form_submitted = False
-        
-        with st.form("outbound_call_form", clear_on_submit=False):
-            customer_name = st.text_input(L.get("customer_name_label", "고객 이름"), placeholder="예: 홍길동", value=st.session_state.get('outbound_customer_name', ''))
-            customer_phone = st.text_input(L.get("phone_label", "전화번호"), placeholder="예: 010-1234-5678", value=st.session_state.get('outbound_customer_phone', ''))
-            call_reason_options = [
-                L.get("call_reason_order_confirmation", "주문 확인"),
-                L.get("call_reason_delivery_info", "배송 안내"),
-                L.get("call_reason_refund", "환불 처리"),
-                L.get("call_reason_product_recommendation", "상품 추천"),
-                L.get("call_reason_event_info", "이벤트 안내"),
-                L.get("call_reason_satisfaction_survey", "고객 만족도 조사"),
-                L.get("call_reason_other", "기타")
-            ]
-            call_reason = st.selectbox(L.get("call_reason_label", "통화 사유"), call_reason_options, index=st.session_state.get('outbound_call_reason_idx', 0))
+    inquiry_text = st.text_area(
+        L.get("call_inquiry_label", "고객 문의 내용을 입력하세요"),
+        value=st.session_state.get("inquiry_text", ""),
+        key="inquiry_text_input_customer_waiting",
+        height=100,
+        placeholder=L.get("call_inquiry_placeholder", "예: 환불 요청, 배송 문의 등..."),
+    )
+    
+    # 전화 발신 버튼
+    col_start, col_cancel = st.columns([1, 1])
+    with col_start:
+        call_button = st.button(L.get("call_make_button", "통화 발신"), use_container_width=True, type="primary")
+    with col_cancel:
+        cancel_button = st.button(L.get("button_cancel", "❌ 취소"), use_container_width=True)
+    
+    # 전화 발신 처리
+    if call_button:
+        if inquiry_text.strip():
+            # 전화번호 설정 (없으면 기본값)
+            caller_phone = st.session_state.get("incoming_phone_number", "")
+            if not caller_phone:
+                caller_phone = "010-0000-0000"  # 기본 전화번호
+                st.session_state.incoming_phone_number = caller_phone
             
-            agent_skill_options = [
-                L.get("agent_skill_auto_assign", "자동 할당"),
-                L.get("agent_skill_order_payment", "주문/결제 전문가"),
-                L.get("agent_skill_refund_cancel", "환불/취소 전문가"),
-                L.get("agent_skill_tech_support", "기술 지원 전문가"),
-                L.get("agent_skill_general_inquiry", "일반 문의 전문가"),
-                L.get("agent_skill_vip", "VIP 고객 전문가")
-            ]
-            agent_skill = st.selectbox(L.get("required_agent_skill_label", "필요한 에이전트 스킬"), agent_skill_options, index=st.session_state.get('outbound_agent_skill_idx', 0))
+            st.session_state.inquiry_text = inquiry_text.strip()
+            st.session_state.incoming_call = {"caller_phone": caller_phone}
+            st.session_state.call_active = True
+            st.session_state.current_call_id = f"call_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            st.session_state.call_direction = "outbound"
+            st.session_state.start_time = datetime.now()
+            st.session_state.call_sim_stage = "IN_CALL"
             
-            # 에이전트 성별 선택 추가
-            agent_gender_options = [
-                L.get("gender_male_option", "남성"),
-                L.get("gender_female_option", "여성")
-            ]
-            agent_gender = st.selectbox(L.get("agent_gender_label", "에이전트 성별"), agent_gender_options, index=st.session_state.get('outbound_agent_gender_idx', 0))
-            
-            col_btn_out1, col_btn_out2 = st.columns(2)
-            with col_btn_out1:
-                call_button = st.form_submit_button(f"📞 {L.get('make_call_button', '전화 걸기')}", type="primary", use_container_width=True)
-            with col_btn_out2:
-                cancel_button = st.form_submit_button(L.get("cancel", "취소"), use_container_width=True)
-        
-        # 전화 걸기 처리
-        if call_button:
-            st.session_state.outbound_form_submitted = True
-            st.session_state.outbound_customer_name = customer_name
-            st.session_state.outbound_customer_phone = customer_phone
-            st.session_state.outbound_call_reason = call_reason  # 저장
-            st.session_state.outbound_agent_skill = agent_skill  # 저장
-            st.session_state.outbound_call_reason_idx = call_reason_options.index(call_reason)
-            st.session_state.outbound_agent_skill_idx = agent_skill_options.index(agent_skill)
-            st.session_state.outbound_agent_gender_idx = agent_gender_options.index(agent_gender)
-            
-            # 에이전트 성별을 session_state에 저장
-            st.session_state.selected_agent_gender = agent_gender
-            # 번역된 텍스트를 원래 값으로 변환
-            male_text = L.get("gender_male_option", "남성")
-            st.session_state.agent_gender = "male" if agent_gender == male_text else "female"
-            
-            if not customer_phone or customer_phone.strip() == "":
-                st.error(f"⚠️ {L.get('phone_number_required', '전화번호를 입력해주세요.')}")
-                st.session_state.outbound_form_submitted = False
-            else:
-                # 에이전트 찾기
-                selected_agent = None
-                try:
-                    from agents import find_agent_by_skill
-                    selected_agent = find_agent_by_skill(agent_skill, st.session_state.available_agents)
-                except ImportError:
-                    # agents 모듈이 없으면 직접 찾기
-                    auto_assign_text = L.get("agent_skill_auto_assign", "자동 할당")
-                    if agent_skill == auto_assign_text:
-                        available = [a for a in st.session_state.available_agents if a.get('status') == 'available']
-                    else:
-                        # 번역된 텍스트를 원래 한글 skill로 매핑
-                        skill_mapping = {
-                            L.get("agent_skill_order_payment", "주문/결제 전문가"): "주문/결제",
-                            L.get("agent_skill_refund_cancel", "환불/취소 전문가"): "환불/취소",
-                            L.get("agent_skill_tech_support", "기술 지원 전문가"): "기술 지원",
-                            L.get("agent_skill_general_inquiry", "일반 문의 전문가"): "일반 문의",
-                            L.get("agent_skill_vip", "VIP 고객 전문가"): "VIP 고객"
-                        }
-                        skill_keyword = skill_mapping.get(agent_skill, "")
-                        if not skill_keyword:
-                            # 매핑이 없으면 텍스트에서 추출 시도
-                            skill_keyword = agent_skill.replace(" 전문가", "").replace(" Specialist", "").replace("専門家", "")
-                            if "/" in skill_keyword:
-                                skill_keyword = skill_keyword.split("/")[0]
-                        
-                        available = [a for a in st.session_state.available_agents 
-                                    if a.get('status') == 'available' and skill_keyword in a.get('skill', '')]
-                    if available:
-                        selected_agent = max(available, key=lambda x: x.get('rating', 0))
-                    else:
-                        selected_agent = None
-                except Exception as e:
-                    print(f"에이전트 찾기 오류: {e}")
-                    selected_agent = None
+            # AI 상담원 첫 인사말 자동 생성
+            try:
+                from utils.prompt_generator import generate_agent_first_greeting
+                from utils.audio_handler import synthesize_tts
                 
-                if selected_agent:
-                    # 에이전트 찾기 성공 - 연결 처리
-                    call_id = f"call_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                    st.session_state.current_call = {
-                        'id': call_id,
-                        'customer_name': customer_name or "고객",
-                        'customer_phone': customer_phone,
-                        'reason': call_reason,
-                        'agent': selected_agent['name'],
-                        'agent_skill': selected_agent['skill'],
-                        'start_time': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        'status': 'connected'
-                    }
-                    
-                    st.session_state.call_history.append({
-                        'id': call_id,
-                        'type': 'outbound',
-                        'customer_name': customer_name or "고객",
-                        'customer_phone': customer_phone,
-                        'reason': call_reason,
-                        'agent': selected_agent['name'],
-                        'start_time': st.session_state.current_call['start_time'],
-                        'status': 'connected'
-                    })
-                    
-                    st.session_state.conversation_history = []
-                    st.session_state.needs_more_info = False
-                    st.session_state.info_requested = []
-                    st.session_state.selected_agent_for_customer = selected_agent
-                    st.session_state.incoming_phone_number = customer_phone
-                    st.session_state.call_active = True
-                    st.session_state.start_time = datetime.now()
-                    st.session_state.current_call_id = call_id
-                    st.session_state.call_direction = "outbound"
-                    
-                    # 에이전트 찾기 상태 초기화
-                    st.session_state.agent_search_in_progress = False
-                    st.session_state.agent_search_attempts = 0
-                    
-                    # 통화 시작
-                    st.session_state.call_sim_stage = "IN_CALL"
-                    
-                    # 첫 인사말 생성
-                    try:
-                        from utils.prompt_generator import generate_agent_first_greeting
-                        from utils.audio_handler import synthesize_tts
-                        
-                        greeting = generate_agent_first_greeting(
-                            lang_key=st.session_state.get("language", "ko"),
-                            initial_query=call_reason,
-                            agent_name=selected_agent['name']
-                        )
-                        
-                        # 메시지에 추가
-                        st.session_state.call_messages = [{
-                            "role": "agent",
-                            "content": greeting,
-                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        }]
-                        
-                        # TTS 생성
-                        try:
-                            from utils.audio_handler import synthesize_tts
-                            tts_audio, tts_msg = synthesize_tts(
-                                text=greeting,
-                                lang_key=st.session_state.get("language", "ko"),
-                                role="agent"
-                            )
-                            if tts_audio and st.session_state.call_messages:
-                                st.session_state.call_messages[-1]["audio"] = tts_audio
-                        except Exception as e:
-                            print(f"TTS 생성 오류: {e}")
-                        
-                        st.success(f"✅ {selected_agent['name']} 에이전트에게 연결되었습니다! ({selected_agent['skill']})")
-                        st.info(f"📞 {customer_phone}로 전화를 걸고 있습니다...")
-                    except Exception as e:
-                        # 기본 인사말
-                        greeting = f"안녕하세요, {customer_name or '고객'}님. {selected_agent['name']}입니다. {call_reason} 관련하여 연락드렸습니다. 감사합니다."
-                        st.session_state.call_messages = [{
-                            "role": "agent",
-                            "content": greeting,
-                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        }]
-                        st.success(f"✅ {selected_agent['name']} 에이전트에게 연결되었습니다! ({selected_agent['skill']})")
-                        st.info(f"📞 {customer_phone}로 전화를 걸고 있습니다...")
-                    
-                    st.session_state.outbound_form_submitted = False
-                    st.rerun()  # IN_CALL 상태로 전환하기 위해 rerun
-                else:
-                    # 에이전트를 찾지 못함 - 재시도 로직 시작
-                    if not st.session_state.agent_search_in_progress:
-                        st.session_state.agent_search_in_progress = True
-                        st.session_state.agent_search_attempts = 0
-                        st.session_state.agent_search_start_time = datetime.now()
-                        # 정보 저장 (재시도 시 사용)
-                        st.session_state.outbound_call_reason = call_reason
-                        st.session_state.outbound_agent_skill = agent_skill
-                    
-                    # 자동 재시도를 위해 rerun (위의 agent_search_in_progress 체크에서 처리됨)
-                    st.rerun()
-        
-        # 취소 버튼 처리
-        if cancel_button:
-            st.session_state.outbound_form_submitted = False
-            st.session_state.outbound_customer_name = ""
-            st.session_state.outbound_customer_phone = ""
-    
-    with col_out2:
-        st.subheader(f"📊 {L.get('call_status_header', '발신 상태')}")
-        if st.session_state.current_call:
-            call = st.session_state.current_call
-            st.info(f"**{L.get('calling_label', '통화 중')}:** {call['customer_name']}")
-            st.write(f"**{L.get('phone_label', '전화번호')}:** {call['customer_phone']}")
-            st.write(f"**{L.get('agent_label', '에이전트')}:** {call['agent']}")
-            st.write(f"**{L.get('skill_label', '스킬')}:** {call['agent_skill']}")
-            st.write(f"**{L.get('start_time_label', '시작 시간')}:** {call['start_time']}")
-            
-            if st.button(f"📞 {L.get('call_end_button', '통화 종료')}", type="secondary", use_container_width=True, key="end_call_outbound"):
-                call['end_time'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                call['status'] = 'ended'
-                for record in st.session_state.call_history:
-                    if record['id'] == call['id']:
-                        record['end_time'] = call['end_time']
-                        record['status'] = 'ended'
-                        break
-                st.session_state.current_call = None
-                st.session_state.conversation_history = []
-                st.session_state.call_sim_stage = "WAITING_CALL"
-                st.session_state.call_messages = []
-                st.success(L.get("call_ended_message", "통화가 종료되었습니다."))
+                recording_notice = L.get("call_recording_notice", "고객님과의 통화 내역이 녹음됩니다.")
+                agent_greeting = generate_agent_first_greeting(
+                    lang_key=current_lang,
+                    initial_query=inquiry_text
+                )
+                
+                st.session_state.call_messages = [{
+                    "role": "system",
+                    "content": recording_notice,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }, {
+                    "role": "agent",
+                    "content": agent_greeting,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }]
+                
+                # TTS 생성
+                try:
+                    from utils.audio_handler import synthesize_tts
+                    tts_audio, tts_msg = synthesize_tts(
+                        text=agent_greeting,
+                        lang_key=current_lang,
+                        role="agent"
+                    )
+                    if tts_audio:
+                        st.session_state.agent_greeting_audio = tts_audio
+                        if st.session_state.call_messages and st.session_state.call_messages[-1].get("role") == "agent":
+                            st.session_state.call_messages[-1]["audio"] = tts_audio
+                except Exception as e:
+                    print(f"TTS 생성 오류: {e}")
+                
+                st.success(L.get("call_started_customer_mode", "통화가 시작되었습니다. AI 상담원이 인사말을 했습니다."))
+            except Exception as e:
+                st.error(f"AI 인사말 생성 오류: {str(e)}")
+                # 기본 인사말로 폴백
+                default_greeting = L.get("agent_first_greeting_ko", "안녕하세요. 고객님 고객 센터에 연락 주셔서 감사드립니다. 저는 상담원이라고 합니다. 무엇을 도와드릴까요?")
+                st.session_state.call_messages = [{
+                    "role": "agent",
+                    "content": default_greeting,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }]
+                st.session_state.call_sim_stage = "IN_CALL"
         else:
-            st.info(L.get("no_active_call", "현재 진행 중인 통화가 없습니다."))
+            st.warning(L.get("warning_enter_inquiry", "문의 내용을 입력해주세요."))
+    
+    # 취소 버튼 처리
+    if cancel_button:
+        st.session_state.call_sim_stage = "WAITING_CALL"
+        st.session_state.incoming_call = None
+        st.session_state.call_active = False
+        st.session_state.start_time = None
+        st.session_state.call_messages = []
+        st.session_state.inquiry_text = ""
+        st.session_state.incoming_phone_number = None
 
