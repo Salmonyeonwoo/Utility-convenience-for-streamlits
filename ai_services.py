@@ -39,7 +39,8 @@ def get_rag_chatbot_response(user_query: str, context: List[dict] = None) -> str
         llm = ChatOpenAI(
             model_name="gpt-4o-mini",
             temperature=0.7,
-            openai_api_key=openai_key
+            openai_api_key=openai_key,
+            max_tokens=2000  # 채팅 응답을 위한 충분한 토큰 수
         )
         
         # 컨텍스트 구성
@@ -160,7 +161,8 @@ def get_ai_response(customer_message: str, customer_info: dict, chat_history: Li
         llm = ChatOpenAI(
             model_name="gpt-4o-mini",
             temperature=0.7,
-            openai_api_key=openai_key
+            openai_api_key=openai_key,
+            max_tokens=2000  # 채팅 응답을 위한 충분한 토큰 수
         )
         
         # 시스템 프롬프트 구성

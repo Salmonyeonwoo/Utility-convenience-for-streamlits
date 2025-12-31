@@ -148,8 +148,15 @@ def get_llm_client():
     return None, None
 
 
-def run_llm(prompt: str) -> str:
-    """선택된 LLM으로 프롬프트 실행 (Fallback 지원)"""
+def run_llm(prompt: str, max_tokens: int = 2000) -> str:
+    """
+    선택된 LLM으로 프롬프트 실행 (Fallback 지원)
+    
+    Args:
+        prompt: LLM에 전달할 프롬프트
+        max_tokens: 최대 토큰 수 (기본값: 2000, 채팅 응답에 적합)
+                    전화 응답 등 짧은 응답이 필요한 경우 200 등으로 조정 가능
+    """
     client, info = get_llm_client()
 
     # None 값 언팩 방지
@@ -202,7 +209,12 @@ def run_llm(prompt: str) -> str:
             if provider == "gemini" and _ensure_genai():
                 genai.configure(api_key=key)
                 gen_model = genai.GenerativeModel(model)
-                resp = gen_model.generate_content(prompt)
+                # 채팅 응답을 위한 충분한 토큰 수 설정
+                generation_config = {
+                    "max_output_tokens": max_tokens,
+                    "temperature": 0.7,
+                }
+                resp = gen_model.generate_content(prompt, generation_config=generation_config)
                 return resp.text
 
             elif provider == "openai":
@@ -210,6 +222,8 @@ def run_llm(prompt: str) -> str:
                 resp = o_client.chat.completions.create(
                     model=model,
                     messages=[{"role": "user", "content": prompt}],
+                    max_tokens=max_tokens,  # 채팅 응답을 위한 충분한 토큰 수
+                    temperature=0.7,
                 )
                 return resp.choices[0].message.content
 
@@ -218,6 +232,8 @@ def run_llm(prompt: str) -> str:
                 resp = c_client.messages.create(
                     model=model,
                     messages=[{"role": "user", "content": prompt}],
+                    max_tokens=max_tokens,  # 채팅 응답을 위한 충분한 토큰 수
+                    temperature=0.7,
                 )
                 return resp.content[0].text
 
@@ -227,6 +243,8 @@ def run_llm(prompt: str) -> str:
                 resp = g_client.chat.completions.create(
                     model=model,
                     messages=[{"role": "user", "content": prompt}],
+                    max_tokens=max_tokens,  # 채팅 응답을 위한 충분한 토큰 수
+                    temperature=0.7,
                 )
                 return resp.choices[0].message.content
 

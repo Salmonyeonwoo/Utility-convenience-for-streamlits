@@ -169,7 +169,8 @@ Generate the customer's verbal response:
         return ""
     
     try:
-        reaction = run_llm(prompt).strip()
+        # 전화 응답은 짧게 유지 (1-2문장이므로 300 토큰으로 설정)
+        reaction = run_llm(prompt, max_tokens=300).strip()
         return reaction
     except Exception as e:
         return f"❌ 고객 반응 생성 오류: {e}"
