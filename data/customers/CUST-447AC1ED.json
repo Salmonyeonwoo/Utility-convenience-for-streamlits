@@ -1,0 +1,32 @@
+{
+    "basic_info": {
+        "customer_id": "CUST-447AC1ED",
+        "name": "minsoo.hwang",
+        "phone": "+8210-1234-5678",
+        "email": "minsoo.hwang@gmail.com",
+        "identity_hash": "9633be966f19a2677fa4d972f518bc62",
+        "created_at": "2025-12-30T14:04:19.746694",
+        "last_access_at": "2025-12-30T14:04:19.746694"
+    },
+    "crm_profile": {
+        "trait": "일반",
+        "total_consultations": 0,
+        "avg_satisfaction": 0.0,
+        "tags": []
+    },
+    "consultation_history": [],
+    "agent_manual_responses": [
+        {
+            "response": "안녕하세요 고객님 구체적으로 어느 지역을 여행하실 건지, 어디에 숙박을 하실 건지 이 정보를 전달해 주시면 저희가 맞춤형 솔루션을 답변 드리도록 하겠습니다.",
+            "timestamp": "2025-12-30T14:04:19.775299",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "안녕하세요 고객님. 문의하신 eSIM 부분과 관련해서, 현재 이용 중이신 eSIM 기기, 그리고 프랑스에서 사용하실 eSIM이라면 현재 프랑스에서 체류하고 계시는지 확인 요청드립니다.",
+            "timestamp": "2025-12-30T14:17:33.583383",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        }
+    ]
+}

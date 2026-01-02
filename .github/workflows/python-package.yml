@@ -1,0 +1,41 @@
+name: Python package
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build
+        pip install -r requirements.txt
+    
+    - name: Build package
+      run: python -m build
+    
+    - name: Install package
+      run: pip install dist/*.whl
+    
+    - name: Test package
+      run: |
+        python -c "import streamlit_app; print('Package imported successfully')"
+        python -c "from streamlit_app_imports import *; print('Imports successful')"
+
