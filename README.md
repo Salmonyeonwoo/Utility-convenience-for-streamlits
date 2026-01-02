@@ -81,6 +81,16 @@ https://www.youtube.com/watch?v=MOQ2qD7Ws-E
 - ✅ Enhanced font detection and fallback mechanisms
 - ✅ Better error handling and debugging information
 
+## 🔧 CI/CD & Development
+
+This project includes automated CI/CD pipelines using GitHub Actions:
+
+- **Python Package Testing**: Automated builds and tests across Python 3.9-3.12
+- **Code Quality**: Pylint integration for code quality checks
+- **Application Testing**: Syntax checks and import validation
+
+See `GITHUB_PUSH_GUIDE.md` for detailed CI/CD setup instructions.
+
 ## 📋 Usage Guide
 
 ### Company Information & FAQ
