@@ -27,7 +27,6 @@ import tempfile
 import os
 import json
 
-
 def render_agent_turn(L, current_lang):
     """에이전트 입력 단계 UI 렌더링"""
     # ⭐ 고객 체험 모드일 때 AI가 자동으로 응답 생성
@@ -57,7 +56,7 @@ def render_agent_turn(L, current_lang):
                             # 다음 단계로 자동 이동 (사용자가 고객으로서 말할 차례)
                             st.session_state.sim_stage = "CUSTOMER_TURN"
                             st.session_state.ai_agent_response_generated = False  # 다음 응답을 위해 리셋
-                            # st.rerun()  # 주석 처리: 상태 변경 후 Streamlit이 자동 rerun함
+
                     except Exception as e:
                         st.error(f"AI 응답 생성 중 오류: {e}")
                         st.session_state.ai_agent_response_generated = False
@@ -169,7 +168,7 @@ def render_agent_turn(L, current_lang):
                     st.session_state.pending_customer_reaction_for_msg_idx = -1
                     
                     # ⭐ 고객 반응 추가 후 화면 업데이트
-                    # st.rerun()  # 주석 처리: 렌더링 순서 변경으로 자동 반영됨
+
             except Exception as e:
                 print(f"고객 반응 생성 오류: {e}")
                 st.session_state.pending_customer_reaction = False
@@ -501,7 +500,7 @@ def render_agent_turn(L, current_lang):
                             st.session_state.pending_customer_reaction_for_msg_idx = len(st.session_state.simulator_messages) - 1
                         
                         # ⭐ 화면 즉시 업데이트
-                        # st.rerun()  # 주석 처리: 렌더링 순서 변경으로 자동 반영됨
+
             except Exception as e:
                 print(f"초기 자동 응답 생성 오류: {e}")
         
@@ -569,7 +568,7 @@ def render_agent_turn(L, current_lang):
                                 st.session_state.auto_generated_draft_text = ""
                                 
                                 # ⭐ 첫 번째 화면 업데이트 (에이전트 응답만 표시)
-                                # st.rerun()  # 주석 처리: 렌더링 순서 변경으로 자동 반영됨
+
                                 
                                 # ⭐ 2단계: 고객 반응은 다음 렌더링 사이클에서 생성
                                 # 자연스러운 타이밍을 위해 즉시 생성하지 않고 플래그 설정
@@ -599,7 +598,7 @@ def render_agent_turn(L, current_lang):
             st.session_state.auto_draft_generated = False
             
             # ⭐ 첫 번째 화면 업데이트 (에이전트 응답만 표시)
-            # st.rerun()  # 주석 처리: 렌더링 순서 변경으로 자동 반영됨
+
             
             # ⭐ 고객 반응은 다음 렌더링 사이클에서 생성 (자연스러운 타이밍)
             if st.session_state.is_llm_ready:
@@ -1119,7 +1118,6 @@ def render_agent_turn(L, current_lang):
                 print(f"에이전트 응답 이력 기록 오류: {e}")
             
             # ⭐ 메시지 추가 시 즉시 화면 업데이트를 위한 rerun
-            # st.rerun()  # 주석 처리: 렌더링 순서 변경으로 자동 반영됨
 
             # 메일 끝인사 확인
             email_closing_patterns = [
@@ -1151,7 +1149,6 @@ def render_agent_turn(L, current_lang):
                 st.session_state.pending_customer_reaction = True
                 st.session_state.pending_customer_reaction_for_msg_idx = len(st.session_state.simulator_messages) - 1
                 # ⭐ 고객 반응 추가 시 즉시 화면 업데이트
-                # st.rerun()  # 주석 처리: 렌더링 순서 변경으로 자동 반영됨
 
                 # 다음 단계 결정 (고객 반응이 아직 생성되지 않았으므로 기본적으로 CUSTOMER_TURN으로 설정)
                 # 고객 반응이 생성된 후에는 pending_customer_reaction 블록에서 처리됨
@@ -1277,7 +1274,7 @@ def render_agent_turn(L, current_lang):
 
                     st.session_state.sim_stage = "AGENT_TURN"
                     # ⭐ 언어 이관 후 화면 즉시 업데이트
-                    # st.rerun()  # 주석 처리: 버튼 클릭 후 Streamlit이 자동 rerun함
+
                 except Exception as e:
                     error_msg = L.get(
                         "transfer_error",
@@ -1303,7 +1300,6 @@ def render_agent_turn(L, current_lang):
                     use_container_width=True):
                 transfer_session(
                     lang_code, st.session_state.simulator_messages)
-
 
 def _render_verification_debug_info(L, is_login_inquiry, customer_provided_info, 
                                     customer_has_attachment, all_customer_texts, all_roles, customer_messages):
@@ -1334,7 +1330,6 @@ def _render_verification_debug_info(L, is_login_inquiry, customer_provided_info,
     if not customer_provided_info:
         st.warning(
             "⚠️ 고객이 검증 정보를 제공하면 검증 UI가 표시됩니다. 위의 디버깅 정보를 확인하세요.")
-
 
 def _render_verification_ui(L, customer_has_attachment):
     """고객 검증 UI 렌더링"""
@@ -1412,7 +1407,7 @@ def _render_verification_ui(L, customer_has_attachment):
                 ):
                     st.session_state.is_customer_verified = True
                     st.success(L.get('verification_completed', '고객 검증이 완료되었습니다.'))
-                    # st.rerun()  # 주석 처리: 폼 제출 후 Streamlit이 자동 rerun함
+
                 else:
                     st.error("검증 정보가 일치하지 않습니다. 다시 확인해주세요.")
     
@@ -1453,7 +1448,7 @@ def _render_verification_ui(L, customer_has_attachment):
                         if uploaded_file.size > 0:
                             st.session_state.is_customer_verified = True
                             st.success(L.get('verification_completed', '고객 검증이 완료되었습니다.'))
-                            # st.rerun()  # 주석 처리: 버튼 클릭 후 Streamlit이 자동 rerun함
+
                         else:
                             st.error("파일을 읽을 수 없습니다.")
                     except Exception as e:

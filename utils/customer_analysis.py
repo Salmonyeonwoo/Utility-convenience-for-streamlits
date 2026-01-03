@@ -567,7 +567,36 @@ def generate_guideline_from_past_cases(customer_query: str, customer_profile: Di
 - Summary: {summary.get('summary', 'N/A')[:200]}
 """
 
-    guideline_prompt = f"""
+    # 언어별 프롬프트 생성
+    if current_lang_key == "ko":
+        guideline_prompt = f"""
+당신은 과거 성공 사례를 분석하여 가이드를 제공하는 AI 고객 지원 슈퍼바이저입니다.
+
+다음 유사한 과거 사례와 그들의 성공적인 해결 전략을 바탕으로 현재 고객 문의를 처리하기 위한 실행 가능한 가이드라인을 제공하세요.
+
+현재 고객 문의:
+{customer_query}
+
+현재 고객 프로필:
+- 성별: {customer_profile.get('gender', 'unknown')}
+- 감정 점수: {customer_profile.get('sentiment_score', 50)}/100
+- 커뮤니케이션 스타일: {customer_profile.get('communication_style', 'unknown')}
+- 긴급도: {customer_profile.get('urgency_level', 'medium')}
+- 예측 유형: {customer_profile.get('predicted_customer_type', 'normal')}
+
+유사한 과거 사례 (성공적인 해결):
+{past_cases_text}
+
+다음 내용을 포함한 간결한 가이드라인을 한국어로 제공하세요:
+1. 유사한 과거 사례에서 잘 작동한 것 식별
+2. 성공적인 패턴을 기반으로 한 구체적인 접근 방법 제안
+3. 과거 경험을 바탕으로 한 잠재적 함정 경고
+4. 높은 고객 만족도로 이어진 응답 전략 권장
+
+가이드라인 (한국어로):
+"""
+    elif current_lang_key == "en":
+        guideline_prompt = f"""
 You are an AI Customer Support Supervisor analyzing past successful cases to provide guidance.
 
 Based on the following similar past cases and their successful resolution strategies, provide actionable guidelines for handling the current customer inquiry.
@@ -585,13 +614,40 @@ Current Customer Profile:
 Similar Past Cases (Successful Resolutions):
 {past_cases_text}
 
-Provide a concise guideline in {lang_name} that:
+Provide a concise guideline in English that:
 1. Identifies what worked well in similar past cases
 2. Suggests specific approaches based on successful patterns
 3. Warns about potential pitfalls based on past experiences
 4. Recommends response strategies that led to high customer satisfaction
 
-Guideline (in {lang_name}):
+Guideline (in English):
+"""
+    else:  # ja
+        guideline_prompt = f"""
+あなたは過去の成功事例を分析してガイドを提供するAIカスタマーサポートスーパーバイザーです。
+
+以下の類似した過去の事例とその成功した解決戦略に基づいて、現在の顧客問い合わせを処理するための実行可能なガイドラインを提供してください。
+
+現在の顧客問い合わせ:
+{customer_query}
+
+現在の顧客プロファイル:
+- 性別: {customer_profile.get('gender', 'unknown')}
+- 感情スコア: {customer_profile.get('sentiment_score', 50)}/100
+- コミュニケーションスタイル: {customer_profile.get('communication_style', 'unknown')}
+- 緊急度: {customer_profile.get('urgency_level', 'medium')}
+- 予測タイプ: {customer_profile.get('predicted_customer_type', 'normal')}
+
+類似した過去の事例（成功した解決）:
+{past_cases_text}
+
+以下の内容を含む簡潔なガイドラインを日本語で提供してください:
+1. 類似した過去の事例でうまくいったことを特定
+2. 成功したパターンに基づく具体的なアプローチ方法の提案
+3. 過去の経験に基づく潜在的な落とし穴の警告
+4. 高い顧客満足度につながった応答戦略の推奨
+
+ガイドライン（日本語で）:
 """
 
     if not st.session_state.is_llm_ready:
@@ -601,7 +657,12 @@ Guideline (in {lang_name}):
         guideline = run_llm(guideline_prompt).strip()
         return guideline
     except Exception as e:
-        return f"가이드라인 생성 오류: {str(e)}"
+        error_msg = {
+            "ko": f"가이드라인 생성 오류: {str(e)}",
+            "en": f"Guideline generation error: {str(e)}",
+            "ja": f"ガイドライン生成エラー: {str(e)}"
+        }.get(current_lang_key, f"Error: {str(e)}")
+        return error_msg
 
 
 def generate_initial_advice(customer_query, customer_type_display, customer_email, customer_phone, current_lang_key,
@@ -680,15 +741,47 @@ def generate_initial_advice(customer_query, customer_type_display, customer_emai
 Consider reviewing past cases manually for patterns.]
 """
 
-    # Output ALL text (guidelines and draft) STRICTLY in {lang_name}. <--- 강력한 언어 강제 지시
-    initial_prompt = f"""
-Output ALL text (guidelines and draft) STRICTLY in {lang_name}.
+    # 언어별 프롬프트 생성 (각 언어로 명확하게 작성)
+    if lang_key_to_use == "ko":
+        initial_prompt = f"""
+모든 텍스트(가이드라인 및 초안)를 반드시 한국어로 작성하세요.
+
+당신은 AI 고객 지원 슈퍼바이저입니다. 다음 고객 문의를 분석하여 제공하세요:
+고객 유형: **{st.session_state.customer_type_sim_select}**
+
+1) 상담원을 위한 상세한 **응대 가이드라인** (단계별)
+2) **전송 가능한 응대 초안** (한국어로)
+
+[형식]
+- 다음 마크다운 헤더를 정확히 사용하세요:
+  - "### {L['simulation_advice_header']}"
+  - "### {L['simulation_draft_header']}"
+
+[중요 가이드라인 규칙]
+1. **초기 정보 수집 (요청 3):** 가이드라인의 첫 번째 단계는 문제 해결을 시도하기 전에 필수적인 초기 진단 정보(예: 기기 호환성, 현지 상태/위치, 주문 번호)를 요청해야 합니다.
+2. **어려운 고객에 대한 공감 (요청 5):** 고객 유형이 '어려운 고객' 또는 '매우 불만족 고객'인 경우, 정책(예: 환불 불가)을 강제해야 하더라도 가이드라인은 극도의 정중함, 공감, 사과를 강조해야 합니다.
+3. **24-48시간 후속 조치 (요청 6):** 문제를 즉시 해결할 수 없거나 현지 파트너/슈퍼바이저의 확인이 필요한 경우, 가이드라인은 다음 절차를 명시해야 합니다:
+   - 문제를 인정합니다.
+   - 고객에게 24시간 또는 48시간 내에 명확한 답변을 받을 것임을 알립니다.
+   - 후속 연락을 위해 고객의 이메일 또는 전화번호를 요청합니다. (제공된 연락처 정보가 있으면 사용)
+4. **과거 사례 학습:** 과거 사례 가이드라인이 제공된 경우, 해당 사례의 성공적인 전략을 권장사항에 통합하세요.
+
+고객 문의:
+{customer_query}
+{contact_info_block}
+{attachment_block}
+{profile_block}
+{past_cases_block}
+"""
+    elif lang_key_to_use == "en":
+        initial_prompt = f"""
+Output ALL text (guidelines and draft) STRICTLY in English.
 
 You are an AI Customer Support Supervisor. Your role is to analyze the following customer inquiry
 from a **{st.session_state.customer_type_sim_select}** and provide:
 
 1) A detailed **response guideline for the human agent** (step-by-step).
-2) A **ready-to-send draft reply** in {lang_name}.
+2) A **ready-to-send draft reply** in English.
 
 [FORMAT]
 - Use the exact markdown headers:
@@ -711,21 +804,73 @@ Customer Inquiry:
 {profile_block}
 {past_cases_block}
 """
+    else:  # ja
+        initial_prompt = f"""
+すべてのテキスト（ガイドラインと草案）を必ず日本語で作成してください。
+
+あなたはAIカスタマーサポートスーパーバイザーです。以下の顧客問い合わせを分析し、提供してください：
+顧客タイプ: **{st.session_state.customer_type_sim_select}**
+
+1) 人間のエージェントのための詳細な**対応ガイドライン**（ステップバイステップ）
+2) **送信可能な対応草案**（日本語で）
+
+[形式]
+- 以下のマークダウンヘッダーを正確に使用してください：
+  - "### {L['simulation_advice_header']}"
+  - "### {L['simulation_draft_header']}"
+
+[重要なガイドライン規則]
+1. **初期情報収集（要件3）：** ガイドラインの最初のステップは、問題のトラブルシューティングや解決を試みる前に、必要な初期診断情報（例：デバイスの互換性、現地の状態/場所、注文番号）を要求することです。
+2. **困難な顧客への共感（要件5）：** 顧客タイプが「困難な顧客」または「非常に不満足な顧客」の場合、ポリシー（例：返金不可）を強制する必要がある場合でも、ガイドラインは極度の丁寧さ、共感、謝罪を強調する必要があります。
+3. **24-48時間のフォローアップ（要件6）：** 問題を即座に解決できない場合、または現地パートナー/スーパーバイザーの確認が必要な場合、ガイドラインは次の手順を記載する必要があります：
+   - 問題を認識します。
+   - 顧客に24時間または48時間以内に明確な回答を受けることを通知します。
+   - フォローアップ連絡のために顧客のメールまたは電話番号を要求します。（提供された連絡先情報がある場合は使用）
+4. **過去の事例学習：** 過去の事例ガイドラインが提供されている場合、それらの事例の成功戦略を推奨事項に組み込んでください。
+
+顧客問い合わせ:
+{customer_query}
+{contact_info_block}
+{attachment_block}
+{profile_block}
+{past_cases_block}
+"""
     if not st.session_state.is_llm_ready:
-        mock_text = (
-            f"### {L['simulation_advice_header']}\n\n"
-            f"- (Mock) {st.session_state.customer_type_sim_select} 유형 고객 응대 가이드입니다. (요청 3, 5, 6 반영)\n\n"
-            f"### {L['simulation_draft_header']}\n\n"
-            f"(Mock) 에이전트 응대 초안이 여기에 들어갑니다。\n\n"
-        )
+        # 언어별 Mock 텍스트
+        if lang_key_to_use == "ko":
+            mock_text = (
+                f"### {L['simulation_advice_header']}\n\n"
+                f"- (Mock) {st.session_state.customer_type_sim_select} 유형 고객 응대 가이드입니다. (요청 3, 5, 6 반영)\n\n"
+                f"### {L['simulation_draft_header']}\n\n"
+                f"(Mock) 에이전트 응대 초안이 여기에 들어갑니다.\n\n"
+            )
+        elif lang_key_to_use == "en":
+            mock_text = (
+                f"### {L['simulation_advice_header']}\n\n"
+                f"- (Mock) Response guide for {st.session_state.customer_type_sim_select} type customer. (Reflects Req 3, 5, 6)\n\n"
+                f"### {L['simulation_draft_header']}\n\n"
+                f"(Mock) Agent response draft will appear here.\n\n"
+            )
+        else:  # ja
+            mock_text = (
+                f"### {L['simulation_advice_header']}\n\n"
+                f"- (Mock) {st.session_state.customer_type_sim_select}タイプの顧客対応ガイドです。（要件3、5、6を反映）\n\n"
+                f"### {L['simulation_draft_header']}\n\n"
+                f"(Mock) エージェント対応草案がここに表示されます。\n\n"
+            )
         return mock_text
     else:
         with st.spinner(L["response_generating"]):
             try:
                 return run_llm(initial_prompt)
             except Exception as e:
-                st.error(f"AI 조언 생성 중 오류 발생: {e}")
-                return f"❌ AI Advice Generation Error: {e}"
+                error_msg = {
+                    "ko": f"AI 조언 생성 중 오류 발생: {e}",
+                    "en": f"Error occurred while generating AI advice: {e}",
+                    "ja": f"AIアドバイス生成中にエラーが発生しました: {e}"
+                }.get(lang_key_to_use, f"Error: {e}")
+                st.error(error_msg)
+                return f"❌ {error_msg}"
 
 
 # 별칭 추가 (하위 호환성)

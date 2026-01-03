@@ -1,0 +1,26 @@
+{
+    "basic_info": {
+        "customer_id": "CUST-2DC4E466",
+        "name": "seonghyeon.hwang30",
+        "phone": "+6010-968-1392",
+        "email": "seonghyeon.hwang30@gmail.com",
+        "identity_hash": "b1fb32f8807df0a91a55e5bd446f9e6d",
+        "created_at": "2026-01-03T15:35:57.132646",
+        "last_access_at": "2026-01-03T15:35:57.132646"
+    },
+    "crm_profile": {
+        "trait": "일반",
+        "total_consultations": 0,
+        "avg_satisfaction": 0.0,
+        "tags": []
+    },
+    "consultation_history": [],
+    "agent_manual_responses": [
+        {
+            "response": "안녕하세요 고객님 확인 감사드리며, 혹시 다른 문의 사항은 없으신가요?",
+            "timestamp": "2026-01-03T15:35:57.159648",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        }
+    ]
+}

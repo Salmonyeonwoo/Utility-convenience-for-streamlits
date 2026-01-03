@@ -56,6 +56,25 @@
       "service_rating": 0.0,
       "evaluation_data": [],
       "sentiment_analysis": []
+    },
+    {
+      "customer_id": "CUSTBA24F562",
+      "customer_name": "황성현",
+      "phone": "+6010-968-1392",
+      "email": "seonghyeon.hwang30@gmail.com",
+      "identity_hash": "b1fb32f8807df0a91a55e5bd446f9e6d",
+      "account_created": "2026-01-03",
+      "last_login": "2026-01-03",
+      "last_consultation": "2026-01-03",
+      "consultation_history": [],
+      "personality": "일반",
+      "personality_summary": "",
+      "preferred_destination": "프랑스",
+      "travel_budget": "",
+      "survey_score": 0.0,
+      "service_rating": 0.0,
+      "evaluation_data": [],
+      "sentiment_analysis": []
     }
   ]
 }

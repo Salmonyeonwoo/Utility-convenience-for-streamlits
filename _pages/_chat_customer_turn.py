@@ -140,7 +140,6 @@ def render_customer_turn(L, current_lang):
                 # 다음 단계로 이동 (AI 상담원이 답변할 차례)
                 st.session_state.sim_stage = "AGENT_TURN"
                 st.session_state.ai_agent_response_generated = False  # AI 응답 생성 플래그 리셋
-            # st.rerun()  # 주석 처리: 버튼 클릭 후 Streamlit이 자동 rerun함
         return  # 고객 모드일 때는 기존 AI 고객 반응 생성 로직을 실행하지 않음
     
     # ⭐ 상담원 테스트 모드: 기존 로직 (AI가 고객 반응 자동 생성)
@@ -231,8 +230,6 @@ def render_customer_turn(L, current_lang):
         
         # ⭐ 상태 변경을 명시적으로 트리거하여 즉시 화면 업데이트
         st.session_state._message_update_trigger = not st.session_state.get("_message_update_trigger", False)
-        # ⭐ 고객 메시지 추가 시 즉시 화면 업데이트를 위한 rerun
-        # st.rerun()  # 주석 처리: 렌더링 순서 변경으로 자동 반영됨
         
         # ⭐ 응대초안 즉시 자동 생성 (고객 메시지 수신 시 - 백그라운드에서 조용히)
         # ⭐ API Key 확인

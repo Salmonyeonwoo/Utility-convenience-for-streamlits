@@ -5,7 +5,7 @@
 
 import streamlit as st
 from lang_pack import LANG
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 
@@ -47,18 +47,58 @@ def render_file_loader_panel(L, current_lang):
         except Exception:
             pass
         
-        if scanned_files:
-            with st.expander(f"📁 {L.get('load_history_from_file', '파일에서 이력 불러오기')}", expanded=False):
-                local_files = [f for f in scanned_files if f.get("source") == "local"]
-                github_files = [f for f in scanned_files if f.get("source") in ["github", "github_api"]]
+        # ⭐ 매일 20~30개씩만 가져오도록 필터링 (오늘 날짜 기준)
+        today = datetime.now().date()
+        
+        # 오늘 날짜에 수정된 파일만 필터링
+        today_files = []
+        for file_meta in scanned_files:
+            try:
+                modified_time_str = file_meta.get("modified_time", "")
+                if not modified_time_str:
+                    continue
+                
+                modified_time = None
+                
+                # 다양한 날짜 형식 파싱 시도
+                try:
+                    # ISO 형식에서 날짜 부분만 추출
+                    # 예: "2025-01-01T12:00:00" -> "2025-01-01"
+                    # 예: "2025-01-01T12:00:00Z" -> "2025-01-01"
+                    date_str = modified_time_str.split('T')[0] if 'T' in modified_time_str else modified_time_str[:10]
+                    
+                    # 날짜 파싱
+                    file_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                    
+                    # 오늘 날짜인지 확인
+                    if file_date == today:
+                        today_files.append(file_meta)
+                except (ValueError, IndexError):
+                    # 날짜 파싱 실패 시 건너뛰기
+                    continue
+            except Exception:
+                # 예외 발생 시 건너뛰기
+                continue
+        
+        # 날짜 기준 최신순 정렬
+        today_files.sort(key=lambda x: x.get("modified_time", ""), reverse=True)
+        
+        # 매일 20~30개 제한 (최대 30개, 파일이 30개 이상이면 30개만 표시)
+        daily_limit = min(30, len(today_files))
+        filtered_files = today_files[:daily_limit] if len(today_files) > 0 else []
+        
+        if filtered_files:
+            with st.expander(f"📁 {L.get('load_history_from_file', '파일에서 이력 불러오기')} (오늘: {len(filtered_files)}개)", expanded=False):
+                local_files = [f for f in filtered_files if f.get("source") == "local"]
+                github_files = [f for f in filtered_files if f.get("source") in ["github", "github_api"]]
                 
                 if local_files:
-                    st.markdown(f"**📂 {L.get('local_files', '로컬 파일')}**")
-                elif github_files:
-                    st.markdown(f"**🌐 {L.get('github_files', 'GitHub 파일')}**")
+                    st.markdown(f"**📂 {L.get('local_files', '로컬 파일')}** (오늘 수정: {len(local_files)}개)")
+                if github_files:
+                    st.markdown(f"**🌐 {L.get('github_files', 'GitHub 파일')}** (오늘 수정: {len(github_files)}개)")
                 
                 file_groups = {}
-                for file_meta in scanned_files[:30]:
+                for file_meta in filtered_files:
                     file_type = file_meta.get("file_type", "unknown")
                     if file_type not in file_groups:
                         file_groups[file_type] = []
@@ -73,9 +113,16 @@ def render_file_loader_panel(L, current_lang):
                         "csv": "📋 CSV"
                     }.get(file_type, f"📎 {file_type.upper()}")
                     
-                    st.markdown(f"**{file_type_label} {L.get('file_label', '파일')}**")
+                    st.markdown(f"**{file_type_label} {L.get('file_label', '파일')}** ({len(files)}개)")
                     for file_meta in files:
                         _render_file_item(L, file_meta)
+                
+                # 오늘 가져온 파일 수 정보 표시
+                if len(filtered_files) > 0:
+                    st.info(f"ℹ️ 오늘 날짜({today.strftime('%Y-%m-%d')})에 수정된 파일 중 {len(filtered_files)}개를 표시합니다. (제한: 20~30개/일)")
+        elif scanned_files:
+            # 오늘 날짜 파일이 없는 경우 안내
+            st.info(f"ℹ️ 오늘 날짜({today.strftime('%Y-%m-%d')})에 수정된 파일이 없습니다. 총 {len(scanned_files)}개의 파일이 검색되었습니다.")
     except ImportError:
         pass
     except Exception:
