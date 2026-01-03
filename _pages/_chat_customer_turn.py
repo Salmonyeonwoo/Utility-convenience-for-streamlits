@@ -22,12 +22,59 @@ def render_customer_turn(L, current_lang):
         user_customer_input = st.chat_input("문의 사항을 입력하세요 (고객 입장)...")
         
         if user_customer_input:
+            # ⭐ 언어 전환 요청 감지 및 처리
+            customer_response = user_customer_input
+            language_change_requested = False
+            requested_lang = None
+            
+            # 영어 전환 요청 감지
+            english_requests = [
+                "can we speak english", "speak english", "english please", 
+                "english, please", "in english", "use english",
+                "영어로", "영어로 말씀해주세요", "영어로 해주세요", "영어로 부탁합니다"
+            ]
+            
+            # 일본어 전환 요청 감지
+            japanese_requests = [
+                "日本語で", "日本語でお願いします", "日本語で話してください",
+                "speak japanese", "japanese please", "in japanese", "use japanese"
+            ]
+            
+            # 한국어 전환 요청 감지
+            korean_requests = [
+                "한국어로", "한국어로 말씀해주세요", "한국어로 해주세요",
+                "speak korean", "korean please", "in korean", "use korean"
+            ]
+            
+            customer_response_lower = customer_response.lower()
+            
+            # 언어 전환 요청 확인
+            if any(req.lower() in customer_response_lower for req in english_requests):
+                requested_lang = "en"
+                language_change_requested = True
+            elif any(req.lower() in customer_response_lower for req in japanese_requests):
+                requested_lang = "ja"
+                language_change_requested = True
+            elif any(req.lower() in customer_response_lower for req in korean_requests):
+                requested_lang = "ko"
+                language_change_requested = True
+            
+            # 언어 전환 처리
+            if language_change_requested and requested_lang:
+                current_lang = st.session_state.get("language", "ko")
+                if requested_lang != current_lang:
+                    st.session_state.language = requested_lang
+                    lang_names = {"ko": "한국어", "en": "English", "ja": "日本語"}
+                    st.info(f"🌐 언어가 {lang_names[requested_lang]}로 자동 변경되었습니다.")
+                    # 언어 변경 후 L 업데이트
+                    L = LANG.get(requested_lang, LANG["ko"])
+                    current_lang = requested_lang
+            
             # 메시지 추가
             new_msg = {"role": "customer", "content": user_customer_input}
             st.session_state.simulator_messages.append(new_msg)
             
             # ⭐ 고객 모드일 때도 closing 단계 전환 로직 적용
-            customer_response = user_customer_input
             
             # 다국어 지원: 고객의 긍정적 종료 응답 감지 (존경어 표현 포함)
             positive_response_keywords = [
@@ -112,6 +159,71 @@ def render_customer_turn(L, current_lang):
         # 고객 반응 즉시 생성 (5초 이내 빠른 응답)
         customer_response = generate_customer_reaction(
             st.session_state.language, is_call=False)
+
+        # ⭐ 언어 전환 요청 감지 및 처리 (AI 생성 메시지도 포함)
+        language_change_requested = False
+        requested_lang = None
+        
+        # 영어 전환 요청 감지
+        english_requests = [
+            "can we speak english", "speak english", "english please", 
+            "english, please", "in english", "use english",
+            "영어로", "영어로 말씀해주세요", "영어로 해주세요", "영어로 부탁합니다"
+        ]
+        
+        # 일본어 전환 요청 감지
+        japanese_requests = [
+            "日本語で", "日本語でお願いします", "日本語で話してください",
+            "speak japanese", "japanese please", "in japanese", "use japanese"
+        ]
+        
+        # 한국어 전환 요청 감지
+        korean_requests = [
+            "한국어로", "한국어로 말씀해주세요", "한국어로 해주세요",
+            "speak korean", "korean please", "in korean", "use korean"
+        ]
+        
+        customer_response_lower = customer_response.lower()
+        
+        # 언어 전환 요청 확인
+        if any(req.lower() in customer_response_lower for req in english_requests):
+            requested_lang = "en"
+            language_change_requested = True
+        elif any(req.lower() in customer_response_lower for req in japanese_requests):
+            requested_lang = "ja"
+            language_change_requested = True
+        elif any(req.lower() in customer_response_lower for req in korean_requests):
+            requested_lang = "ko"
+            language_change_requested = True
+        
+        # 언어 전환 처리
+        if language_change_requested and requested_lang:
+            current_lang_state = st.session_state.get("language", "ko")
+            if requested_lang != current_lang_state:
+                st.session_state.language = requested_lang
+                lang_names = {"ko": "한국어", "en": "English", "ja": "日本語"}
+                st.info(f"🌐 고객의 요청에 따라 언어가 {lang_names[requested_lang]}로 자동 변경되었습니다.")
+                # L 업데이트
+                L = LANG.get(requested_lang, LANG["ko"])
+                current_lang = requested_lang
+        else:
+            # 언어 전환 요청이 없으면 메시지 언어 자동 감지
+            try:
+                from utils.customer_analysis import detect_text_language
+                detected_lang = detect_text_language(customer_response)
+                if detected_lang in ["ko", "en", "ja"]:
+                    current_lang_state = st.session_state.get("language", "ko")
+                    if detected_lang != current_lang_state:
+                        # 감지된 언어가 현재 언어와 다르고, 메시지가 해당 언어로 작성된 경우
+                        # (단, 언어 전환 요청이 명확하지 않은 경우만 자동 감지)
+                        st.session_state.language = detected_lang
+                        lang_names = {"ko": "한국어", "en": "English", "ja": "日本語"}
+                        st.info(f"🌐 입력 언어가 감지되어 언어 설정이 {lang_names[detected_lang]}로 자동 변경되었습니다.")
+                        L = LANG.get(detected_lang, LANG["ko"])
+                        current_lang = detected_lang
+            except Exception as e:
+                # 언어 감지 실패 시 현재 언어 유지
+                print(f"Language detection failed: {e}")
 
         # 메시지 추가 및 즉시 화면 반영을 위한 상태 업데이트
         new_message = {"role": "customer", "content": customer_response}
@@ -213,7 +325,72 @@ def render_customer_turn(L, current_lang):
         else:
             st.session_state.sim_stage = "AGENT_TURN"
     else:
+        # 기존 고객 메시지가 있는 경우
         customer_response = last_customer_message
+        
+        # ⭐ 기존 고객 메시지에서도 언어 전환 요청 확인
+        if customer_response:
+            language_change_requested = False
+            requested_lang = None
+            
+            # 영어 전환 요청 감지
+            english_requests = [
+                "can we speak english", "speak english", "english please", 
+                "english, please", "in english", "use english",
+                "영어로", "영어로 말씀해주세요", "영어로 해주세요", "영어로 부탁합니다"
+            ]
+            
+            # 일본어 전환 요청 감지
+            japanese_requests = [
+                "日本語で", "日本語でお願いします", "日本語で話してください",
+                "speak japanese", "japanese please", "in japanese", "use japanese"
+            ]
+            
+            # 한국어 전환 요청 감지
+            korean_requests = [
+                "한국어로", "한국어로 말씀해주세요", "한국어로 해주세요",
+                "speak korean", "korean please", "in korean", "use korean"
+            ]
+            
+            customer_response_lower = customer_response.lower()
+            
+            # 언어 전환 요청 확인
+            if any(req.lower() in customer_response_lower for req in english_requests):
+                requested_lang = "en"
+                language_change_requested = True
+            elif any(req.lower() in customer_response_lower for req in japanese_requests):
+                requested_lang = "ja"
+                language_change_requested = True
+            elif any(req.lower() in customer_response_lower for req in korean_requests):
+                requested_lang = "ko"
+                language_change_requested = True
+            
+            # 언어 전환 처리
+            if language_change_requested and requested_lang:
+                current_lang_state = st.session_state.get("language", "ko")
+                if requested_lang != current_lang_state:
+                    st.session_state.language = requested_lang
+                    lang_names = {"ko": "한국어", "en": "English", "ja": "日本語"}
+                    st.info(f"🌐 고객의 요청에 따라 언어가 {lang_names[requested_lang]}로 자동 변경되었습니다.")
+                    # L 업데이트
+                    L = LANG.get(requested_lang, LANG["ko"])
+                    current_lang = requested_lang
+            else:
+                # 언어 전환 요청이 없으면 메시지 언어 자동 감지
+                try:
+                    from utils.customer_analysis import detect_text_language
+                    detected_lang = detect_text_language(customer_response)
+                    if detected_lang in ["ko", "en", "ja"]:
+                        current_lang_state = st.session_state.get("language", "ko")
+                        if detected_lang != current_lang_state:
+                            st.session_state.language = detected_lang
+                            lang_names = {"ko": "한국어", "en": "English", "ja": "日本語"}
+                            st.info(f"🌐 입력 언어가 감지되어 언어 설정이 {lang_names[detected_lang]}로 자동 변경되었습니다.")
+                            L = LANG.get(detected_lang, LANG["ko"])
+                            current_lang = detected_lang
+                except Exception as e:
+                    # 언어 감지 실패 시 현재 언어 유지
+                    print(f"Language detection failed: {e}")
 
     # 종료 조건 검토
     escaped_no_more = re.escape(L["customer_no_more_inquiries"])

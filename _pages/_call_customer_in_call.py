@@ -52,6 +52,69 @@ def process_audio_input(customer_audio_input, current_lang, L):
             if transcript and transcript.strip():
                 transcript = transcript.strip()
                 
+                # ⭐ 언어 전환 요청 감지 및 처리 (오디오 전사 결과도 포함)
+                language_change_requested = False
+                requested_lang = None
+                
+                # 영어 전환 요청 감지
+                english_requests = [
+                    "can we speak english", "speak english", "english please", 
+                    "english, please", "in english", "use english",
+                    "영어로", "영어로 말씀해주세요", "영어로 해주세요", "영어로 부탁합니다"
+                ]
+                
+                # 일본어 전환 요청 감지
+                japanese_requests = [
+                    "日本語で", "日本語でお願いします", "日本語で話してください",
+                    "speak japanese", "japanese please", "in japanese", "use japanese"
+                ]
+                
+                # 한국어 전환 요청 감지
+                korean_requests = [
+                    "한국어로", "한국어로 말씀해주세요", "한국어로 해주세요",
+                    "speak korean", "korean please", "in korean", "use korean"
+                ]
+                
+                transcript_lower = transcript.lower()
+                
+                # 언어 전환 요청 확인
+                if any(req.lower() in transcript_lower for req in english_requests):
+                    requested_lang = "en"
+                    language_change_requested = True
+                elif any(req.lower() in transcript_lower for req in japanese_requests):
+                    requested_lang = "ja"
+                    language_change_requested = True
+                elif any(req.lower() in transcript_lower for req in korean_requests):
+                    requested_lang = "ko"
+                    language_change_requested = True
+                
+                # 언어 전환 처리
+                if language_change_requested and requested_lang:
+                    current_lang_state = st.session_state.get("language", "ko")
+                    if requested_lang != current_lang_state:
+                        st.session_state.language = requested_lang
+                        lang_names = {"ko": "한국어", "en": "English", "ja": "日本語"}
+                        st.info(f"🌐 언어가 {lang_names[requested_lang]}로 자동 변경되었습니다.")
+                        # 언어 변경 후 L 업데이트
+                        L = LANG.get(requested_lang, LANG["ko"])
+                        current_lang = requested_lang
+                else:
+                    # 언어 전환 요청이 없으면 메시지 언어 자동 감지
+                    try:
+                        from utils.customer_analysis import detect_text_language
+                        detected_lang = detect_text_language(transcript)
+                        if detected_lang in ["ko", "en", "ja"]:
+                            current_lang_state = st.session_state.get("language", "ko")
+                            if detected_lang != current_lang_state:
+                                st.session_state.language = detected_lang
+                                lang_names = {"ko": "한국어", "en": "English", "ja": "日本語"}
+                                st.info(f"🌐 입력 언어가 감지되어 언어 설정이 {lang_names[detected_lang]}로 자동 변경되었습니다.")
+                                L = LANG.get(detected_lang, LANG["ko"])
+                                current_lang = detected_lang
+                    except Exception as e:
+                        # 언어 감지 실패 시 현재 언어 유지
+                        print(f"Language detection failed: {e}")
+                
                 # 고객 메시지로 즉시 추가 (UI 업데이트 최소화)
                 st.session_state.call_messages.append({
                     "role": "customer",
@@ -82,6 +145,69 @@ def process_text_input(user_input, current_lang, L):
         return
     
     user_input = user_input.strip()
+    
+    # ⭐ 언어 전환 요청 감지 및 처리
+    language_change_requested = False
+    requested_lang = None
+    
+    # 영어 전환 요청 감지
+    english_requests = [
+        "can we speak english", "speak english", "english please", 
+        "english, please", "in english", "use english",
+        "영어로", "영어로 말씀해주세요", "영어로 해주세요", "영어로 부탁합니다"
+    ]
+    
+    # 일본어 전환 요청 감지
+    japanese_requests = [
+        "日本語で", "日本語でお願いします", "日本語で話してください",
+        "speak japanese", "japanese please", "in japanese", "use japanese"
+    ]
+    
+    # 한국어 전환 요청 감지
+    korean_requests = [
+        "한국어로", "한국어로 말씀해주세요", "한국어로 해주세요",
+        "speak korean", "korean please", "in korean", "use korean"
+    ]
+    
+    user_input_lower = user_input.lower()
+    
+    # 언어 전환 요청 확인
+    if any(req.lower() in user_input_lower for req in english_requests):
+        requested_lang = "en"
+        language_change_requested = True
+    elif any(req.lower() in user_input_lower for req in japanese_requests):
+        requested_lang = "ja"
+        language_change_requested = True
+    elif any(req.lower() in user_input_lower for req in korean_requests):
+        requested_lang = "ko"
+        language_change_requested = True
+    
+    # 언어 전환 처리
+    if language_change_requested and requested_lang:
+        current_lang_state = st.session_state.get("language", "ko")
+        if requested_lang != current_lang_state:
+            st.session_state.language = requested_lang
+            lang_names = {"ko": "한국어", "en": "English", "ja": "日本語"}
+            st.info(f"🌐 언어가 {lang_names[requested_lang]}로 자동 변경되었습니다.")
+            # 언어 변경 후 L 업데이트
+            L = LANG.get(requested_lang, LANG["ko"])
+            current_lang = requested_lang
+    else:
+        # 언어 전환 요청이 없으면 메시지 언어 자동 감지
+        try:
+            from utils.customer_analysis import detect_text_language
+            detected_lang = detect_text_language(user_input)
+            if detected_lang in ["ko", "en", "ja"]:
+                current_lang_state = st.session_state.get("language", "ko")
+                if detected_lang != current_lang_state:
+                    st.session_state.language = detected_lang
+                    lang_names = {"ko": "한국어", "en": "English", "ja": "日本語"}
+                    st.info(f"🌐 입력 언어가 감지되어 언어 설정이 {lang_names[detected_lang]}로 자동 변경되었습니다.")
+                    L = LANG.get(detected_lang, LANG["ko"])
+                    current_lang = detected_lang
+        except Exception as e:
+            # 언어 감지 실패 시 현재 언어 유지
+            print(f"Language detection failed: {e}")
     
     # 중복 처리 방지 - 최근 처리된 텍스트와 비교 (같은 세션 내에서만)
     last_processed_text_key = "last_processed_text_call"

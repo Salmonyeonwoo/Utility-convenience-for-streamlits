@@ -28,6 +28,7 @@ env/
 
 # Streamlit
 .streamlit/secrets.toml
+.streamlit/config.toml
 
 # IDE
 .idea/
