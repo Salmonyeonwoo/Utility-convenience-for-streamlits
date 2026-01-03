@@ -668,26 +668,34 @@ Guideline (in English):
 def generate_initial_advice(customer_query, customer_type_display, customer_email, customer_phone, current_lang_key,
                              customer_attachment_file):
     """Supervisor 가이드라인과 초안을 생성하는 함수 (저장된 데이터 활용)"""
-    # 입력 텍스트의 언어를 자동 감지 (오류 발생 시 안전하게 처리)
-    try:
-        detected_lang = detect_text_language(customer_query)
-    except Exception as e:
-        print(f"Language detection failed in generate_initial_advice: {e}")
-        detected_lang = current_lang_key if current_lang_key else "ko"
-    
-    # 감지된 언어를 우선 사용하되, current_lang_key가 명시적으로 제공되면 그것을 사용
-    lang_key_to_use = detected_lang if detected_lang else current_lang_key
-    # lang_key_to_use가 유효한지 확인
-    if lang_key_to_use not in ["ko", "en", "ja"]:
-        lang_key_to_use = current_lang_key if current_lang_key else "ko"
-    
-    # 언어 키 검증
-    if lang_key_to_use not in ["ko", "en", "ja"]:
+    # ⭐ 중요: current_lang_key가 명시적으로 제공되면 그것을 우선 사용
+    # (언어 설정을 존중하기 위해)
+    if current_lang_key and current_lang_key in ["ko", "en", "ja"]:
+        lang_key_to_use = current_lang_key
+        print(f"[DEBUG] generate_initial_advice: Using provided current_lang_key = {lang_key_to_use}")
+    else:
+        # current_lang_key가 없거나 유효하지 않으면 세션 상태에서 가져오기
         lang_key_to_use = st.session_state.get("language", "ko")
         if lang_key_to_use not in ["ko", "en", "ja"]:
-            lang_key_to_use = "ko"
+            # 여전히 유효하지 않으면 고객 쿼리 언어 감지 (fallback)
+            try:
+                detected_lang = detect_text_language(customer_query)
+                if detected_lang and detected_lang in ["ko", "en", "ja"]:
+                    lang_key_to_use = detected_lang
+                    print(f"[DEBUG] generate_initial_advice: Using detected language = {lang_key_to_use}")
+                else:
+                    lang_key_to_use = "ko"  # 최종 fallback
+                    print(f"[DEBUG] generate_initial_advice: Using fallback language = {lang_key_to_use}")
+            except Exception as e:
+                print(f"Language detection failed in generate_initial_advice: {e}")
+                lang_key_to_use = "ko"  # 최종 fallback
+        else:
+            print(f"[DEBUG] generate_initial_advice: Using session state language = {lang_key_to_use}")
+    
+    print(f"[DEBUG] generate_initial_advice: Final lang_key_to_use = {lang_key_to_use}")
     L = LANG.get(lang_key_to_use, LANG["ko"])
     lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[lang_key_to_use]
+    print(f"[DEBUG] generate_initial_advice: lang_name = {lang_name}")
 
     # 언어별 contact_info_block
     if lang_key_to_use == "ko":
