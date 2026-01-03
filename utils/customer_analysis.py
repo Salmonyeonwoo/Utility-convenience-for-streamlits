@@ -800,18 +800,25 @@ Consider reviewing past cases manually for patterns.]
     # 언어별 프롬프트 생성 (각 언어로 명확하게 작성)
     if lang_key_to_use == "ko":
         initial_prompt = f"""
-모든 텍스트(가이드라인 및 초안)를 반드시 한국어로 작성하세요.
+🔴 🔴 🔴 극도로 중요 🔴 🔴 🔴
+당신의 모든 응답(가이드라인과 초안 포함)은 반드시 100% 한국어로 작성되어야 합니다.
+영어나 일본어를 절대 사용하지 마세요. 모든 텍스트는 한국어여야 합니다.
+🔴 🔴 🔴 극도로 중요 🔴 🔴 🔴
 
 당신은 AI 고객 지원 슈퍼바이저입니다. 다음 고객 문의를 분석하여 제공하세요:
 고객 유형: **{st.session_state.customer_type_sim_select}**
 
-1) 상담원을 위한 상세한 **응대 가이드라인** (단계별)
-2) **전송 가능한 응대 초안** (한국어로)
+1) 상담원을 위한 상세한 **응대 가이드라인** (단계별, 반드시 한국어로)
+2) **전송 가능한 응대 초안** (반드시 한국어로)
 
-[형식]
-- 다음 마크다운 헤더를 정확히 사용하세요:
-  - "### {L['simulation_advice_header']}"
-  - "### {L['simulation_draft_header']}"
+[응답 형식 - 반드시 이 형식으로 작성하세요]
+### {L['simulation_advice_header']}
+
+(여기에 한국어로 가이드라인 작성)
+
+### {L['simulation_draft_header']}
+
+(여기에 한국어로 초안 작성)
 
 [중요 가이드라인 규칙]
 1. **초기 정보 수집 (요청 3):** 가이드라인의 첫 번째 단계는 문제 해결을 시도하기 전에 필수적인 초기 진단 정보(예: 기기 호환성, 현지 상태/위치, 주문 번호)를 요청해야 합니다.
@@ -822,29 +829,36 @@ Consider reviewing past cases manually for patterns.]
    - 후속 연락을 위해 고객의 이메일 또는 전화번호를 요청합니다. (제공된 연락처 정보가 있으면 사용)
 4. **과거 사례 학습:** 과거 사례 가이드라인이 제공된 경우, 해당 사례의 성공적인 전략을 권장사항에 통합하세요.
 
+⚠️ 언어 요구사항: 모든 텍스트(가이드라인, 초안, 설명 등)는 반드시 한국어로만 작성하세요. 영어나 일본어를 사용하면 안 됩니다.
+
 고객 문의:
 {customer_query}
 {contact_info_block}
 {attachment_block}
 {profile_block}
 {past_cases_block}
-
-⚠️ 중요: 모든 응답(가이드라인과 초안 모두)을 반드시 한국어로 작성하세요. 영어나 다른 언어를 사용하지 마세요.
 """
     elif lang_key_to_use == "en":
         initial_prompt = f"""
-Output ALL text (guidelines and draft) STRICTLY in English.
+🔴 🔴 🔴 EXTREMELY IMPORTANT 🔴 🔴 🔴
+ALL your responses (including guidelines and draft) MUST be written 100% in English.
+Do NOT use Korean or Japanese. All text must be in English.
+🔴 🔴 🔴 EXTREMELY IMPORTANT 🔴 🔴 🔴
 
 You are an AI Customer Support Supervisor. Your role is to analyze the following customer inquiry
 from a **{st.session_state.customer_type_sim_select}** and provide:
 
-1) A detailed **response guideline for the human agent** (step-by-step).
-2) A **ready-to-send draft reply** in English.
+1) A detailed **response guideline for the human agent** (step-by-step, must be in English).
+2) A **ready-to-send draft reply** (must be in English).
 
-[FORMAT]
-- Use the exact markdown headers:
-  - "### {L['simulation_advice_header']}"
-  - "### {L['simulation_draft_header']}"
+[RESPONSE FORMAT - You MUST write in this format]
+### {L['simulation_advice_header']}
+
+(Write guidelines here in English)
+
+### {L['simulation_draft_header']}
+
+(Write draft here in English)
 
 [CRITICAL GUIDELINE RULES]
 1. **Initial Information Collection (Req 3):** The first step in the guideline MUST be to request the necessary initial diagnostic information (e.g., device compatibility, local status/location, order number) BEFORE attempting to troubleshoot or solve the problem.
@@ -855,14 +869,14 @@ from a **{st.session_state.customer_type_sim_select}** and provide:
    - Request the customer's email or phone number for follow-up contact. (Use provided contact info if available)
 4. **Past Cases Learning:** If past cases guidelines are provided, incorporate successful strategies from those cases into your recommendations.
 
+⚠️ LANGUAGE REQUIREMENT: All text (guidelines, draft, descriptions, etc.) MUST be written ONLY in English. Do NOT use Korean or Japanese.
+
 Customer Inquiry:
 {customer_query}
 {contact_info_block}
 {attachment_block}
 {profile_block}
 {past_cases_block}
-
-⚠️ IMPORTANT: You MUST write ALL responses (both guidelines and draft) STRICTLY in English. Do NOT use Korean, Japanese, or any other language.
 """
     else:  # ja
         initial_prompt = f"""
@@ -894,8 +908,6 @@ Customer Inquiry:
 {attachment_block}
 {profile_block}
 {past_cases_block}
-
-⚠️ 重要: すべての応答（ガイドラインと草案の両方）を必ず日本語で作成してください。英語や韓国語、その他の言語は使用しないでください。
 """
     if not st.session_state.is_llm_ready:
         # 언어별 Mock 텍스트
