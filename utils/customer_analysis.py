@@ -689,12 +689,23 @@ def generate_initial_advice(customer_query, customer_type_display, customer_emai
     L = LANG.get(lang_key_to_use, LANG["ko"])
     lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[lang_key_to_use]
 
+    # 언어별 contact_info_block
+    if lang_key_to_use == "ko":
+        contact_info_text = "고객 연락처 정보 (참고용, 응대 초안에는 사용하지 마세요!)"
+    elif lang_key_to_use == "en":
+        contact_info_text = "Customer contact info for reference (DO NOT use these in your reply draft!)"
+    else:  # ja
+        contact_info_text = "顧客連絡先情報（参考用、対応草案には使用しないでください！）"
+    
     contact_info_block = ""
     if customer_email or customer_phone:
+        email_label = {"ko": "이메일", "en": "Email", "ja": "メール"}[lang_key_to_use]
+        phone_label = {"ko": "전화번호", "en": "Phone", "ja": "電話番号"}[lang_key_to_use]
+        na_text = {"ko": "없음", "en": "N/A", "ja": "なし"}[lang_key_to_use]
         contact_info_block = (
-            f"\n\n[Customer contact info for reference (DO NOT use these in your reply draft!)]"
-            f"\n- Email: {customer_email or 'N/A'}"
-            f"\n- Phone: {customer_phone or 'N/A'}"
+            f"\n\n[{contact_info_text}]\n"
+            f"- {email_label}: {customer_email or na_text}\n"
+            f"- {phone_label}: {customer_phone or na_text}"
         )
 
     attachment_block = ""
@@ -715,9 +726,21 @@ def generate_initial_advice(customer_query, customer_type_display, customer_emai
             customer_query, customer_profile, similar_cases, lang_key_to_use
         )
 
-    # 고객 프로필 정보
+    # 언어별 고객 프로필 정보
     gender_display = customer_profile.get('gender', 'unknown')
-    profile_block = f"""
+    if lang_key_to_use == "ko":
+        profile_block = f"""
+[고객 프로필 분석]
+- 성별: {gender_display}
+- 감정 점수: {customer_profile.get('sentiment_score', 50)}/100
+- 커뮤니케이션 스타일: {customer_profile.get('communication_style', 'unknown')}
+- 긴급도: {customer_profile.get('urgency_level', 'medium')}
+- 예측 유형: {customer_profile.get('predicted_customer_type', 'normal')}
+- 주요 관심사: {', '.join(customer_profile.get('key_concerns', []))}
+- 톤: {customer_profile.get('tone_analysis', 'unknown')}
+"""
+    elif lang_key_to_use == "en":
+        profile_block = f"""
 [Customer Profile Analysis]
 - Gender: {gender_display}
 - Sentiment Score: {customer_profile.get('sentiment_score', 50)}/100
@@ -727,18 +750,51 @@ def generate_initial_advice(customer_query, customer_type_display, customer_emai
 - Key Concerns: {', '.join(customer_profile.get('key_concerns', []))}
 - Tone: {customer_profile.get('tone_analysis', 'unknown')}
 """
+    else:  # ja
+        profile_block = f"""
+[顧客プロファイル分析]
+- 性別: {gender_display}
+- 感情スコア: {customer_profile.get('sentiment_score', 50)}/100
+- コミュニケーションスタイル: {customer_profile.get('communication_style', 'unknown')}
+- 緊急度: {customer_profile.get('urgency_level', 'medium')}
+- 予測タイプ: {customer_profile.get('predicted_customer_type', 'normal')}
+- 主要な関心事: {', '.join(customer_profile.get('key_concerns', []))}
+- トーン: {customer_profile.get('tone_analysis', 'unknown')}
+"""
 
-    # 과거 케이스 기반 가이드라인 블록
+    # 언어별 과거 케이스 기반 가이드라인 블록
     past_cases_block = ""
     if past_cases_guideline:
-        past_cases_block = f"""
+        if lang_key_to_use == "ko":
+            past_cases_block = f"""
+[유사한 과거 {len(similar_cases)}개 사례 기반 가이드라인]
+{past_cases_guideline}
+"""
+        elif lang_key_to_use == "en":
+            past_cases_block = f"""
 [Guidelines Based on {len(similar_cases)} Similar Past Cases]
 {past_cases_guideline}
 """
+        else:  # ja
+            past_cases_block = f"""
+[類似した過去{len(similar_cases)}件の事例に基づくガイドライン]
+{past_cases_guideline}
+"""
     elif similar_cases:
-        past_cases_block = f"""
+        if lang_key_to_use == "ko":
+            past_cases_block = f"""
+[참고: 유사한 과거 사례 {len(similar_cases)}개를 찾았지만 상세 가이드라인을 생성할 수 없습니다.
+패턴을 확인하기 위해 과거 사례를 수동으로 검토하는 것을 고려하세요.]
+"""
+        elif lang_key_to_use == "en":
+            past_cases_block = f"""
 [Note: Found {len(similar_cases)} similar past cases, but unable to generate detailed guidelines.
 Consider reviewing past cases manually for patterns.]
+"""
+        else:  # ja
+            past_cases_block = f"""
+[注: 類似した過去の事例{len(similar_cases)}件が見つかりましたが、詳細なガイドラインを生成できませんでした。
+パターンを確認するために、過去の事例を手動で確認することを検討してください。]
 """
 
     # 언어별 프롬프트 생성 (각 언어로 명확하게 작성)
@@ -772,6 +828,8 @@ Consider reviewing past cases manually for patterns.]
 {attachment_block}
 {profile_block}
 {past_cases_block}
+
+⚠️ 중요: 모든 응답(가이드라인과 초안 모두)을 반드시 한국어로 작성하세요. 영어나 다른 언어를 사용하지 마세요.
 """
     elif lang_key_to_use == "en":
         initial_prompt = f"""
@@ -803,6 +861,8 @@ Customer Inquiry:
 {attachment_block}
 {profile_block}
 {past_cases_block}
+
+⚠️ IMPORTANT: You MUST write ALL responses (both guidelines and draft) STRICTLY in English. Do NOT use Korean, Japanese, or any other language.
 """
     else:  # ja
         initial_prompt = f"""
@@ -834,6 +894,8 @@ Customer Inquiry:
 {attachment_block}
 {profile_block}
 {past_cases_block}
+
+⚠️ 重要: すべての応答（ガイドラインと草案の両方）を必ず日本語で作成してください。英語や韓国語、その他の言語は使用しないでください。
 """
     if not st.session_state.is_llm_ready:
         # 언어별 Mock 텍스트
