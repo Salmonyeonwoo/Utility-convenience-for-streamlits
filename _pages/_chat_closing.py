@@ -67,15 +67,30 @@ def render_escalation(L, current_lang):
 
 def render_wait_closing_confirmation(L, current_lang):
     """종료 확인 메시지 대기 단계 렌더링"""
-    st.success(
-        L.get(
-            "customer_positive_solution_reaction",
-            "고객이 솔루션에 만족했습니다."))
-
-    st.info(
-        L.get(
-            "info_use_buttons",
-            "💡 아래 버튼을 사용하여 추가 문의 여부를 확인하거나 상담을 종료하세요."))
+    # ⭐ 고객 모드 확인
+    perspective = st.session_state.get("sim_perspective", "AGENT")
+    is_customer_mode = (perspective == "CUSTOMER")
+    
+    if is_customer_mode:
+        # 고객 모드: 고객이 추가 문의 여부를 선택할 수 있는 버튼 표시
+        st.success(
+            L.get(
+                "customer_positive_solution_reaction",
+                "고객이 솔루션에 만족했습니다."))
+        st.info(
+            L.get(
+                "info_use_buttons",
+                "💡 아래 버튼을 사용하여 추가 문의 여부를 확인하거나 상담을 종료하세요."))
+    else:
+        # 에이전트 모드: 에이전트가 종료 확인 메시지를 보낼 수 있는 버튼 표시
+        st.success(
+            L.get(
+                "customer_positive_solution_reaction",
+                "고객이 솔루션에 만족했습니다."))
+        st.info(
+            L.get(
+                "info_use_buttons",
+                "💡 아래 버튼을 사용하여 추가 문의 여부를 확인하거나 상담을 종료하세요."))
 
     col_chat_end, col_email_end = st.columns(2)
 

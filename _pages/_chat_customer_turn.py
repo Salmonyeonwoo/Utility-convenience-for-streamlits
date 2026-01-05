@@ -76,34 +76,39 @@ def render_customer_turn(L, current_lang):
             
             # ⭐ 고객 모드일 때도 closing 단계 전환 로직 적용
             
+            # ⭐ 추가 문의 의도 키워드 확인 (엔딩으로 가지 않도록)
+            additional_inquiry_keywords = [
+                "추가", "더", "또", "그런데", "그리고", "또한", "또한", "문의", "질문", "궁금",
+                "additional", "more", "also", "but", "and", "question", "inquiry", "wonder",
+                "追加", "もっと", "また", "でも", "そして", "質問", "問い合わせ", "疑問"
+            ]
+            has_additional_inquiry_intent = any(
+                keyword in customer_response for keyword in additional_inquiry_keywords
+            )
+            
             # 다국어 지원: 고객의 긍정적 종료 응답 감지 (존경어 표현 포함)
+            # ⭐ 단, 추가 문의 의도가 없는 경우에만 종료로 간주
             positive_response_keywords = [
                 L["customer_positive_response"],  # 다국어 키 사용
                 "알겠습니다", "알겠어요", "네", "yes", "ok", "okay", 
-                "承知致しました", "承知いたしました", "了解しました",
-                "감사합니다", "thank you", "ありがとうございます", "thanks", "thank"
+                "承知致しました", "承知いたしました", "了解しました"
             ]
             has_positive_response = any(
                 keyword.lower() in customer_response.lower() 
                 for keyword in positive_response_keywords
             )
-            # "알겠습니다" + "감사합니다" 조합도 감지 (다국어, 일본어는 존경어 표현)
-            # 마침표, 공백 등을 고려하여 감지
+            # "알겠습니다" + "감사합니다" 조합 감지 (다국어, 일본어는 존경어 표현)
+            # ⭐ 추가 문의 의도가 없고, 두 키워드가 모두 포함된 경우에만 종료로 간주
             has_positive_combination = (
-                ("알겠습니다" in customer_response or "알겠어요" in customer_response or 
+                not has_additional_inquiry_intent and
+                (("알겠습니다" in customer_response or "알겠어요" in customer_response or 
                  "承知致しました" in customer_response or "承知いたしました" in customer_response or
                  "了解しました" in customer_response or
                  "yes" in customer_response.lower() or "ok" in customer_response.lower() or "okay" in customer_response.lower() or
                  "承知" in customer_response or "了解" in customer_response) and
                 ("감사합니다" in customer_response or "ありがとうございます" in customer_response or 
                  "ありがとう" in customer_response or
-                 "thank you" in customer_response.lower() or "thanks" in customer_response.lower() or "thank" in customer_response.lower())
-            ) or (
-                # 단독으로도 감지: "ありがとうございます"만 있어도 감지
-                "ありがとうございます" in customer_response or 
-                "ありがとう" in customer_response or
-                "감사합니다" in customer_response or
-                "thank you" in customer_response.lower() or "thanks" in customer_response.lower()
+                 "thank you" in customer_response.lower() or "thanks" in customer_response.lower() or "thank" in customer_response.lower()))
             )
             
             # 종료 조건 검토
@@ -126,10 +131,18 @@ def render_customer_turn(L, current_lang):
             )
             is_solution_provided = st.session_state.get("is_solution_provided", False) or has_agent_response
             
-            if (L["customer_positive_response"] in customer_response or 
+            # ⭐ 추가 문의 의도가 있으면 엔딩으로 가지 않음
+            if has_additional_inquiry_intent:
+                # 추가 문의가 있는 경우 일반 응대 계속
+                st.session_state.sim_stage = "AGENT_TURN"
+                st.session_state.ai_agent_response_generated = False
+            elif (L["customer_positive_response"] in customer_response or 
                 has_positive_response or has_positive_combination or is_positive_closing):
+                # ⭐ 솔루션이 제공되었고, 추가 문의 의도가 없는 경우에만 closing 단계로
                 if is_solution_provided:
                     st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
+                    # ⭐ 고객 모드에서 즉시 버튼이 보이도록 rerun
+                    st.rerun()
                 else:
                     # 솔루션이 제공되지 않았으면 일반 응대 계속
                     st.session_state.sim_stage = "AGENT_TURN"
