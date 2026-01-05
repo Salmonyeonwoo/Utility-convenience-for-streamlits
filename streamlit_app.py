@@ -88,8 +88,8 @@ if feature_selection == L.get("home_tab", "홈"):
             st.session_state.ai_suggestion = {}
         render_home_page()
     except ImportError:
-        st.title("📊 대시보드")
-        st.info("홈 페이지 모듈을 불러올 수 없습니다.")
+        st.title(L.get("dashboard_title", "📊 대시보드"))
+        st.info(L.get("home_page_module_error", "홈 페이지 모듈을 불러올 수 없습니다."))
 
 elif feature_selection == L.get("chat_email_tab", "채팅/이메일"):
     if CHAT_SIMULATOR_AVAILABLE:
@@ -105,7 +105,7 @@ elif feature_selection == L.get("chat_email_tab", "채팅/이메일"):
                 st.session_state.ai_suggestion = {}
             render_chat_page()
         except ImportError as e:
-            st.error(f"채팅 페이지 모듈을 불러올 수 없습니다: {str(e)}")
+            st.error(f"{L.get('chat_page_module_error', '채팅 페이지 모듈을 불러올 수 없습니다')}: {str(e)}")
 
 elif feature_selection == L.get("phone_tab", "전화"):
     st.markdown(f"### 📞 {L.get('phone_tab', '전화')}")
@@ -113,13 +113,13 @@ elif feature_selection == L.get("phone_tab", "전화"):
     if PHONE_SIMULATOR_AVAILABLE:
         render_phone_simulator()
     else:
-        st.error("전화 시뮬레이터 탭 모듈을 찾을 수 없습니다.")
+        st.error(L.get("phone_simulator_module_not_found", "전화 시뮬레이터 탭 모듈을 찾을 수 없습니다."))
 
 elif feature_selection == L.get("customer_data_inquiry_tab", "고객 데이터 조회"):
     st.markdown(f"### 📋 {L.get('customer_data_inquiry_tab', '고객 데이터 조회')}")
-    st.caption("고객 정보를 조회하고 이전 응대 이력을 확인합니다.")
+    st.caption(L.get("customer_data_inquiry_desc", "고객 정보를 조회하고 이전 응대 이력을 확인합니다."))
     try:
         from _pages._customer_data import render_customer_data_page
         render_customer_data_page()
     except ImportError:
-        st.error("고객 데이터 조회 모듈을 찾을 수 없습니다.")
+        st.error(L.get("customer_data_module_not_found", "고객 데이터 조회 모듈을 찾을 수 없습니다."))

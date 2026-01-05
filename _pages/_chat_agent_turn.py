@@ -1118,6 +1118,7 @@ def render_agent_turn(L, current_lang):
                 print(f"에이전트 응답 이력 기록 오류: {e}")
             
             # ⭐ 메시지 추가 시 즉시 화면 업데이트를 위한 rerun
+            st.rerun()
 
             # 메일 끝인사 확인
             email_closing_patterns = [
@@ -1149,6 +1150,7 @@ def render_agent_turn(L, current_lang):
                 st.session_state.pending_customer_reaction = True
                 st.session_state.pending_customer_reaction_for_msg_idx = len(st.session_state.simulator_messages) - 1
                 # ⭐ 고객 반응 추가 시 즉시 화면 업데이트
+                st.rerun()
 
                 # 다음 단계 결정 (고객 반응이 아직 생성되지 않았으므로 기본적으로 CUSTOMER_TURN으로 설정)
                 # 고객 반응이 생성된 후에는 pending_customer_reaction 블록에서 처리됨

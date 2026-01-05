@@ -83,19 +83,19 @@ def render_file_loader_panel(L, current_lang):
         # 날짜 기준 최신순 정렬
         today_files.sort(key=lambda x: x.get("modified_time", ""), reverse=True)
         
-        # 매일 20~30개 제한 (최대 30개, 파일이 30개 이상이면 30개만 표시)
-        daily_limit = min(30, len(today_files))
+        # 매일 정확히 20개 제한
+        daily_limit = 20
         filtered_files = today_files[:daily_limit] if len(today_files) > 0 else []
         
         if filtered_files:
-            with st.expander(f"📁 {L.get('load_history_from_file', '파일에서 이력 불러오기')} (오늘: {len(filtered_files)}개)", expanded=False):
+            with st.expander(f"📁 {L.get('load_history_from_file', '파일에서 이력 불러오기')} ({L.get('today', '오늘')}: {len(filtered_files)}{L.get('files_count', '개')})", expanded=False):
                 local_files = [f for f in filtered_files if f.get("source") == "local"]
                 github_files = [f for f in filtered_files if f.get("source") in ["github", "github_api"]]
                 
                 if local_files:
-                    st.markdown(f"**📂 {L.get('local_files', '로컬 파일')}** (오늘 수정: {len(local_files)}개)")
+                    st.markdown(f"**📂 {L.get('local_files', '로컬 파일')}** ({L.get('today_modified', '오늘 수정')}: {len(local_files)}{L.get('files_count', '개')})")
                 if github_files:
-                    st.markdown(f"**🌐 {L.get('github_files', 'GitHub 파일')}** (오늘 수정: {len(github_files)}개)")
+                    st.markdown(f"**🌐 {L.get('github_files', 'GitHub 파일')}** ({L.get('today_modified', '오늘 수정')}: {len(github_files)}{L.get('files_count', '개')})")
                 
                 file_groups = {}
                 for file_meta in filtered_files:
@@ -113,16 +113,16 @@ def render_file_loader_panel(L, current_lang):
                         "csv": "📋 CSV"
                     }.get(file_type, f"📎 {file_type.upper()}")
                     
-                    st.markdown(f"**{file_type_label} {L.get('file_label', '파일')}** ({len(files)}개)")
+                    st.markdown(f"**{file_type_label} {L.get('file_label', '파일')}** ({len(files)}{L.get('files_count', '개')})")
                     for file_meta in files:
                         _render_file_item(L, file_meta)
                 
                 # 오늘 가져온 파일 수 정보 표시
                 if len(filtered_files) > 0:
-                    st.info(f"ℹ️ 오늘 날짜({today.strftime('%Y-%m-%d')})에 수정된 파일 중 {len(filtered_files)}개를 표시합니다. (제한: 20~30개/일)")
+                    st.info(f"ℹ️ {L.get('today_files_info', '오늘 날짜')}({today.strftime('%Y-%m-%d')}){L.get('modified_files_display', '에 수정된 파일 중')} {len(filtered_files)}{L.get('files_displayed', '개를 표시합니다')}. ({L.get('daily_limit', '제한')}: 20{L.get('files_per_day', '개/일')})")
         elif scanned_files:
             # 오늘 날짜 파일이 없는 경우 안내
-            st.info(f"ℹ️ 오늘 날짜({today.strftime('%Y-%m-%d')})에 수정된 파일이 없습니다. 총 {len(scanned_files)}개의 파일이 검색되었습니다.")
+            st.info(f"ℹ️ {L.get('today_files_info', '오늘 날짜')}({today.strftime('%Y-%m-%d')}){L.get('no_modified_files', '에 수정된 파일이 없습니다')}. {L.get('total_files_scanned', '총')} {len(scanned_files)}{L.get('files_found', '개의 파일이 검색되었습니다')}.")
     except ImportError:
         pass
     except Exception:

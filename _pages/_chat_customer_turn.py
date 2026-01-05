@@ -18,8 +18,8 @@ def render_customer_turn(L, current_lang):
     # ⭐ 고객 체험 모드일 때 사용자가 직접 입력
     perspective = st.session_state.get("sim_perspective", "AGENT")
     if perspective == "CUSTOMER" and st.session_state.sim_stage == "CUSTOMER_TURN":
-        st.info("👤 고객 입장에서 AI 상담원에게 응답을 입력하세요.")
-        user_customer_input = st.chat_input("문의 사항을 입력하세요 (고객 입장)...")
+        st.info(L.get("customer_mode_info", "👤 고객 입장에서 AI 상담원에게 응답을 입력하세요."))
+        user_customer_input = st.chat_input(L.get("customer_inquiry_input_placeholder", "문의 사항을 입력하세요 (고객 입장)..."))
         
         if user_customer_input:
             # ⭐ 언어 전환 요청 감지 및 처리
