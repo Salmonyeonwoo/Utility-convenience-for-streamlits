@@ -171,6 +171,12 @@ def init_all_session_state():
         st.session_state.audio_handler = AppAudioHandler()
     if "call_active" not in st.session_state:
         st.session_state.call_active = False
+    if "selected_customer_id" not in st.session_state:
+        st.session_state.selected_customer_id = None
+    if "last_message_id" not in st.session_state:
+        st.session_state.last_message_id = {}
+    if "ai_suggestion" not in st.session_state:
+        st.session_state.ai_suggestion = {}
     
     # 세션 상태 초기화 모듈 호출
     if SESSION_INIT_AVAILABLE:

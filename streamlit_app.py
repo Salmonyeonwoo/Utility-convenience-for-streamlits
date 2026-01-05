@@ -80,12 +80,6 @@ feature_selection = st.session_state.get(
 if feature_selection == L.get("home_tab", "홈"):
     try:
         from _pages._reference_home import render_home_page
-        if 'selected_customer_id' not in st.session_state:
-            st.session_state.selected_customer_id = None
-        if 'last_message_id' not in st.session_state:
-            st.session_state.last_message_id = {}
-        if 'ai_suggestion' not in st.session_state:
-            st.session_state.ai_suggestion = {}
         render_home_page()
     except ImportError:
         st.title(L.get("dashboard_title", "📊 대시보드"))
@@ -97,12 +91,6 @@ elif feature_selection == L.get("chat_email_tab", "채팅/이메일"):
     else:
         try:
             from _pages._app_chat_page import render_chat_page
-            if 'selected_customer_id' not in st.session_state:
-                st.session_state.selected_customer_id = None
-            if 'last_message_id' not in st.session_state:
-                st.session_state.last_message_id = {}
-            if 'ai_suggestion' not in st.session_state:
-                st.session_state.ai_suggestion = {}
             render_chat_page()
         except ImportError as e:
             st.error(f"{L.get('chat_page_module_error', '채팅 페이지 모듈을 불러올 수 없습니다')}: {str(e)}")
