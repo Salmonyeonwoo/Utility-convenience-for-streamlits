@@ -1,0 +1,38 @@
+{
+    "basic_info": {
+        "customer_id": "CUST-84399A32",
+        "name": "daisuke.yamada50",
+        "phone": "+8190-1234-5678",
+        "email": "daisuke.yamada50@gmail.com",
+        "identity_hash": "0d5a7c7e340b586b5e7c1ec9116c4928",
+        "created_at": "2026-01-03T22:07:36.362077",
+        "last_access_at": "2026-01-03T22:07:36.362077"
+    },
+    "crm_profile": {
+        "trait": "일반",
+        "total_consultations": 0,
+        "avg_satisfaction": 0.0,
+        "tags": []
+    },
+    "consultation_history": [],
+    "agent_manual_responses": [
+        {
+            "response": "公式アプリでのQRコードスキャン方法については、アプリを開いて「チケット」セクションからQRコードを選択し、「スキャン」ボタンをタップする手順キャンセルポリシーについては、予約確認メールに記載されているリンクを辿る手続きをお願い致します。キャンセル手続きが可能であることを伝え、返金がクレジットカードまたは元の支払い方法に対して処理されるようにしてください。",
+            "timestamp": "2026-01-03T22:07:36.415934",
+            "reason": "고객 불만/직접 응대 요청",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "はい。畏まりました。ほかのお問合せはございませんか",
+            "timestamp": "2026-01-03T22:09:28.952683",
+            "reason": "고객 불만/직접 응대 요청",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "はい。畏まりました。それでは、これでチャットの応対を渉猟させて頂きます。",
+            "timestamp": "2026-01-03T22:11:25.113294",
+            "reason": "고객 불만/직접 응대 요청",
+            "is_cancellation_refund": false
+        }
+    ]
+}

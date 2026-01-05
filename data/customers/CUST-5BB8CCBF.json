@@ -1,0 +1,62 @@
+{
+    "basic_info": {
+        "customer_id": "CUST-5BB8CCBF",
+        "name": "hitoshi.takemoto50",
+        "phone": "+8190-1234-5678",
+        "email": "hitoshi.takemoto50@gmail.com",
+        "identity_hash": "1606fdeee847f1d393f0f848e2589206",
+        "created_at": "2026-01-04T17:47:46.725591",
+        "last_access_at": "2026-01-04T17:47:46.725591"
+    },
+    "crm_profile": {
+        "trait": "일반",
+        "total_consultations": 0,
+        "avg_satisfaction": 0.0,
+        "tags": []
+    },
+    "consultation_history": [],
+    "agent_manual_responses": [
+        {
+            "response": "こんばんは。ご連絡頂き、有難う御座います。ユーロースターの音愛わせを確認しました。具体的なお問合せの内容を教えて頂ければ、探してみますので、宜しいでしょうか",
+            "timestamp": "2026-01-04T17:47:46.756591",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "取り合えず、座席の変更の理由を教えて頂けますでしょうか",
+            "timestamp": "2026-01-04T20:45:43.325944",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "畏まりました。これは、我々からは現地当店での職員達と確認する必要があると判断されております。その為、即答は遣り兼ねると思いますが、できるだけ、ユーロースターの会社の職員達と確認したうえで、お客様に24～48時間の以内に、メールアドレスでお伝えいたしますので、少々お待ち頂けますでしょうか",
+            "timestamp": "2026-01-04T21:01:21.187598",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "ご了承頂きありがとうございました。",
+            "timestamp": "2026-01-04T21:03:03.608288",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "お客様、大変お待たせ致しまして申し訳御座いません。会社の職員達と確認しましたところ、現在変更の可能出来るか否かを確認している途中で、確認メールをお客様の予約のメールアドレスに直接に送りますよって、返事を受けましたので、ご参照頂ければと思いますが、宜しいでしょうか",
+            "timestamp": "2026-01-04T21:09:33.277821",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "はい。ありがとうございました。ほかのお問合せは御座いませんか",
+            "timestamp": "2026-01-04T21:11:38.464446",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "はい。それでは、このチャットを終了させて頂きます。",
+            "timestamp": "2026-01-04T21:14:54.458725",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        }
+    ]
+}

@@ -75,6 +75,44 @@
       "service_rating": 0.0,
       "evaluation_data": [],
       "sentiment_analysis": []
+    },
+    {
+      "customer_id": "CUST957A0B2C",
+      "customer_name": "Mr. David Jason",
+      "phone": "+44-1234-5678",
+      "email": "jason.david50@gmail.com",
+      "identity_hash": "77e8ba544da20c81882c63381a494115",
+      "account_created": "2026-01-03",
+      "last_login": "2026-01-03",
+      "last_consultation": "2026-01-03",
+      "consultation_history": [],
+      "personality": "일반",
+      "personality_summary": "",
+      "preferred_destination": "",
+      "travel_budget": "",
+      "survey_score": 0.0,
+      "service_rating": 0.0,
+      "evaluation_data": [],
+      "sentiment_analysis": []
+    },
+    {
+      "customer_id": "CUSTD1FB0D9C",
+      "customer_name": "No name",
+      "phone": "+8210-2153-1208",
+      "email": "noemail@gmail.com",
+      "identity_hash": "909b0e8dae6de2a3ce31f9c68a788acb",
+      "account_created": "2026-01-04",
+      "last_login": "2026-01-04",
+      "last_consultation": "2026-01-04",
+      "consultation_history": [],
+      "personality": "일반",
+      "personality_summary": "",
+      "preferred_destination": "",
+      "travel_budget": "",
+      "survey_score": 0.0,
+      "service_rating": 0.0,
+      "evaluation_data": [],
+      "sentiment_analysis": []
     }
   ]
 }
