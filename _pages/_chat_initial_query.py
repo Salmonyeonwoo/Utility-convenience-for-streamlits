@@ -102,9 +102,11 @@ def render_initial_query(L, current_lang):
                 reg_phone = st.text_input(L.get("contact_required", "연락처 *"), key="reg_phone_chat")
                 reg_email = st.text_input(L.get("email_required", "이메일 *"), key="reg_email_chat")
             with col_reg2:
+                # ⭐ 언어별 고객 성향 옵션 사용
+                personality_options = L.get("personality_options", ["일반", "신중형", "활발형", "가족형", "프리미엄형", "절약형", "자유형"])
                 reg_personality = st.selectbox(
                     L.get("customer_personality", "고객 성향"), 
-                    ["일반", "신중형", "활발형", "가족형", "프리미엄형", "절약형", "자유형"], 
+                    personality_options, 
                     key="reg_personality_chat"
                 )
                 reg_destination = st.text_input(L.get("preferred_destination", "선호 여행지"), key="reg_destination_chat")

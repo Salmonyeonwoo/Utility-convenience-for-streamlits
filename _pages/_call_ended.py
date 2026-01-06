@@ -64,9 +64,11 @@ def render_call_ended():
                     key="call_ended_customer_email",
                     value=st.session_state.get("call_customer_email", "")
                 )
+                # ⭐ 언어별 고객 성향 옵션 사용
+                personality_options = L.get("personality_options", ["일반", "신중형", "활발형", "가족형", "프리미엄형", "절약형", "자유형"])
                 call_customer_personality = st.selectbox(
                     L.get("personality_label", "고객 성향"),
-                    ["일반", "신중형", "활발형", "가족형", "프리미엄형", "절약형", "자유형"],
+                    personality_options,
                     key="call_ended_customer_personality",
                     index=0
                 )
@@ -98,7 +100,8 @@ def render_call_ended():
                             'customer_name': call_customer_name,
                             'phone': call_customer_phone,
                             'email': call_customer_email,
-                            'personality': call_customer_personality
+                            'personality': call_customer_personality,
+                            'inquiry_summary': call_summary_memo  # ⭐ 추가: 문의 내용 요약 저장
                         }
                         customer_id = manager.create_customer(customer_data)
                         st.session_state.call_customer_id = customer_id

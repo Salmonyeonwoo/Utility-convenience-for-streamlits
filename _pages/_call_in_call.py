@@ -255,9 +255,9 @@ def render_call_in_call():
     
     with audio_col1:
         audio_input = st.audio_input(
-            "말씀하세요",
+            L.get("audio_speak_label", "말씀하세요"),
             key="call_audio_input_in_call",
-            help="음성을 녹음하면 자동으로 전사됩니다"
+            help=L.get("audio_input_help", "음성을 녹음하면 자동으로 전사됩니다")
         )
     
     with audio_col2:

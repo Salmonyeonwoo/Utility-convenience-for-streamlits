@@ -141,8 +141,8 @@ def render_customer_turn(L, current_lang):
                 # ⭐ 솔루션이 제공되었고, 추가 문의 의도가 없는 경우에만 closing 단계로
                 if is_solution_provided:
                     st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
-                    # ⭐ 고객 모드에서 즉시 버튼이 보이도록 rerun
-                    st.rerun()
+                    # ⭐ 고객 모드에서 즉시 버튼이 보이도록 rerun (주석 처리: Streamlit이 자동으로 rerun함)
+                    # st.rerun()
                 else:
                     # 솔루션이 제공되지 않았으면 일반 응대 계속
                     st.session_state.sim_stage = "AGENT_TURN"

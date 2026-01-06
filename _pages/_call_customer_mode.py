@@ -82,7 +82,7 @@ def render_call_customer_mode():
                         call_summary = generate_call_summary(
                             messages=st.session_state.call_messages,
                             initial_query=st.session_state.get("inquiry_text", ""),
-                            customer_type="일반 고객",
+                            customer_type=L.get("default_customer_type", "일반 고객"),
                             current_lang_key=current_lang
                         )
                         if call_summary:
@@ -108,7 +108,7 @@ def render_call_customer_mode():
                         call_summary = generate_call_summary(
                             messages=st.session_state.call_messages,
                             initial_query=st.session_state.get("inquiry_text", ""),
-                            customer_type="일반 고객",
+                            customer_type=L.get("default_customer_type", "일반 고객"),
                             current_lang_key=current_lang
                         )
                         if call_summary:
@@ -168,7 +168,7 @@ def render_call_customer_mode():
             try:
                 from utils.history_handler import generate_chat_summary
                 inquiry_text = st.session_state.get("inquiry_text", "")
-                customer_type = st.session_state.get("customer_type_sim_select", "일반 고객")
+                customer_type = st.session_state.get("customer_type_sim_select", L.get("default_customer_type", "일반 고객"))
                 
                 current_session_summary = generate_chat_summary(
                     converted_messages,
@@ -256,7 +256,7 @@ def render_call_customer_mode():
                         import json
                         history_data = {
                             "initial_query": st.session_state.get("inquiry_text", ""),
-                            "customer_type": "일반 고객",
+                            "customer_type": L.get("default_customer_type", "일반 고객"),
                             "messages": converted_messages,
                             "language_key": current_lang,
                             "is_call": True,
@@ -316,7 +316,7 @@ def render_call_customer_mode():
                     from utils.history_handler import save_simulation_history_local
                     save_simulation_history_local(
                         initial_query=st.session_state.get("inquiry_text", ""),
-                        customer_type="일반 고객",
+                        customer_type=L.get("default_customer_type", "일반 고객"),
                         messages=converted_messages,
                         is_chat_ended=True,
                         attachment_context="",

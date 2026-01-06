@@ -116,6 +116,7 @@ class CustomerDataManager:
             'consultation_history': [],
             'personality': customer_data.get('personality', '일반'),
             'personality_summary': customer_data.get('personality_summary', ''),
+            'inquiry_summary': customer_data.get('inquiry_summary', ''),  # ⭐ 추가: 문의 내용 요약 저장
             'preferred_destination': customer_data.get('preferred_destination', ''),
             'travel_budget': customer_data.get('travel_budget', ''),
             'survey_score': customer_data.get('survey_score', 0.0),

@@ -119,8 +119,8 @@ def render_wait_closing_confirmation(L, current_lang):
             )
 
             st.session_state.sim_stage = "WAIT_CUSTOMER_CLOSING_RESPONSE"
-            # ⭐ 메시지 추가 후 즉시 화면 업데이트
-            st.rerun()
+            # ⭐ 메시지 추가 후 즉시 화면 업데이트 (주석 처리: Streamlit이 자동으로 rerun함)
+            # st.rerun()
 
     with col_email_end:
         # 언어별 기본값 설정
