@@ -257,11 +257,11 @@ def render_initial_query(L, current_lang):
                 customer_query, customer_profile, detected_lang, limit=5)
 
             # 프로필 분석을 expander로 감싸서 기본적으로 접힘
-            with st.expander("📊 고객 프로필 분석", expanded=False):
+            with st.expander(f"📊 {L.get('customer_profile_analysis', '고객 프로필 분석')}", expanded=False):
                 profile_chart = visualize_customer_profile_scores(
                     customer_profile, detected_lang)
                 if profile_chart:
-                    st.plotly_chart(profile_chart, use_container_width=True, height=250)  # 높이 제한
+                    st.plotly_chart(profile_chart, use_container_width=True, config={"displayModeBar": False, "displaylogo": False})  # 높이 제한 제거 (deprecated 파라미터)
                 else:
                     col1, col2, col3, col4 = st.columns(4)
                     with col1:
@@ -295,26 +295,26 @@ def render_initial_query(L, current_lang):
 
             # 유사 케이스 시각화 (컴팩트하게)
             if similar_cases:
-                with st.expander(f"🔍 유사 케이스 추천 ({len(similar_cases)}개)", expanded=False):
+                with st.expander(f"🔍 {L.get('similar_case_recommendation', '유사 케이스 추천')} ({len(similar_cases)}{L.get('count_unit', '개')})", expanded=False):
                     similarity_chart = visualize_similarity_cases(
                         similar_cases, detected_lang)
                     if similarity_chart:
-                        st.plotly_chart(similarity_chart, use_container_width=True, height=250)  # 높이 제한
+                        st.plotly_chart(similarity_chart, use_container_width=True, config={"displayModeBar": False, "displaylogo": False})  # 높이 제한 제거 (deprecated 파라미터)
 
-                    with st.expander(f"💡 {len(similar_cases)}개 유사 케이스 상세 정보", expanded=False):
+                    with st.expander(f"💡 {len(similar_cases)}{L.get('similar_cases_detail_info', '개 유사 케이스 상세 정보')}", expanded=False):
                         for idx, similar_case in enumerate(similar_cases, 1):
                             case = similar_case["case"]
                             summary = similar_case["summary"]
                             similarity = similar_case["similarity_score"]
-                            st.markdown(f"### 케이스 {idx} (유사도: {similarity:.1f}%)")
+                            st.markdown(f"### {L.get('case_similarity_format', '케이스 {num} (유사도: {similarity}%)').format(num=idx, similarity=f'{similarity:.1f}')}")
                             st.markdown(
-                                f"**문의 내용:** {summary.get('main_inquiry', 'N/A')}")
+                                f"**{L.get('inquiry_content_label', '문의 내용:')}** {summary.get('main_inquiry', 'N/A')}")
                             st.markdown(
-                                f"**감정 점수:** {summary.get('customer_sentiment_score', 50)}/100")
+                                f"**{L.get('sentiment_score_label_short', '감정 점수:')}** {summary.get('customer_sentiment_score', 50)}/100")
                             st.markdown(
-                                f"**만족도 점수:** {summary.get('customer_satisfaction_score', 50)}/100")
+                                f"**{L.get('satisfaction_score_label_short', '만족도 점수:')}** {summary.get('customer_satisfaction_score', 50)}/100")
                             if summary.get("key_responses"):
-                                st.markdown("**핵심 응답:**")
+                                st.markdown(f"**{L.get('key_response_label', '핵심 응답:')}**")
                                 for response in summary.get(
                                         "key_responses", [])[:3]:
                                     st.markdown(f"- {response[:100]}...")

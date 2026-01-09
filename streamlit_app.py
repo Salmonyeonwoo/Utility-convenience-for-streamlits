@@ -89,11 +89,17 @@ elif feature_selection == L.get("chat_email_tab", "채팅/이메일"):
     if CHAT_SIMULATOR_AVAILABLE:
         render_chat_simulator()
     else:
+        # GitHub 원본 채팅 페이지 복원: _pages._app_chat_page 우선 시도
         try:
             from _pages._app_chat_page import render_chat_page
             render_chat_page()
-        except ImportError as e:
-            st.error(f"{L.get('chat_page_module_error', '채팅 페이지 모듈을 불러올 수 없습니다')}: {str(e)}")
+        except ImportError:
+            # Fallback: app_chat.py 사용
+            try:
+                from app_chat import render_chat_page
+                render_chat_page()
+            except ImportError as e:
+                st.error(f"{L.get('chat_page_module_error', '채팅 페이지 모듈을 불러올 수 없습니다')}: {str(e)}")
 
 elif feature_selection == L.get("phone_tab", "전화"):
     st.markdown(f"### 📞 {L.get('phone_tab', '전화')}")

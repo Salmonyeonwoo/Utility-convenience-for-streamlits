@@ -400,8 +400,8 @@ def visualize_similarity_cases(similar_cases: List[Dict[str, Any]], current_lang
         margin=dict(l=20, r=20, t=50, b=20),
         barmode='group'
     )
-    fig.update_yaxes(title_text="점수", row=2, col=1)
-    fig.update_yaxes(title_text="유사도 (%)", row=1, col=1)
+    fig.update_yaxes(title_text=L.get("score_label_short", "점수"), row=2, col=1)
+    fig.update_yaxes(title_text=L.get("similarity_percent", "유사도 (%)"), row=1, col=1)
 
     return fig
 
