@@ -1,0 +1,157 @@
+{
+  "initial_query": "",
+  "customer_type": "일반 고객",
+  "messages": [
+    {
+      "role": "agent_response",
+      "content": "안녕하세요, 주문 확인 관련 문의 주셨죠? 상담원 000입니다. 무엇을 도와드릴까요?"
+    },
+    {
+      "role": "customer",
+      "content": "네 안녕하세요 혹시 제 목소리 들리시나요? 들리시면 제가 주문확인 이런 것보다도 제가 JR 패스 클럭에서 구매를 하려고 하는데 이 부분에 대해서 좀 문의를 드릴 게 있습니다. 혹시 일단 좀 도와주실 수 있으실까요?"
+    },
+    {
+      "role": "agent_response",
+      "content": "안녕하세요, 고객님. 감사합니다. 무엇을 도와드릴까요?"
+    },
+    {
+      "role": "customer",
+      "content": "혹시 제 목소리가 들리셨나요?"
+    },
+    {
+      "role": "agent_response",
+      "content": "네, '혹시 제 목소리가 들리셨나요?' 말씀하신 내용 확인했습니다. 감사합니다. 처리해드리겠습니다."
+    },
+    {
+      "role": "customer",
+      "content": "우선 제가 말씀드리고 싶은 문제는 gr 패스문입니다."
+    },
+    {
+      "role": "agent_response",
+      "content": "네, '우선 제가 말씀드리고 싶은 문제는 gr 패스문입니다.' 말씀하신 내용 확인했습니다. 감사합니다. 처리해드리겠습니다."
+    },
+    {
+      "role": "customer",
+      "content": "네, 우선 제가 다른 부분에 대해서는 문의가 필요 없고 JFS 뉴욕 기간에 가능한 역이 어디가 있는지 이거를 좀 문의를 해드리고 싶거든요."
+    },
+    {
+      "role": "agent_response",
+      "content": "네, 말씀하신 내용 확인했습니다. 감사합니다. 더 정확한 도움을 드리기 위해 관련 주문번호나 상세 정보를 알려주시겠어요?"
+    },
+    {
+      "role": "customer",
+      "content": "네, 우선 제가 다른 부분에 대해서는 문의가 필요 없고 JFS 뉴욕 기간에 가능한 역이 어디가 있는지 이거를 좀 문의를 해드리고 싶거든요."
+    },
+    {
+      "role": "agent_response",
+      "content": "네, 말씀하신 내용 확인했습니다. 감사합니다. 더 정확한 도움을 드리기 위해 관련 주문번호나 상세 정보를 알려주시겠어요?"
+    },
+    {
+      "role": "customer",
+      "content": "우선 제가 그거보다도 아직 문의 내용을 해결하던게 없는데 우선 제가 지금 유효한 구간이 어딘지 문의를 드렸거든요 제가 여행을 할 지역이 혹시 궁금하시다면 저는 도쿄랑 오사카를 여행을 할 예정입니다 우선 여기서 이용 가능한 역구간이 어떻게 될까요"
+    },
+    {
+      "role": "agent_response",
+      "content": "네, 말씀하신 내용 확인했습니다. 감사합니다. 더 정확한 도움을 드리기 위해 관련 주문번호나 상세 정보를 알려주시겠어요?"
+    },
+    {
+      "role": "customer",
+      "content": "우선 제가 주문번호나 이런건 아직 제가 구매를 하지 않았기 때문에 아직 결제 전입니다 그래서 이거는 확인이 되지 않고요 구매를 할 예정 도중에 제가 전화를 드린겁니다 왜냐면 정확한 정보를 알고 싶어서요 도쿄랑 도쿄랑 오사카를 여행할 예정인데 혹시 JFS가 이용 가능한 구간이 어떻게 될까요?"
+    },
+    {
+      "role": "agent_response",
+      "content": "네, 주문번호 확인했습니다. 감사합니다. 주문 내역을 확인해드리겠습니다."
+    },
+    {
+      "role": "customer",
+      "content": "다시 한번 말씀을 드릴께요 jr 패스를 아직 구매하지 않아서 예약번호 주문번호 아무것도 확인이 되지 않습니다 그냥 제가 구매를 하려고 하는데 알아보는 도중에 제가 잘 모르는게 있어서 그래서 정확한 답변을 드리고자 전화를 드린겁니다 다시 한번 말씀을 드리자면 제가 도쿄 오사카를 여행한 예정인데요 jr 패스를 이용할 수 있는 가능한 역구간이 어떻게 됩니까?"
+    },
+    {
+      "role": "agent_response",
+      "content": "안녕하세요, 고객님. JR 패스와 관련하여 도쿄와 오사카 지역에서 이용 가능한 역구간에 대해 설명드리겠습니다. JR 패스를 사용하시면 신칸센(히카리, 사쿠라 등)과 JR 중앙선, JR 오사카 순환선 등 다양한 노선을 이용하실 수 있습니다. 도쿄에서는 주요 역인 도쿄, 시나가와, 신주쿠, 시부야 등을 중심으로, 오사카에서는 오사카, 신오사카, 교토 등의 역을 포함한 광범위한 구간에서 JR 패스를 활용할 수 있습니다. 특히, 도쿄와 오사카를 연결하는 신칸센으로는 두 도시 간의 빠르고 편리한 이동이 가능합니다. 다른 궁금하신 사항이나 추가 정보가 필요하시면 언제든지 말씀해 주세요. 추가 문의 사항 있으신가요?"
+    },
+    {
+      "role": "customer",
+      "content": "네 그러면은 제가 하나 더 여쭤보고 싶은 게 혹시 JR버스를 이용을 하게 되면은 혹시 이 교동수단은 뭐 이용을 하면 할 수 없다 뭐 예를 들면 제가 듣기로는 지하철은 안 된다고 들었거든요 그러니까 지하철은 도쿄메트로는 이렇게 별도 다른 회사인 것 같은데 혹시 그러면은 뭐 그리고 또 신간생도 전부 다 이용을 할 수 있는 건지 근데 또 JR버스는 너무 비싸서 혹시나 한번 타보려고 했는데 이용이 안 된다 이런 식인 것 같은데 정확하게 맞는지 이거를 다시 한번 좀 확인을 부탁드리겠습니다"
+    },
+    {
+      "role": "agent_response",
+      "content": "안녕하세요, 고객님. JR 패스 관련하여 추가적인 설명 드리겠습니다. JR 패스를 이용하실 경우 신칸센과 JR이 운영하는 노선은 대부분 사용이 가능합니다. 그러나 도쿄 메트로나 기타 사설 지하철 노선은 JR 패스로 이용하실 수 없습니다. 말씀하신 대로 도쿄 메트로는 별도의 회사로 운영되고 있어서 추가 티켓을 구매하셔야 합니다. \n\n신칸센 중에서 일부 노선은 이용이 제한됩니다. 예를 들어 '노조미'와 '미즈호'는 JR 패스가 적용되지 않지만, '히카리'와 '사쿠라'는 사용할 수 있습니다. JR 버스의 경우, 패스를 통해 이용 가능한 버스 노선도 있지만, 일부 지역에서는 추가 요금이 발생할 수 있습니다. \n\nJR 패스를 통해 주로 사용하는 교통수단에 대해 적절히 계획하시기 바라며, 더욱 구체적인 정보가 필요하시다면 언제든지 말씀해 주세요. 추가 문의 사항 있으신가요?"
+    },
+    {
+      "role": "customer",
+      "content": "네, 우선 알겠습니다. 그리고 오사카 같은 경우는 어떻게 됩니까? 혹시 오사카 안에서도 제가 남바 쪽이나 이런 데서 아마 숙박을 할 예정인데요. 혹시 여기서도 이렇게 JR패스 이용 가능한 옆 구간이 어떻게 될까요?"
+    },
+    {
+      "role": "agent_response",
+      "content": "안녕하세요, 고객님. 오사카에서 JR 패스를 이용할 수 있는 구간에 대해 설명드리겠습니다. 오사카 내에서는 JR 패스로 오사카 순환선 일부와 주요 역들인 신오사카, 오사카, 텐노지 등을 이용하실 수 있습니다. 다만, 고객님께서 언급하신 남바 지역은 JR 노선이 직접 연결되어 있지 않습니다. 남바에서는 난카이 전철이나 오사카 메트로를 이용하여 JR 역으로 이동할 수 있으며, 이 경우 추가 티켓이 필요합니다.\n\nJR 패스 사용을 고려하신다면, 오사카 도시 내에서도 JR 패스를 통해 연결되는 순환선이나 주요 신칸센 노선을 활용하시기를 추천드립니다. 다른 궁금한 사항이 있거나 추가 정보 필요하시면 언제든지 문의해 주세요. 추가 문의 사항 있으신가요?"
+    },
+    {
+      "role": "customer",
+      "content": "네 알겠습니다. 답변 감사드립니다. 추가 문의 없습니다. 감사합니다."
+    },
+    {
+      "role": "agent_response",
+      "content": "네, 알겠습니다. 감사합니다. 좋은 하루 되세요."
+    }
+  ],
+  "language_key": "ko",
+  "is_call": true,
+  "call_duration": 2084.777763,
+  "timestamp": "2025-12-28T17:22:08.829787",
+  "customer_info": {},
+  "summary": {
+    "customer_inquiry": "JFS 뉴욕 기간에 가능한 역에 대한 문의",
+    "key_solutions": [
+      "고객님의 요청 사항 확인",
+      "관련 주문번호나 상세 정보 요청"
+    ],
+    "summary": "고객은 JFS 뉴욕 기간 동안 가능한 역에 대해 문의했고, 상담원은 고객의 요청 사항을 확인하고 추가 정보를 요청했습니다.",
+    "summary_ko": "고객은 JFS 뉴욕 기간 동안 가능한 역에 대해 문의했고, 상담원은 고객의 요청 사항을 확인하고 추가 정보를 요청했습니다.",
+    "summary_en": [
+      "The customer inquired about possible stations during JFS New York, and the agent confirmed the customer's request and asked for additional information.",
+      true
+    ],
+    "summary_ja": [
+      "顧客はJFSニューヨーク期間中に可能な駅について問い合わせ、相談員は顧客の要請事項を確認し追加情報を求めました。",
+      true
+    ]
+  },
+  "chat_summary": {
+    "main_inquiry": "Inquiry about JR Pass usage in Tokyo and Osaka",
+    "key_responses": [
+      "Explained JR Pass usage for Tokyo and Osaka regions including Shinkansen and JR lines.",
+      "Clarified non-applicable lines for JR Pass such as Tokyo Metro.",
+      "Provided information on JR Bus and additional charges."
+    ],
+    "customer_sentiment_score": 50,
+    "customer_satisfaction_score": 50,
+    "customer_characteristics": {
+      "language": "ko",
+      "cultural_hints": "unknown",
+      "cultural_score": 0,
+      "region": "unknown",
+      "communication_style": "unknown",
+      "formality_score": 50,
+      "detail_level_score": 50,
+      "personality_traits": {
+        "patience_level": 50,
+        "assertiveness": 50,
+        "politeness_level": 50,
+        "technical_proficiency": 50
+      }
+    },
+    "privacy_info": {
+      "has_email": false,
+      "has_phone": false,
+      "has_address": false,
+      "region_hint": "unknown"
+    },
+    "behavior_patterns": {
+      "response_time": "moderate",
+      "question_complexity": "moderate",
+      "escalation_tendency": 50
+    },
+    "summary": "Customer inquiry about: 전화 통화"
+  }
+}

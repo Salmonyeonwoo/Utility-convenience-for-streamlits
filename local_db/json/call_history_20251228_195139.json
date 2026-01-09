@@ -1,0 +1,130 @@
+{
+  "initial_query": "",
+  "customer_type": "일반 고객",
+  "messages": [
+    {
+      "role": "agent_response",
+      "content": "お電話ありがとうございます。주문 확인の件ですね。担当の000と申します。どのようなご用件でしょうか?"
+    },
+    {
+      "role": "customer",
+      "content": "おはようございます えっと、現在聞こえますか?"
+    },
+    {
+      "role": "agent_response",
+      "content": "はい、こちらの声はしっかりと聞こえています。ご注文の確認についてお手伝いできることはありますか？具体的なご質問やご不明点があればお知らせください。"
+    },
+    {
+      "role": "customer",
+      "content": "お客様として確認してみたいことがありますが ユニバーサルスタジオのジャパンのエクスプレスのチケットの商品の購入のことなんですけど エクスプレスと入場券のパースのチケットは別に購入するべきみたいですよね これ間違いないんですか?"
+    },
+    {
+      "role": "agent_response",
+      "content": "ユニバーサルスタジオジャパンでは、エクスプレスパスと入場券は別々に購入する必要があります。エクスプレスパスは人気アトラクションに優先的にアクセスできるオプションで、入場券とは別に販売されていますので、両方必要な場合はそれぞれ購入してください。"
+    },
+    {
+      "role": "customer",
+      "content": "とそれじゃああの入場券買わないとがイスプレス系のを買っても つまりご利用いただけないということですよねなんかそしてなんか日付も絶対に何か 絶対に何か同じなその日指にしないといけないみたいなんですけどこれはどうなっておりますか"
+    },
+    {
+      "role": "agent_response",
+      "content": "はい、その通りです。入場券を持っていないとエクスプレスパスはご利用いただけません。また、エクスプレスパスの日付は入場券の日付に合わせて購入する必要がありますので、同じ日を選択してください。"
+    },
+    {
+      "role": "customer",
+      "content": "はい、かしこまりました。 それではですね、絶対に大人気のアトラクションを必ずご利用いただきたいのですけれども、 ハリポーターとか人間堂とかジュラギの公園とか、 ジョースとかバックドラップとか、 フライングダイノスは絶対にご利用いただきたいと思います。 ご利用させていただきたいと思います。 このオプションが全部含まれているエクスプレッソは何がありますかね?"
+    },
+    {
+      "role": "agent_response",
+      "content": "そのアトラクションすべてが含まれるエクスプレスパスとしては、「エクスプレス・パス7」があります。このパスは、ハリー・ポッター、ジュラシック・パーク、フライング・ダイナソーなどの人気アトラクションに優先アクセスが可能です。事前に公式サイトで詳細を確認し、早めに購入されることをおすすめします。"
+    },
+    {
+      "role": "customer",
+      "content": "はい、かしこまりました。 それではですね、 もしかして天気が悪くなったら、 例えば雨が降る天気とか、 それとも他にも天気が悪くなったら、 ご利用いただけなくなるかもしれないんですけど、 その場合は取り消しと返金のサポートはできますか?"
+    },
+    {
+      "role": "agent_response",
+      "content": "天候によるアトラクションのキャンセルについては、通常は返金や変更が難しい場合があります。ただし、特定の状況やポリシーによって対応が異なることがありますので、詳細は公式サイトのキャンセルポリシーをご確認ください。"
+    },
+    {
+      "role": "customer",
+      "content": "OK 承知いたしました 結構助かりました ありがとうございます"
+    },
+    {
+      "role": "agent_response",
+      "content": "どういたしまして。何か他にご不明点があれば、いつでもお知らせください。楽しいご旅行になりますように。"
+    },
+    {
+      "role": "customer",
+      "content": "はいあの他のお問い合わせはございませんはい電話来ても大丈夫ですはいありがとうございました"
+    },
+    {
+      "role": "agent_response",
+      "content": "ご不明点が解決されたようで良かったです。楽しい一日をお過ごしください。また何かございましたら、いつでもご連絡ください。"
+    }
+  ],
+  "language_key": "ja",
+  "is_call": true,
+  "call_duration": 904.664077,
+  "timestamp": "2025-12-28T19:51:39.500017",
+  "customer_info": {
+    "name": "渡辺武",
+    "phone": "+8190-1234-5678",
+    "email": "takeshi.watanabe50@softbank.ne.jp",
+    "memo": "ユニバーサルスタジオのエクスプレスの利用方法と注意点"
+  },
+  "summary": {
+    "customer_inquiry": "JFS 뉴욕 기간에 가능한 역에 대한 문의",
+    "key_solutions": [
+      "고객님의 요청 사항 확인",
+      "관련 주문번호나 상세 정보 요청"
+    ],
+    "summary": "고객은 JFS 뉴욕 기간 동안 가능한 역에 대해 문의했고, 상담원은 고객의 요청 사항을 확인하고 추가 정보를 요청했습니다.",
+    "summary_ko": "고객은 JFS 뉴욕 기간 동안 가능한 역에 대해 문의했고, 상담원은 고객의 요청 사항을 확인하고 추가 정보를 요청했습니다.",
+    "summary_en": [
+      "The customer inquired about possible stations during JFS New York, and the agent confirmed the customer's request and asked for additional information.",
+      true
+    ],
+    "summary_ja": [
+      "顧客はJFSニューヨーク期間中に可能な駅について問い合わせ、相談員は顧客の要請事項を確認し追加情報を求めました。",
+      true
+    ]
+  },
+  "chat_summary": {
+    "main_inquiry": "Inquiry about buying Universal Studios Japan Express Pass and entrance ticket",
+    "key_responses": [
+      "Confirmed that Express Pass and entrance ticket must be purchased separately",
+      "Explained that the dates for Express Pass and entrance ticket must match",
+      "Recommended purchasing Express Pass 7 for access to all desired attractions"
+    ],
+    "customer_sentiment_score": 50,
+    "customer_satisfaction_score": 50,
+    "customer_characteristics": {
+      "language": "ja",
+      "cultural_hints": "unknown",
+      "cultural_score": 0,
+      "region": "unknown",
+      "communication_style": "unknown",
+      "formality_score": 50,
+      "detail_level_score": 50,
+      "personality_traits": {
+        "patience_level": 50,
+        "assertiveness": 50,
+        "politeness_level": 50,
+        "technical_proficiency": 50
+      }
+    },
+    "privacy_info": {
+      "has_email": false,
+      "has_phone": false,
+      "has_address": false,
+      "region_hint": "unknown"
+    },
+    "behavior_patterns": {
+      "response_time": "moderate",
+      "question_complexity": "moderate",
+      "escalation_tendency": 50
+    },
+    "summary": "Customer inquiry about: 전화 통화"
+  }
+}

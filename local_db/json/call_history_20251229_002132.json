@@ -1,0 +1,114 @@
+{
+  "initial_query": "",
+  "customer_type": "일반 고객",
+  "messages": [
+    {
+      "role": "agent_response",
+      "content": "안녕하세요. 고객님 고객 센터에 연락 주셔서 감사드립니다. 저는 상담원 정태영라고 합니다. 무엇을 도와드릴까요?"
+    },
+    {
+      "role": "customer",
+      "content": "おはようございます。えっと、僕の声聞こえますか?もしもし?"
+    },
+    {
+      "role": "agent_response",
+      "content": "はい、声はしっかりと聞こえています。どのようなご用件でしょうか？お手伝いできることがあれば教えてください。"
+    },
+    {
+      "role": "customer",
+      "content": "ユニバーサルスタジオのビジネス利用権のことについてお話したいことがありますが これはですね、まだ購入決定していませんけど 購入がまだ決まっていませんけど 考えている最中に、よく分かりたいものがあって 分かりたいものがあって電話しました エスプレッソと入所券のパスはどうやって違いますか? このすれ違いのことをはっきり教えてください"
+    },
+    {
+      "role": "agent_response",
+      "content": "エスプレッソは、一般的に飲み物のエスプレッソを指しますが、ここではユニバーサルスタジオの特別なサービスや特典を指しているかもしれませんね。一方、入所券のパスは、入園するためのチケットや年間パスを指します。具体的な詳細は、ユニバーサルスタジオの公式サイトやカスタマーサービスに直接お問い合わせいただくことをお勧めします。"
+    },
+    {
+      "role": "customer",
+      "content": "かしこまりました わかりました それではですね なんかハリーポッターと 任天堂のことと なんかもしかして これは時間のことが 予約設定になってるみたいなんですけど なんかそれとは別にして なんか他にも なんか大人気のアトラクションのことを なんか素早く利用して 利用させていただくためには どうすればいいんですか"
+    },
+    {
+      "role": "agent_response",
+      "content": "大人気のアトラクションを素早く利用するには、ユニバーサル・エクスプレス・パスの購入をおすすめします。これは、特定のアトラクションで優先的に入場できるチケットです。詳細や利用可能なアトラクションについては、公式サイトを確認するか、直接お問い合わせください。"
+    },
+    {
+      "role": "customer",
+      "content": "はいかしこまりましたその中でもう一つ聞きたいことがあるんですけど なんか関西パスのことも何か一緒にご利用いただけるようになっているみたいなんですけどこれを 一緒に買っ購入したら見つけて僕の構想を起こすのがお得で 僕はお得で恵まれるものなんかありますかこれをちょっと教えていただきますかね"
+    },
+    {
+      "role": "agent_response",
+      "content": "関西パスとユニバーサル・エクスプレス・パスを一緒に購入することで、交通費と待ち時間の両方でお得になる場合があります。関西パスは、関西地域内の交通機関を割安で利用できるため、ユニバーサルスタジオへのアクセスが便利になります。具体的な組み合わせの割引情報については、公式サイトや旅行会社での確認をお勧めします。"
+    },
+    {
+      "role": "customer",
+      "content": "はい、かしこまりました。それではですね、まずはちょっと詳しく確認させていただきます。 その後で、もしかして他にも不明点なものがございましたら、後で改めて連絡をやり直します。 ご説明いただきありがとうございました。他のお答え要請はございません。"
+    },
+    {
+      "role": "agent_response",
+      "content": "詳細をご確認いただき、何か不明点が出てきましたら、いつでもお知らせください。ご質問にお答えできて良かったです。引き続き、何かあればお気軽にご連絡ください。"
+    }
+  ],
+  "language_key": "ja",
+  "is_call": true,
+  "call_duration": 367.866945,
+  "timestamp": "2025-12-29T00:21:32.604327",
+  "customer_info": {
+    "name": "渡辺武",
+    "phone": "+8190-1234-5678",
+    "email": "takeshi.watanabe50@softbank.ne.jp",
+    "memo": "ユニバーサルスタジオのエクスプレスの利用方法と注意点"
+  },
+  "summary": {
+    "customer_inquiry": "JFS 뉴욕 기간에 가능한 역에 대한 문의",
+    "key_solutions": [
+      "고객님의 요청 사항 확인",
+      "관련 주문번호나 상세 정보 요청"
+    ],
+    "summary": "고객은 JFS 뉴욕 기간 동안 가능한 역에 대해 문의했고, 상담원은 고객의 요청 사항을 확인하고 추가 정보를 요청했습니다.",
+    "summary_ko": "고객은 JFS 뉴욕 기간 동안 가능한 역에 대해 문의했고, 상담원은 고객의 요청 사항을 확인하고 추가 정보를 요청했습니다.",
+    "summary_en": [
+      "The customer inquired about possible stations during JFS New York, and the agent confirmed the customer's request and asked for additional information.",
+      true
+    ],
+    "summary_ja": [
+      "顧客はJFSニューヨーク期間中に可能な駅について問い合わせ、相談員は顧客の要請事項を確認し追加情報を求めました。",
+      true
+    ]
+  },
+  "chat_summary": {
+    "main_inquiry": "Differences between Universal Studios business pass options and express pass for attractions",
+    "key_responses": [
+      "Explanation of espresso and admission pass differences",
+      "Recommendation to purchase Universal Express Pass for quick access to attractions",
+      "Information on combining Kansai Pass and Universal Express Pass for benefits"
+    ],
+    "customer_sentiment_score": 50,
+    "customer_satisfaction_score": 50,
+    "customer_characteristics": {
+      "language": "ja",
+      "cultural_hints": "unknown",
+      "cultural_score": 0,
+      "region": "unknown",
+      "communication_style": "unknown",
+      "formality_score": 50,
+      "detail_level_score": 50,
+      "personality_traits": {
+        "patience_level": 50,
+        "assertiveness": 50,
+        "politeness_level": 50,
+        "technical_proficiency": 50
+      }
+    },
+    "privacy_info": {
+      "has_email": false,
+      "has_phone": false,
+      "has_address": false,
+      "region_hint": "unknown"
+    },
+    "behavior_patterns": {
+      "response_time": "moderate",
+      "question_complexity": "moderate",
+      "escalation_tendency": 50
+    },
+    "summary": "Customer inquiry about: 전화 통화"
+  }
+}

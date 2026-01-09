@@ -1,0 +1,115 @@
+[
+  {
+    "id": "call_02d979ea-6a37-4547-be0f-f10a18190da9",
+    "timestamp": "2025-12-28T00:41:26.267510",
+    "initial_query": "‘한국어 버전’\n불가피한 상황으로 인해서, 고객님께서 상하이 디즈니랜드 이용 날짜 취소, 변경 혹은 환불 요청 케이스 (원래 규정으로서는 취소, 환불, 변경 불가)\n1. 고객에게 정확한 이유 확인 요청\n2. 정확한 이유에 해당되는 증거물 요청",
+    "customer_type": "까다로운 고객",
+    "language_key": "ko",
+    "messages": [
+      {
+        "role": "agent_response",
+        "content": "안녕하세요. 큰형님 연락주셔서 감사드립니다. 오늘 고객님의 의문이 담당하게 된 박연우라고 합니다. 무엇으로 도와드릴까요?"
+      },
+      {
+        "role": "customer",
+        "content": "안녕하세요, 박연우님. 말씀 주셔서 감사합니다. 불가피한 상황 때문에 상하이 디즈니랜드 이용 날짜의 취소, 변경 혹은 환불을 요청하고 싶어서 연락드렸어요. 관련해서 필요한 정보나 증거가 있다면 말씀해 주세요."
+      },
+      {
+        "role": "agent_response",
+        "content": "알겠습니다. 혹시 그러면 정확하게 어떤 이유이실까요? 여권이라든가 아니면 비행기 결항 이라든가 어떤 이유이십니까?"
+      },
+      {
+        "role": "customer",
+        "content": "죄송합니다, 여권 문제로 인한 예약 취소가 필요합니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "아 그러시군요. 그러면 여권에 대해서 정확하게 어떤 오류입니까? 기간이 만료가 되신건가요? 아니면 스펠링이나 이런게 잘못이야기 되신건가요?"
+      },
+      {
+        "role": "customer",
+        "content": "여권의 유효 기간이 만료되었습니다. 새로 발급받아야 할 것 같습니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "알겠습니다. 그러면은 저희가 지금 한번 일단은 확인을 먼저 해보겠지만요. 그러면 그전에 일단 전화로서는 저희가 여권사진이나 고객님이 이런 정보가 확인이 되지 않으니까 우선 저희가 그러면은 고객님의 성함이랑 그 다음에 예약하신 번호 특히 그 GLN으로 시작되는 번호 그 다음에 여권정보 그 다음에 이메일 주소 이런 게 좀 필요하게 될 것 같습니다. 혹시 이 정보들을 확인하신 대로 지금 회신을 주실 수 있으신가요?"
+      },
+      {
+        "role": "customer",
+        "content": "네, 성함은 홍길동이고 예약번호는 GLN123456입니다. 여권번호는 A12345678이고, 이메일 주소는 honggildong@example.com입니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "네, 알겠습니다. 지금 확인 감사드리고요. 그러면 저희가 일단 그 해당 이메일로 요청 이메일을 보내드릴게요. 거기서 고객님께서 여권정보에 대한 스캔본 혹은 사진을 정확하게 모든 정보 다 포함해서 저희한테 회신을 주시면 이걸 토대로 저희가 업체랑 같이 연락을 해 보도록 하겠습니다. 괜찮으시겠죠?"
+      },
+      {
+        "role": "customer",
+        "content": "네, 괜찮습니다. 이메일 기다리겠습니다. 보내주시면 여권 정보 스캔본을 회신 드리겠습니다. 감사합니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "알겠습니다. 알려주셔서 감사드리고요. 혹시 또 다른 추가 요청사항은 없으십니까?"
+      },
+      {
+        "role": "customer",
+        "content": "네, 알겠습니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "혹시 또 다른 문의상은 없으신가요?"
+      },
+      {
+        "role": "customer",
+        "content": "없습니다. 감사합니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "네, 알겠습니다. 그러면 저희가 바로 전화 종료되는 대로 바로 요청 이메일을 보내드리도록 하겠습니다. 이메일 꼭 확인해 주시고요. 네, 클릭 연약 주셔서 감사드립니다. 지금까지 상담방 파견이었습니다. 즐거운 하루 되세요."
+      },
+      {
+        "role": "customer",
+        "content": "네, 알겠습니다. 이메일 확인하겠습니다. 감사합니다. 좋은 하루 되세요."
+      }
+    ],
+    "summary": {
+      "main_inquiry": "Request for cancellation, change, or refund of Shanghai Disneyland ticket due to unavoidable circumstances (passport issue).",
+      "key_responses": [
+        "Requested clarification on the exact reason for cancellation.",
+        "Requested evidence or details about the reason (passport details).",
+        "Instructed the customer to send a scanned copy of the passport via email."
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Interaction suggests familiarity with Korean business etiquette.",
+        "cultural_score": 75,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 80,
+          "assertiveness": 60,
+          "politeness_level": 95,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "simple",
+        "escalation_tendency": 10
+      },
+      "summary": "고객은 여권 문제로 인해 상하이 디즈니랜드의 티켓 취소, 변경 또는 환불을 요청하였습니다. 상담원은 상황을 이해하고 고객에게 정확한 정보를 요청하고 관련된 증거를 이메일로 제출하도록 안내하였습니다."
+    },
+    "is_chat_ended": true,
+    "attachment_context": "홍길동이고 예약번호는 GLN123456입니다. 여권번호는 A12345678이고, 이메일 주소는 honggildong@example.com입니다.",
+    "is_call": true
+  }
+]

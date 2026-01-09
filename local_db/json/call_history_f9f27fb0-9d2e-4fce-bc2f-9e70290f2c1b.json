@@ -1,0 +1,115 @@
+[
+  {
+    "id": "call_f9f27fb0-9d2e-4fce-bc2f-9e70290f2c1b",
+    "timestamp": "2026-01-06T20:18:56.301863",
+    "initial_query": "Customer's issue : eSIM is not working to be utilized at Paris, France",
+    "customer_type": "까다로운 고객",
+    "language_key": "en",
+    "messages": [
+      {
+        "role": "agent_response",
+        "content": "Hi customers, thank you for calling to our customer support, this is Mr. Yonapark speaking, how may I help you?"
+      },
+      {
+        "role": "customer",
+        "content": "Hi Mr. Yonapark! Thanks for taking my call. I'm in Paris right now and having a bit of trouble getting my eSIM to work, so I'm hoping you can help me sort it out!"
+      },
+      {
+        "role": "agent_response",
+        "content": "Okay, thank you for your kind confirmation, and you're staying in Paris. Firstly, can I have your booking number, and your email address, or your phone number, and your name, please? So that we also can proceed with the confirmation and send the solution to you."
+      },
+      {
+        "role": "customer",
+        "content": "Of course! My booking number is 12345. My name is Jane Doe, and my email address is janedoe@example.com. Thank you for helping me with this!"
+      },
+      {
+        "role": "agent_response",
+        "content": "OK, thank you for your kind confirmation, Mrs. Jane Dell. And there's one more confirmation. So can I have your device details about the connection of the EC?"
+      },
+      {
+        "role": "customer",
+        "content": "Of course! I'm using an iPhone 14 for the connection."
+      },
+      {
+        "role": "agent_response",
+        "content": "okay thank you for your kind confirmation and then so we would like to clarify so what kind of the status that you used to have a process with some the property maybe so okay personally so we would like to we would like you to check if your settings has been activated for some the data and the data roaming and the some the cellular and the some the Wi-Fi or the Bluetooth like this"
+      },
+      {
+        "role": "customer",
+        "content": "Sure! I've checked, and all my settings for data, data roaming, cellular, Wi-Fi, and Bluetooth are activated and working perfectly. Thank you for your assistance!"
+      },
+      {
+        "role": "agent_response",
+        "content": "okay but so even so even so you tried that so your your current connection is not working for the ECMAS at Paris is this correct?"
+      },
+      {
+        "role": "customer",
+        "content": "Yes, that's correct! My current connection with the eSIM in Paris isn't working, but I'm sure we can figure it out. 😊"
+      },
+      {
+        "role": "agent_response",
+        "content": "Okay, then please kindly check if the network connection setting has been accurately connected with the local telecommunication company. So if it's okay, but even you tried that, if it's not working, then please kindly try to turn on and off the flight mode. The turning on and off the flight mode is also sometimes working for the best solution about the connection problem. But if, okay, after you tried that, if it is not solved, please kindly turn off and on your device. So within the five minutes for all of the setting. Or else also, please kindly check if any other notification has been confirmed about the request to update any other setting of your network or the device."
+      },
+      {
+        "role": "customer",
+        "content": "Thank you so much for the tips! I'll try those steps right away and see if that solves the connection issue. I really appreciate your help!"
+      },
+      {
+        "role": "agent_response",
+        "content": "Okay, is there anything else so we can assist you?"
+      },
+      {
+        "role": "customer",
+        "content": "No, that will be all, thank you。"
+      },
+      {
+        "role": "agent_response",
+        "content": "Okay, thank you for contacting our cool customer support. This was Mr. Park, and I'm speaking as your consultant of your inquiry today. Have a nice trip!"
+      },
+      {
+        "role": "customer",
+        "content": "Thank you so much, Mr. Park! I really appreciate your help. I'm all set for my trip now, and I'm super excited. Have a great day!"
+      }
+    ],
+    "summary": {
+      "main_inquiry": "eSIM not working in Paris, France",
+      "key_responses": [
+        "Check if network connection setting is accurately connected with local telecom",
+        "Turn on and off flight mode",
+        "Restart the device"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "en",
+        "cultural_hints": "polite and appreciative, open to suggestions",
+        "cultural_score": 70,
+        "region": "Europe",
+        "communication_style": "casual/detailed",
+        "formality_score": 40,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 80,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 70
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Europe"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "The customer contacted support regarding an eSIM issue in Paris. The agent provided several troubleshooting steps, including checking network settings, toggling flight mode, and restarting the device. The customer was polite and expressed gratitude, indicating high satisfaction with the support received."
+    },
+    "is_chat_ended": true,
+    "attachment_context": "Of course! My booking number is 12345. My name is Jane Doe, and my email address is janedoe@example.com. Thank you for helping me with this!  iPhone 14",
+    "is_call": true
+  }
+]

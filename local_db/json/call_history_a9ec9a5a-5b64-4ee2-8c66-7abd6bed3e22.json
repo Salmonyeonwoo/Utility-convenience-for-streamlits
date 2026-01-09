@@ -1,0 +1,139 @@
+[
+  {
+    "id": "call_a9ec9a5a-5b64-4ee2-8c66-7abd6bed3e22",
+    "timestamp": "2025-12-29T11:55:58.866490",
+    "initial_query": "‘한국어 버전’\n불가피한 상황으로 인해서, 고객님께서 상하이 디즈니랜드 이용 날짜 취소, 변경 혹은 환불 요청 케이스 (원래 규정으로서는 취소, 환불, 변경 불가)\n1. 고객에게 정확한 이유 확인 요청\n2. 정확한 이유에 해당되는 증거물 요청",
+    "customer_type": "까다로운 고객",
+    "language_key": "ko",
+    "messages": [
+      {
+        "role": "agent_response",
+        "content": "안녕하세요. 큐노기의 연락주셔서 감사드립니다. 오늘 고객님 의문일에 담당하게 될 박연우라고 합니다. 무엇을 도와드릴까요?"
+      },
+      {
+        "role": "customer",
+        "content": "안녕하세요, 박연우님. 전화 받아주셔서 감사합니다. 불가피한 상황으로 인해 상하이 디즈니랜드 이용 날짜를 취소하거나 변경, 환불을 요청드리고 싶습니다. 해당 상황에 대한 정확한 이유와 증거물을 준비했습니다. 이에 대해 논의하고 싶습니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "네, 알겠습니다. 이유에 해당되는 증거를 일단 준비해 주셔서 감사드리고요. 우선 사유가 어떤 것입니까? 여권 정보 변경이신가요? 아니면 다른 사유이신가요?"
+      },
+      {
+        "role": "customer",
+        "content": "아니요, 여권 정보 변경은 아니고요, 예약 날짜 변경을 원합니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "이약 날짜 변경이시군요. 그러면 이약 날짜 변경이 개인 사정 이신가요 아니면 불가피한 악천 우라든가 아니면 비행기 결항 지연 이런 것과 연관이 있으신 건가요"
+      },
+      {
+        "role": "customer",
+        "content": "개인 사정으로 날짜를 변경하려고 합니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "아 개인사정이시군요. 그러면 개인사정은 정확하게 어떤 사정이십니까"
+      },
+      {
+        "role": "customer",
+        "content": "죄송하지만 개인적인 사정이라 구체적으로 말씀드리기 어렵습니다. 양해 부탁드립니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "네 그러시군요. 알겠습니다. 그러면 어쨌든 비행기나 다른 여행 날짜 들도 전부 다 취소나 변경을 완료 하신 상황이신 건가요"
+      },
+      {
+        "role": "customer",
+        "content": "네, 비행기와 다른 여행 날짜 변경은 이미 완료했습니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "알겠습니다. 확인 감사드리고요. 그러면은 저희가 일단은 제가 나중에 일단 전화를 잠시 종료한 후에 업체 측과의 이메일 증거물 파일의 확인을 여부를 위해서 이메일로 저희가 요청이메일을 보내드리도록 할텐데요. 혹시 예약번호랑 고객님께서 저한테 전화주시는 분의 성함이랑 영문성함, 이메일 주소 이렇게 좀 확인을 부탁드려도 되겠습니까?"
+      },
+      {
+        "role": "customer",
+        "content": "네, 알겠습니다. 예약번호는 123456이고, 제 이름은 김민수입니다. 영문 이름은 Minsoo Kim이고, 이메일 주소는 minsoo.kim@example.com입니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "확인 감사드리고요. 제가 다시 한번 확인을 해볼게요. 우선 예약번호는 123456, 성함 김민수님, 영어이름은 minsoo.kim 그 다음에 이메일 계정은 minsoo.kim.example.com 이게 맞으신가요? 제가 맞게 불렀는지 다시 한번 확인을 부탁드리겠습니다."
+      },
+      {
+        "role": "customer",
+        "content": "네, 맞습니다. 예약번호 123456, 성함 김민수, 영어이름 minsoo.kim, 이메일 계정 minsoo.kim@example.com이 맞습니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "네 확인 감사드립니다. 그러면 이제 저희가 일단 이 정보로 일단 먼저 저희가 이메일 고객님의 이 이메일 주소로 일단 전화 종료를 한 후에 요청 이메일을 저희가 하나 보내드릴 거예요. 여기서 요청 이메일에 회신을 하실 때 그때 준비하셨던 그 증거물의 파일들을 전부 저희한테 제출해 주시면 바로 업체측관 확인을 해보고 같이 업체측관에서 환불 변경에 대한 업데이트를 받는 대로 바로 고객님한테 연락을 드리도록 할텐데요. 아마 상황에 따라서 오늘 안에 바로 될 수도 있지만 영업일에 따라서 내일까지 기다려야 되는 불편함이 좀 있을 수도 있습니다. 의장님 혹시 괜찮으실까요?"
+      },
+      {
+        "role": "customer",
+        "content": "네, 괜찮습니다. 이메일 보내주시면 요청에 맞춰 증거 파일을 제출하겠습니다. 감사합니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "그러면 저희가 우선 제가 나중에 고객님한테 업데이트 연락에 대한 연락을 전화나 이메일로 해드리게 될 수도 있습니다. 그렇게 되면 전화번호의 경우는 발신 번호가 저희 부사 상황에 따라서 걸리신 번호와는 좀 다른 번호로 갖게 될 수도 있습니다. 그 점 양해 부탁드리고 만약에 전화가 안되시면 이메일로 따로 추가 업데이트 연락을 드리도록 하겠습니다. 최대한 빨리 연락을 드리도록 할 테니까요. 조금만 더 기다려주시면 감사드리겠고 먼저 이메일을 제가 보내드릴 테니까 확인을 꼭 부탁드리겠습니다."
+      },
+      {
+        "role": "customer",
+        "content": "네, 알겠습니다. 이메일 확인하도록 하겠습니다. 빠른 연락 부탁드립니다. 감사합니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "네 혹시 또 다른 문의사항은 없으신가요?"
+      },
+      {
+        "role": "customer",
+        "content": "없습니다. 감사합니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "그러면 감사드립니다. 네클링에 연락주셔서 감사드립니다. 지금까지 상담원 박연배였습니다. 즐거운 여행 되세요."
+      },
+      {
+        "role": "customer",
+        "content": "네, 감사합니다. 좋은 하루 보내세요."
+      }
+    ],
+    "summary": {
+      "main_inquiry": "Cancellation or rescheduling of Shanghai Disneyland visit due to unavoidable circumstances",
+      "key_responses": [
+        "Requested customer to provide the exact reason and evidence for the cancellation or change request",
+        "Confirmed details such as reservation number and email to follow up with a request email for evidence submission",
+        "Informed customer about the follow-up process and potential waiting time for resolution"
+      ],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: ‘한국어 버전’\n불가피한 상황으로 인해서, 고객님께서 상하이 디즈니랜드 이용 날짜 취소, 변경 혹은 환불 요청 케이스 (원래 규정으로서는 취소, 환불, 변경 불가)\n1. 고객에게 "
+    },
+    "is_chat_ended": true,
+    "attachment_context": "김민수, minsoo kim, minsoo.kim@example.com, booking number : 123456",
+    "is_call": true
+  }
+]

@@ -1,0 +1,99 @@
+[
+  {
+    "id": "call_e7a1c3ce-c16b-409c-81ee-84a98b81110f",
+    "timestamp": "2025-12-30T03:04:00.214500",
+    "initial_query": "JR 패스 문의 \n\n유효기한 및 이용 가능한 역 구간들\n취소 및 환불 문의\n기타",
+    "customer_type": "까다로운 고객",
+    "language_key": "ko",
+    "messages": [
+      {
+        "role": "agent_response",
+        "content": "안녕하세요. 큰혁이 연락주셔서 감사드립니다. 오늘 고위험의 문제가 등등하게 방역으로 갑니다. 무엇을 더 드릴까요?"
+      },
+      {
+        "role": "customer",
+        "content": "안녕하세요. JR 패스에 대해 문의드리고 싶습니다. 유효기한과 이용 가능한 역 구간들, 그리고 취소 및 환불 관련 정보를 알고 싶습니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "확인 감사드립니다. 우선 저희가 지금 확인을 해보고 싶은 게 있는데요. 우선 취소 환불의 경우는 비행기 취소, 비행기 결항, 지연, 그 다음에 금액, 신장, 불가피한 사유 이런 것들 위에는 이런 것들의 경우는 100% 절약 환불이 가능하고요. 그 다음에 두 개의 나머지 개인 자정의 경우는 10%의 수수료가 불가능합니다. 물론 배송을, 실물 티켓을 받고 나서 사용하시기 전까지입니다. 그러나 실물 티켓 받고 사용하시기 전까지는 고민하시고 나서 일단 예약을 구매하시고 나서 실물 티켓 받기 전까지는 90일 안에 운영을 하실 수 있지만 증얼력에 가셔서 실물 티켓으로 첫 개차를 하시고 나서부터는 바로 환불이 안될 정도로 거기서부터는 바로 7일, 14일, 21일 이렇게 이용기간을 카운팅이 바로 시작됩니다. 이 점 참고 부탁드리고요. 그리고 유효기간은 이렇게 안내가 되고 이용가능한 역구간의 경우는 저희가 맞춤형 안내를 드리기 위해서 혹시 어느 지역을 여행하실 거고 어느 지역에 소감을 하실 건가요?"
+      },
+      {
+        "role": "customer",
+        "content": "제가 여행할 예정인 지역은 도쿄와 오사카입니다. 이 두 지역에 대한 안내 부탁드립니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "네, 우선 숙박지역까지 부탁드리겠습니다. 도쿄에서는 어디서 모으신거고, 오사카에서는 어디서 모으신건지 이렇게까지만 부탁드리겠습니다."
+      },
+      {
+        "role": "customer",
+        "content": "도쿄에서는 신주쿠에서 모았고, 오사카에서는 난바에서 모았습니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "네 확인 검사됩니다. 신주쿠에서 머무시는 거면요. 신주쿠역의 출발 지점으로 해가지고 타치카와 하치우지, 후지산, 마츠모토, 도쿠부, 도쿠메인시니지역인 이케북로, 니포리, 도쿄, 미키아바라, 시나가, 시부야, 신주쿠, 하라츠쿠, 오쿠고, 신오쿠고 디즈니랜드역인 마이야마 이렇게까지 메인지역 전부 다 이용을 할 수 있구요. 오사카로 이동하실 때 신가중역시 이용을 할 수 있습니다. 그리고 오사카에서는 우메다, 오사카, 유니버설스튜디오, 관세공항, 신이마미아, 텐로지, 오사카, 성질모토시, 이식구조 이렇게 모든 제야로선이 되는 모든역도 이용할 수 있습니다. 하지만 신탄생은 노점이 위주로 제외가 되구요. 그 다음에 제야버스 역시 제외가 됩니다. 그리고 지하철이나 다른 전철 역시 이용이 안됩니다."
+      },
+      {
+        "role": "customer",
+        "content": "네, 설명 감사합니다. 이해했습니다. 신주쿠와 오사카에서 이용할 수 있는 역들을 잘 참고하겠습니다. 추가적으로 신탄생과 제야버스, 지하철이나 다른 전철은 사용할 수 없는 점도 알겠습니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "네, 혹시 또 다른 문의사항은 없으신가요?"
+      },
+      {
+        "role": "customer",
+        "content": "없습니다. 감사합니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "네, 틀룩에 연락주셔서 감사드립니다. 지금까지 상담원 박연경이었습니다. 즐거운 하루 되세요."
+      },
+      {
+        "role": "customer",
+        "content": "네, 감사합니다. 좋은 하루 되세요."
+      }
+    ],
+    "summary": {
+      "main_inquiry": "JR 패스 유효기한 및 이용 가능 구간, 취소 및 환불 관련",
+      "key_responses": [
+        "취소 환불 조건 설명",
+        "JR 패스 이용 가능 역 안내",
+        "제한 사항 및 예외 사항 안내"
+      ],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: JR 패스 문의 \n\n유효기한 및 이용 가능한 역 구간들\n취소 및 환불 문의\n기타"
+    },
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": true
+  }
+]

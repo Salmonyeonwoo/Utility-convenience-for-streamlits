@@ -1,0 +1,1344 @@
+{
+  "companies": {
+    "삼성": {
+      "info_ko": "삼성은 대한민국의 대표적인 다국적 기업으로, 전 세계적으로 전자제품, 반도체, 정보통신기기, 건설 및 조선업 등 다양한 분야에서 사업을 운영하고 있습니다. 1938년에 이병철에 의해 설립되었으며, 처음에는 식품 판매업으로 시작했으나 현재는 세계 최대의 전자제품 생산 기업 중 하나로 성장했습니다. 삼성전자는 특히 스마트폰, TV, 반도체 칩에서 높은 시장 점유율을 보이며, 지속적인 기술 혁신과 품질 강화를 통해 글로벌 시장에서의 경쟁력을 유지하고 있습니다. 삼성은 '기술을 통해 인류의 삶을 풍요롭게 만들자'는 목표를 가리키며, 지속 가능함과 사회적 책임을 중요한 경영 전략으로 채택하고 있습니다. 최근 삼성은 차세대 기술 개발, 인공지능, IoT, 5G 기술, 그리고 친환경 에너지 사업에 투자하며 미래를 대비하고 있습니다.",
+      "info_en": "",
+      "info_ja": "",
+      "popular_products": [
+        {
+          "text_ko": "갤럭시 스마트폰",
+          "score": 90,
+          "image_url": ""
+        },
+        {
+          "text_ko": "QLED TV",
+          "score": 85,
+          "image_url": ""
+        },
+        {
+          "text_ko": "삼성 SSD",
+          "score": 80,
+          "image_url": ""
+        }
+      ],
+      "trending_topics": [
+        {
+          "text_ko": "5G 기술 확장",
+          "score": 90,
+          "detail_ko": "삼성은 5G 기술의 글로벌 확장을 위해 대규모 투자를 진행하고 있습니다. 이를 통해 차세대 통신 인프라 확장과 데이터 전송 속도를 비약적으로 향상시키는 데 주력하고 있습니다."
+        },
+        {
+          "text_ko": "친환경 사업 강화",
+          "score": 85,
+          "detail_ko": "최근 삼성은 기업의 지속 가능한 발전을 위해 친환경 제품 개발 및 탄소 배출 감소 목표를 강화하고 있습니다. 이에 따라 에너지 효율성을 높이고 재생 에너지 사용 비중을 확대하는 등 다양한 노력을 하고 있습니다."
+        },
+        {
+          "text_ko": "반도체 사업 투자",
+          "score": 80,
+          "detail_ko": "삼성은 반도체 시장에서의 선도적인 위치를 견고히 하기 위해 대규모 투자를 발표하였습니다. 주요 전략으로는 첨단 반도체 제조 과정에 대한 기술개발과 글로벌 생산 역량 확장을 포함하고 있습니다."
+        }
+      ],
+      "faqs": [
+        {
+          "question_ko": "Galaxy S25 Ultra의 주요 특징은 무엇인가요?",
+          "answer_ko": "Galaxy S25 Ultra는 삼성의 최신 플래그십 스마트폰으로, 고성능 프로세서, 고해상도 카메라 시스템, 긴 배터리 수명, 빠른 충전 기능을 제공합니다. 특히 AI 기능이 강화되어 사진 촬영, 생산성 향상, 일상 작업 자동화에 도움이 됩니다.",
+          "question_en": "What are the main features of Galaxy S25 Ultra?",
+          "answer_en": "Galaxy S25 Ultra is Samsung's latest flagship smartphone, offering high-performance processor, high-resolution camera system, long battery life, and fast charging. AI features are particularly enhanced to help with photography, productivity, and daily task automation.",
+          "question_ja": "Galaxy S25 Ultraの主な特徴は何ですか？",
+          "answer_ja": "Galaxy S25 Ultraはサムスンの最新フラグシップスマートフォンで、高性能プロセッサー、高解像度カメラシステム、長いバッテリー寿命、高速充電機能を提供します。特にAI機能が強化され、写真撮影、生産性向上、日常作業の自動化に役立ちます。"
+        },
+        {
+          "question_ko": "신규 출시 예정 제품은 언제 출시되나요?",
+          "answer_ko": "삼성은 정기적으로 신제품을 출시합니다. 정확한 출시 일정은 공식 발표를 통해 확인하실 수 있으며, 일반적으로 갤럭시 시리즈는 연 1-2회 주요 업데이트가 있습니다. 신제품 출시 소식은 삼성 공식 웹사이트나 공식 채널을 통해 확인하시기 바랍니다.",
+          "question_en": "When will the new products be released?",
+          "answer_en": "Samsung regularly releases new products. Exact release schedules can be confirmed through official announcements, and generally, the Galaxy series has 1-2 major updates per year. Please check Samsung's official website or official channels for new product release news.",
+          "question_ja": "新製品はいつ発売されますか？",
+          "answer_ja": "サムスンは定期的に新製品を発売しています。正確な発売スケジュールは公式発表で確認でき、一般的にギャラクシーシリーズは年間1-2回の主要アップデートがあります。新製品発売のニュースはサムスン公式ウェブサイトまたは公式チャンネルでご確認ください。"
+        },
+        {
+          "question_ko": "삼성전자의 주요 사업 분야는 무엇인가요?",
+          "answer_ko": "삼성전자는 전자제품, 반도체, 정보통신기기, 디스플레이 패널 등 다양한 분야에서 사업을 운영하고 있습니다."
+        },
+        {
+          "question_ko": "삼성의 설립 연도와 창립자는 누구인가요?",
+          "answer_ko": "삼성은 1938년에 이병철에 의해 설립되었습니다."
+        },
+        {
+          "question_ko": "삼성전자의 글로벌 본사는 어디에 위치하고 있나요?",
+          "answer_ko": "삼성전자의 글로벌 본사는 대한민국 수원시에 위치하고 있습니다."
+        },
+        {
+          "question_ko": "삼성의 대표적인 스마트폰 시리즈는 무엇인가요?",
+          "answer_ko": "삼성의 대표적인 스마트폰 시리즈는 갤럭시 시리즈입니다."
+        },
+        {
+          "question_ko": "삼성이 최근 중점을 두고 있는 기술 분야는 무엇인가요?",
+          "answer_ko": "삼성은 인공지능, 5G, IoT, 친환경 에너지 등의 분야에 중점을 두고 있습니다."
+        },
+        {
+          "question_ko": "삼성은 어떤 방식으로 사회적 책임을 이행하고 있나요?",
+          "answer_ko": "삼성은 다양한 사회공헌 프로그램 및 친환경 정책을 통해 사회적 책임을 이행하고 있습니다."
+        },
+        {
+          "question_ko": "삼성의 기술 개발 전략은 무엇인가요?",
+          "answer_ko": "삼성은 혁신적인 기술 개발과 품질 강화를 통한 경쟁력 유지를 전략으로 삼고 있습니다."
+        },
+        {
+          "question_ko": "삼성의 주요 TV 제품군은 무엇인가요?",
+          "answer_ko": "삼성의 주요 TV 제품군은 QLED TV와 Neo QLED TV입니다."
+        },
+        {
+          "question_ko": "삼성의 주력 반도체 제품은 무엇인가요?",
+          "answer_ko": "삼성의 주력 반도체 제품은 메모리 반도체와 시스템 반도체입니다."
+        },
+        {
+          "question_ko": "삼성의 경영 철학은 무엇인가요?",
+          "answer_ko": "삼성의 경영 철학은 인재와 기술을 바탕으로 최고의 제품과 서비스를 창출하여 인류 사회에 기여한다는 것입니다."
+        }
+      ],
+      "interview_questions": [
+        {
+          "question_ko": "삼성이 추구하는 비전과 그에 따른 가치가 무엇인지 설명해 주세요.",
+          "answer_ko": "삼성의 비전은 '기술 혁신을 통한 인류 삶의 질 향상'이라고 할 수 있습니다. 이를 달성하기 위해 삼성은 지속 가능한 경영과 사회적 책임을 중요시하고 있습니다. 삼성은 혁신적인 제품 개발과 품질 강화를 통해 글로벌 시장에서의 경쟁력을 유지하고 있으며, 친환경 사업과 지역 사회 기여에 많은 노력을 하고 있습니다. 따라서, 삼성의 비전은 단순한 기업의 성장과 이익을 넘어 사회 전체의 발전에 기여하는 것을 목표로 하고 있습니다.",
+          "category_ko": "회사 이해"
+        },
+        {
+          "question_ko": "삼성에서 가장 중요하게 생각하는 기술 트렌드는 무엇이며, 왜 그렇다고 생각하나요?",
+          "answer_ko": "삼성에서는 5G, AI, IoT, 친환경 기술 등을 중요한 기술 트렌드로 꼽고 있습니다. 이는 급속히 변화하는 기술 환경 속에서 사용자의 편의성을 높이고, 데이터 처리 능력을 높이기 위한 필수 요소입니다. 특히 5G는 삼성의 통신 사업에서 글로벌 시장 경쟁력을 높이는 데 핵심이 되고 있으며, AI는 스마트폰, TV, 가전 제품 등에서 사용자 경험을 크게 향상시키고 있습니다. 또한, 친환경 기술은 기업의 지속 가능성 확보와 기업의 사회적 책임을 강화하는데 필수적인 요소로서 지속 가능한 미래를 위한 전략적 중요성을 가집니다.",
+          "category_ko": "업무 관련"
+        },
+        {
+          "question_ko": "삼성과 같은 대기업에서 커리어를 쌓는데 중요한 요소는 무엇인가요?",
+          "answer_ko": "삼성과 같은 대기업에서 커리어를 쌓기 위해서는 혁신에 대한 열정과 끊임없는 성장 욕구가 중요합니다. 또한, 글로벌 시장에서의 경쟁력을 갖추기 위해 다양한 문화와 시장에 대한 이해가 필요하며, 팀워크와 커뮤니케이션 능력도 필수적입니다. 빠르게 변화하는 산업 환경에 적응할 수 있는 유연성 역시 중요하며, 책임감을 가지고 주도적으로 업무를 수행하려는 자세가 요구됩니다. 삼성은 직원들에게 다양한 교육과 발전 기회를 제공하여 개인의 역량을 최대화할 수 있도록 지원하고 있습니다.",
+          "category_ko": "직무 이해"
+        },
+        {
+          "question_ko": "삼성의 조직 문화와 철학에 대해 어떻게 이해하고 있나요?",
+          "answer_ko": "삼성의 조직 문화는 개방성과 혁신을 중시하며, 도전적인 목표 달성을 위해 협력을 장려합니다. 임직원들의 다양성을 존중하고, 각자의 의견을 중요시하는 문화를 가지고 있습니다. 또한, 성과 기반의 공정한 보상 체계를 운영하며, 직원들의 성장과 발전을 위한 다양한 프로그램을 제공하고 있습니다. 이러한 문화와 철학은 삼성의 글로벌 경쟁력 향상의 원동력이 되고 있다고 할 수 있습니다. 삼성은 변화와 혁신을 지속적으로 추진하는 가운데, 팀워크와 결과지향성을 강조하는 환경을 조성하고 있습니다.",
+          "category_ko": "회사 이해"
+        },
+        {
+          "question_ko": "삼성에서 제공하는 제품 중 당신이 가장 크게 기여할 수 있는 분야는 무엇이며, 그 이유는 무엇인가요?",
+          "answer_ko": "저는 AI와 데이터 분석 분야에 특히 기여할 수 있다고 생각합니다. 데이터 분석과 AI는 현재 삼성의 제품과 서비스 혁신을 이끄는 중요한 요소이며, 이러한 분야에서의 전문성을 바탕으로 효율적인 운영 체계를 구축하고 사용자 경험을 개선할 수 있습니다. 예를 들어, 스마트폰과 가전 제품에 AI 기능을 접목해 사용자 맞춤형 서비스 제공이 가능하도록 도울 수 있습니다. 이를 통해 최종적으로 사용자의 만족도를 높이고, 기업의 가치를 증대시키는 데 기여할 수 있을 것입니다.",
+          "category_ko": "업무 관련"
+        }
+      ]
+    },
+    "클룩": {
+      "info_ko": "클룩(Klook)은 여행 및 여가 활동 예약을 위한 글로벌 온라인 플랫폼입니다. 2014년에 설립된 클룩은 전 세계 사용자들이 다양한 여행지에서 즐길 수 있는 액티비티, 투어, 교통수단, 현지 체험 등을 간편하게 검색하고 예약할 수 있도록 지원합니다. 사용자는 Klook의 웹사이트나 모바일 애플리케이션을 통해 실시간으로 현지 여러 옵션을 비교하며 최적의 선택을 할 수 있습니다. 또한, 클룩은 고객 만족도를 높이기 위해 다양한 혜택과 할인 코드를 제공하며, 편리한 취소 정책을 운영하고 있습니다. 클룩은 글로벌 시장에서 강력한 입지를 다지고 있으며, 100개 이상의 도시에서 서비스하고 있습니다. 그들은 특히 아시아 시장에서 두각을 나타내고 있으며, 전 세계 여행자들 사이에서 믿을 수 있는 여행 파트너로 자리매김하고 있습니다.",
+      "info_en": "클룩(Klook)은 여행 및 여가 활동을 위한 온라인 플랫폼으로, 2014년에 설립되었습니다. 본사는 홍콩에 위치하며 전 세계 여행자들에게 다양한 여행 액티비티, 투어, 입장권, 교통편 등을 쉽고 간편하게 예약할 수 있는 서비스를 제공합니다. 클룩은 특히 아시아 지역에서 강세를 보이며, 전 세계 1000개 이상의 도시에서 수십만 개의 상품을 제공하고 있습니다. 사용자는 클룩 웹사이트나 모바일 앱을 통해 손쉽게 원하는 서비스를 검색하고, 비교하며, 예약할 수 있습니다. 또한 사용자 리뷰 기능을 통해 다른 여행자들의 후기를 참고하여 더 나은 선택을 할 수 있습니다. 클룩은 합리적인 가격과 다양한 상품 옵션을 통해 부분적으로 여행 계획의 번거로움을 덜어주며, 특히 현지 문화 체험, 액티비티, 맛집 투어 등의 다양한 경험을 선사하는데 주력하고 있습니다. 젊고 역동적인 브랜드 이미지로 여행의 편리함을 제공하고, 고객에게 큰 만족을 주기 위한 서비스 향상을 지속적으로 추진하고 있습니다.",
+      "info_ja": "",
+      "popular_products": [
+        {
+          "text_ko": "홍콩 디즈니랜드 티켓",
+          "score": 85,
+          "image_url": ""
+        },
+        {
+          "text_ko": "도쿄 타워 입장권",
+          "score": 80,
+          "image_url": ""
+        },
+        {
+          "text_ko": "싱가포르 유니버설 스튜디오 티켓",
+          "score": 75,
+          "image_url": ""
+        }
+      ],
+      "trending_topics": [
+        {
+          "text_ko": "코로나19 이후 여행 트렌드 변화",
+          "score": 90,
+          "detail_ko": "코로나19 이후 여행 산업의 복구에 따라, 비대면 여행과 안전한 여행이 중요 화두가 되었습니다. 클룩은 이러한 변화에 발맞추어 '안전한 여행' 카테고리를 강화하며 여행객들이 더 안전하게 이동할 수 있는 다양한 옵션을 제공하고 있습니다."
+        },
+        {
+          "text_ko": "아시아 시장의 성장",
+          "score": 85,
+          "detail_ko": "클룩은 아시아 시장에서의 강력한 성장을 바탕으로 서비스 지역을 확대하고 있습니다. 특히 한국, 일본, 대만 등에서의 성과가 두드러지며, 다양한 현지 파트너쉽을 통해 현지 고객들과의 접점을 강화하고 있습니다."
+        },
+        {
+          "text_ko": "온라인 여행 플랫폼의 발전",
+          "score": 80,
+          "detail_ko": "여행 소비자가 오프라인에서 온라인으로 지속적으로 이동함에 따라 클룩은 디지털 혁신을 가속화하고 있습니다. 최신 모바일 앱 개선, 사용자 맞춤형 추천 기능 등을 통해 고객 경험을 극대화하고 있습니다."
+        }
+      ],
+      "faqs": [
+        {
+          "question_ko": "eSIM은 어떤 국가에서 사용할 수 있나요?",
+          "answer_ko": "eSIM은 전 세계 대부분의 국가에서 사용 가능합니다. 주요 여행지인 유럽, 아시아, 아메리카, 오세아니아 등 전 세계 190개 이상의 국가와 지역에서 사용할 수 있습니다. 각 국가별 데이터 요금제와 사용 가능 여부는 상품 페이지에서 확인하실 수 있습니다.",
+          "question_en": "Which countries can I use eSIM in?",
+          "answer_en": "eSIM can be used in most countries around the world. It is available in over 190 countries and regions including major travel destinations in Europe, Asia, Americas, and Oceania. Data plans and availability for each country can be checked on the product page.",
+          "question_ja": "eSIMはどの国で使用できますか？",
+          "answer_ja": "eSIMは世界中のほとんどの国で使用できます。主要な旅行先であるヨーロッパ、アジア、アメリカ、オセアニアなど、世界190以上の国と地域で使用可能です。各国のデータプランと利用可否は商品ページでご確認いただけます。"
+        },
+        {
+          "question_ko": "eSIM 활성화는 어떻게 하나요?",
+          "answer_ko": "eSIM 활성화는 매우 간단합니다. 1) 구매 후 이메일로 받은 QR 코드를 확인하세요. 2) 여행지에 도착한 후 스마트폰 설정에서 eSIM을 추가하세요. 3) QR 코드를 스캔하거나 수동으로 입력하세요. 4) 데이터 요금제를 활성화하세요. 대부분의 경우 자동으로 활성화되며, 수동 활성화가 필요한 경우 상품 페이지의 안내를 따르시면 됩니다.",
+          "question_en": "How do I activate eSIM?",
+          "answer_en": "Activating eSIM is very simple. 1) Check the QR code received via email after purchase. 2) After arriving at your destination, add eSIM in your smartphone settings. 3) Scan the QR code or enter manually. 4) Activate your data plan. In most cases, it activates automatically, and if manual activation is required, please follow the instructions on the product page.",
+          "question_ja": "eSIMの有効化はどうすればいいですか？",
+          "answer_ja": "eSIMの有効化は非常に簡単です。1) 購入後メールで受け取ったQRコードを確認してください。2) 旅行先に到着したら、スマートフォンの設定でeSIMを追加してください。3) QRコードをスキャンするか、手動で入力してください。4) データプランを有効化してください。ほとんどの場合、自動的に有効化されますが、手動有効化が必要な場合は、商品ページの案内に従ってください。"
+        },
+        {
+          "question_ko": "eSIM을 여러 국가에서 사용할 수 있나요?",
+          "answer_ko": "네, 일부 eSIM 요금제는 여러 국가에서 사용할 수 있는 글로벌 플랜을 제공합니다. 지역별 플랜(예: 유럽 여러 국가, 아시아 여러 국가)도 있습니다. 구매 전 상품 설명에서 지원 국가 목록을 확인하시기 바랍니다. 단일 국가 전용 플랜도 있으므로 여행 계획에 맞는 플랜을 선택하시면 됩니다.",
+          "question_en": "Can I use eSIM in multiple countries?",
+          "answer_en": "Yes, some eSIM plans offer global plans that can be used in multiple countries. There are also regional plans (e.g., multiple European countries, multiple Asian countries). Please check the list of supported countries in the product description before purchase. There are also single-country exclusive plans, so please choose a plan that suits your travel plans.",
+          "question_ja": "eSIMを複数の国で使用できますか？",
+          "answer_ja": "はい、一部のeSIMプランは複数の国で使用できるグローバルプランを提供しています。地域別プラン（例：ヨーロッパ複数国、アジア複数国）もあります。購入前に商品説明でサポート国リストをご確認ください。単一国専用プランもあるため、旅行計画に合ったプランを選択してください。"
+        },
+        {
+          "question_ko": "eSIM은 어떤 기기에서 사용할 수 있나요?",
+          "answer_ko": "eSIM은 eSIM 기능을 지원하는 스마트폰, 태블릿, 스마트워치 등에서 사용할 수 있습니다. 주요 호환 기종은 다음과 같습니다:\n\n**iPhone:**\n- iPhone XS, XS Max, XR 이후 모델 (iPhone 14 시리즈 이상 권장)\n- iPhone SE (2020년 이후 모델)\n\n**Android:**\n- Google Pixel 3 이후 모델\n- Samsung Galaxy S20 시리즈 이후 (S21, S22, S23, S24, S25 등)\n- Samsung Galaxy Note 20 시리즈 이후\n- Samsung Galaxy Z Fold, Z Flip 시리즈\n- Samsung Galaxy Tab 시리즈 (일부 모델)\n- OnePlus 6 이후 모델\n- Xiaomi, Huawei, Oppo 등 주요 브랜드의 최신 모델\n\n**기타:**\n- iPad Pro (2018년 이후), iPad Air (2020년 이후), iPad mini (2019년 이후)\n- Apple Watch Series 3 이후 (셀룰러 모델)\n\n기기 호환성은 제조사와 모델에 따라 다를 수 있으므로, 구매 전 상품 페이지에서 사용하시는 기기 모델의 호환 여부를 확인하시기 바랍니다. 또한 일부 기기는 특정 국가나 통신사에서만 eSIM을 지원할 수 있습니다.",
+          "question_en": "Which devices support eSIM?",
+          "answer_en": "eSIM can be used on smartphones, tablets, smartwatches, and other devices that support eSIM functionality. Main compatible devices include:\n\n**iPhone:**\n- iPhone XS, XS Max, XR and later models (iPhone 14 series and above recommended)\n- iPhone SE (2020 and later models)\n\n**Android:**\n- Google Pixel 3 and later models\n- Samsung Galaxy S20 series and later (S21, S22, S23, S24, S25, etc.)\n- Samsung Galaxy Note 20 series and later\n- Samsung Galaxy Z Fold, Z Flip series\n- Samsung Galaxy Tab series (some models)\n- OnePlus 6 and later models\n- Latest models from Xiaomi, Huawei, Oppo, and other major brands\n\n**Others:**\n- iPad Pro (2018 and later), iPad Air (2020 and later), iPad mini (2019 and later)\n- Apple Watch Series 3 and later (cellular models)\n\nDevice compatibility may vary by manufacturer and model, so please check the product page before purchase to confirm compatibility with your device model. Some devices may only support eSIM in specific countries or with specific carriers.",
+          "question_ja": "eSIMはどのデバイスで使用できますか？",
+          "answer_ja": "eSIMは、eSIM機能をサポートするスマートフォン、タブレット、スマートウォッチなどで使用できます。主な互換デバイスは以下の通りです：\n\n**iPhone:**\n- iPhone XS、XS Max、XR以降のモデル（iPhone 14シリーズ以降推奨）\n- iPhone SE（2020年以降のモデル）\n\n**Android:**\n- Google Pixel 3以降のモデル\n- Samsung Galaxy S20シリーズ以降（S21、S22、S23、S24、S25など）\n- Samsung Galaxy Note 20シリーズ以降\n- Samsung Galaxy Z Fold、Z Flipシリーズ\n- Samsung Galaxy Tabシリーズ（一部モデル）\n- OnePlus 6以降のモデル\n- Xiaomi、Huawei、Oppoなどの主要ブランドの最新モデル\n\n**その他:**\n- iPad Pro（2018年以降）、iPad Air（2020年以降）、iPad mini（2019年以降）\n- Apple Watch Series 3以降（セルラーモデル）\n\nデバイスの互換性はメーカーやモデルによって異なる場合があるため、購入前に商品ページで使用するデバイスモデルの互換性をご確認ください。また、一部のデバイスは特定の国や通信事業者でのみeSIMをサポートする場合があります。"
+        },
+        {
+          "question_ko": "클룩에서 예약한 투어의 취소 정책은 어떻게 되나요?",
+          "answer_ko": "클룩은 사용자의 편의를 위해 다양한 취소 정책을 제공합니다. 일반적으로 예약 후 24시간 전까지 무료 취소가 가능합니다."
+        },
+        {
+          "question_ko": "클룩에서 제공하는 할인 코드는 어떻게 받나요?",
+          "answer_ko": "클룩 앱 또는 웹사이트의 '프로모션' 섹션에서 최신 할인 코드를 확인할 수 있습니다."
+        },
+        {
+          "question_ko": "클룩 포인트는 어떻게 적립되고 사용할 수 있나요?",
+          "answer_ko": "클룩 포인트는 예약 시 쌓이며, 이후 예약할 때 할인 혜택으로 사용할 수 있습니다. 포인트는 클룩 계정에서 확인 가능합니다."
+        },
+        {
+          "question_ko": "클룩에서 예약 가능한 활동은 어떤 것들이 있나요?",
+          "answer_ko": "입장권, 투어, 교통수단, 식사 이용권 등 다양한 활동이 가능합니다. 지역에 따라 제공되는 활동이 다를 수 있습니다."
+        },
+        {
+          "question_ko": "클룩의 안전 여행 가이드는 무엇인가요?",
+          "answer_ko": "클룩은 안전한 여행을 위해 여행자들에게 '안전 여행 가이드'를 제공합니다. 이 가이드는 활동의 안전 기준 및 방역 정보를 포함합니다."
+        },
+        {
+          "question_ko": "클룩 계정에서 마이 북킹은 어떻게 확인하나요?",
+          "answer_ko": "클룩 계정에 로그인 후 '마이 북킹' 섹션에서 예약한 모든 상품을 확인할 수 있습니다."
+        },
+        {
+          "question_ko": "클룩의 고객센터는 어떻게 연락할 수 있나요?",
+          "answer_ko": "클룩은 24시간 고객 지원 서비스를 제공합니다. 웹사이트의 '고객센터'를 통해 문의 가능합니다."
+        },
+        {
+          "question_ko": "클룩에서 사용하는 결제 방법은 무엇인가요?",
+          "answer_ko": "클룩은 신용카드, PayPal 등 다양한 결제 방법을 지원합니다. 지역에 따라 사용할 수 있는 방법이 달라질 수 있습니다."
+        },
+        {
+          "question_ko": "클룩 모바일 앱을 다운로드하려면 어떻게 해야 하나요?",
+          "answer_ko": "iOS 및 Android 사용자 모두 앱 스토어에서 클룩 앱을 무료로 다운로드할 수 있습니다."
+        },
+        {
+          "question_ko": "예약 확정 이메일을 받지 못했습니다. 어떻게 해야 하나요?",
+          "answer_ko": "예약 진행 후 최대 24시간 이내 이메일을 받지 못했다면, 스팸 폴더를 확인하거나 고객센터로 문의하세요."
+        }
+      ],
+      "interview_questions": [
+        {
+          "question_ko": "클룩의 장기 비전에 대해 어떻게 생각하고, 기여할 수 있는 방법은 무엇인가요?",
+          "answer_ko": "클룩의 장기 비전은 '세상의 모든 여정이 특별하도록 만드는 것'입니다. 이를 위해 저는 우선 고객의 입장에서 생각하며, 고객 경험을 최우선시하는 가치를 실현하고자 합니다. 지속적인 학습과 기술 활용을 통해 클룩이 고객에게 보다 높은 가치를 제공할 수 있도록 집중하겠습니다. 다양한 글로벌 고객들의 요구를 이해하고, 그에 따른 현명한 전략적 결정을 통해 클룩의 시장 확대에 기여할 수 있습니다. 또한, 팀워크 강화와 커뮤니케이션 스킬 향상을 통해 팀의 업무 효율성을 극대화할 수 있을 것입니다.",
+          "category_ko": "회사 이해"
+        },
+        {
+          "question_ko": "이전 경험에서 클룩의 특정 직무에 어떻게 적용할 수 있을지 설명해주세요.",
+          "answer_ko": "이전 경험에서 얻은 프로젝트 관리 및 고객 서비스 기술은 클룩의 업무에 매우 유용할 것입니다. 예를 들어, 고객 요구를 정확히 이해하고 문제를 해결하는 능력은 클룩의 고객 만족도를 높이는 데 기여할 수 있습니다. 또한, 다양한 문화적 배경을 가진 팀과 협력했던 경험은 글로벌 시장에서 다양한 고객과 소통하는 데 큰 도움이 될 것입니다. 이러한 경험을 바탕으로 클룩의 목표를 달성하는 데 실질적으로 기여할 수 있을 것으로 기대합니다.",
+          "category_ko": "업무 관련"
+        },
+        {
+          "question_ko": "여행 산업의 미래 트렌드에 대해 어떻게 생각하십니까?",
+          "answer_ko": "COVID-19 팬데믹 이후 여행 산업은 큰 변화를 겪고 있으며, 지속가능성 및 안전이 새로운 트렌드로 자리잡고 있습니다. 개인 맞춤형 여행과 개별 투어의 수요가 더욱 증가하고 있습니다. 기술을 활용한 비대면 서비스와 개인화된 여행 계획이 점점 더 중요해지고 있습니다. 또한, 지속 가능한 여행 옵션을 제공하는 기업이 각광받을 것으로 예상하며, 클룩은 이러한 트렌드에 맞서 빠르게 적응할 수 있는 능력을 가지고 있습니다.",
+          "category_ko": "직무 이해"
+        },
+        {
+          "question_ko": "클라우드 기반 기술이 여행 플랫폼에 어떤 이점을 주는지 설명해주세요.",
+          "answer_ko": "클라우드 기반 기술은 여행 플랫폼에 큰 유연성과 확장성을 제공합니다. 데이터의 안전한 저장과 처리가 가능하며, 이를 통해 고객에게 보다 신속하고 안정적인 서비스를 제공할 수 있습니다. 또한, 클라우드 기술은 실시간 데이터 분석을 가능하게 하며, 이를 통해 고객의 니즈를 더욱 정확하게 파악하고, 맞춤형 서비스를 제공할 수 있는 기반을 제공합니다. 클룩은 이러한 기술적 우위를 통해 사용자 경험을 혁신적으로 개선할 수 있을 것입니다.",
+          "category_ko": "회사 이해"
+        },
+        {
+          "question_ko": "여행 플랫폼에서 고객 경험을 극대화할 수 있는 방법은 무엇이라고 생각하십니까?",
+          "answer_ko": "고객 경험을 극대화하기 위해서는 사용자의 여정을 이해하고, 그 여정 전반에서 기대 이상의 가치를 제공해야 합니다. 클룩에서는 웹사이트와 모바일 앱의 사용자 인터페이스를 지속적으로 개선하고, 고품질의 고객 지원을 제공함으로써 고객 만족도를 높일 수 있습니다. 또한, 다양한 고객의 의견을 적극 수렴하고 분석하여 서비스를 맞춤화할 수 있으며, 고객의 피드백을 통해 빠르게 적응하고 개선하는 문화가 중요합니다. 이를 통해 고객이 간편하게 원하는 서비스를 찾고, 즐기며, 또 돌아오고 싶은 플랫폼이 되게 할 수 있습니다.",
+          "category_ko": "업무 관련"
+        }
+      ],
+      "ceo_info": {
+        "name_ko": "에단 린(Ethan Lin)",
+        "position_ko": "대표이사/CEO",
+        "bio_ko": "에단 린은 클룩의 공동창립자이자 CEO로, 여행 및 여가 활동 플랫폼을 글로벌 시장으로 확장하는 데 중요한 역할을 하고 있습니다. 그는 대만에서 태어나 홍콩과 미국에서 교육을 받았으며, 전자 상거래와 여행 기술 분야에서 다양한 경험을 쌓았습니다. 클룩을 설립하기 전, 그는 여러 벤처 회사에서 경력을 쌓으며 기술 기반의 비즈니스 모델 개발에 주력했습니다. 그의 리더십 아래, 클룩은 빠르게 성장하며 전 세계 여행자들에게 혁신적인 서비스를 제공하고 있습니다.",
+        "tenure_ko": "2014년 ~ 현재",
+        "education_ko": "중국 홍콩 대학 경영학 학사",
+        "career_ko": "클룩 공동창립 및 CEO, 다양한 기술 스타트업 경력 보유"
+      }
+    },
+    "유니버셜 스튜디오": {
+      "info_ko": "유니버셜 스튜디오는 1912년에 설립된 미국의 영화 제작사로 현재는 NBC유니버셜의 자회사입니다. 본사는 캘리포니아 로스앤젤레스에 위치하고 있으며, 세계에서 가장 오래된 영화 스튜디오 중 하나로 잘 알려져 있습니다. 유니버셜 스튜디오는 다양한 장르의 영화를 제작하며, 특히 블록버스터급 영화들로 유명합니다. 이 스튜디오의 대표작으로는 '쥬라기 공원', 'E.T.', '분노의 질주' 시리즈 등이 있습니다. 또한, 유니버셜 스튜디오는 테마파크 사업도 활발히 운영하고 있으며, 전 세계 여러 도시에 테마파크를 개장하여 많은 방문객들을 끌어들이고 있습니다. 이 테마파크들에서는 영화의 한 장면을 현실에서 체험할 수 있는 다양한 어트랙션과 쇼가 제공됩니다.",
+      "info_en": "",
+      "info_ja": "",
+      "popular_products": [
+        {
+          "text_ko": "쥬라기 월드",
+          "score": 85
+        },
+        {
+          "text_ko": "분노의 질주",
+          "score": 80
+        },
+        {
+          "text_ko": "미니언즈",
+          "score": 75
+        }
+      ],
+      "trending_topics": [
+        {
+          "text_ko": "쥬라기 공원 새 시리즈 발표",
+          "score": 90
+        },
+        {
+          "text_ko": "분노의 질주 최신작 개봉",
+          "score": 85
+        },
+        {
+          "text_ko": "유니버셜 스튜디오 테마파크 신기능",
+          "score": 80
+        }
+      ],
+      "faqs": [
+        {
+          "question_ko": "유니버셜 스튜디오의 본사는 어디에 있나요?",
+          "answer_ko": "유니버셜 스튜디오의 본사는 미국 캘리포니아주 로스앤젤레스에 위치하고 있습니다."
+        },
+        {
+          "question_ko": "유니버셜 스튜디오는 언제 설립되었나요?",
+          "answer_ko": "유니버셜 스튜디오는 1912년에 설립되었습니다."
+        },
+        {
+          "question_ko": "유니버셜 스튜디오에서 제작한 유명한 영화들은 무엇인가요?",
+          "answer_ko": "'쥬라기 공원', 'E.T.', '분노의 질주' 시리즈 등이 있습니다."
+        },
+        {
+          "question_ko": "유니버셜 스튜디오의 테마파크는 어디에 있나요?",
+          "answer_ko": "유니버셜 스튜디오의 테마파크는 플로리다주 올랜도와 할리우드 및 도쿄 등 여러 도시에 위치하고 있습니다."
+        },
+        {
+          "question_ko": "유니버셜 스튜디오 테마파크에서는 어떤 어트랙션을 즐길 수 있나요?",
+          "answer_ko": "유명 영화의 장면을 체험할 수 있는 다양한 어트랙션과 쇼가 제공됩니다."
+        },
+        {
+          "question_ko": "유니버셜 스튜디오의 소유주는 누구인가요?",
+          "answer_ko": "유니버셜 스튜디오는 NBC유니버셜의 자회사입니다."
+        },
+        {
+          "question_ko": "최초로 개봉한 유니버셜 스튜디오 영화는 무엇인가요?",
+          "answer_ko": "최초의 유니버셜 스튜디오 영화 중 하나는 'Traffic in Souls'(1913)입니다."
+        },
+        {
+          "question_ko": "유니버셜 스튜디오의 수익 모델은 무엇인가요?",
+          "answer_ko": "주 수익 모델은 영화 제작 및 배급, 테마파크 운영 등을 포함합니다."
+        },
+        {
+          "question_ko": "유니버셜 스튜디오의 주요 경쟁자는 어디인가요?",
+          "answer_ko": "주요 경쟁자는 월트 디즈니 스튜디오, 워너 브라더스 등이 있습니다."
+        },
+        {
+          "question_ko": "최근 유니버셜 스튜디오의 인기 영화는 무엇인가요?",
+          "answer_ko": "최근 인기 영화 중 하나는 '미니언즈: 더 라이즈 오브 그루'입니다."
+        }
+      ]
+    },
+    "모토로라": {
+      "info_ko": "모토로라는 1928년에 미국 일리노이주 시카고에서 Paul Galvin과 Joseph Galvin 형제에 의해 Galvin Manufacturing Corporation으로 설립된 회사입니다. 1947년에 모토로라라는 브랜드 이름을 출시하면서 회사의 이름을 바꾸었습니다. 모토로라는 두명의 형제와 그들의 실험적 개발이 지베 무선 제품과 혁신을 통해 세계적으로 유명해졌습니다. 1930년대에 일체형 자동차 라디오를 처음 선보이며 혁신의 길을 열었습니다. 그 이후로 모토로라는 1969년 아폴로 11호의 달 착륙 당시 달과 지구 간의 첫 방송을 가능케 한 통신 장비들을 만들어내기도 했습니다. 또한 셀룰러 기술의 선구자로, 최초의 휴대폰 'DynaTAC'을 1980년대 초에 개발했으며, 이는 현대 스마트폰의 기초를 만들었습니다. 이후 모토로라는 다양한 전자 및 통신 장비를 발전시키면서 테크놀로지 중심의 혁신 브랜드로 자리잡았습니다. 2011년에는 모토로라 모빌리티와 모토로라 솔루션으로 분사하였으며, 모빌리티 부문은 2014년에 레노버에 인수되었습니다. 현재 모토로라는 스마트폰 및 기타 통신 장비를 제조하는 것으로 잘 알려져 있습니다.",
+      "info_en": "",
+      "info_ja": "",
+      "popular_products": [
+        {
+          "text_ko": "Moto G Power",
+          "score": 85,
+          "image_url": ""
+        },
+        {
+          "text_ko": "Moto G Stylus",
+          "score": 80,
+          "image_url": ""
+        },
+        {
+          "text_ko": "Razr 5G",
+          "score": 75,
+          "image_url": ""
+        }
+      ],
+      "trending_topics": [
+        {
+          "text_ko": "5G 네트워크 지원 확대",
+          "score": 90,
+          "detail_ko": "모토로라는 최신 5G 기술을 지원하는 스마트폰을 다양하게 출시하면서 소비자에게 초고속 인터넷 경험을 제공합니다. 5G 네트워크는 향상된 데이터 속도와 연결성을 통해 사용자 경험을 혁신적으로 바꿔 놓고 있습니다."
+        },
+        {
+          "text_ko": "접이식 스마트폰 시장 진출",
+          "score": 85,
+          "detail_ko": "모토로라는 최근 접이식 스마트폰인 Razr 5G를 출시하며 접이식 시장에 진입했습니다. 이 제품은 과거 Razr 디자인을 현대 기술과 결합하여 혁신적인 사용자 경험을 제공합니다."
+        },
+        {
+          "text_ko": "고급 중저가 스마트폰 출시",
+          "score": 80,
+          "detail_ko": "모토로라는 성능과 가격의 균형을 맞춘 다수의 중저가 스마트폰을 출시하며, 다양한 소비자 층에게 접근성을 제공합니다. 특히 Moto G 시리즈는 가성비 좋은 성능으로 인기를 끌고 있습니다."
+        }
+      ],
+      "faqs": [
+        {
+          "question_ko": "모토로라에서 최신 스마트폰은 무엇인가요?",
+          "answer_ko": "모토로라의 최신 스마트폰 중 하나는 'Moto G Power 2023'입니다. 5G 지원과 대용량 배터리로 주목받고 있습니다."
+        },
+        {
+          "question_ko": "모토로라의 휴대폰은 어디에서 구입할 수 있나요?",
+          "answer_ko": "모토로라 휴대폰은 온라인 쇼핑몰, 공식 웹사이트, 대형 전자제품 매장에서 구입 가능합니다."
+        },
+        {
+          "question_ko": "모토로라 휴대폰의 보증 기간은 어떻게 되나요?",
+          "answer_ko": "보증 기간은 보통 1년이며, 구입한 지역과 제품에 따라 다를 수 있습니다."
+        },
+        {
+          "question_ko": "모토로라 휴대폰의 AS 센터는 어디에 있나요?",
+          "answer_ko": "공식 웹사이트를 통해 가까운 AS 센터의 위치를 확인할 수 있습니다."
+        },
+        {
+          "question_ko": "모토로라 휴대폰은 어떤 운영체제를 사용하나요?",
+          "answer_ko": "모토로라 스마트폰은 대부분 Android 운영체제를 사용합니다."
+        },
+        {
+          "question_ko": "모토로라의 접이식 스마트폰 특징은 무엇인가요?",
+          "answer_ko": "모토로라의 접이식 스마트폰, 특히 Razr 모델은 혁신적인 디자인과 휴대성을 특징으로 합니다."
+        },
+        {
+          "question_ko": "모토로라 스마트폰의 배터리 수명은 어떻게 되나요?",
+          "answer_ko": "배터리 수명은 모델과 사용량에 따라 다르지만, 최신 모델들은 대용량 배터리를 탑재해 장시간 사용이 가능합니다."
+        },
+        {
+          "question_ko": "모토로라의 5G 지원 모델은 어떤 것이 있나요?",
+          "answer_ko": "Moto G 시리즈 및 Razr 5G는 모토로라의 5G 지원 모델 중 일부입니다."
+        },
+        {
+          "question_ko": "모토로라 전용 액세서리는 어디서 구할 수 있나요?",
+          "answer_ko": "모토로라 전용 액세서리는 공식 웹사이트나 대형 전자제품 매장에서 구입할 수 있습니다."
+        },
+        {
+          "question_ko": "모토로라에서 중저가 스마트폰 라인은 무엇이 있나요?",
+          "answer_ko": "Moto G 시리즈는 모토로라의 중저가 스마트폰 라인으로, 가격 대비 성능이 뛰어납니다."
+        }
+      ]
+    },
+    "klook": {
+      "info_en": "Klook is a global travel and leisure booking platform that offers travelers a comprehensive range of travel-related services. Founded in 2014, the company has rapidly expanded its footprint across the world, providing users with an easy way to discover and book travel activities, attractions, tours, and local experiences. Its platform is designed to be a one-stop-shop for travelers, offering everything from theme park tickets, sightseeing tours, and food and dining experiences to transportation services and unique local activities. Klook's mobile app and website aim to make travel planning more convenient by offering competitive pricing, instant confirmation, and a wide variety of options. With a mission to connect people to more joyful experiences, Klook partners with numerous service providers across the globe, allowing travelers to plan and book trips with confidence and convenience. The company has established itself strongly in the Asian market and continues to expand its services in Europe and the Americas, fueled by its commitment to enhancing the overall travel experience for its users.",
+      "info_ko": "Klook is a leading travel and leisure booking platform that connects travelers with local experiences and services around the world. Founded in 2014 in Hong Kong by Ethan Lin, Eric Gnock Fah, and Bernie Xiong, Klook was developed to make it easier for travelers to discover and book activities, attractions, and services such as tours, transportation, and SIM cards. With a focus on Asia, Klook quickly expanded to offer services in over 400 destinations worldwide. The platform provides both web and mobile app interfaces to facilitate user-friendly bookings. As of 2023, Klook continues to grow its partnerships with local vendors and expand its offerings, including wellness experiences, dining vouchers, and transport services, making it a comprehensive partner for travelers seeking convenient and diverse travel plans.",
+      "info_ja": "",
+      "popular_products": [
+        {
+          "text_en": "Universal Studios Singapore",
+          "score": 85,
+          "image_url": "https://example.com/image1.jpg"
+        },
+        {
+          "text_en": "Hong Kong Disneyland",
+          "score": 80,
+          "image_url": "https://example.com/image2.jpg"
+        },
+        {
+          "text_en": "Tokyo Disneyland",
+          "score": 75,
+          "image_url": "https://example.com/image3.jpg"
+        }
+      ],
+      "trending_topics": [
+        {
+          "text_en": "Expansion into European Markets",
+          "score": 90,
+          "detail_en": "Klook is making significant strides in expanding its presence in European markets. This is part of the company's strategy to diversify its customer base and offer more local experiences across the continent. By partnering with a wide range of European service providers, Klook aims to integrate a more diverse selection of cultural and leisure activities into its portfolio."
+        },
+        {
+          "text_en": "Innovative Travel Technologies",
+          "score": 85,
+          "detail_en": "Klook is leveraging cutting-edge travel technologies, including AI and machine learning, to enhance its booking platform. These technologies allow for more personalized user experiences, optimizing search results and suggesting curated activities based on user preferences. This innovation is set to improve the travel planning process for customers."
+        },
+        {
+          "text_en": "Sustainable Tourism Initiatives",
+          "score": 80,
+          "detail_en": "In a bid to promote sustainable tourism, Klook is implementing initiatives that encourage eco-friendly travel practices. The company is collaborating with local partners to offer activities that focus on cultural preservation and environmental conservation, helping travelers make more responsible travel choices."
+        }
+      ],
+      "faqs": [
+        {
+          "question_en": "Which countries can I use eSIM in?",
+          "answer_en": "eSIM can be used in most countries around the world. It is available in over 190 countries and regions including major travel destinations in Europe, Asia, Americas, and Oceania. Data plans and availability for each country can be checked on the product page.",
+          "question_ko": "eSIM은 어떤 국가에서 사용할 수 있나요?",
+          "answer_ko": "eSIM은 전 세계 대부분의 국가에서 사용 가능합니다.",
+          "question_ja": "eSIMはどの国で使用できますか？",
+          "answer_ja": "eSIMは世界中のほとんどの国で使用できます。"
+        },
+        {
+          "question_en": "How do I activate eSIM?",
+          "answer_en": "Activating eSIM is very simple. 1) Check the QR code received via email after purchase. 2) After arriving at your destination, add eSIM in your smartphone settings. 3) Scan the QR code or enter manually. 4) Activate your data plan.",
+          "question_ko": "eSIM 활성화는 어떻게 하나요?",
+          "answer_ko": "eSIM 활성화는 매우 간단합니다.",
+          "question_ja": "eSIMの有効化はどうすればいいですか？",
+          "answer_ja": "eSIMの有効化は非常に簡単です。"
+        },
+        {
+          "question_en": "Which devices support eSIM?",
+          "answer_en": "eSIM can be used on smartphones, tablets, smartwatches, and other devices that support eSIM functionality. Main compatible devices include:\n\n**iPhone:**\n- iPhone XS, XS Max, XR and later models (iPhone 14 series and above recommended)\n- iPhone SE (2020 and later models)\n\n**Android:**\n- Google Pixel 3 and later models\n- Samsung Galaxy S20 series and later (S21, S22, S23, S24, S25, etc.)\n- Samsung Galaxy Note 20 series and later\n- Samsung Galaxy Z Fold, Z Flip series\n- Samsung Galaxy Tab series (some models)\n- OnePlus 6 and later models\n- Latest models from Xiaomi, Huawei, Oppo, and other major brands\n\n**Others:**\n- iPad Pro (2018 and later), iPad Air (2020 and later), iPad mini (2019 and later)\n- Apple Watch Series 3 and later (cellular models)\n\nDevice compatibility may vary by manufacturer and model, so please check the product page before purchase to confirm compatibility with your device model. Some devices may only support eSIM in specific countries or with specific carriers.",
+          "question_ko": "eSIM은 어떤 기기에서 사용할 수 있나요?",
+          "answer_ko": "eSIM은 eSIM 기능을 지원하는 스마트폰, 태블릿, 스마트워치 등에서 사용할 수 있습니다.",
+          "question_ja": "eSIMはどのデバイスで使用できますか？",
+          "answer_ja": "eSIMは、eSIM機能をサポートするスマートフォン、タブレット、スマートウォッチなどで使用できます。"
+        },
+        {
+          "question_en": "How does Klook work?",
+          "answer_en": "Klook allows users to browse and book a wide variety of travel activities, attractions, and services through its website or mobile app. Users can search for specific destinations, discover popular attractions, and check availability in real-time."
+        },
+        {
+          "question_en": "Is Klook safe to use for bookings?",
+          "answer_en": "Yes, Klook is a reputable platform that partners with trusted service providers. The company uses secure payment methods and offers customer support to assist with any issues."
+        },
+        {
+          "question_en": "Can I get a refund on my Klook booking?",
+          "answer_en": "Refund policies vary depending on the activity or service. It's important to review the specific terms and conditions of each booking. Many activities offer refunds or fee-free cancellations up to a certain date."
+        },
+        {
+          "question_en": "How do I contact Klook customer service?",
+          "answer_en": "Klook provides customer support through various channels including email, phone, and live chat on their platform. The availability of these channels may vary by region."
+        },
+        {
+          "question_en": "Does Klook offer any discounts?",
+          "answer_en": "Klook frequently offers promotions and discount codes that can be applied at checkout. It's advisable to check their website or subscribe to their newsletter for the latest deals."
+        },
+        {
+          "question_en": "Do I need to print my Klook booking voucher?",
+          "answer_en": "Most of Klook's booking vouchers can be accessed via their mobile app, making it convenient for travelers who may not have access to a printer. However, certain activities may require a printed voucher."
+        },
+        {
+          "question_en": "Can I change the date of my Klook booking?",
+          "answer_en": "Changes to booking dates depend on the specific terms of each activity. Some bookings may allow date changes, while others may not. You should check the cancellation policy before making changes."
+        },
+        {
+          "question_en": "What types of activities can I book on Klook?",
+          "answer_en": "Klook offers a broad range of activities including theme park tickets, guided tours, cultural excursions, food and dining experiences, accommodation booking, and transport services like airport transfers."
+        },
+        {
+          "question_en": "Are there Klook gift cards available?",
+          "answer_en": "Yes, Klook offers gift cards that can be used to purchase activities and services on their platform. These can be a great gift for travelers looking to explore new experiences."
+        },
+        {
+          "question_en": "How does Klook handle cancellations due to unforeseen circumstances?",
+          "answer_en": "In the event of unforeseen circumstances, Klook typically works with their service providers to accommodate changes, offering refunds or rescheduling options when possible. It's best to contact their customer support for assistance in such scenarios."
+        }
+      ]
+    },
+    "サムスン": {
+      "info_ja": "サムスン電子（Samsung Electronics）は、韓国に本社を置く世界最大級のエレクトロニクスメーカーであり、幅広い家電製品や電子機器を提供しています。設立は1969年で、以後急成長を遂げ、今ではスマートフォン、テレビ、半導体、ディスプレイパネルなどの分野で世界をリードしています。特にGalaxyシリーズのスマートフォンは世界的な人気を誇り、革新的な技術を搭載した製品を次々と市場に投入しています。また、サムスンは研究開発に大規模な投資を行い、年間売上高の約10%を費やしています。この投資により、人工知能、5G、IoT、エレクトロニクスの各分野での技術革新を推進しています。さらに、サムスンの半導体事業は、世界のメモリ市場を支える重要な役割を持ち、多くの国際的な企業に部品を供給しています。サムスンはまた、環境への配慮も怠らず、持続可能な未来に向けてクリーンエネルギーへの投資を積極的に行っています。",
+      "info_ko": "サムスン電子は、1938年に李秉喆氏によって創業され、現在は韓国を代表する大手多国籍企業の一つです。本社は韓国のソウルに位置し、主に電子機器、半導体、電気通信機器を製造・販売しています。サムスンは、その多様な事業ポートフォリオを通じて、世界中のさまざまな市場でプレゼンスを持っており、特にスマートフォン市場においては、世界トップクラスのメーカーとして知られています。同社のビジネスは、モバイル通信、半導体、ディスプレイ技術、家電、その他のITソリューションを含む多岐にわたります。サムスンはまた、革新と技術開発に重点を置いており、毎年多額の投資を研究開発に投入しています。その結果、同社は数々の革新的な製品を市場に投入し続けています。持続可能性と社会貢献活動にも積極的であり、環境保護や教育、社会福祉など、多様なCSR活動を通じて地域社会に貢献しています。",
+      "info_en": "",
+      "popular_products": [
+        {
+          "text_ja": "Galaxy Sシリーズ",
+          "score": 85,
+          "image_url": ""
+        },
+        {
+          "text_ja": "QLEDテレビ",
+          "score": 80,
+          "image_url": ""
+        },
+        {
+          "text_ja": "サムスンSSD",
+          "score": 75,
+          "image_url": ""
+        }
+      ],
+      "trending_topics": [
+        {
+          "text_ja": "次世代半導体技術の開発",
+          "score": 90,
+          "detail_ja": "サムスンは次世代半導体技術の開発を加速しています。特にAIや5Gに対応したチップセットの開発は、未来の技術トレンドをリードするための重要なステップとされています。"
+        },
+        {
+          "text_ja": "折りたたみスマートフォンの革新",
+          "score": 85,
+          "detail_ja": "サムスンの折りたたみスマートフォンは、最新の技術を駆使して市場で注目を集めています。耐久性の向上や新たなユーザー体験を提供することで、ユーザーのライフスタイルを一新しようとしています。"
+        },
+        {
+          "text_ja": "持続可能な開発目標への取り組み",
+          "score": 80,
+          "detail_ja": "サムスンは持続可能な開発目標を支持し、環境に優しい技術や製品の開発に注力しています。その一環として、クリーンエネルギープロジェクトの拡大に力を入れています。"
+        }
+      ],
+      "faqs": [
+        {
+          "question_ja": "サムスンの製品保証期間はどれくらいですか？",
+          "answer_ja": "サムスンの製品保証期間は製品によって異なりますが、通常1年間のメーカー保証が付いています。"
+        },
+        {
+          "question_ja": "サムスンのスマートフォンの最新モデルは何ですか？",
+          "answer_ja": "サムスンの最新モデルはGalaxy SシリーズやFoldシリーズの最新機種です。詳細は公式ウェブサイトで確認できます。"
+        },
+        {
+          "question_ja": "サムスン製品のサポートを受けるにはどうすればいいですか？",
+          "answer_ja": "サムスンのカスタマーサポートセンターに連絡するか、公式ウェブサイトのサポートページからオンラインで問い合わせることができます。"
+        },
+        {
+          "question_ja": "サムスンのスマートテレビでアプリをインストールするには？",
+          "answer_ja": "サムスンスマートテレビのSmart Hubからアプリストアにアクセスし、インストールしたいアプリを選択してダウンロードします。"
+        },
+        {
+          "question_ja": "サムスンの製品をオンラインで購入する方法を教えてください。",
+          "answer_ja": "サムスンの公式オンラインストアまたは主要なオンラインリテールサイトで製品を購入できます。"
+        },
+        {
+          "question_ja": "サムスン製品の修理センターはどこにありますか？",
+          "answer_ja": "サムスン製品の修理センターは各地域にありますので、公式ウェブサイトで最寄りのセンターを検索してください。"
+        },
+        {
+          "question_ja": "サムスンのエコシステムサービスにはどんなものがありますか？",
+          "answer_ja": "サムスンのエコシステムサービスには、SmartThingsやSamsung HealthなどのIoTや健康管理をサポートするサービスがあります。"
+        },
+        {
+          "question_ja": "サムスンの著名な技術革新には何がありますか？",
+          "answer_ja": "ディスプレイ技術の革新（AMOLED, QLED）、折りたたみスマートフォン、AIチップの開発などが挙げられます。"
+        },
+        {
+          "question_ja": "サムスンの最新の技術イベントは何ですか？",
+          "answer_ja": "毎年開催されるGalaxy Unpackedイベントがあります。ここでは新製品や技術革新が発表されます。"
+        },
+        {
+          "question_ja": "サムスンのビジネス戦略の主要なポイントは何ですか？",
+          "answer_ja": "新技術開発への積極的な投資、グローバル市場でのシェア拡大、持続可能な開発への取り組みが挙げられます。"
+        }
+      ]
+    },
+    "넷플릭스": {
+      "info_ko": "넷플릭스는 1997년 리드 헤이스팅스와 마크 랜돌프에 의해 설립된 미국의 세계적인 엔터테인먼트 서비스 제공 업체입니다. 현재 넷플릭스는 가입자 기반의 스트리밍 서비스를 주력으로 하며, 영화, 드라마, 다큐멘터리 등 다양한 콘텐츠를 제공합니다. 회사는 오리지널 콘텐츠 제작에도 많은 투자를 하고 있으며, 이를 통해 글로벌 시장에서 큰 성공을 거두고 있습니다. 넷플릭스는 이제 단순히 콘텐츠를 제공하는 데 그치지 않고, 콘텐츠 큐레이션 및 추천 알고리즘에도 중점을 두어 사용자의 취향에 맞는 맞춤형 경험을 제공합니다. 이와 같은 혁신적인 서비스로 넷플릭스는 엔터테인먼트 업계의 패러다임을 변화시키고 있습니다.",
+      "info_en": "",
+      "info_ja": "",
+      "popular_products": [
+        {
+          "text_ko": "기묘한 이야기",
+          "score": 85,
+          "image_url": ""
+        },
+        {
+          "text_ko": "하우스 오브 카드",
+          "score": 80,
+          "image_url": ""
+        },
+        {
+          "text_ko": "오징어 게임",
+          "score": 75,
+          "image_url": ""
+        }
+      ],
+      "trending_topics": [
+        {
+          "text_ko": "오리지널 콘텐츠 제작 강화",
+          "score": 90,
+          "detail_ko": "넷플릭스는 자체 제작 콘텐츠에 대한 투자를 확대하여, 글로벌 시장에서의 경쟁력을 높이고 있습니다. 이는 다양한 문화권과 언어에 맞춘 콘텐츠 제작을 통해 새로운 시청자층을 확보하기 위한 전략입니다."
+        },
+        {
+          "text_ko": "구독료 인상",
+          "score": 85,
+          "detail_ko": "최근 넷플릭스는 일부 국가에서 구독료를 인상하였습니다. 이는 콘텐츠 제작 및 서비스 개선을 위한 투자 비용을 충당하기 위한 결정으로, 사용자들에게는 추가적인 가치를 제공하겠다는 목표입니다."
+        },
+        {
+          "text_ko": "광고 기반 요금제 도입",
+          "score": 80,
+          "detail_ko": "넷플릭스는 더 많은 사용자를 확보하기 위해 광고가 포함된 저렴한 요금제를 시범 도입하고 있습니다. 이 요금제는 기존의 무광고 요금제와 비교하여 낮은 가격으로 제공되며, 선택적 광고 시청을 포함합니다."
+        }
+      ],
+      "faqs": [
+        {
+          "question_ko": "넷플릭스의 구독 요금은 얼마인가요?",
+          "answer_ko": "넷플릭스의 요금은 지역과 요금제에 따라 다릅니다. 요금제를 선택할 때 화면 수와 화질에 따라 가격이 달라집니다."
+        },
+        {
+          "question_ko": "넷플릭스에서 제공하는 콘텐츠는 어떤 것이 있나요?",
+          "answer_ko": "넷플릭스는 영화, 드라마, 다큐멘터리와 같은 다양한 콘텐츠를 제공하며, 많은 인기 있는 오리지널 시리즈도 포함됩니다."
+        },
+        {
+          "question_ko": "넷플릭스를 시청하는 데 필요한 기기는 무엇인가요?",
+          "answer_ko": "넷플릭스는 스마트TV, 스트리밍 미디어 플레이어, 게임 콘솔, 스마트폰, 태블릿, PC 등 다양한 기기에서 시청할 수 있습니다."
+        },
+        {
+          "question_ko": "넷플릭스 계정을 공유할 수 있나요?",
+          "answer_ko": "넷플릭스 계정은 최대 설정된 화면 수 내에서 다른 사용자와 공유할 수 있습니다. 사용자는 개인 프로필을 설정하여 시청을 관리할 수 있습니다."
+        },
+        {
+          "question_ko": "넷플릭스에서 다운로드 기능을 사용할 수 있나요?",
+          "answer_ko": "넷플릭스 앱을 통해 영화나 TV 프로그램을 기기에 다운로드하여 인터넷이 없는 곳에서도 시청할 수 있습니다."
+        },
+        {
+          "question_ko": "넷플릭스의 추천 콘텐츠는 어떻게 결정되나요?",
+          "answer_ko": "넷플릭스는 사용자의 시청 기록, 평가, 검색 기록 등을 바탕으로 맞춤형 콘텐츠를 추천합니다."
+        },
+        {
+          "question_ko": "넷플릭스 구독을 취소할 수 있나요?",
+          "answer_ko": "넷플릭스 구독은 언제든지 취소할 수 있으며, 취소는 결제가 갱신되기 전까지 가능합니다. 취소 후 남은 기간 동안 계속 사용 가능합니다."
+        },
+        {
+          "question_ko": "넷플릭스 오리지널 시리즈란 무엇인가요?",
+          "answer_ko": "넷플릭스 오리지널 시리즈는 넷플릭스가 직접 제작하거나 공동 제작한 작품들로, '기묘한 이야기', '오징어 게임' 등이 이에 해당합니다."
+        },
+        {
+          "question_ko": "넷플릭스의 고객 지원은 어떻게 받을 수 있나요?",
+          "answer_ko": "넷플릭스는 웹사이트와 앱을 통해 고객 지원을 제공하며, 언제든지 도움을 받을 수 있는 FAQ와 상담 기능을 갖추고 있습니다."
+        },
+        {
+          "question_ko": "넷플릭스는 여러 언어의 자막을 제공하나요?",
+          "answer_ko": "넷플릭스는 다양한 언어로 된 자막과 오디오 설명을 제공하여 사용자들이 더욱 편리하게 콘텐츠를 즐길 수 있도록 지원합니다."
+        }
+      ]
+    },
+    "samsung": {
+      "info_en": "Samsung Electronics, a flagship subsidiary of the Samsung Group, is a global leader in technology, known for producing a wide range of consumer electronics and semiconductors. Established in 1969 in Suwon, South Korea, Samsung has grown to become one of the world's largest technology companies by revenue. Samsung Electronics is renowned for its innovation across various sectors including mobile communications, consumer electronics, and appliance manufacturing, making cutting-edge products such as smartphones, televisions, home appliances, and semiconductors. The company's commitment to research and development is evident from its expansive product portfolio and technological advancements. Samsung operates globally, employing hundreds of thousands of people across numerous countries. The brand is synonymous with quality and innovation, with the Samsung Galaxy series being one of the most popular smartphone lines in the world. Besides its consumer products, Samsung Electronics plays a crucial role in the development of technology infrastructure, such as network systems, contributing significantly to the global digitization and Internet of Things (IoT) ecosystems. Samsung Electronics continues to drive forward with a focus on sustainability and smart technology, aiming to shape the future of the electronics industry.",
+      "info_ko": "Samsung Electronics Co., Ltd., a global leader in technology and innovation, was established in Suwon, South Korea, in 1969. As a part of the Samsung Group, one of the largest business conglomerates in South Korea, Samsung Electronics has played a pivotal role in transforming the electronics industry. The company is renowned for its commitment to pushing the boundaries of design and enhancing the consumer experience through its diverse range of products. With a product lineup that includes smartphones, televisions, home appliances, and semiconductors, Samsung consistently strives to deliver groundbreaking technologies that enrich the lives of consumers worldwide. Over the years, Samsung has not only achieved numerous technological breakthroughs but has also positioned itself as a trusted brand in consumer electronics. The company remains dedicated to sustainable practices and innovative solutions that address the ever-evolving demands of the market.",
+      "info_ja": "",
+      "popular_products": [
+        {
+          "text_en": "Samsung Galaxy S21 Ultra",
+          "score": 85,
+          "image_url": ""
+        },
+        {
+          "text_en": "Samsung QLED TV",
+          "score": 80,
+          "image_url": ""
+        },
+        {
+          "text_en": "Samsung Galaxy Buds Pro",
+          "score": 75,
+          "image_url": ""
+        }
+      ],
+      "trending_topics": [
+        {
+          "text_en": "Samsung Unveils New Foldable Phones",
+          "score": 90,
+          "detail_en": "Samsung has recently launched its latest foldable smartphones, the Galaxy Z Fold3 and Galaxy Z Flip3, which are gaining attention for their innovative design and enhanced durability. These models feature improved hinges and water resistance, positioning Samsung at the forefront of foldable technology."
+        },
+        {
+          "text_en": "Samsung's Role in 5G Expansion",
+          "score": 85,
+          "detail_en": "As a leader in telecommunications equipment, Samsung is significantly contributing to the global expansion of 5G networks. The company is investing heavily in 5G infrastructure, partnering with carriers around the world to deliver faster and more reliable mobile services."
+        },
+        {
+          "text_en": "Sustainability Initiatives by Samsung",
+          "score": 80,
+          "detail_en": "Samsung is making strides in sustainability by focusing on reducing electronic waste and enhancing energy efficiency in its products. The company's commitment to eco-friendly manufacturing processes and its initiatives like upcycling old devices reflect its dedication to environmental protection and sustainable business practices."
+        }
+      ],
+      "faqs": [
+        {
+          "question_en": "What are the main features of Galaxy S25 Ultra?",
+          "answer_en": "Galaxy S25 Ultra is Samsung's latest flagship smartphone, offering high-performance processor, high-resolution camera system, long battery life, and fast charging.",
+          "question_ko": "Galaxy S25 Ultra의 주요 특징은 무엇인가요?",
+          "answer_ko": "Galaxy S25 Ultra는 삼성의 최신 플래그십 스마트폰입니다.",
+          "question_ja": "Galaxy S25 Ultraの主な特徴は何ですか？",
+          "answer_ja": "Galaxy S25 Ultraはサムスンの最新フラグシップスマートフォンです。"
+        },
+        {
+          "question_en": "What is Samsung's flagship smartphone?",
+          "answer_en": "Samsung’s flagship smartphone is the Galaxy S series, with the latest being the Samsung Galaxy S21 Ultra."
+        },
+        {
+          "question_en": "Where is Samsung headquartered?",
+          "answer_en": "Samsung's headquarters is located in Suwon, South Korea."
+        },
+        {
+          "question_en": "What industries does Samsung operate in?",
+          "answer_en": "Samsung operates in various industries including consumer electronics, telecommunications equipment, semiconductors, and home appliances."
+        },
+        {
+          "question_en": "When was Samsung founded?",
+          "answer_en": "Samsung was founded on March 1, 1938, by Lee Byung-chul."
+        },
+        {
+          "question_en": "What are some of Samsung's popular products?",
+          "answer_en": "Some of Samsung's popular products include the Galaxy smartphone series, QLED TVs, and Samsung's range of home appliances."
+        },
+        {
+          "question_en": "How does Samsung contribute to the 5G network?",
+          "answer_en": "Samsung contributes to the 5G network through its telecom equipment division, supplying infrastructure and technology solutions globally."
+        },
+        {
+          "question_en": "What is Samsung's approach to sustainability?",
+          "answer_en": "Samsung’s approach to sustainability includes eco-friendly innovations, minimizing waste, and initiatives to reuse resources in product manufacturing."
+        },
+        {
+          "question_en": "Does Samsung produce semiconductors?",
+          "answer_en": "Yes, Samsung is a leading producer of semiconductors, providing chips for various electronic devices worldwide."
+        },
+        {
+          "question_en": "What is Samsung's vision?",
+          "answer_en": "Samsung's vision is to inspire the world and create the future by delivering innovative technologies and services."
+        },
+        {
+          "question_en": "What is unique about Samsung's QLED TV?",
+          "answer_en": "Samsung's QLED TVs offer superior color and brightness levels, using Quantum Dot technology to deliver sharp and vibrant picture quality."
+        }
+      ],
+      "interview_questions": [
+        {
+          "question_en": "What do you know about Samsung's global impact and its contribution to technology?",
+          "answer_en": "Samsung has a significant global impact as one of the largest technology companies in the world. It not only leads in consumer electronics like smartphones and televisions but also plays a crucial role in the development of semiconductors and telecommunications infrastructure. Samsung's investment in research and development and its strong commitment to innovation have positioned it as a leader in the tech industry, contributing to technological advancements that impact daily life globally. As a company, Samsung continues to prioritize sustainability and smart technology, influencing how technology is integrated into our world.",
+          "category_en": "Company Understanding"
+        },
+        {
+          "question_en": "Can you describe a time you successfully worked on a project similar to what we do here at Samsung?",
+          "answer_en": "In my previous role, I was part of a team that designed and implemented a user-friendly mobile application, with an emphasis on innovative digital features similar to Samsung’s emphasis on making cutting-edge products. My responsibilities included collaborating with developers and designers to ensure the application met market demands. This experience honed my ability to contribute to technology projects that focus on user experience and client satisfaction, aligning with Samsung’s dedication to innovation and customer-focused products.",
+          "category_en": "Work Related"
+        },
+        {
+          "question_en": "How do you keep up with technological advancements and trends relevant to Samsung’s industry?",
+          "answer_en": "To stay informed about the latest technological advancements and trends, I regularly read industry publications, engage in webinars, and participate in tech forums related to consumer electronics and telecommunications. Furthermore, I subscribe to updates from tech giants, including Samsung, to gain insights into new product launches and innovation directions. Adopting this proactive approach allows me to maintain a comprehensive understanding of the fast-evolving tech landscape, aligning with Samsung's ethos of continuous innovation.",
+          "category_en": "Job Understanding"
+        },
+        {
+          "question_en": "Describe Samsung's approach to customer satisfaction and how you would contribute to it if hired.",
+          "answer_en": "Samsung prioritizes customer satisfaction through innovative product design, robust research and development, and commitment to quality. If hired, I would contribute by consistently advocating for the customer’s perspective, ensuring that their needs and feedback are reflected in product design and service delivery. My experience in customer-focused roles has equipped me with the skills to bridge communication between development teams and customer service, striving for excellence in aligning Samsung products with consumer expectations.",
+          "category_en": "Company Understanding"
+        },
+        {
+          "question_en": "In what ways do you think Samsung can continue to lead in the innovation sector over the next decade?",
+          "answer_en": "Samsung can maintain its leadership in innovation by continuing its investment in emerging technologies like artificial intelligence, 5G, and the Internet of Things (IoT). Expanding collaborations with tech startups and research institutions could foster shared innovation and groundbreaking discoveries. Samsung should also prioritize sustainability by integrating greener production methods and enhancing energy efficiency in its products, meeting an increasing consumer demand for eco-friendly technology. I believe by maintaining a balance between technological advancement and environmental responsibility, Samsung can navigate the future successfully.",
+          "category_en": "Work Related"
+        }
+      ],
+      "ceo_info": {
+        "name_en": "Jong-Hee Han",
+        "position_en": "Co-CEO",
+        "bio_en": "Jong-Hee Han has played a pivotal role in shaping Samsung's strategy towards becoming a global leader in consumer electronics. With a robust background in display technology, Han has led several innovative product developments, contributing significantly to Samsung’s rise in the television and display sectors. His leadership style emphasizes innovation and customer-centric product development. Han's strategic direction in maximizing operational efficiencies and fostering a culture of creativity and excellence continues to drive Samsung's position as a trailblazer in the tech industry.",
+        "tenure_en": "2021 - Present",
+        "education_en": "Han holds a degree in electronic engineering from Inha University.",
+        "career_en": "Han has held key positions in Samsung's Visual Display Business, and was instrumental in the development of the QLED TV technology. Under his leadership, Samsung has consistently maintained a competitive edge in the display market."
+      }
+    },
+    "화웨이": {
+      "info_ko": "화웨이는 1987년 중국 선전에 설립된 글로벌 정보통신 기술(ICT) 솔루션 공급업체입니다. 이 회사는 통신 네트워크, IT, 스마트 기기, 클라우드 서비스 등 여러 분야에서 활동하며, 혁신적인 기술 개발로 유명합니다. 특히 전 세계 통신 네트워크 구축과 관련 제품 제공에서 주요한 위치를 차지하고 있습니다. 화웨이는 또한 스마트폰을 포함한 다양한 소비자 전자 제품에서도 강력한 입지를 구축하고 있으며, 5G 네트워크 기술에 있어서도 선두주자로 자리매김하고 있습니다. 기업 고객과 소비자 대상 제품 모두에서 우수한 기술력과 서비스를 제공하며 글로벌 시장에서 높은 신뢰와 인지도를 얻고 있습니다. 그러나 최근에는 미국과의 무역 분쟁과 관련된 다양한 정치적 이슈에 직면하여, 일부 제품 및 서비스가 제한되기도 했으나, 계속하여 혁신과 품질 개선을 통한 지속적인 성장을 추구하고 있습니다.",
+      "info_en": "",
+      "info_ja": "",
+      "popular_products": [
+        {
+          "text_ko": "화웨이 P40 Pro",
+          "score": 85,
+          "image_url": ""
+        },
+        {
+          "text_ko": "화웨이 메이트북 X 프로",
+          "score": 80,
+          "image_url": ""
+        },
+        {
+          "text_ko": "화웨이 메이트 30",
+          "score": 75,
+          "image_url": ""
+        }
+      ],
+      "trending_topics": [
+        {
+          "text_ko": "화웨이의 5G 기술",
+          "score": 90,
+          "detail_ko": "화웨이는 전 세계적으로 5G 네트워크 구현의 선두주자로, 다수의 국가에 5G 장비와 기술을 공급하고 있습니다. 특히 빠른 데이터 전송 속도와 안정성을 바탕으로 산업 전반에 혁신을 가져오고 있으며, 자율주행차, 스마트 시티 등 다양한 분야에서 활용되고 있습니다."
+        },
+        {
+          "text_ko": "미국과의 무역 분쟁",
+          "score": 85,
+          "detail_ko": "화웨이는 미국 정부와의 정치적 갈등으로 인해 미국 내에서의 사업 활동에 제약을 받고 있으며, 이는 일부 부품과 소프트웨어 이용에 영향을 미치고 있습니다. 이러한 상황은 화웨이의 글로벌 전략에 큰 도전으로 작용하고 있습니다."
+        },
+        {
+          "text_ko": "화웨이의 스마트폰 시장 전략",
+          "score": 80,
+          "detail_ko": "화웨이는 스마트폰 시장에서 독자적인 운영체제를 개발하고, 혁신적인 카메라 기술 및 AI 기능을 포함한 제품을 출시하면서 시장 경쟁력을 강화하고 있습니다. 특히 아시아 및 유럽 시장에서의 점유율 확대를 적극적으로 추진하고 있습니다."
+        }
+      ],
+      "faqs": [
+        {
+          "question_ko": "화웨이 제품은 어디서 구매할 수 있나요?",
+          "answer_ko": "화웨이 제품은 온라인 스토어, 공인 대리점 및 주요 유통 채널을 통해 구매할 수 있습니다."
+        },
+        {
+          "question_ko": "화웨이 스마트폰의 특징은 무엇인가요?",
+          "answer_ko": "화웨이 스마트폰은 우수한 카메라 성능과 AI 기반 기능으로 유명합니다."
+        },
+        {
+          "question_ko": "화웨이는 어떤 IT 솔루션을 제공하나요?",
+          "answer_ko": "화웨이는 통신 네트워크, 클라우드 서비스, 데이터 센터 솔루션 등 다양한 IT 솔루션을 제공합니다."
+        },
+        {
+          "question_ko": "화웨이의 5G 기술은 무엇이 특별한가요?",
+          "answer_ko": "화웨이는 빠르고 안정적인 5G 네트워크를 제공하며, 다양한 산업에서 활용할 수 있는 기술을 보유하고 있습니다."
+        },
+        {
+          "question_ko": "화웨이의 주요 시장은 어디인가요?",
+          "answer_ko": "화웨이는 아시아, 유럽 및 중동에서 강력한 입지를 구축하고 있으며, 지속적으로 글로벌 시장을 확대하고 있습니다."
+        },
+        {
+          "question_ko": "화웨이 제품의 해외 사용에 제한이 있나요?",
+          "answer_ko": "일부 국가에서는 정치적 상황에 따라 판매 제한이 있을 수 있으니 각 국가의 규정을 확인하시기 바랍니다."
+        },
+        {
+          "question_ko": "화웨이 랩탑의 주요 장점은 무엇인가요?",
+          "answer_ko": "화웨이의 랩탑은 휴대성이 뛰어나고 고성능을 제공하며, 혁신적인 디자인과 우수한 디스플레이가 특징입니다."
+        },
+        {
+          "question_ko": "화웨이의 기업 가치는 어떻게 평가되나요?",
+          "answer_ko": "화웨이는 지속적인 혁신과 품질 개선을 통해 높은 기업 가치를 유지하고 있으며, 글로벌 IT 리더로 인정받고 있습니다."
+        },
+        {
+          "question_ko": "화웨이의 서비스 지원은 어떤가요?",
+          "answer_ko": "화웨이는 다양한 고객 지원 채널을 통해 신속하고 최적화된 기술 지원을 제공합니다."
+        },
+        {
+          "question_ko": "화웨이의 최신 기술 트렌드는 무엇인가요?",
+          "answer_ko": "화웨이는 AI, 클라우드 컴퓨팅, 5G 기술을 포함한 첨단 기술 개발에 중점을 두고 있습니다."
+        }
+      ]
+    },
+    "코레일": {
+      "info_ko": "한국철도공사(KORAIL)는 대한민국의 공기업으로, 국내 철도를 운영하고 있는 주요 기업입니다. 2004년에 설립된 이 공사는 한국의 모든 주요 도시를 연결하는 광범위한 철도 네트워크를 관리하고 있습니다. 코레일은 고속철도, 광역전철, 일반철도 등을 포함하는 다양한 철도 서비스를 제공하여 대한민국 내의 교통망을 강화하고 있습니다. 특히 KTX를 통해 빠르고 편리하게 주요 도시 간 이동이 가능하며, 이는 국내 여행 및 통근수단의 주요 축으로 자리 잡고 있습니다. 코레일은 지속 가능한 친환경 교통 수단을 제공하는 데 중점을 두며, 철도의 안전성과 효율성을 높이기 위한 다양한 기술적 발전과 인프라 개선에 투자하고 있습니다. 또한 국제 표준에 부합하는 철도 서비스 품질을 유지하면서도 고객만족도 향상을 위해 지속적으로 노력하고 있습니다.",
+      "info_en": "",
+      "info_ja": "",
+      "popular_products": [
+        {
+          "text_ko": "KTX 고속열차",
+          "score": 95,
+          "image_url": ""
+        },
+        {
+          "text_ko": "ITX-새마을호",
+          "score": 88,
+          "image_url": ""
+        },
+        {
+          "text_ko": "무궁화호",
+          "score": 80,
+          "image_url": ""
+        }
+      ],
+      "trending_topics": [
+        {
+          "text_ko": "친환경 전동차 도입",
+          "score": 90,
+          "detail_ko": "KORAIL은 최근 친환경 전동차를 도입하여 탄소 배출을 줄이고 환경 보호에 기여하고 있습니다. 이 전동차는 에너지 효율을 높이고, 소음을 감소시키는 최신 기술이 적용되었습니다."
+        },
+        {
+          "text_ko": "고속철도망 확장 계획",
+          "score": 85,
+          "detail_ko": "정부는 향후 몇 년 내에 고속철도망을 더욱 확장하여 주요 도시 간 연결성을 강화하는 계획을 발표했습니다. 이는 지역 경제 활성화와 국내 관광산업에 긍정적인 영향을 미칠 것으로 기대되고 있습니다."
+        },
+        {
+          "text_ko": "고객 서비스 개선 프로젝트",
+          "score": 80,
+          "detail_ko": "코레일은 최근 고객 서비스 개선을 위한 새로운 프로젝트를 시작하였습니다. 스마트 플랫폼을 도입하여 승객들에게 실시간으로 간편한 정보를 제공하고, 고객지원 시스템을 강화하였습니다."
+        }
+      ],
+      "faqs": [
+        {
+          "question_ko": "KTX 예매는 어떻게 하나요?",
+          "answer_ko": "KTX 예매는 코레일 홈페이지, 코레일 톡 앱, 및 가까운 기차역 매표소에서 가능합니다."
+        },
+        {
+          "question_ko": "할인 혜택이 있는가요?",
+          "answer_ko": "코레일은 다양한 할인 혜택을 제공하며, 청소년, 군인, 노약자 등을 위한 특별 할인이 있습니다."
+        },
+        {
+          "question_ko": "자는 대중교통 카드로 결제가 가능한가요?",
+          "answer_ko": "네, 대중교통 카드(T-money, Railplus 등)을 이용해 일부 열차를 제외한 일반열차 및 지하철 운임 결제가 가능합니다."
+        },
+        {
+          "question_ko": "승차권 취소 및 환불 규정은 어떻게 되나요?",
+          "answer_ko": "승차권은 출발 전까지 취소 가능하며, 출발 후에는 사용한 구간을 제외한 금액에 대해 부분 환불이 가능합니다. 환불 수수료는 조건에 따라 상이할 수 있습니다."
+        },
+        {
+          "question_ko": "유아 및 소아 동반 시 요금은 어떻게 되나요?",
+          "answer_ko": "만 4세 미만의 유아는 무료로 동반 가능하나, 좌석을 원할 경우 어린이 요금을 부담해야 합니다. 4세 이상 13세 미만 어린이는 소아 요금이 적용됩니다."
+        },
+        {
+          "question_ko": "수하물 규정은 어떻게 되나요?",
+          "answer_ko": "일반 수하물은 무료로 운송할 수 있으며, 휴대 가능한 크기와 무게를 초과하는 수하물의 경우 추가 요금이 발생할 수 있습니다. 위험물 및 반려동물 운송은 규정에 따른 제한이 있습니다."
+        },
+        {
+          "question_ko": "반려동물과 함께 열차를 이용할 수 있나요?",
+          "answer_ko": "작은 반려동물은 케이지에 넣어 이용 가능하며, 케이지 크기와 무게에 따라 추가 요금이 발생할 수 있습니다. 대형 동물은 화물칸에 별도로 운송할 수 있습니다."
+        },
+        {
+          "question_ko": "코레일 톡을 통한 예매는 어떻게 하나요?",
+          "answer_ko": "코레일 톡 앱을 설치 후 회원가입을 하시면 예매가 가능하며, 다양한 기능을 제공하고 있습니다."
+        },
+        {
+          "question_ko": "차량 내 와이파이 이용은 가능한가요?",
+          "answer_ko": "일부 KTX 차량 안에서는 무료 와이파이를 이용할 수 있으며, 서비스 가능 여부는 차량에 따라 다를 수 있습니다."
+        },
+        {
+          "question_ko": "기차역에서 자전거를 대여할 수 있나요?",
+          "answer_ko": "일부 역에서는 자전거 대여 서비스를 제공하고 있으며, 지역별로 대여 규정과 요금이 다를 수 있으니 사전에 확인이 필요합니다."
+        }
+      ]
+    },
+    "서울교통공사": {
+      "info_ko": "서울교통공사는 대한민국의 수도인 서울특별시의 대중교통을 책임지는 중요한 공기업입니다. 2017년 5월 31일 서울메트로와 서울특별시도시철도공사의 통합으로 탄생한 서울교통공사는 서울 시민들에게 안전하고 효율적인 지하철 서비스를 제공하기 위해 설립되었습니다. 이 회사는 서울시의 주요 대중교통 수단인 지하철의 운영 및 관리를 담당하며, 서울 시내의 1호선부터 9호선, 그리고 일부 지역철도 노선까지 관리합니다. 서울교통공사는 약 23,000명 이상의 직원이 서울 전역의 300개 이상의 역 중심으로 매일 약 7백만 명 이상의 승객에게 서비스를 제공합니다. 또한, 지속 가능한 도시교통 시스템을 구축하고자 다양한 설비 개선 및 환경친화적 프로젝트를 추진하고 있습니다. 고객 안전과 편의를 최우선으로 삼아, 최첨단 기술을 도입하여 스마트 지하철 시스템을 구현하며, 끊임없는 혁신을 통해 세계적인 수준의 대중교통 서비스를 제공하기 위해 노력하고 있습니다.",
+      "info_en": "",
+      "info_ja": "",
+      "popular_products": [
+        {
+          "text_ko": "T-Money 카드",
+          "score": 85,
+          "image_url": ""
+        },
+        {
+          "text_ko": "지하철 공기질 개선 시스템",
+          "score": 80,
+          "image_url": ""
+        },
+        {
+          "text_ko": "다국어 안내 시스템",
+          "score": 75,
+          "image_url": ""
+        }
+      ],
+      "trending_topics": [
+        {
+          "text_ko": "서울 지하철 10호선 계획",
+          "score": 90,
+          "detail_ko": "서울 지하철 10호선 계획은 서울시의 새로운 교통 수요를 충족하고자 하는 중장기 계획입니다. 10호선은 서울 남부 지역을 중심으로 노선을 구축해, 서울 내외곽 지역 간의 접근성을 높이는 것이 목표입니다."
+        },
+        {
+          "text_ko": "역사 내 공기질 개선 프로젝트",
+          "score": 85,
+          "detail_ko": "서울교통공사는 역사 내 공기질을 개선하기 위해 최신 공기 정화 시스템을 도입하는 프로젝트를 진행 중입니다. 이 시스템은 미세먼지와 같은 오염 물질을 효과적으로 제거하여 이용객의 건강 보호를 목적으로 합니다."
+        },
+        {
+          "text_ko": "스마트 지하철 시스템 도입",
+          "score": 80,
+          "detail_ko": "서울교통공사는 스마트 기술을 이용한 지하철 시스템 도입을 추진 중입니다. 이 시스템은 IoT 및 AI 기술을 활용하여 고객 맞춤형 서비스 제공 및 운영 효율성을 극대화하는 데 주안점을 두고 있습니다."
+        }
+      ],
+      "faqs": [
+        {
+          "question_ko": "지하철 운영 시간은 어떻게 되나요?",
+          "answer_ko": "서울 지하철은 일반적으로 오전 5시 30분부터 자정까지 운영됩니다."
+        },
+        {
+          "question_ko": "노약자석 이용 규칙이 있나요?",
+          "answer_ko": "노약자석은 노인, 임산부, 장애인 등을 위한 좌석이며, 일반 승객분께서는 양보를 부탁드립니다."
+        },
+        {
+          "question_ko": "환승 방법은 어떻게 되나요?",
+          "answer_ko": "서울 지하철은 환승 시 별도 추가 비용 없이 환승할 수 있으며, 환승 통로를 따라가시면 됩니다."
+        },
+        {
+          "question_ko": "교통카드 잔액은 어디서 확인할 수 있나요?",
+          "answer_ko": "교통카드 잔액은 지하철 역사 내 자동판매기나 개찰구에 있는 리더기에 교통카드를 대면 확인할 수 있습니다."
+        },
+        {
+          "question_ko": "분실물 센터는 어디에 있나요?",
+          "answer_ko": "분실물 센터는 서울 각 지하철 노선별로 주요 환승역에 위치해 있습니다. 인터넷으로도 분실물 조회 및 신고가 가능합니다."
+        },
+        {
+          "question_ko": "T-Money 카드는 어디서 구매할 수 있나요?",
+          "answer_ko": "T-Money 카드는 지하철 역사 내 자동판매기와 편의점에서 구매 가능합니다."
+        },
+        {
+          "question_ko": "서울교통공사 고객센터 전화번호는 무엇인가요?",
+          "answer_ko": "서울교통공사 고객센터 전화번호는 1577-5678입니다. 고객 지원은 연중 무휴로 제공됩니다."
+        },
+        {
+          "question_ko": "지하철 내 자전거 반입이 가능한가요?",
+          "answer_ko": "자전거는 평일 출퇴근 시간대를 제외한 시간에만 반입이 가능하며, 주말과 공휴일에는 제한 없이 이용할 수 있습니다."
+        },
+        {
+          "question_ko": "서울 지하철은 휠체어 접근이 가능한가요?",
+          "answer_ko": "서울 지하철 대부분의 역은 휠체어 접근이 가능하며, 엘리베이터 및 경사로가 마련되어 있습니다."
+        },
+        {
+          "question_ko": "지하철 요금은 어떻게 책정되나요?",
+          "answer_ko": "지하철 요금은 기본 요금 후 거리 및 환승 요금이 추가될 수 있으며, 자세한 요금 체계는 서울교통공사 웹사이트를 참고하시기 바랍니다."
+        }
+      ]
+    },
+    "Baidu": {
+      "info_ko": "Baidu(바이두)는 중국의 다국적 기술 기업으로, 주로 인터넷 관련 서비스와 인공지능(AI) 분야에서 활동하고 있습니다. 2000년 리옌홍(Robin Li)과 쉬용(도널드 장)이 설립하였으며, 본사는 베이징에 위치해 있습니다. Baidu는 세계 최대의 중국어 검색 엔진 운영업체로, 구글과 비슷하게 웹 검색, 이미지, 비디오 검색 등의 다양한 서비스를 제공합니다. 또한, 온라인 광고 플랫폼, 클라우드 컴퓨팅, 데이터 관리와 같은 다양한 기술 솔루션을 제공합니다. AI 혁신을 선도하기 위해 AI 연구 센터와 인공지능 기반의 제품 개발에 집중하고 있으며, 특히 자율주행차, 음성 인식, 자연어 처리 등 미래 기술 개발에 중점을 두고 있습니다. Baidu는 중국 인터넷 산업의 선두주자로서, 2018년부터 나스닥에 상장되어 있습니다.",
+      "info_en": "",
+      "info_ja": "",
+      "popular_products": [
+        {
+          "text_ko": "바이두 검색 엔진",
+          "score": 90,
+          "image_url": ""
+        },
+        {
+          "text_ko": "아이큐이(YiQiyi)",
+          "score": 88,
+          "image_url": ""
+        },
+        {
+          "text_ko": "바이두 웹 서비스(Baidu Web Services)",
+          "score": 85,
+          "image_url": ""
+        }
+      ],
+      "trending_topics": [
+        {
+          "text_ko": "자율주행차 개발",
+          "score": 90,
+          "detail_ko": "바이두는 'Apollo'라는 이름의 자율주행차 개발 플랫폼을 운영하고 있으며, 이는 현재 중국에서 가장 큰 자율주행차 개발 프로젝트 중 하나입니다. 많은 자동차 제조업체와 협력하여 다양한 테스트를 진행하고 있습니다."
+        },
+        {
+          "text_ko": "바이두 인공지능",
+          "score": 88,
+          "detail_ko": "바이두는 AI 연구 및 개발에 집중하고 있습니다. 음성 인식 기술, 자연어 처리, 딥러닝 등을 활용한 여러 AI 제품을 출시하여 중국 내에서 인공지능 분야를 선도하고 있습니다."
+        },
+        {
+          "text_ko": "클라우드 컴퓨팅 확장",
+          "score": 85,
+          "detail_ko": "바이두는 자체 클라우드 플랫폼을 확대하여 데이터를 관리하고, 다양한 클라우드 서비스를 제공하고 있습니다. 이는 기업 고객들이 효과적으로 데이터를 관리하고 처리할 수 있도록 지원합니다."
+        }
+      ],
+      "faqs": [
+        {
+          "question_ko": "Baidu는 언제 설립되었나요?",
+          "answer_ko": "Baidu는 2000년에 설립되었습니다."
+        },
+        {
+          "question_ko": "Baidu의 주 사업은 무엇인가요?",
+          "answer_ko": "Baidu는 주로 인터넷 검색 서비스와 인공지능 관련 기술 서비스를 제공합니다."
+        },
+        {
+          "question_ko": "Baidu의 주요 제품은 무엇인가요?",
+          "answer_ko": "Baidu의 대표 제품으로는 Baidu 검색 엔진, 아이큐이(YiQiyi), Baidu 웹 서비스 등이 있습니다."
+        },
+        {
+          "question_ko": "Baidu는 어디에 본사가 있나요?",
+          "answer_ko": "Baidu의 본사는 중국 베이징에 위치해 있습니다."
+        },
+        {
+          "question_ko": "Baidu는 어떤 기술에 집중하고 있나요?",
+          "answer_ko": "Baidu는 주로 AI, 자율주행차, 클라우드 컴퓨팅 기술에 집중하고 있습니다."
+        },
+        {
+          "question_ko": "Baidu는 어떤 주식 시장에 상장되어 있나요?",
+          "answer_ko": "Baidu는 미국 나스닥에 상장되어 있습니다."
+        },
+        {
+          "question_ko": "Baidu의 자율주행 차량 개발 프로젝트는 무엇인가요?",
+          "answer_ko": "Baidu의 자율주행 차량 개발 프로젝트는 'Apollo' 플랫폼입니다."
+        },
+        {
+          "question_ko": "Baidu는 어떤 클라우드 서비스 제공하나요?",
+          "answer_ko": "Baidu는 데이터 관리, 컴퓨팅 자원 제공 등 다양한 클라우드 서비스를 제공합니다."
+        },
+        {
+          "question_ko": "Baidu의 인공지능 연구 분야는 무엇인가요?",
+          "answer_ko": "Baidu는 음성 인식, 자연어 처리, 딥러닝 등 다양한 인공지능 기술을 연구하고 있습니다."
+        },
+        {
+          "question_ko": "Baidu는 글로벌 시장에도 진출해 있나요?",
+          "answer_ko": "Baidu는 여러 글로벌 시장에 진출해 있으며, 특히 AI와 자율주행차 분야에서 국제적 협력을 하고 있습니다."
+        }
+      ]
+    },
+    "로블록스": {
+      "info_ko": "로블록스(Roblox)는 전 세계적으로 인기를 끌고 있는 온라인 게임 플랫폼이자, 사용자가 직접 게임을 개발하고 플레이할 수 있는 커뮤니티입니다. 2006년에 데이빗 바수츠키(David Baszucki)와 에릭 카셀(Erik Cassel)이 설립하였으며, 사용자는 로블록스 스튜디오를 사용해 다양한 게임을 제작하고, 이를 다른 사용자와 공유할 수 있습니다. 이 플랫폼은 다양한 장르의 게임을 포함하며, 사용자들은 독특한 아바타를 만들고 가상 아이템을 거래할 수 있습니다. 2010년대 후반부터 로블록스는 교육적인 도구로도 인정을 받아 여러 학교와 교육 기관에서 활용되고 있으며, 코로나19 팬데믹 중에 더욱 큰 성장을 이루며 몰입형 디지털 세상을 구축했습니다. 또한 로블록스는 자사의 가상 경제 시스템인 로벅스(Robux)를 통해 사용자 기반 경제를 만들었으며 개발자들이 수익을 창출할 수 있는 환경을 제공하고 있습니다. 로블록스의 비전은 전 세계 모든 사람들이 창의적이고 상호작용적인 방식으로 소통할 수 있는 플랫폼을 제공하는 것입니다.",
+      "info_en": "",
+      "info_ja": "",
+      "popular_products": [
+        {
+          "text_ko": "로블록스 스튜디오",
+          "score": 85,
+          "image_url": ""
+        },
+        {
+          "text_ko": "로벅스",
+          "score": 80,
+          "image_url": ""
+        },
+        {
+          "text_ko": "로블록스 아바타",
+          "score": 75,
+          "image_url": ""
+        }
+      ],
+      "trending_topics": [
+        {
+          "text_ko": "로블록스의 메타버스 구축",
+          "score": 90,
+          "detail_ko": "로블록스는 자체 메타버스를 구축하여 사용자들에게 더욱 몰입감 있는 경험을 제공합니다. 최신 기술을 활용하여 디지털 공간에서 사용자가 상호작용할 수 있는 방법을 혁신하고 있습니다."
+        },
+        {
+          "text_ko": "개발자 커뮤니티 지원",
+          "score": 85,
+          "detail_ko": "로블록스는 개발자 지원 프로그램을 통해 전 세계 개발자들이 더욱 쉽게 콘텐츠를 제작하고 수익을 창출할 수 있도록 다양한 도구와 리소스를 제공하고 있습니다."
+        },
+        {
+          "text_ko": "지속 가능한 가상 경제",
+          "score": 80,
+          "detail_ko": "로블록스는 로벅스를 기반으로 하는 가상 경제를 구축하여 사용자들이 게임 내 아이템을 거래하고 소비할 수 있는 다양한 시스템을 운영하고 있습니다."
+        }
+      ],
+      "faqs": [
+        {
+          "question_ko": "로블록스는 무료로 사용할 수 있나요?",
+          "answer_ko": "네, 로블록스는 무료로 가입하고 플레이할 수 있지만, 일부 아이템과 기능은 유료로 제공됩니다."
+        },
+        {
+          "question_ko": "로벅스는 무엇인가요?",
+          "answer_ko": "로벅스는 로블록스에서 사용하는 가상 화폐로, 게임 내에서 아이템을 구매하거나 거래하는 데 사용됩니다."
+        },
+        {
+          "question_ko": "개발자가 되려면 어떻게 해야 하나요?",
+          "answer_ko": "로블록스 스튜디오를 설치하고 온라인 튜토리얼과 가이드를 통해 게임 개발을 시작할 수 있습니다. 개발자 포럼과 커뮤니티도 참고하세요."
+        },
+        {
+          "question_ko": "어떤 플랫폼에서 로블록스를 즐길 수 있나요?",
+          "answer_ko": "로블록스는 PC, Mac, iOS 및 Android 기기, Xbox 콘솔 등 다양한 플랫폼에서 플레이할 수 있습니다."
+        },
+        {
+          "question_ko": "로블록스의 안전 기능은 무엇인가요?",
+          "answer_ko": "로블록스는 부모 제어 기능, 채팅 필터링 등 다양한 안전 기능을 통해 사용자 특히 어린이의 안전을 지원합니다."
+        },
+        {
+          "question_ko": "로블록스는 교육적으로 어떤 점이 좋은가요?",
+          "answer_ko": "로블록스는 창의력과 문제 해결 능력을 기를 수 있는 게임 설계 경험을 제공합니다. 일부 학교는 교육 자료로 로블록스를 사용합니다."
+        },
+        {
+          "question_ko": "로블록스 광고는 어떻게 작동하나요?",
+          "answer_ko": "개발자는 자신의 게임이나 아이템을 로블록스 플랫폼 내에서 광고할 수 있으며, 이는 목표 고객에게 도달하는 데 도움을 줍니다."
+        },
+        {
+          "question_ko": "계정을 비활성화/삭제하려면 어떻게 해야 하나요?",
+          "answer_ko": "계정을 삭제하려면 로블록스 고객 지원팀에 문의하여 비활성화 또는 삭제 요청을 할 수 있습니다."
+        },
+        {
+          "question_ko": "게임 내 구매는 어떻게 이뤄지나요?",
+          "answer_ko": "로블록스에서는 로벅스를 사용하여 게임 내 아이템을 구매할 수 있으며, 이는 실제 화폐로 충전 가능합니다."
+        },
+        {
+          "question_ko": "로블록스로 수익을 창출할 수 있나요?",
+          "answer_ko": "네, 개발자들은 자기가 만든 게임과 아이템을 통해 수익을 창출할 수 있습니다. 로블록스의 지원 프로그램을 통해 자세히 알아보세요."
+        }
+      ]
+    },
+    "하이닉스": {
+      "info_ko": "SK하이닉스는 글로벌 반도체 기업으로, 메모리 반도체(디램, 낸드플래시)를 주력으로 하고 있으며, 시스템 반도체 분야로 영역을 확장하고 있습니다. SK하이닉스는 1983년 설립되어 지속적인 기술 혁신과 품질 향상을 통해 전 세계 IT 산업에 중요한 역할을 하고 있습니다. 특히, 삼성전자와 함께 대한민국 반도체 산업의 양대 산맥을 이루며, 혁신과 지속 가능성을 최우선 가치로 삼고 있습니다. 또한, 다양한 파트너십과 R&D 투자로 미래 성장 동력을 확보하고 있으며, 인재 육성과 사회적 책임을 다하는 기업 문화를 강조하고 있습니다. 글로벌 시장에서의 경쟁력을 높이고자 연구개발 분야에 집중 투자를 하고 있으며, 이를 통해 메모리 반도체 산업의 변화와 발전을 주도하고 있습니다.",
+      "info_en": "",
+      "info_ja": "",
+      "popular_products": [
+        {
+          "text_ko": "DDR5 메모리",
+          "score": 85,
+          "image_url": ""
+        },
+        {
+          "text_ko": "낸드 플래시 솔루션",
+          "score": 80,
+          "image_url": ""
+        },
+        {
+          "text_ko": "SSD 드라이브",
+          "score": 75,
+          "image_url": ""
+        }
+      ],
+      "trending_topics": [
+        {
+          "text_ko": "친환경 공정 도입",
+          "score": 90,
+          "detail_ko": "SK하이닉스는 반도체 생산 과정에서 발생하는 환경 영향을 최소화하기 위해 친환경 공정을 도입했습니다. 이는 에너지 소비 절감과 탄소 배출 감소를 목표로 하고 있으며, 업계에서 지속 가능한 성장을 실천하기 위한 노력입니다. 이러한 친환경 공정은 기업의 장기적인 경쟁력 향상에 긍정적인 영향을 미치고 있습니다."
+        },
+        {
+          "text_ko": "차세대 반도체 기술 개발",
+          "score": 85,
+          "detail_ko": "SK하이닉스는 차세대 반도체 기술 개발에 적극적으로 나서고 있습니다. 특히, 고성능 DRAM과 NAND Flash 기술의 발전을 통해 더 나은 저장 성능과 데이터 처리 속도를 제공하며, 이를 통해 AI와 빅데이터 시대에 필수적인 기술 인프라를 구축하고 있습니다."
+        },
+        {
+          "text_ko": "글로벌 시장 확대",
+          "score": 80,
+          "detail_ko": "SK하이닉스는 글로벌 시장에서의 입지를 강화하기 위해 주요 지역에 생산 및 연구 시설을 확장하고 있습니다. 이를 통해 전 세계 고객의 다양한 요구에 신속하고 효율적으로 대응할 수 있으며, 장기적인 성장 기반을 확보하고 있습니다."
+        }
+      ],
+      "faqs": [
+        {
+          "question_ko": "SK하이닉스의 주요 제품은 무엇인가요?",
+          "answer_ko": "주요 제품은 DRAM, NAND Flash 메모리와 다양한 솔루션을 포함합니다."
+        },
+        {
+          "question_ko": "SK하이닉스는 언제 설립되었나요?",
+          "answer_ko": "1983년에 설립되었습니다."
+        },
+        {
+          "question_ko": "SK하이닉스는 어느 나라의 회사인가요?",
+          "answer_ko": "대한민국에 본사를 두고 있습니다."
+        },
+        {
+          "question_ko": "친환경 정책은 무엇인가요?",
+          "answer_ko": "친환경 공정을 통해 에너지 절감과 탄소 배출을 감소시키고 있습니다."
+        },
+        {
+          "question_ko": "글로벌 시장에서의 입지는 어떻게 되나요?",
+          "answer_ko": "글로벌 시장에서 강력한 입지를 구축하고 있으며 지속적으로 확장하고 있습니다."
+        },
+        {
+          "question_ko": "연구개발에 대한 투자는 어느 정도인가요?",
+          "answer_ko": "연구개발 분야에 대한 지속적인 투자를 통해 혁신을 주도하고 있습니다."
+        },
+        {
+          "question_ko": "사회적 책임 활동에는 어떤 것이 있나요?",
+          "answer_ko": "사회적 책임을 다하기 위해 다양한 인재 육성과 사회공헌 활동을 수행하고 있습니다."
+        },
+        {
+          "question_ko": "SK하이닉스의 비전은 무엇인가요?",
+          "answer_ko": "혁신과 지속 가능성을 추구하며 글로벌 반도체 시장을 선도하는 것입니다."
+        },
+        {
+          "question_ko": "공정과 관련된 주요 기술은 무엇인가요?",
+          "answer_ko": "고성능 DRAM 및 NAND Flash 개발을 통해 반도체 기술의 발전을 이끌고 있습니다."
+        },
+        {
+          "question_ko": "SK하이닉스의 경쟁력은 무엇인가요?",
+          "answer_ko": "지속적인 기술 혁신과 품질 향상으로 글로벌 시장에서 경쟁력을 유지하고 있습니다."
+        }
+      ],
+      "interview_questions": [
+        {
+          "question_ko": "SK하이닉스의 비전과 목표는 무엇인가요?",
+          "answer_ko": "SK하이닉스는 혁신과 지속 가능성을 통해 글로벌 반도체 산업의 미래를 이끌고자 합니다. 회사는 끊임없는 연구개발과 기술 투자를 통해 앞서나가며, 친환경 경영과 사회적 책임을 다하는 기업으로 성장해 나가고 있습니다. 향후 10년간 차세대 메모리와 시스템 반도체 분야에서 시장을 선도하기 위한 청사진을 가지고 있습니다.",
+          "category_ko": "회사 이해"
+        },
+        {
+          "question_ko": "메모리 반도체 산업의 트렌드는 무엇인가요?",
+          "answer_ko": "최근 메모리 반도체 산업은 AI와 빅데이터, 클라우드 컴퓨팅의 확산에 힘입어 수요가 급증하고 있으며, 고성능 DRAM 및 대용량 NAND Flash 제품 개발이 화두가 되고 있습니다. 또한, 친환경 생산 공정의 도입과 스마트 팩토리 구현이 주요 트렌드로 자리잡고 있으며, SK하이닉스는 이러한 변화에 발맞춰 지속적인 혁신을 추진하고 있습니다.",
+          "category_ko": "업무 관련"
+        },
+        {
+          "question_ko": "SK하이닉스가 중요시하는 기업 문화는 무엇인가요?",
+          "answer_ko": "SK하이닉스는 인재 중심의 조직 문화를 중요시하며, 직원의 성장과 자기 개발을 적극 지원합니다. 개방성과 협력을 바탕으로 각자의 아이디어를 자유롭게 공유할 수 있는 환경을 조성하며, 지속 가능한 성장을 위해 사회적 책임을 다하는 기업 문화를 만들고자 노력하고 있습니다.",
+          "category_ko": "회사 이해"
+        },
+        {
+          "question_ko": "향후 솔루션 사업부의 전략 방향은 어떻게 되나요?",
+          "answer_ko": "향후 SK하이닉스의 솔루션 사업부는 글로벌 IT 산업의 흐름을 주도할 수 있는 차세대 스토리지 솔루션 개발에 중점을 둘 것입니다. 특히 데이터 센터 및 서버 시장의 확대에 대응하기 위해 고성능, 저전력, 고밀도의 제품 포트폴리오를 강화할 계획이며, 고객 맞춤형 솔루션 제공을 통해 경쟁력을 높이려 합니다.",
+          "category_ko": "직무 이해"
+        },
+        {
+          "question_ko": "SK하이닉스에서 가장 혁신적인 프로젝트는 무엇인가요?",
+          "answer_ko": "SK하이닉스의 가장 혁신적인 프로젝트 중 하나는 차세대 3D NAND 플래시 메모리의 개발입니다. 회사는 차세대 메모리 기술에 대한 막대한 투자를 아끼지 않으며, 세계 최초로 초고층 메모리 셀 구조를 구현하는 등 기술 경계를 넓히고 있습니다. 이러한 혁신은 글로벌 시장에서의 입지를 더욱 공고히 하는 데 기여하고 있습니다.",
+          "category_ko": "업무 관련"
+        }
+      ],
+      "ceo_info": {
+        "name_ko": "박정호",
+        "position_ko": "대표이사 부회장",
+        "bio_ko": "박정호 대표이사 부회장은 현재 SK하이닉스를 이끌고 있는 경영자로, SK그룹 내에서 다양한 직책을 맡아오며 풍부한 경험을 쌓았습니다. 그의 리더십 하에 SK하이닉스는 기술 혁신과 글로벌 시장 확대에 주력하고 있습니다. 경영에서의 주요 성과로는 메모리 반도체 분야의 시장 점유율 확대와 환경 친화적인 생산 과정 도입 등이 있습니다. 박정호 부회장은 변화 주도형 리더십과 전략적 사고로 조직을 이끌며 지속 가능한 성장을 추진하고 있습니다.",
+        "tenure_ko": "2020년 ~ 현재",
+        "education_ko": "서울대학교 경영학 학사",
+        "career_ko": "SK텔레콤 CEO, SK C&C 대표이사 등 다양한 SK그룹 내 직책 역임"
+      }
+    }
+  }
+}

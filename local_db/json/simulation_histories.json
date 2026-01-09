@@ -1,0 +1,3914 @@
+[
+  {
+    "id": "1fe4a20b-a531-4efd-bc6a-e8fd9f132079",
+    "initial_query": "",
+    "customer_type": "General Inquiry",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "JR Pass inquiries - Validity period and available sections",
+      "key_responses": [
+        "The JR Pass covers the majority of the Japan Railways Group’s rail lines, including the Shinkansen (bullet trains), limited express trains, and local trains, except certain trains like the Nozomi and Mizuho Shinkansen.",
+        "The pass is available in durations of 7, 14, and 21 consecutive days, and once activated, it must be used on consecutive days without interruption."
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "en",
+        "cultural_hints": "Planning a trip to Japan, interested in JR Pass details",
+        "cultural_score": 70,
+        "region": "unknown",
+        "communication_style": "formal/detailed",
+        "formality_score": 75,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 10
+      },
+      "summary": "The customer inquired about the JR Pass's validity period and the rail network sections it covers, planning to travel in mid-November. The agent provided detailed information about the JR Pass coverage and validity, which satisfied the customer's needs."
+    },
+    "language_key": "en",
+    "timestamp": "2026-01-09T15:12:37.099290",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "f6814ee2-94e5-46c2-93de-06cf1a34e27c",
+    "initial_query": "",
+    "customer_type": "General Inquiry",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "JR Pass inquiries - Validity period and available sections",
+      "key_responses": [
+        "The JR Pass covers majority of Japan Railways Group’s rail lines, excluding Nozomi and Mizuho Shinkansen.",
+        "The pass is available for 7, 14, and 21 consecutive days and must be activated consecutively."
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "en",
+        "cultural_hints": "Planning a trip to Japan, interest in rail travel",
+        "cultural_score": 70,
+        "region": "unknown",
+        "communication_style": "formal/detailed",
+        "formality_score": 80,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 80,
+          "assertiveness": 50,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 10
+      },
+      "summary": "The customer inquired about the validity period and sections covered by the JR Pass for a mid-November trip to Japan. The agent provided detailed information on rail network coverage and validity options, leading to high customer satisfaction and positive sentiment. The customer was polite and patient, with a formal and detailed communication style, and exhibited no escalation tendency."
+    },
+    "language_key": "en",
+    "timestamp": "2026-01-09T15:12:22.964176",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "c328a79a-a0cc-4f00-bcee-222a9ca22469",
+    "initial_query": "https://www.klook.com/ko/activity/1420-7-day-whole-japan-rail-pass-jr-pass/?spm=Activity.SearchSuggest_LIST&clickId=c3031f6080 \n\nJR Pass inquiries - Validity period and available sections\n",
+    "customer_type": "General Inquiry",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/activity/1420-7-day-whole-japan-rail-pass-jr-pass/?spm=Activity.SearchSuggest_LIST&clickId=c3031f6080 \n\nJR Pass inquiries - Validity period and available sections\n"
+      }
+    ],
+    "summary": null,
+    "language_key": "en",
+    "timestamp": "2026-01-09T15:01:00.395637",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "bcf54213-beff-4769-9b5f-4c113b3a49fe",
+    "initial_query": "",
+    "customer_type": "General Inquiry",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "updating airport transfer booking details on Klook",
+      "key_responses": [
+        "Provided steps to update booking details on Klook",
+        "Offered to assist further by contacting support if issues arise"
+      ],
+      "customer_sentiment_score": 80,
+      "customer_satisfaction_score": 85,
+      "customer_characteristics": {
+        "language": "en",
+        "cultural_hints": "likely familiar with Japanese locations",
+        "cultural_score": 70,
+        "region": "Asia",
+        "communication_style": "brief",
+        "formality_score": 60,
+        "detail_level_score": 40,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 80,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "simple",
+        "escalation_tendency": 20
+      },
+      "summary": "The customer inquired about updating their airport transfer booking details on Klook. They provided a booking number and the new destination. The agent guided the customer through the steps to modify their booking details and offered further assistance if needed. The customer acknowledged the instructions and expressed gratitude."
+    },
+    "language_key": "en",
+    "timestamp": "2026-01-09T14:51:50.728926",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "087658a0-9599-4ae4-b598-cdb5c4dee1e8",
+    "initial_query": "https://www.klook.com/airport-transfers/ \n\nAs long as customer’s destination is updated.\nAs long as customer’s flight times are updated.\nAs long as airport terminal details are changed for customer’s flights\n",
+    "customer_type": "General Inquiry",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/airport-transfers/ \n\nAs long as customer’s destination is updated.\nAs long as customer’s flight times are updated.\nAs long as airport terminal details are changed for customer’s flights\n"
+      }
+    ],
+    "summary": null,
+    "language_key": "en",
+    "timestamp": "2026-01-09T14:41:48.378735",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "c857de53-1739-4afa-be61-7dd2034f293b",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "JR 패스의 유효기한, 이용 가능한 역 구간, 취소 및 환불에 관한 문의",
+      "key_responses": [
+        "JR 패스는 구매일로부터 3개월 이내에 사용을 시작해야 하며, 일본 내 대부분의 JR 역에서 사용 가능",
+        "취소 및 환불은 구매 후 7일 이내에 가능하며, 소정의 수수료가 발생",
+        "JR 패스를 사용하기 전에 예약이 필요한지 여부 안내"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean language usage indicates Korean cultural context",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 75,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "fast",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 JR 패스의 유효기한, 이용 가능한 역 구간, 취소 및 환불 절차에 대한 문의를 했습니다. 고객은 주문 번호를 제공하여 빠른 확인을 요청하였으며, 예약이 필요한 구간에 대해 궁금해했습니다. 에이전트는 신속하고 상세한 답변을 제공하였고, 고객은 추가 문의 사항이 없음을 밝혔습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-09T14:22:04.352928",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "046f5633-011d-481e-9ed9-083b57256cef",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "JR 패스의 유효기한 및 이용 가능한 역 구간, 취소 및 환불, 예약 필요 여부",
+      "key_responses": [
+        "JR 패스는 구매일로부터 3개월 이내에 사용을 시작해야 하며, 대부분의 JR 역에서 사용 가능",
+        "취소 및 환불은 구매 후 7일 이내에 요청해야 하며, 소정의 수수료 발생 가능",
+        "일부 노선이나 좌석은 사전 예약이 필요할 수 있음"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "customer likely from South Korea",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 75,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "fast",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 JR 패스의 유효기한, 이용 가능한 역 구간, 취소 및 환불, 예약 필요 여부에 대해 문의했습니다. 에이전트는 관련 정보를 제공하며, 특정 노선에 대한 예약 필요성을 설명했습니다. 고객은 추가적인 문의사항이 없음을 확인했습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-09T14:21:41.518183",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "3c42e72e-c44a-4f56-9982-ca50dfd3f907",
+    "initial_query": "https://www.klook.com/ko/activity/1420-7-day-whole-japan-rail-pass-jr-pass/?spm=Activity.SearchSuggest_LIST&clickId=c3031f6080\n\nJR 패스 문의 \n\n유효기한 및 이용 가능한 역 구간들\n취소 및 환불 문의\n기타\n",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/activity/1420-7-day-whole-japan-rail-pass-jr-pass/?spm=Activity.SearchSuggest_LIST&clickId=c3031f6080\n\nJR 패스 문의 \n\n유효기한 및 이용 가능한 역 구간들\n취소 및 환불 문의\n기타\n"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-01-09T14:09:29.204678",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "9af850c3-5890-44c3-8d42-53d086527255",
+    "initial_query": "오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "customer_inquiry": "오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의",
+      "key_solutions": [],
+      "summary": "Phone call conversation about 오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의",
+      "summary_ko": "Phone call conversation about 오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의",
+      "summary_en": [
+        "Phone call conversation about Osaka Universal Studios Japan admission ticket + express inquiry",
+        true
+      ],
+      "summary_ja": [
+        "オーサカユニバーサルスタジオジャパンの入場券＋エクスプレスに関する問い合わせの電話会話",
+        true
+      ]
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-06T10:39:42.909975",
+    "is_chat_ended": true,
+    "attachment_context": "익스프레스 문의를 주셨고, 익스프레스 구매 및 이용 방법에 대해서 입장권과 함께 같은 날짜로 구매해야 함을 유의하도록 안내함. 그리고 해리포터와 닌텐도 같이 인기 있는 어트랙션들의 경우, 반드시 시간까지 꼼꼼히 점검해서 예약하도록 주의 요청",
+    "is_call": true
+  },
+  {
+    "id": "6d4b298e-9d28-4e55-a67c-81c92218ad09",
+    "initial_query": "오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "customer_inquiry": "오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의",
+      "key_solutions": [],
+      "summary": "Phone call conversation about 오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의",
+      "summary_ko": "Phone call conversation about 오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의",
+      "summary_en": [
+        "Phone call conversation about Osaka Universal Studios Japan admission ticket + express inquiry",
+        true
+      ],
+      "summary_ja": [
+        "電話での会話について、大阪ユニバーサルスタジオジャパンの入場券とエクスプレスに関する問い合わせ",
+        true
+      ]
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-06T10:38:32.650974",
+    "is_chat_ended": true,
+    "attachment_context": "익스프레스 문의를 주셨고, 익스프레스 구매 및 이용 방법에 대해서 입장권과 함께 같은 날짜로 구매해야 함을 유의하도록 안내함. 그리고 해리포터와 닌텐도 같이 인기 있는 어트랙션들의 경우, 반드시 시간까지 꼼꼼히 점검해서 예약하도록 주의 요청",
+    "is_call": true
+  },
+  {
+    "id": "05919283-a5b2-409e-bb43-f962fcddd40a",
+    "initial_query": "",
+    "customer_type": "일반적인 문의",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Inquiries about Taiwan travel tour discounts, email receipt errors, duplicate discount codes, eligible products, and coupon availability",
+      "key_responses": [
+        "Provided link to check Taiwan tour discounts",
+        "Guided to check spam folder and verify email address for coupon code email",
+        "Explained discount code usage policy and provided steps for checking product eligibility"
+      ],
+      "customer_sentiment_score": 80,
+      "customer_satisfaction_score": 85,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean-speaking with interest in Taiwan travel",
+        "cultural_score": 70,
+        "region": "Asia",
+        "communication_style": "formal and detailed",
+        "formality_score": 75,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 85,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 대만 여행 투어 할인, 이메일 수신 오류, 할인 코드 중복 여부, 적용 가능한 상품 및 쿠폰 매진 여부에 대해 문의했습니다. 상담원은 대만 투어 할인 정보를 확인할 수 있는 링크를 제공하고, 쿠폰 코드 이메일 문제 해결을 위한 스팸 폴더 확인 및 이메일 주소 재확인을 안내했습니다. 또한, 상품 적용 가능 여부를 확인하는 방법과 할인 코드 사용 정책을 설명했습니다. 고객은 문제 해결 방법에 만족하였고, 추가 문의 사항은 없다고 했습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-04T13:59:20.578719",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "ee73717f-3532-432c-bfd3-668a06d5d33e",
+    "initial_query": "",
+    "customer_type": "일반적인 문의",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Discount inquiry for Taiwan travel tour",
+      "key_responses": [
+        "Provided a link to the promotion page for discounts",
+        "Guided to check spam folder and verify email address for coupon email",
+        "Clarified that the same discount code cannot be used twice on the same account"
+      ],
+      "customer_sentiment_score": 80,
+      "customer_satisfaction_score": 85,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean language usage, interested in Taiwan travel",
+        "cultural_score": 70,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 75,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 65,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 대만 여행 투어 할인에 대해 문의하였으며, 이메일 수신 문제와 쿠폰 코드의 중복 사용 여부 및 적용 가능한 상품에 대해 안내를 받았습니다. 고객은 이메일 문제 해결을 위해 스팸 폴더 확인과 이메일 주소 재확인을 요청받았고, 쿠폰이 적용 가능한 호텔 목록을 알고 싶어 했습니다. 상담원은 고객에게 프로모션 페이지에서 확인할 수 있도록 안내하였고, 고객은 이에 만족하였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-04T13:58:33.477284",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "d24b6564-fe15-4d0b-a9b7-b46ba6421a51",
+    "initial_query": "",
+    "customer_type": "일반적인 문의",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Taiwan travel tour discount and coupon code issues",
+      "key_responses": [
+        "Provided link to check Taiwan tour discount",
+        "Guided on checking spam folder and email address for coupon email",
+        "Explained coupon code usage limits and re-sending process"
+      ],
+      "customer_sentiment_score": 65,
+      "customer_satisfaction_score": 70,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean language, familiarity with Korean customer service practices",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 80,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 60,
+          "assertiveness": 50,
+          "politeness_level": 85,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 대만 여행 투어 할인 및 쿠폰 코드 문제에 대해 문의했으며, 에이전트는 프로모션 페이지 링크 제공, 스팸 폴더 및 이메일 주소 확인 방법 안내, 쿠폰 코드 사용 제한 및 재발송 과정 설명 등의 답변을 제공했습니다. 고객은 이메일 재수신을 기다리고 있으며, 추가 문의 사항이 있을 수 있습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-04T13:57:34.559765",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "d7c7eaeb-b770-42ff-838a-1fd7f71b9348",
+    "initial_query": "https://www.klook.com/ko/tetris/promo/taiwan_camp_kr/ \n\n대만 여행 투어 할인 문의\n이메일 수신 오류 문의 (쿠폰 코드)\n할인 코드 중복 여부 문의\n할인 코드 적용되는 상품들 문의\n쿠폰이 매진되었는지의 여부 확인\n",
+    "customer_type": "일반적인 문의",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/tetris/promo/taiwan_camp_kr/ \n\n대만 여행 투어 할인 문의\n이메일 수신 오류 문의 (쿠폰 코드)\n할인 코드 중복 여부 문의\n할인 코드 적용되는 상품들 문의\n쿠폰이 매진되었는지의 여부 확인\n"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-01-04T13:51:22.066442",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "596113ee-2b03-45e4-9b2a-b68997f70d30",
+    "initial_query": "",
+    "customer_type": "일반적인 문의",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Change airport pickup destination to Marina Bay Sands Hotel in Singapore",
+      "key_responses": [
+        "Requested order number and new destination details",
+        "Confirmed with local service center about the change",
+        "Informed customer about successful destination change"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean language used, polite language",
+        "cultural_score": 80,
+        "region": "East Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 65,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "resides in Asia region"
+      },
+      "behavior_patterns": {
+        "response_time": "fast",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 싱가포르 창이 공항에서 마리나 베이 샌즈 호텔로 픽업 목적지를 변경하고자 했습니다. 상담원은 고객의 요청에 신속하게 대응하여 현지 직원과의 소통을 통해 성공적으로 목적지 변경을 완료했습니다. 고객은 결과에 만족했으며 추가 문의 사항은 없었습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-04T13:32:56.691766",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "30af52d2-b146-4378-ac61-85f7bb05575a",
+    "initial_query": "",
+    "customer_type": "일반적인 문의",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Change of airport pickup destination to Marina Bay Sands Hotel",
+      "key_responses": [
+        "Requested order number and new destination details",
+        "Confirmed with local service center",
+        "Notified customer of successful destination change"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean-speaking, polite and formal communication",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 75,
+          "assertiveness": 70,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "fast",
+        "question_complexity": "simple",
+        "escalation_tendency": 20
+      },
+      "summary": "고객님께서는 싱가포르 창이 공항의 픽업 목적지를 마리나 베이 샌즈 호텔로 변경을 요청하셨고, 에이전트가 신속하게 처리하여 성공적으로 완료되었습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-04T13:31:45.728804",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "2e26a6e1-745a-480d-aade-10049f3119b0",
+    "initial_query": "네, 기다리겠습니다. 감사합니다.",
+    "customer_type": "일반적인 문의 (Outbound Call to 현지 업체/파트너)",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Airport pickup destination change request for Singapore Changi Airport",
+      "key_responses": [
+        "Requested order number for service",
+        "Asked for new destination details",
+        "Confirmed no change in date and time"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean language and polite communication",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 95,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "simple",
+        "escalation_tendency": 20
+      },
+      "summary": "고객님은 싱가포르 창이 공항의 공항 픽업 서비스를 마리나 베이 샌즈 호텔로 변경 요청하셨습니다. 주문 번호 123456을 제공하였으며, 픽업 날짜와 시간은 변경하지 않을 계획임을 확인하였습니다. 상담원은 현지 직원 센터와 연락을 시도하며 10분 대기를 요청하였습니다. 고객은 이에 동의하였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-04T13:31:16.958787",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "7b04bc9f-bab5-4587-a074-66453557ecdd",
+    "initial_query": "새로운 목적지는 마리나 베이 샌즈 호텔입니다. 주문 번호는 123456이고, 픽업 날짜와 시간은 변경하지 않을 계획입니다. 빠른 처리 부탁드립니다. 감사합니다.",
+    "customer_type": "일반적인 문의 (Outbound Call to 현지 업체/파트너)",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Change in airport pickup destination",
+      "key_responses": [
+        "Requested order number and new destination for verification",
+        "Confirmed no changes in pickup date and time",
+        "Contacted local staff for further assistance"
+      ],
+      "customer_sentiment_score": 80,
+      "customer_satisfaction_score": 85,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean language and politeness",
+        "cultural_score": 75,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 75,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "simple",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 공항 픽업 목적지를 마리나 베이 샌즈 호텔로 변경하고자 하였으며, 주문 번호와 함께 관련 정보를 제공하였습니다. 상담원은 현지 직원과의 협조를 통해 신속한 처리를 약속하였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-04T13:30:12.914004",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "5a33af2f-780c-4e21-b4da-0991b32c9fbd",
+    "initial_query": "",
+    "customer_type": "일반적인 문의",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Change of airport pickup destination (Singapore Changi Airport)",
+      "key_responses": [
+        "Requested order number and new destination details",
+        "Confirmed new destination as Marina Bay Sands Hotel",
+        "Contacted local staff for further assistance"
+      ],
+      "customer_sentiment_score": 80,
+      "customer_satisfaction_score": 85,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Likely Korean due to language use",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "simple",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 싱가포르 창이 공항의 픽업 목적지를 마리나 베이 샌즈 호텔로 변경하고자 합니다. 에이전트는 새로운 목적지 정보를 확인한 후 현지 직원 센터와 연락하여 처리를 진행하고 있습니다. 고객은 신속한 처리를 요청했으며, 전반적으로 긍정적인 태도를 보였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-04T13:30:00.948926",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "e9ab63cb-c248-4146-8f9d-66ee679662e8",
+    "initial_query": "",
+    "customer_type": "일반적인 문의",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/airport-transfers/ \n\n공항 픽업 목적지 변경 (싱가포르 창이 공항)"
+      },
+      {
+        "role": "agent_response",
+        "content": "안녕하세요. 고객님께서 싱가포르 창이 공항의 픽업 목적지를 변경하고 싶으신 것으로 이해했습니다. 정확한 도움을 드리기 위해 몇 가지 추가 정보가 필요합니다. \n\n1. 예약하신 공항 픽업 서비스의 주문 번호를 알려주시면 감사하겠습니다.\n2. 변경하고자 하시는 새로운 목적지를 구체적으로 말씀해 주실 수 있을까요?\n3. 픽업 날짜와 시간을 변경하실 계획이 있으신지도 확인 부탁드립니다.\n\n이 정보를 주시면 최대한 빠르게 해결해 드리겠습니다. 추가 문의 사항이 있으시면 언제든지 알려주세요. 감사합니다."
+      },
+      {
+        "role": "customer",
+        "content": "1. 주문 번호는 123456입니다.\n2. 새로운 목적지는 마리나 베이 샌즈 호텔입니다.\n3. 픽업 날짜와 시간은 변경할 계획이 없습니다. \n\n빠른 처리 부탁드립니다. 감사합니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "안녕하세요 고객님. 연락 주셔서 감사드립니다. 고객님의 상담원 박연우입니다. 공항 픽업 목적지 변경 문의를 주셨는데요. 목적지를 어디로 변경을 원하시는지 확인하시는 대로 회신 부탁드립니다.",
+        "is_manual_response": true,
+        "timestamp": "2026-01-04T22:27:51.913447"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-01-04T13:28:45.214335",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "712db453-ec67-4a5b-92a8-27ef883cd855",
+    "initial_query": "https://www.klook.com/airport-transfers/ \n\n공항 픽업 목적지 변경 (싱가포르 창이 공항)",
+    "customer_type": "일반적인 문의",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/airport-transfers/ \n\n공항 픽업 목적지 변경 (싱가포르 창이 공항)"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-01-04T13:25:15.609910",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "70e6c272-f82e-4884-b726-1af2e27d9d73",
+    "initial_query": "",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "ユーロースターの座席変更に関する問い合わせ",
+      "key_responses": [
+        "座席変更の可否確認",
+        "変更手続きの実施",
+        "窓側の座席が確保できない場合の代替案提示"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "顧客は日本語を使用し、敬意を持って応対している点から日本文化の影響が見られる",
+        "cultural_score": 75,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 85,
+        "personality_traits": {
+          "patience_level": 80,
+          "assertiveness": 60,
+          "politeness_level": 95,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "simple",
+        "escalation_tendency": 10
+      },
+      "summary": "お客様はユーロースターの座席を窓側に変更したいと希望し、予約情報を提供しました。エージェントは座席の空き状況を確認し、変更手続きを進めています。お客様はリラックスした旅を望んでおり、窓側の座席確保を期待しています。"
+    },
+    "language_key": "ja",
+    "timestamp": "2026-01-04T12:15:14.817035",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "8896a3f3-c5fa-45d3-a676-71cbe9815332",
+    "initial_query": "",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "ユーロースターの座席変更",
+      "key_responses": [
+        "座席変更の可否確認",
+        "変更手続きの実施",
+        "変更内容の確認メール送信"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "顧客は日本語を使用し、礼儀正しい応答をしている",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 80,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 70
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "simple",
+        "escalation_tendency": 20
+      },
+      "summary": "お客様はユーロースターの座席を窓側に変更したいと希望し、予約番号とメールアドレスを提供しました。エージェントは窓側座席の空き状況を確認し、変更手続きが完了次第メールで通知すると約束しました。お客様は手続きを待ち望んでおり、追加情報が必要な場合は連絡を求めています。"
+    },
+    "language_key": "ja",
+    "timestamp": "2026-01-04T12:15:04.903101",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "e9b1b030-2400-416b-9858-d76d5638e07f",
+    "initial_query": "",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "ユーロースターの座席変更を希望",
+      "key_responses": [
+        "座席変更の可否確認",
+        "変更手続きの実施",
+        "確認メールの送信"
+      ],
+      "customer_sentiment_score": 80,
+      "customer_satisfaction_score": 85,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "日本的な丁寧さと景色を楽しむ文化的背景",
+        "cultural_score": 70,
+        "region": "アジア",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 75,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "simple",
+        "escalation_tendency": 20
+      },
+      "summary": "お客様はユーロースターの窓側座席への変更を希望し、景色を楽しむことで旅を快適に過ごしたいと考えている。確認手続きが完了次第、変更内容をメールで通知する予定である。"
+    },
+    "language_key": "ja",
+    "timestamp": "2026-01-04T12:11:48.938482",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "49e390ab-65e3-4eb3-bd58-2d2f64bb7094",
+    "initial_query": "",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "ユーロースターの座席変更",
+      "key_responses": [
+        "確認メールの送信",
+        "座席の空き状況確認",
+        "代替案の提供"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "日本文化の丁寧さと配慮が感じられる",
+        "cultural_score": 75,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 80,
+          "assertiveness": 60,
+          "politeness_level": 95,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "simple",
+        "escalation_tendency": 20
+      },
+      "summary": "お客様はユーロースターの座席を窓側に変更したいという要望を持っており、エージェントは予約情報をもとに座席の空き状況を確認し、可能であれば変更手続きを進める予定です。お客様は座席の変更に関して非常に礼儀正しく、景色を楽しみながら旅をしたいと希望しています。エージェントは確認メールをお客様のメールアドレスに送る予定で、迅速な対応を約束しています。"
+    },
+    "language_key": "ja",
+    "timestamp": "2026-01-04T12:09:56.070734",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "baf38670-0e24-4831-9e6c-cc721fd7b033",
+    "initial_query": "窓側の座席が確保できることを願っています。確認メールをお待ちしておりますので、引き続きよろしくお願いいたします。手続きを進めていただき、ありがとうございます。何か追加で必要な情報がありましたら、いつでもお知らせください。よろしくお願いいたします。",
+    "customer_type": "一般的な問い合わせ (Outbound Call to 現地業者/パートナー)",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Eurostar seat change request to a window seat",
+      "key_responses": [
+        "Checked availability of window seat",
+        "Conducted seat change process",
+        "Sent confirmation email upon completion"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "Politeness and formal communication",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 85,
+        "personality_traits": {
+          "patience_level": 75,
+          "assertiveness": 50,
+          "politeness_level": 95,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "simple",
+        "escalation_tendency": 20
+      },
+      "summary": "お客様はユーロースターの座席を窓側に変更したいと希望しています。エージェントは座席の空き状況を確認し、手続きを進めています。お客様は迅速な対応と丁寧な説明に満足しており、確認メールを心待ちにしています。"
+    },
+    "language_key": "ja",
+    "timestamp": "2026-01-04T12:09:12.993083",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "6ce08f6a-7e7c-4efd-985f-1da17848213c",
+    "initial_query": "窓側の座席が確保できることを願っています。確認メールをお待ちしておりますので、引き続きよろしくお願いいたします。手続きを進めていただき、ありがとうございます。何か追加で必要な情報がありましたら、いつでもお知らせください。よろしくお願いいたします。",
+    "customer_type": "一般的な問い合わせ (Outbound Call to 現地業者/パートナー)",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Request to change Eurostar seat to a window seat",
+      "key_responses": [
+        "Check availability of window seat",
+        "Proceed with seat change if available",
+        "Send confirmation email"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 80,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "Polite and formal communication typical in Japanese culture",
+        "cultural_score": 80,
+        "region": "Asia region",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 50,
+          "politeness_level": 95,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia region"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "simple",
+        "escalation_tendency": 20
+      },
+      "summary": "お客様はユーロースターの座席を窓側に変更したいと希望しています。エージェントは座席の空き状況を確認し、可能であれば変更手続きを進めて確認メールを送信することを約束しました。お客様は丁寧で詳細なコミュニケーションスタイルを持ち、やや忍耐強く、非常に丁寧です。問い合わせは技術的な内容ではなく、迅速な対応を求めるものではありませんが、確認を待つ間の礼儀正しさが際立っています。"
+    },
+    "language_key": "ja",
+    "timestamp": "2026-01-04T12:05:24.710316",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "2f484855-a93e-42b4-a00f-7c98d78ffd9f",
+    "initial_query": "窓側の座席が確保できることを願っています。確認メールをお待ちしておりますので、引き続きよろしくお願いいたします。手続きを進めていただき、ありがとうございます。何か追加で必要な情報がありましたら、いつでもお知らせください。よろしくお願いいたします。",
+    "customer_type": "一般的な問い合わせ (Outbound Call to 現地業者/パートナー)",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Request to change to a window seat on Eurostar",
+      "key_responses": [
+        "Confirm reservation details and email address",
+        "Check window seat availability and proceed with changes if possible",
+        "Send confirmation email upon successful seat change"
+      ],
+      "customer_sentiment_score": 80,
+      "customer_satisfaction_score": 85,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "Customer uses polite and formal language typically associated with Japanese culture",
+        "cultural_score": 90,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 65,
+          "politeness_level": 90,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "simple",
+        "escalation_tendency": 20
+      },
+      "summary": "お客様はユーロースターの窓側座席への変更を希望しています。予約番号とメールアドレスを確認し、窓側座席の空き状況を確認して、可能であれば変更を進めるよう求めています。確認メールの送信を楽しみにしています。"
+    },
+    "language_key": "ja",
+    "timestamp": "2026-01-04T12:04:45.567358",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "071735da-2dd6-4a7c-af3e-707e685629ec",
+    "initial_query": "",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "ユーロースターの座席変更についての問い合わせ",
+      "key_responses": [
+        "座席変更の可否確認を行い、窓側の座席が確保できるか迅速にお知らせします。",
+        "座席が確保できた場合、変更手続きを行い、確認メールを送信します。",
+        "窓側の座席が満席の場合は、代替案を提案します。"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "日本語でのコミュニケーション",
+        "cultural_score": 80,
+        "region": "Asia region",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 95,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia region"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "simple",
+        "escalation_tendency": 20
+      },
+      "summary": "お客様はユーロースターの座席を窓側に変更したいと希望されています。予約番号123456789で、2023年10月15日の旅行について問い合わせを行い、メールアドレス「ex****************@gm***.com」を提供されています。エージェントは座席変更の可否を確認し、変更手続きを進めることをお客様に約束しました。お客様は確認メールを待っており、手続きに満足しているようです。"
+    },
+    "language_key": "ja",
+    "timestamp": "2026-01-04T12:03:12.937456",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "f1d1f9bb-b33b-4b29-b2e2-60cf98a3a55a",
+    "initial_query": "",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "ユーロースターの座席の変更",
+      "key_responses": [
+        "窓側の座席の空き状況を確認",
+        "変更手続きの実施",
+        "確認メールの送信"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 80,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "polite and formal communication typical in Japan",
+        "cultural_score": 75,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 80,
+          "assertiveness": 60,
+          "politeness_level": 95,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "simple",
+        "escalation_tendency": 20
+      },
+      "summary": "お客様はユーロースターの座席を窓側に変更したいと希望しており、景色を楽しむためであると説明しました。エージェントは空き状況を確認し、座席が確保できた場合の手続きを進めると約束しました。全体として、会話は丁寧でスムーズに進行しました。"
+    },
+    "language_key": "ja",
+    "timestamp": "2026-01-04T12:01:32.423547",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "ad960e11-d3b6-4f87-9c02-1b3cf2a90d91",
+    "initial_query": "",
+    "customer_type": "General Inquiry",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Validity period and available sections of the JR Pass for travel in Osaka and Tokyo, Japan",
+      "key_responses": [
+        "The JR Pass covers all JR trains in the Osaka area, including the JR Osaka Loop Line and Haruka Express.",
+        "In Tokyo, the JR Pass is valid on all JR lines, including the Yamanote Line.",
+        "The pass allows travel between Osaka and Tokyo on the Tokaido Shinkansen for Hikari and Kodama trains."
+      ],
+      "customer_sentiment_score": 70,
+      "customer_satisfaction_score": 85,
+      "customer_characteristics": {
+        "language": "en",
+        "cultural_hints": "customer plans to travel in Japan, indicating a potential interest in Japanese culture",
+        "cultural_score": 70,
+        "region": "Asia",
+        "communication_style": "formal/casual",
+        "formality_score": 60,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 80,
+          "assertiveness": 30,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "The customer inquired about the validity and coverage areas of the JR Pass for travel in Osaka and Tokyo, Japan. The agent provided detailed information on the areas covered by the pass, including specific JR lines in Osaka and Tokyo and the Shinkansen routes available. The customer showed polite and patient behavior and expressed satisfaction without further questions."
+    },
+    "language_key": "en",
+    "timestamp": "2026-01-03T15:13:39.509746",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "552ac84d-a608-42ec-9684-eec4c8357ed6",
+    "initial_query": "",
+    "customer_type": "General Inquiry",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "JR Pass validity period and accessible sections",
+      "key_responses": [
+        "Requested specification of details for more precise guidance",
+        "Inquired about specific travel plans to Osaka and Tokyo for better assistance"
+      ],
+      "customer_sentiment_score": 60,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Interest in Japanese travel; uses Korean URL",
+        "cultural_score": 70,
+        "region": "Asia",
+        "communication_style": "brief/detailed",
+        "formality_score": 50,
+        "detail_level_score": 60,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 60,
+          "politeness_level": 70,
+          "technical_proficiency": 30
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 40
+      },
+      "summary": "The customer inquired about the JR Pass's validity period and accessible sections, specifically for travel in Osaka and Tokyo. The agent requested more specific details to assist accurately, but the conversation was not fully resolved."
+    },
+    "language_key": "en",
+    "timestamp": "2026-01-03T15:02:11.662239",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "6797591f-179f-4f2c-9ebe-42599581a9e0",
+    "initial_query": "",
+    "customer_type": "General Inquiry",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "JR Pass validity period and available sections",
+      "key_responses": [
+        "Requested specific details about the pass validity or sections covered",
+        "Prompted for account login for purchase-related inquiries"
+      ],
+      "customer_sentiment_score": 65,
+      "customer_satisfaction_score": 70,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "interest in travel to Japan",
+        "cultural_score": 50,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 80,
+        "detail_level_score": 70,
+        "personality_traits": {
+          "patience_level": 60,
+          "assertiveness": 55,
+          "politeness_level": 75,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "The customer inquired about the JR Pass, specifically its validity period and accessible sections. The agent asked for more details to provide precise assistance and advised logging into the Klook account for purchase-related questions. The customer expressed an interest in traveling to Osaka and Tokyo."
+    },
+    "language_key": "en",
+    "timestamp": "2026-01-03T15:00:21.806195",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "5a325934-a773-4d2f-a0bd-8e10011e8f24",
+    "initial_query": "https://www.klook.com/ko/activity/1420-7-day-whole-japan-rail-pass-jr-pass/?spm=Activity.SearchSuggest_LIST&clickId=c3031f6080 \n\nJR Pass inquiries - Validity period and available sections\n",
+    "customer_type": "General Inquiry",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/activity/1420-7-day-whole-japan-rail-pass-jr-pass/?spm=Activity.SearchSuggest_LIST&clickId=c3031f6080 \n\nJR Pass inquiries - Validity period and available sections\n"
+      }
+    ],
+    "summary": null,
+    "language_key": "en",
+    "timestamp": "2026-01-03T14:57:29.992234",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "b06df389-c44f-4fd1-8b9a-76d2514daa8e",
+    "initial_query": "",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Date change request for Lotte World Sky admission ticket due to flight cancellation",
+      "key_responses": [
+        "Apologized for the inconvenience and requested reservation details",
+        "Explained the necessity of providing specific information for quick processing",
+        "Emphasized the importance of information for security reasons"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "Japanese cultural context with politeness",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 95,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "fast",
+        "question_complexity": "simple",
+        "escalation_tendency": 20
+      },
+      "summary": "お客様は、飛行機の欠航によりロッテワールドスカイの入場券の日付変更を依頼しました。エージェントは謝罪し、迅速な対応のために予約番号、メールアドレス、現在の予約日と変更希望日を求めました。お客様はすぐに航空券情報を送ると返信し、やり取りは円滑に進みました。全体として、会話は丁寧で詳細なものでした。"
+    },
+    "language_key": "ja",
+    "timestamp": "2026-01-03T14:00:47.204935",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "363bff3f-c03d-4570-ad31-6393818d6eb0",
+    "initial_query": "https://www.klook.com/ja/activity/17678-lotte-world-sky-admission/?spm=Activity.TopNavigation.SelectCurrency&clickId=6fb436be69 \n\n飛行機の欠航によって、日付の変更を要請する",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ja/activity/17678-lotte-world-sky-admission/?spm=Activity.TopNavigation.SelectCurrency&clickId=6fb436be69 \n\n飛行機の欠航によって、日付の変更を要請する"
+      }
+    ],
+    "summary": null,
+    "language_key": "ja",
+    "timestamp": "2026-01-03T13:56:47.142931",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "96c0700d-a464-4698-a995-c04dc08e7bdf",
+    "initial_query": "",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Inquiry about QR code usage and cancellation policy for Disneyland Paris tickets.",
+      "key_responses": [
+        "Provided instructions for QR code scanning via the official app.",
+        "Explained the cancellation process via the reservation confirmation email link.",
+        "Confirmed refund processing to the original payment method."
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "Japanese language usage and politeness",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 85,
+        "personality_traits": {
+          "patience_level": 80,
+          "assertiveness": 60,
+          "politeness_level": 95,
+          "technical_proficiency": 70
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "お客様はパリディズニーランドのチケットに関するQRコードの利用方法とキャンセルポリシーについて問い合わせました。エージェントは、公式アプリでのQRコードスキャン手順とキャンセル手続きを説明し、返金が元の支払い方法に処理されることを確認しました。お客様は対応に満足し、感謝の意を示しました。"
+    },
+    "language_key": "ja",
+    "timestamp": "2026-01-03T13:11:57.015923",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "95efba90-792c-4da0-9333-90319a2ce5da",
+    "initial_query": "",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Details about QR code usage and cancellation policy for Disneyland Paris tickets",
+      "key_responses": [
+        "Explained QR code scanning procedure via the official app",
+        "Provided information on cancellation procedure via reservation confirmation email link"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "Japanese cultural context detected from language",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 65,
+          "politeness_level": 95,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "顧客は、ディズニーランドパリのQRコードの利用方法とキャンセルポリシーについて詳細を確認したいと問い合わせました。エージェントは、QRコードのスキャン手順とキャンセル手続きについて説明しました。顧客は説明に満足し、感謝の意を示しました。"
+    },
+    "language_key": "ja",
+    "timestamp": "2026-01-03T13:11:41.794291",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "619cd740-0ffc-4ea8-8c1e-d34ffa017f1c",
+    "initial_query": "",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Inquiry about QR code usage and cancellation policy for Disneyland Paris tickets.",
+      "key_responses": [
+        "Explained QR code scanning method in the official app.",
+        "Guided to use the link in the reservation confirmation email for cancellation and refund processing."
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "Japanese language usage and polite communication style",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 80,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "お客様は、パリディズニーランドのQRコードの使用方法とキャンセルポリシーについて問い合わせました。エージェントは公式アプリでのQRコードのスキャン方法を説明し、予約確認メール内のリンクを使用してキャンセルと返金手続きを行うように案内しました。お客様は、丁寧な対応に感謝の意を示しました。"
+    },
+    "language_key": "ja",
+    "timestamp": "2026-01-03T13:09:42.294638",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "c8f69daf-dd19-4293-bb1e-9630e9f97287",
+    "initial_query": "",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "QRコードの利用方法とキャンセルポリシーについて",
+      "key_responses": [
+        "公式アプリでのQRコードスキャン方法について説明",
+        "予約確認メールのリンクを通じてキャンセル手続きを案内",
+        "返金がクレジットカードまたは元の支払い方法に対して処理されると説明"
+      ],
+      "customer_sentiment_score": 70,
+      "customer_satisfaction_score": 75,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "Japanese context detected from language and formal communication",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "お客様はパリディズニーランドのQRコードの利用方法とキャンセルポリシーについて問い合わせました。エージェントは、QRコードのスキャン方法とキャンセル手続きについての詳細を説明しました。お客様はメールアドレスの一部を提供し、エージェントからの回答に満足しているようです。"
+    },
+    "language_key": "ja",
+    "timestamp": "2026-01-03T13:08:16.379432",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "fbde3b76-c37a-4394-adce-c7b7383484dd",
+    "initial_query": "https://www.klook.com/ko/activity/3969-disneyland-resort-paris/?spm=SearchResult.SearchResult_LIST&clickId=c0a1e01c7a\n\nパリーディズニーランドのお問合せ-->>入場日の72時間前まで無料取消と全額返金可能/　指定された日付だけ利用可能　/　予約後、公式のアプリを通じて、QRコードのスキャンと利用方法",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/activity/3969-disneyland-resort-paris/?spm=SearchResult.SearchResult_LIST&clickId=c0a1e01c7a\n\nパリーディズニーランドのお問合せ-->>入場日の72時間前まで無料取消と全額返金可能/　指定された日付だけ利用可能　/　予約後、公式のアプリを通じて、QRコードのスキャンと利用方法"
+      }
+    ],
+    "summary": null,
+    "language_key": "ja",
+    "timestamp": "2026-01-03T12:19:46.100045",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "f577f0a3-7051-4cbb-8138-b603fa6ca284",
+    "initial_query": "https://www.klook.com/ko/activity/3969-disneyland-resort-paris/?spm=SearchResult.SearchResult_LIST&clickId=c0a1e01c7a\n\n파리 디즈니랜드 문의 →> 취소 가능 여부 (72시간 전까지 무료 취소 ok) / 지정된 날짜에 한해서만 유효 / 예약 후에 QR 코드 이용 방법",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/activity/3969-disneyland-resort-paris/?spm=SearchResult.SearchResult_LIST&clickId=c0a1e01c7a\n\n파리 디즈니랜드 문의 →> 취소 가능 여부 (72시간 전까지 무료 취소 ok) / 지정된 날짜에 한해서만 유효 / 예약 후에 QR 코드 이용 방법"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-01-03T06:53:17.896142",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "d1403700-dd92-4336-a19b-cca647733664",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "eSIM activation issue in Paris, France",
+      "key_responses": [
+        "Guide through eSIM activation steps",
+        "Recommend contacting local carrier support",
+        "Offer to provide remote technical support if needed"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean-speaking, likely familiar with Korean customer service norms",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Europe"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 40
+      },
+      "summary": "고객은 프랑스 파리에서 eSIM 활성화 문제를 겪고 있으며, 에이전트는 여러 가지 해결 방법을 안내하고 추가 지원을 제공할 의사를 밝혔다. 고객은 제안된 방법을 시도한 후 다시 연락하겠다고 답변했다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-03T06:38:33.383259",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "b88ead9a-7fde-4399-bacd-599c60204397",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "eSIM activation issue in Paris",
+      "key_responses": [
+        "Check eSIM installation and network settings",
+        "Reboot device and contact local carrier",
+        "Contact customer service for remote support"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 80,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean-speaking customer traveling in France",
+        "cultural_score": 75,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 85,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 95,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 프랑스 파리에서 eSIM 활성화 문제를 해결하기 위해 여러 방법을 시도할 계획이며, 추가적인 문제가 발생할 경우 고객 서비스 팀에 연락할 의향이 있습니다. 고객은 친절하게 대응하며 문제 해결을 위해 제안된 해결책을 따르기로 했습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-03T06:36:28.182572",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "71ee560d-4546-4a82-879a-e623ec3f24aa",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "eSIM activation issue in Paris, France",
+      "key_responses": [
+        "Guide on checking and reinstalling eSIM profile",
+        "Recommendation to contact the carrier's customer service",
+        "Offer of remote technical support if needed"
+      ],
+      "customer_sentiment_score": 75,
+      "customer_satisfaction_score": 80,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean language used",
+        "cultural_score": 75,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 50,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "resides in Asia region"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 40
+      },
+      "summary": "고객님은 프랑스 파리에서 eSIM 활성화 문제를 겪고 있으며, 에이전트는 프로파일 확인 및 설치 방법을 안내하고 통신사 고객센터 연락을 권장했습니다. 고객은 안내된 방법을 시도하겠다고 답변했고, 에이전트는 추가 지원을 약속했습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-03T06:36:25.292909",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "0b6cd125-c1b9-4e69-a371-f21f4f9a368b",
+    "initial_query": "프랑스 파리에 도착했는데, eSIM 활성화가 안 됩니다",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "프랑스 파리에 도착했는데, eSIM 활성화가 안 됩니다"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-01-03T06:29:01.553205",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "cd5d9d85-d605-47a4-bd71-c6fd0e7a388b",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "eSIM activation issue in France",
+      "key_responses": [
+        "Provided steps to activate eSIM upon arrival in France",
+        "Explained that eSIM activation is possible only in France",
+        "Suggested manual network selection if automatic connection fails"
+      ],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-30T05:48:15.378807",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "a90cf944-dad7-41a7-9f43-e3d5e8aa0a6e",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Issue with activating eSIM in France",
+      "key_responses": [
+        "Customer needs to activate eSIM in France upon arrival using iPhone settings.",
+        "Manually select Orange or SFR network if automatic connection fails.",
+        "Provided detailed steps for eSIM activation on iPhone 13."
+      ],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-30T05:48:05.544346",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "62a135fe-921c-496e-8393-ab8a0f131716",
+    "initial_query": "https://www.klook.com/activity/161040-5g-esim-france-orange-sfr/?spm=SearchResult.SearchResult_LIST&clickId=7e5fe59fe0 \n\n프랑스 eSIM 안 되는 문의",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/activity/161040-5g-esim-france-orange-sfr/?spm=SearchResult.SearchResult_LIST&clickId=7e5fe59fe0 \n\n프랑스 eSIM 안 되는 문의"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2025-12-30T05:44:48.572249",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "7f177e88-a091-4cae-a3a1-cf72bebae80c",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "eSIM activation in Paris, France",
+      "key_responses": [
+        "Check eSIM activation on iPhone 12",
+        "Provide QR code scanning instructions",
+        "Suggest manual eSIM setup if QR code fails"
+      ],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-30T05:42:18.782711",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "476ff8eb-3c84-4611-89c8-4b6a13febdce",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "eSIM activation in Paris, France",
+      "key_responses": [
+        "Confirmed customer details and location",
+        "Provided steps for eSIM activation on iPhone 12",
+        "Offered additional support if needed"
+      ],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-30T05:20:15.896583",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "54dfbe8f-4b26-4635-aa85-ecfc080580aa",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "eSIM activation in Paris, France",
+      "key_responses": [
+        "Provided step-by-step instructions for eSIM activation on iPhone 12",
+        "Suggested checking Klook account for eSIM information if QR code is missing",
+        "Offered further assistance if issues persist"
+      ],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-30T05:19:56.242738",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "a87e7502-0a8a-419a-8fc3-ad63852cc408",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "eSIM activation in Paris, France",
+      "key_responses": [
+        "Provided step-by-step guide to activate eSIM on iPhone 12",
+        "Advised scanning a QR code or checking Klook account for eSIM details",
+        "Offered further assistance if initial steps do not resolve the issue"
+      ],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-30T05:19:01.245439",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "54f54d15-11de-43fa-a3b6-469e32aacb80",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "eSIM activation in Paris, France",
+      "key_responses": [
+        "Confirmed customer's account and location information",
+        "Provided step-by-step guide to activate eSIM on iPhone 12",
+        "Suggested logging into Klook for QR code if needed"
+      ],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-30T05:17:54.384830",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "bbf55e6c-05da-487e-a8d0-c8c9addfd44e",
+    "initial_query": "https://www.klook.com/activity/161040-5g-esim-france-orange-sfr/?spm=SearchResult.SearchResult_LIST&clickId=7e5fe59fe0 \n\n프랑스 파리 eSIM 활성화 문의",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/activity/161040-5g-esim-france-orange-sfr/?spm=SearchResult.SearchResult_LIST&clickId=7e5fe59fe0 \n\n프랑스 파리 eSIM 활성화 문의"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2025-12-30T05:15:43.719400",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "840304da-d6cf-4c03-bd50-fc1af6518f76",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "JR Pass validity and usable routes",
+      "key_responses": [
+        "JR Pass is valid for 7 days on designated JR lines in Japan.",
+        "Tokyo to Kyoto and Kyoto to Osaka routes can be used with JR Pass without additional fees.",
+        "Recommended using 'Hikari' or 'Kodama' Shinkansen for travel between Tokyo, Kyoto, and Osaka."
+      ],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-30T05:09:11.286683",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "099b2966-fdb1-4aed-a397-67ce71a80785",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "JR 패스의 유효기한 및 이용 가능한 역 구간들",
+      "key_responses": [
+        "JR 패스는 사용 시작일로부터 7일간 유효하며, 지정된 JR 노선에서 사용할 수 있습니다.",
+        "도쿄에서 교토, 오사카로의 이동은 JR 패스로 추가 요금 없이 가능합니다.",
+        "나고야 방문을 포함한 여행 경로에 대해 추가 정보를 제공받았습니다."
+      ],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-30T05:08:15.974472",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "a311aaf7-58fd-4649-91f3-9d6da0335317",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Inquiry about the validity and usable sections of the JR Pass",
+      "key_responses": [
+        "Provided information on the validity and coverage of the JR Pass",
+        "Confirmed the use of JR Pass for Tokyo to Kyoto and Kyoto to Osaka without extra charges",
+        "Advised on exchanging the pass voucher in Japan"
+      ],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-30T05:05:51.377806",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "b347b4c2-1f7c-4b84-9e29-ba5330419cb3",
+    "initial_query": "https://www.klook.com/ko/activity/1420-7-day-whole-japan-rail-pass-jr-pass/?spm=Activity.SearchSuggest_LIST&clickId=c3031f6080\n\nJR 패스 문의 \n\n유효기한 및 이용 가능한 역 구간들\n",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/activity/1420-7-day-whole-japan-rail-pass-jr-pass/?spm=Activity.SearchSuggest_LIST&clickId=c3031f6080\n\nJR 패스 문의 \n\n유효기한 및 이용 가능한 역 구간들\n"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2025-12-30T05:02:55.565319",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "49fb8b7a-0880-4dff-b659-8ae2e462e11a",
+    "initial_query": "",
+    "customer_type": "일반 고객",
+    "messages": [],
+    "summary": {
+      "customer_inquiry": "",
+      "key_solutions": [],
+      "summary": "Phone call conversation about ",
+      "summary_ko": "Phone call conversation about ",
+      "summary_en": [
+        "I'm sorry, it seems like the chat history you provided is incomplete. Could you please provide the full chat history for translation?",
+        true
+      ],
+      "summary_ja": [
+        "申し訳ありませんが、提供された情報が不完全です。完全なチャット履歴を提供してください。",
+        true
+      ]
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-28T08:21:50.727730",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": true
+  },
+  {
+    "id": "d75689c8-efe7-4c53-9651-807c807bd389",
+    "initial_query": "‘한국어 버전’\n불가피한 상황으로 인해서, 고객님께서 상하이 디즈니랜드 이용 날짜 취소, 변경 혹은 환불 요청 케이스 (원래 규정으로서는 취소, 환불, 변경 불가)\n1. 고객에게 정확한 이유 확인 요청\n2. 정확한 이유에 해당되는 증거물 요청",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "customer_inquiry": "상하이 디즈니랜드 일정의 취소, 변경, 환불 요청",
+      "key_solutions": [
+        "정확한 취소 사유 확인 및 증거물 요청",
+        "고객 정보 및 여권 정보 수집",
+        "요청 이메일을 통해 여권 스캔본 회신 요청"
+      ],
+      "summary": "고객은 여권 문제로 디즈니랜드 일정의 취소, 변경, 환불을 요청하였으며, 대표는 정확한 사유 및 고객 정보를 수집하고, 이메일을 통해 여권 스캔본을 요청하여 처리하기로 하였다.",
+      "summary_ko": "고객은 여권 문제로 디즈니랜드 일정의 취소, 변경, 환불을 요청하였으며, 대표는 정확한 사유 및 고객 정보를 수집하고, 이메일을 통해 여권 스캔본을 요청하여 처리하기로 하였다.",
+      "summary_en": [
+        "The customer requested cancellation, change, and refund of the Disneyland schedule due to a passport issue. The representative collected the exact reason and customer information and decided to handle it by requesting a scanned copy of the passport via email.",
+        true
+      ],
+      "summary_ja": [
+        "お客様はパスポートの問題でディズニーランドのスケジュールのキャンセル、変更、返金を要求し、代表者は正確な理由と顧客情報を収集し、メールを通じてパスポートのスキャンを要求して処理することにした。",
+        true
+      ]
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-27T15:43:00.942751",
+    "is_chat_ended": true,
+    "attachment_context": "홍길동이고 예약번호는 GLN123456입니다. 여권번호는 A12345678이고, 이메일 주소는 honggildong@example.com입니다.",
+    "is_call": true
+  },
+  {
+    "id": "4f0d1a83-7c6d-45a6-815e-c2360ebd1ae1",
+    "initial_query": "JR 패스 문의 \n\n유효기한 및 이용 가능한 역 구간들\n취소 및 환불 문의\n기타",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "JR Pass validity, usage areas, cancellation and refund policies",
+      "key_responses": [
+        "Cancellation within 90 days allows for a 100% refund unless 10% fee applies for personal reasons",
+        "Validity of the pass is 90 days with options for 7, 14, or 21 day use periods starting from first use",
+        "Guidance offered on travel routes between Tokyo and Osaka with specific station recommendations"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Uses Korean language, expresses gratitude frequently",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 90,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 75,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": true,
+        "has_address": false,
+        "region_hint": "East Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 JR 패스의 유효 기간 및 사용 가능 구간에 대해 문의했습니다. 고객은 도쿄에서 오사카까지 여행할 계획이며, 구체적인 역과 여행 가능한 구간에 대한 안내를 받았습니다. 모든 질문에 친절히 답변받아 만족도를 표현했으며, 개인정보를 공유하며 재문의 의사를 밝혔습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-27T15:05:42.610798",
+    "is_chat_ended": true,
+    "attachment_context": "김성수이고, 연락처는 010-1234-5678입니다. 이메일 주소는 kimseongsu@example.com",
+    "is_call": true
+  },
+  {
+    "id": "b469276b-2e35-4bb6-a10a-40a057799b80",
+    "initial_query": "JR 패스 문의 \n\n유효기한 및 이용 가능한 역 구간들\n취소 및 환불 문의\n기타",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "JR 패스 유효기한, 이용 가능한 역 구간, 취소 및 환불 문의",
+      "key_responses": [
+        "취소 요청 시 100% 전액 환불 처리 가능",
+        "JR 패스의 유효기간 90일 내",
+        "도쿄 및 오사카 여행에 대한 구체적인 역 구간 안내"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean cultural context with formal greeting and polite language",
+        "cultural_score": 85,
+        "region": "Asia",
+        "communication_style": "formal and detailed",
+        "formality_score": 90,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 80,
+          "assertiveness": 75,
+          "politeness_level": 95,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": true,
+        "has_address": false,
+        "region_hint": "resides in Asia region"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 JR 패스의 유효기간, 취소 및 환불 정책, 도쿄 및 오사카에서의 이용 가능한 역 구간에 대해 문의하였습니다. 상담원은 친절하고 상세하게 정보 제공하였습니다. 고객은 상담원에게 만족감을 표현하고 개인 정보를 제공하여 이후 문의를 위한 기록을 남겼습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-27T15:05:03.336461",
+    "is_chat_ended": true,
+    "attachment_context": "김성수이고, 연락처는 010-1234-5678입니다. 이메일 주소는 kimseongsu@example.com",
+    "is_call": true
+  },
+  {
+    "id": "9b241423-01cf-4bc8-9416-92eae9c8b310",
+    "initial_query": "JR 패스 문의 \n\n유효기한 및 이용 가능한 역 구간들\n취소 및 환불 문의\n기타",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "JR 패스의 유효기한, 이용 가능한 역 구간, 취소 및 환불 조건 문의",
+      "key_responses": [
+        "취소 요청 시 90일 이내에는 전액 환불, 개인 사유는 10% 수수료",
+        "유효기간은 JR 패스 첫 사용 시점부터 시작됨, 7일, 14일, 21일 중 선택",
+        "도쿄 및 오사카에서 특정 역구간 안내 및 가능 여부 설명"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "번역 교훈, 한국어로 상담",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 75,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 65,
+          "politeness_level": 85,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": true,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "JR 패스의 사용 기간, 구간 및 환불에 대한 질문이었으며, 도쿄와 오사카 간의 여행 계획에 대한 구체적인 설명과 안내를 받았다. 고객은 친절한 대응에 만족감을 표했고, 추가 문의 시 연락처를 제공하였다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-27T15:04:26.527433",
+    "is_chat_ended": true,
+    "attachment_context": "김성수이고, 연락처는 010-1234-5678입니다. 이메일 주소는 kimseongsu@example.com",
+    "is_call": true
+  },
+  {
+    "id": "6a5d889b-bef1-4fbc-8c2a-0e94235e9984",
+    "initial_query": "",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Inquiry about QR code scanning and usage for Disneyland Paris tickets",
+      "key_responses": [
+        "Solicited more details on specific QR code scanning issues",
+        "Requested account verification for reservation support"
+      ],
+      "customer_sentiment_score": 80,
+      "customer_satisfaction_score": 85,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "Japanese language used, hints of politeness",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 70,
+        "personality_traits": {
+          "patience_level": 75,
+          "assertiveness": 65,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "fast",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "顧客はパリーディズニーランドのQRコードのスキャンと利用方法について問い合わせた。エージェントは具体的な問題点とアカウント確認の情報提供を求め、顧客は感謝の意を表し了承した。"
+    },
+    "language_key": "ja",
+    "timestamp": "2025-12-27T07:13:34.237048",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "f0691352-80c7-4e9a-ac03-cdda563cd7d4",
+    "initial_query": "https://www.klook.com/ko/activity/3969-disneyland-resort-paris/?spm=SearchResult.SearchResult_LIST&clickId=c0a1e01c7a\n\nパリーディズニーランドのお問合せ　予約後、公式のアプリを通じて、QRコードのスキャンと利用方法",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/activity/3969-disneyland-resort-paris/?spm=SearchResult.SearchResult_LIST&clickId=c0a1e01c7a\n\nパリーディズニーランドのお問合せ　予約後、公式のアプリを通じて、QRコードのスキャンと利用方法"
+      }
+    ],
+    "summary": null,
+    "language_key": "ja",
+    "timestamp": "2025-12-27T07:07:27.747753",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "f1a8e245-5e5d-4ff8-90a4-b908379ffce6",
+    "initial_query": "",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Issues with activating and using a Malaysia eSIM in Malaysia and Singapore",
+      "key_responses": [
+        "Check eSIM activation in Johor Bahru, Malaysia",
+        "Ensure data roaming is possible in Singapore",
+        "Contact Klook support if issues occur in Singapore"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "Customer familiar with Southeast Asia travel, mentioning travel plans and routes",
+        "cultural_score": 70,
+        "region": "Southeast Asia",
+        "communication_style": "formal",
+        "formality_score": 85,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 80,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "顧客は、マレーシアのジョーホールバールでeSIMを活性化することに関する問題とその後のシンガポールでの利用について問い合わせました。エージェントは、ジョーホールバールでの正しいアクティベーションとデータローミングが可能かどうかの確認を提案しました。また、必要に応じてKlookのサポートへの連絡を推奨しました。顧客は、提供された情報に満足し感謝を示しました。"
+    },
+    "language_key": "ja",
+    "timestamp": "2025-12-27T06:40:45.388821",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "cb3e5d26-fe55-4647-abed-6ea8ace578b2",
+    "initial_query": "https://www.klook.com/ko/activity/110713-malaysia-esim-high-speed-internet-qr-code-in-the-voucher/?spm=SearchResult.SearchResult_LIST&clickId=842a678935\n\n-->> マレーシアで使われるeSIMが作動されません",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/activity/110713-malaysia-esim-high-speed-internet-qr-code-in-the-voucher/?spm=SearchResult.SearchResult_LIST&clickId=842a678935\n\n-->> マレーシアで使われるeSIMが作動されません"
+      }
+    ],
+    "summary": null,
+    "language_key": "ja",
+    "timestamp": "2025-12-27T06:24:35.447035",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "8e20619e-d26b-4ae0-a532-a42d43490ccb",
+    "initial_query": "",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Change or cancellation of Shanghai Disneyland tickets due to passport information change.",
+      "key_responses": [
+        "Provide reason and evidence for ticket change or cancellation.",
+        "Suggested contacting Shanghai Disneyland's support directly for passport info update.",
+        "Recommended using translation apps or English for communication at Disneyland."
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ja",
+        "cultural_hints": "Possibly Japanese due to language and politeness.",
+        "cultural_score": 85,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 65,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "カスタマーは、日程変更が不可の上海ディズニーランドのチケットを、パスポート情報の変更によってどうすればいいかと相談。代理店は、状況説明と証拠の提出、パスポート情報更新のためのディズニー公式サポートへの依頼、翻訳アプリの利用、英語でのコミュニケーションを推奨し、インフォメーションセンターの活用も案内した。対応に満足したカスタマーから感謝の意が表された。"
+    },
+    "language_key": "ja",
+    "timestamp": "2025-12-27T05:41:24.377857",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "652bf272-1caf-4664-aa55-0771ff0c76f5",
+    "initial_query": "https://www.klook.com/ja/activity/2128-disney-resort-shang-hai/?spm=SearchResult.SearchResult_LIST&clickId=2f3d07f749\n\n「日本語のバージョン」\nやむを得ない場合により、上海ディズニーランドチケットの利用日の取消それとも変更(元々は、取消と返金と変更不可)\n1．理由の確認が必要\n2．理由に当該される証拠の確認と提出の要請\n\n\n",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ja/activity/2128-disney-resort-shang-hai/?spm=SearchResult.SearchResult_LIST&clickId=2f3d07f749\n\n「日本語のバージョン」\nやむを得ない場合により、上海ディズニーランドチケットの利用日の取消それとも変更(元々は、取消と返金と変更不可)\n1．理由の確認が必要\n2．理由に当該される証拠の確認と提出の要請\n\n\n"
+      }
+    ],
+    "summary": null,
+    "language_key": "ja",
+    "timestamp": "2025-12-27T05:31:22.844917",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "def2b4e1-022c-48e3-bc7b-fcd22ab49dab",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Request for cancellation and refund of Shanghai Disneyland reservation due to health issues.",
+      "key_responses": [
+        "Requested customer to provide a hospital certificate.",
+        "Explained process for handling refunds and potential escalation if delayed.",
+        "Clarified verification by requesting part of the customer's email address."
+      ],
+      "customer_sentiment_score": 65,
+      "customer_satisfaction_score": 85,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean cultural context with politeness and respect",
+        "cultural_score": 75,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 70,
+        "personality_traits": {
+          "patience_level": 75,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "고객은 건강상의 이유로 상하이 디즈니랜드 예약 취소 및 환불을 요청했습니다. 에이전트는 절차를 설명하고 병원 진단서를 요청하여 가능한 빨리 환불 프로세스를 처리하겠다고 약속했습니다. 또한, 고객 인증을 위해 이메일 일부를 요청했으며, 만약 상황이 지연될 경우 상위 부서로 문제를 이관하겠다고 하였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-27T04:50:09.472270",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "86820aa6-10d2-4ddb-8b3c-f23f82c14bba",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Request for cancellation or refund of Disneyland Shanghai reservation due to health issues",
+      "key_responses": [
+        "Requested submission of medical certificate for cancellation or refund",
+        "Assisted with potential escalation to higher department if necessary",
+        "Confirmed reception of email for documentation and assured swift processing"
+      ],
+      "customer_sentiment_score": 70,
+      "customer_satisfaction_score": 75,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Politeness and appreciation common in Korean culture",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 65,
+          "politeness_level": 85,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객님께서는 건강 문제로 인해 상하이 디즈니랜드 예약을 취소하고자 하셨으며, 의료 진단서를 제출하여 환불 절차를 진행하고 있었습니다. Klook 고객 지원 팀은 고객님의 상황에 공감하며 신속한 처리를 약속하였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-27T04:49:39.078077",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "514cccba-b47d-40ad-a6d3-d1952d06236e",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Cancellation of Shanghai Disneyland reservation due to health reasons",
+      "key_responses": [
+        "Requested specific reason and evidence for unavoidable circumstance",
+        "Will process refund upon receiving hospital certificate",
+        "Provided steps for account verification using partial email"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 80,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Formal Korean communication",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "fast",
+        "question_complexity": "moderate",
+        "escalation_tendency": 40
+      },
+      "summary": "건강상의 이유로 상하이 디즈니랜드 예약 취소를 요청하셨습니다. 고객 지원팀은 병원 진단서를 요구하며, 빠른 환불을 약속하였습니다. 고객은 친절하게 응대하였으며, 추가 정보 제공을 위해 이메일 인증을 요구받았습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-27T04:47:56.072574",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "a4ea5202-0b79-488e-9068-dfd14755b8d5",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Cancellation request for Shanghai Disneyland due to health reasons",
+      "key_responses": [
+        "Request for specific reason and supporting documents for cancellation",
+        "Process for submitting documents and initiating refund",
+        "Assurance of escalation if the request is delayed"
+      ],
+      "customer_sentiment_score": 80,
+      "customer_satisfaction_score": 85,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "South Korean with emphasis on politeness",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "fast",
+        "question_complexity": "moderate",
+        "escalation_tendency": 40
+      },
+      "summary": "고객은 건강상의 이유로 상하이 디즈니랜드 예약을 취소하려고 하고, 관련 증빙 자료를 제출할 예정입니다. 에이전트는 증빙 자료 접수 후 환불 절차를 진행하겠다고 답변했으며, 지연 시 상위 부서에 이관하겠다고 약속했습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-27T04:43:42.175208",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "4467a4f9-d2e4-46e3-b58a-b434da7f7a2c",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Cancellation, modification, or refund request for Shanghai Disneyland tickets due to health issues.",
+      "key_responses": [
+        "Request for specific reason and evidence for cancellation.",
+        "Guidance on submitting a medical certificate for refund processing.",
+        "Assurance of escalation to a higher department if necessary."
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "South Korean, culturally sensitive to formality and politeness.",
+        "cultural_score": 90,
+        "region": "Asia region",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 95,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia region"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 40
+      },
+      "summary": "고객은 건강상의 이유로 상하이 디즈니랜드 티켓 취소를 원했으며, 고객 지원팀은 의료진단서를 제출하면 환불 절차를 진행할 것이라고 안내하였고, 필요 시 상위 부서에 문제를 이관하여 신속히 해결할 수 있도록 조치를 취하였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-27T04:41:04.075880",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "e1d87381-901f-4036-8b9f-a4bc63df8e4b",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Cancellation of Shanghai Disneyland reservation due to health reasons.",
+      "key_responses": [
+        "Requested specific reason and evidence for cancellation.",
+        "Acknowledged customer's health issues and agreed to process cancellation upon receipt of proof.",
+        "Ensured the issue would be escalated if there were delays or further complications."
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean language; politeness in communication",
+        "cultural_score": 85,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 80,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 80,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 건강상의 이유로 상하이 디즈니랜드 예약 취소 요청을 했습니다. 고객지원을 통해 환불 절차를 신속히 진행하기 위해 병원 진단서가 요청되었습니다. 문제가 해결되지 않으면 상위 부서로 이관할 것을 약속했습니다. 고객은 이메일로 필요한 문서를 곧 보내겠다고 확인했습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-27T04:39:26.496123",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "21cd91fc-5ae7-48e4-bcd2-ad91eba32810",
+    "initial_query": "https://www.klook.com/ja/activity/2128-disney-resort-shang-hai/?spm=SearchResult.SearchResult_LIST&clickId=2f3d07f749\n\n‘한국어 버전’\n불가피한 상황으로 인해서, 고객님께서 상하이 디즈니랜드 이용 날짜 취소, 변경 혹은 환불 요청 케이스 (원래 규정으로서는 취소, 환불, 변경 불가)\n1. 고객에게 정확한 이유 확인 요청\n2. 정확한 이유에 해당되는 증거물 요청",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ja/activity/2128-disney-resort-shang-hai/?spm=SearchResult.SearchResult_LIST&clickId=2f3d07f749\n\n‘한국어 버전’\n불가피한 상황으로 인해서, 고객님께서 상하이 디즈니랜드 이용 날짜 취소, 변경 혹은 환불 요청 케이스 (원래 규정으로서는 취소, 환불, 변경 불가)\n1. 고객에게 정확한 이유 확인 요청\n2. 정확한 이유에 해당되는 증거물 요청"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2025-12-27T04:28:57.804849",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "e02a41c7-4696-4183-9c7f-d92bd5bbd1f5",
+    "initial_query": "https://www.klook.com/activity/161040-5g-esim-france-orange-sfr/?spm=SearchResult.SearchResult_LIST&clickId=7e5fe59fe0 \n\nお客様のお問い合わせの内容：パリーでeSIMのデーターの活性化の手続の中で、トラブルに向かっている \n",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/activity/161040-5g-esim-france-orange-sfr/?spm=SearchResult.SearchResult_LIST&clickId=7e5fe59fe0 \n\nお客様のお問い合わせの内容：パリーでeSIMのデーターの活性化の手続の中で、トラブルに向かっている \n"
+      }
+    ],
+    "summary": null,
+    "language_key": "ja",
+    "timestamp": "2025-12-26T08:30:06.365227",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "867e5ff8-8cc0-4670-b901-294c55292e31",
+    "initial_query": "https://www.klook.com/ko/search/result/?query=%EC%9C%A0%EB%A1%9C%EC%8A%A4%ED%83%80&spm=SearchResult.TopNavigation.SelectLanguage&clickId=a510e2449b \n\nパリーからスイスまでユーロースターでかかる時間と料金",
+    "customer_type": "一般的な問い合わせ",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/search/result/?query=%EC%9C%A0%EB%A1%9C%EC%8A%A4%ED%83%80&spm=SearchResult.TopNavigation.SelectLanguage&clickId=a510e2449b \n\nパリーからスイスまでユーロースターでかかる時間と料金"
+      }
+    ],
+    "summary": null,
+    "language_key": "ja",
+    "timestamp": "2025-12-26T07:22:45.381887",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "bf796a19-3bed-48c6-ae98-b849c22f3c0c",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Inquiry about entry tickets and express passes for Universal Studios Japan",
+      "key_responses": [
+        "Requested order or payment details to provide accurate assistance",
+        "Provided information about popular attractions using express passes",
+        "Clarified that no additional discounts are available using JR Pass"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Use of formal Korean language with possible South Korean cultural etiquette",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 75,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 30
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 오사카 유니버셜 스튜디오 재팬 입장권과 익스프레스 패스에 대한 문의를 했습니다. 에이전트는 정확한 지원을 위해 추가 정보를 요청하였고, 인기가 많은 어트랙션과 JR 패스 할인 가능성에 대한 정보를 제공했습니다. 고객은 궁금증이 해소되었고, 추가 요청이 없다고 답했습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-26T06:38:58.633088",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "358631fd-9524-4f68-9c9d-b966f430b8b9",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Inquiry about admission and express pass for Universal Studios Japan",
+      "key_responses": [
+        "Requested additional information such as order number or payment details for accurate assistance",
+        "Provided information on popular attractions that can be accessed via express pass",
+        "Clarified that no additional discounts are available through JR pass"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean language and customer service politeness",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal",
+        "formality_score": 85,
+        "detail_level_score": 60,
+        "personality_traits": {
+          "patience_level": 75,
+          "assertiveness": 65,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "simple",
+        "escalation_tendency": 10
+      },
+      "summary": "고객은 유니버셜 스튜디오 재팬의 입장권 및 익스프레스 패스에 대해 문의하였습니다. 상담사는 인기 있는 어트랙션에 대한 정보를 제공하고 JR 패스로는 추가 할인이 제공되지 않음을 설명했습니다. 고객은 답변에 만족하였고 추가 문의는 없었습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-26T06:38:25.830852",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "8adc8dc4-e489-457f-9b13-c79996f8e9ae",
+    "initial_query": "https://www.klook.com/ko/activity/3407-universal-studios-japan-express-pass-osaka/?spm=Activity.Good_to_know.Link&clickId=6178885762\n\n\nhttps://www.klook.com/ko/activity/46604-universal-studios-japan-e-ticket-osaka-qr-code-direct-entry/?spm=Activity.SearchSuggest_LIST&clickId=3cf3a8b9e1\n오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의 \n",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/activity/3407-universal-studios-japan-express-pass-osaka/?spm=Activity.Good_to_know.Link&clickId=6178885762\n\n\nhttps://www.klook.com/ko/activity/46604-universal-studios-japan-e-ticket-osaka-qr-code-direct-entry/?spm=Activity.SearchSuggest_LIST&clickId=3cf3a8b9e1\n오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의 \n"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2025-12-26T06:22:25.275918",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "74039431-95e2-41b9-9f3b-e062bcd4df9b",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "문의 about purchasing Universal Studios Japan tickets and express passes.",
+      "key_responses": [
+        "Explained that tickets and express passes can be purchased separately.",
+        "Provided information about express pass benefits and potential restrictions.",
+        "Advised checking specific details on Klook for cancellation policies and attraction options."
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean language consistency",
+        "cultural_score": 85,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 80,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "fast",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 오사카 유니버셜 스튜디오 재팬의 입장권과 익스프레스 패스 구매 관련 문의를 했습니다. 에이전트는 성공적으로 구매 옵션과 각 패스의 사용 혜택 및 제한에 대해 상세히 설명했습니다. 고객은 제공된 정보에 만족하였으며, 추가 질문도 빠르게 해결되었습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-26T06:02:02.680503",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "f66644fc-6e1c-4a8e-a02f-6b28c3ef806f",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Inquiry about purchasing Universal Studios Japan tickets and express pass",
+      "key_responses": [
+        "Tickets and express passes can be purchased separately.",
+        "Check email for cancellation policy details.",
+        "Express pass grants access to specific attractions without waiting in line."
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean-speaking, interested in Japanese theme park",
+        "cultural_score": 70,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 75,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 85,
+          "assertiveness": 40,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "fast",
+        "question_complexity": "moderate",
+        "escalation_tendency": 10
+      },
+      "summary": "고객은 오사카 유니버셜 스튜디오 재팬의 입장권 및 익스프레스 패스 구매 가능 여부와 취소 정책에 대해 문의했습니다. 에이전트는 두 패스를 별도로 구매할 수 있으며, 이메일을 통해 취소 정책을 확인할 수 있음을 안내했습니다. 추가적으로, 익스프레스 패스 사용 시의 혜택과 제한 사항에 대한 설명도 제공했습니다. 고객은 전반적으로 긍정적인 반응을 보였으며, 감사 인사를 전했습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-26T06:01:38.837352",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "a447fe9d-6491-4930-ad10-7318927bc612",
+    "initial_query": "https://www.klook.com/ko/activity/3407-universal-studios-japan-express-pass-osaka/?spm=Activity.Good_to_know.Link&clickId=6178885762\n\n\nhttps://www.klook.com/ko/activity/46604-universal-studios-japan-e-ticket-osaka-qr-code-direct-entry/?spm=Activity.SearchSuggest_LIST&clickId=3cf3a8b9e1\n오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의 \n",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/activity/3407-universal-studios-japan-express-pass-osaka/?spm=Activity.Good_to_know.Link&clickId=6178885762\n\n\nhttps://www.klook.com/ko/activity/46604-universal-studios-japan-e-ticket-osaka-qr-code-direct-entry/?spm=Activity.SearchSuggest_LIST&clickId=3cf3a8b9e1\n오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의 \n"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2025-12-26T05:46:40.697872",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "47c81544-e961-4f07-8c40-9c3d85a6800b",
+    "initial_query": "유럽에서 Klook eSIM 사용하는 문제",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "유럽에서 Klook eSIM 사용하는 문제"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2025-12-26T03:38:55.499556",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "7247c7ef-0222-4573-9c38-d84d8d8dfd83",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": ""
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2025-12-26T03:28:51.562850",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "cea411e9-b970-4d11-96c7-9d6d80cd5631",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Right earbud of the wireless earbuds is not working",
+      "key_responses": [
+        "Checked if both earbuds are charged and suggested swapping positions",
+        "Recommended resetting and reconnecting the earbuds",
+        "Advised to ensure software is updated"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal",
+        "formality_score": 85,
+        "detail_level_score": 70,
+        "personality_traits": {
+          "patience_level": 75,
+          "assertiveness": 65,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "fast",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 무선 이어버드의 오른쪽 이어버드에 문제가 있다고 보고했습니다. 에이전트는 문제 해결을 위해 몇 가지 단계를 안내하였으며, 고객 역시 그 지시에 따라 문제를 해결하기로 했습니다. 고객은 에이전트의 빠르고 세심한 응대에 감사의 표시를 했습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-26T03:28:11.273321",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "16e39694-0baa-4e7f-851e-38e98361f236",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Issue with the right earbud of wireless earbuds not producing sound.",
+      "key_responses": [
+        "Verify both earbuds are charged and swap positions.",
+        "Reset earbuds and reconnect.",
+        "Check for software updates."
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "The conversation was conducted in Korean, suggesting familiarity with Korean language.",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 75,
+          "assertiveness": 65,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "fast",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 무선 이어버드의 오른쪽 이어버드에 문제가 있다고 문의했습니다. 고객 지원 담당자는 기본 점검, 리셋 및 재연결, 소프트웨어 업데이트 확인과 같은 해결책을 제공했습니다. 고객은 이러한 제안을 시도해 보고 문제가 계속되면 고객센터에 연락하겠다고 응답했습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-26T03:27:47.038257",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "94f67b52-4e40-4de8-89eb-c80d53288d64",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "issue with right earbud of wireless earbuds not working",
+      "key_responses": [
+        "suggested basic checks, reset and reconnect the earbuds",
+        "recommended checking software updates and cleaning the earbuds",
+        "provided escalation option for further support or product replacement"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "use of formal language",
+        "cultural_score": 80,
+        "region": "Korea or Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 85,
+        "personality_traits": {
+          "patience_level": 80,
+          "assertiveness": 70,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "fast",
+        "question_complexity": "moderate",
+        "escalation_tendency": 40
+      },
+      "summary": "고객은 무선 이어버드의 오른쪽 이어버드에서 소리가 나지 않는 문제로 문의하였습니다. 상담원은 기본 점검, 이어버드 설정 초기화, 소프트웨어 업데이트 확인을 제안하였습니다. 고객은 제안된 단계를 시도해 보겠다고 응답했으며 추가적인 도움이 필요할 경우 고객센터에 연락하겠다고 하였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-26T03:08:14.477884",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "de72982b-23ef-48d4-b441-8588375fdf0f",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": ""
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2025-12-26T03:01:19.076299",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "fe8da2d8-7199-463e-9f80-4a0a4649ede9",
+    "initial_query": "오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Osaka Universal Studios Japan ticket and Express pass purchasing issue",
+      "key_responses": [
+        "Tickets and Express passes must be purchased separately",
+        "Check for other purchase errors with the payment card",
+        "Consider using alternative online payment methods like KakaoPay, NaverPay"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean customer addressing agent with honorifics",
+        "cultural_score": 75,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 95,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 오사카 유니버셜 스튜디오 재팬 입장권과 익스프레스 패스 구매 과정에서 결제 오류를 문의함. 에이전트는 별도 구매 필요성과 대안 결제 수단을 제안함. 고객은 문제가 해결될 기미를 보이며 감사 인사를 전함."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-26T02:50:08.343698",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": true
+  },
+  {
+    "id": "91dffcd2-c22a-4f85-933a-7013ca59c303",
+    "initial_query": "오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Issue with purchasing Osaka Universal Studios Japan tickets and express pass",
+      "key_responses": [
+        "Clarified that tickets and express passes need to be purchased separately",
+        "Suggested checking the card for errors and trying other payment methods if needed",
+        "Advised contacting the bank for card issues"
+      ],
+      "customer_sentiment_score": 80,
+      "customer_satisfaction_score": 85,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Customer seems knowledgeable about Japanese attractions and payment systems",
+        "cultural_score": 70,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 오사카 유니버셜 스튜디오 재팬의 입장권 및 익스프레스 패스 구매에 문제가 있다고 문의하였으며, 에이전트는 티켓과 패스는 별도로 구매해야 한다고 설명하고, 결제 시 사용할 수 있는 다른 대체 결제 수단을 조언하였습니다. 고객은 이러한 조언에 감사하며 답변에 만족하는 모습을 보였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-26T02:46:01.294565",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": true
+  },
+  {
+    "id": "511e2233-9520-45a8-98d5-59e29706c2db",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Universal Studios Japan ticket and express pass purchase error",
+      "key_responses": [
+        "Verify internet connection and payment details",
+        "Attempt transaction with different browser/device",
+        "Provide contact details for further assistance"
+      ],
+      "customer_sentiment_score": 65,
+      "customer_satisfaction_score": 70,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Polite and formal communication typical in South Korea",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal",
+        "formality_score": 85,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": true,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객님은 오사카 유니버셜 스튜디오 재팬 입장권과 익스프레스 패스 구매 중 오류를 겪고 있었으며, 결제 오류를 해결하기 위해 인터넷 연결 및 결제 수단 확인, 다른 기기의 사용을 권장받았습니다. 문제가 지속되어 고객센터와의 추가적인 연락을 통해 문제를 해결하고자 하였으며, 은행에의 확인 과정도 추가되었습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-26T02:45:50.245117",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "1b4603ac-17aa-402d-805e-b2c34d4870e8",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Issue with purchasing Universal Studios Japan tickets and express pass due to payment error",
+      "key_responses": [
+        "Check internet connection, payment method, and try other devices",
+        "Provide order number for further assistance",
+        "Ask for contact details for direct follow-up"
+      ],
+      "customer_sentiment_score": 65,
+      "customer_satisfaction_score": 70,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean language preference",
+        "cultural_score": 85,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 80,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 60,
+          "politeness_level": 85,
+          "technical_proficiency": 70
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": true,
+        "has_address": false,
+        "region_hint": "resides in Asia region"
+      },
+      "behavior_patterns": {
+        "response_time": "fast",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "고객님은 오사카 유니버셜 스튜디오 재팬 티켓 구매 중 결제 오류 문제를 해결하기 위해 문의하셨습니다. 에이전트는 인터넷 연결, 결제 수단 확인 및 기기 변경을 제안하였고, 직접 연락을 위한 성함과 전화번호를 요청했습니다. 고객님은 시도된 방법들이 효과가 없다고 하셨고, 정중하고 빠른 해결을 요청하셨습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-26T02:45:09.671938",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "8f214130-b327-4f7b-9352-3a47fc7de7ff",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "오사카 유니버셜 스튜디오 재팬 티켓 및 익스프레스 패스 결제 오류",
+      "key_responses": [
+        "인터넷 연결 상태 확인",
+        "결제 수단 정보 재확인",
+        "다른 브라우저나 기기로 시도"
+      ],
+      "customer_sentiment_score": 70,
+      "customer_satisfaction_score": 65,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 80,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 60,
+          "assertiveness": 70,
+          "politeness_level": 80,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": true,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 40
+      },
+      "summary": "고객은 오사카 유니버셜 스튜디오 재팬 티켓 및 익스프레스 패스를 구매하려다 결제 과정에서 오류가 발생했다고 문의하였습니다. 에이전트는 인터넷 연결 상태 확인, 결제 수단 정보 재확인, 다른 브라우저나 기기를 사용해 보라는 해결 방안을 제시하였습니다. 고객은 시도 후에도 문제가 해결되지 않자 이름과 연락처를 제공하고 빠른 해결을 요청했습니다. 이후에는 카드사에 문의해 보겠다고 응답하였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-26T02:43:52.811721",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "d532b59f-91da-4f97-882d-f4294d5df6b3",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Issue with purchasing tickets and express pass for Universal Studios Japan due to payment error",
+      "key_responses": [
+        "Checked internet connection and confirmed payment method",
+        "Tried using a different browser or device",
+        "Suggested contacting the customer center with personal contact information for direct assistance"
+      ],
+      "customer_sentiment_score": 65,
+      "customer_satisfaction_score": 70,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean language and name indicate Korean cultural background",
+        "cultural_score": 80,
+        "region": "Korea",
+        "communication_style": "formal/detailed",
+        "formality_score": 75,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 55,
+          "assertiveness": 65,
+          "politeness_level": 85,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": true,
+        "has_address": false,
+        "region_hint": "Korea"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "고객은 오사카 유니버셜 스튜디오 재팬의 티켓과 익스프레스 패스를 구매하면서 결제 오류가 발생했다고 문의했습니다. 상담원은 인터넷 연결 상태 및 결제 수단 확인, 다른 브라우저나 기기 사용을 제안했습니다. 고객은 이러한 방법을 시도했지만 문제가 해결되지 않아 상담원에게 직접 연락을 기다리고 있다고 했습니다. 상담원은 다른 웹사이트에서의 결제 오류 여부를 확인하고 카드사에 연락할 것을 권장했습니다. 고객은 추가 문의가 없다고 응답했습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-26T02:43:23.556471",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "7533b458-0ed9-4801-a154-ec4b47922551",
+    "initial_query": "https://www.klook.com/ko/activity/3407-universal-studios-japan-express-pass-osaka/?spm=Activity.Good_to_know.Link&clickId=6178885762\n\n\nhttps://www.klook.com/ko/activity/46604-universal-studios-japan-e-ticket-osaka-qr-code-direct-entry/?spm=Activity.SearchSuggest_LIST&clickId=3cf3a8b9e1\n오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의 \n",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/activity/3407-universal-studios-japan-express-pass-osaka/?spm=Activity.Good_to_know.Link&clickId=6178885762\n\n\nhttps://www.klook.com/ko/activity/46604-universal-studios-japan-e-ticket-osaka-qr-code-direct-entry/?spm=Activity.SearchSuggest_LIST&clickId=3cf3a8b9e1\n오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의 \n"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2025-12-25T16:00:44.862621",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "6135e1ef-c5dc-41d7-a095-0c2efbb85714",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Questions about purchasing and using Universal Studios Japan tickets and Express Pass",
+      "key_responses": [
+        "Provided information on benefits of purchasing tickets and Express Pass together",
+        "Explained how to check available dates and times for tickets",
+        "Detailed refund policy for tickets and Express Passes"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Shows understanding of Korean customer service interaction",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 90,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 오사카 유니버셜 스튜디오 재팬의 입장권 및 익스프레스 패스 구매와 관련된 다양한 질문을 했습니다. 에이전트는 각 질문에 대한 구체적인 정보를 제공했으며, 고객은 전반적으로 긍정적인 응답을 받았습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-25T15:57:44.970912",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "96c7d457-81cd-4ab3-bc65-741de4d12fb8",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Inquiry about Universal Studios Japan entrance ticket and express pass benefits.",
+      "key_responses": [
+        "Explained express pass benefits like reduced wait times and advised checking reservation page for available times.",
+        "Provided information on checking express ride access and real-time availability on the reservation page.",
+        "Explained general refund policy for weather-related issues and emphasized non-refundable nature of express passes."
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 80,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Customer displayed courteous communication typical of Korean culture.",
+        "cultural_score": 70,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 55,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 오사카 유니버셜 스튜디오 재팬의 입장권 및 익스프레스 패스에 대한 다양한 사항을 문의하였고, 에이전트는 만족스럽게 답변을 제공했습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2025-12-25T15:57:16.785078",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  }
+]

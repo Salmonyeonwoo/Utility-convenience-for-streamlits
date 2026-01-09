@@ -42,7 +42,7 @@ env/
 Thumbs.db
 
 # Local Data
-local_db/
+# local_db/  # 주석 처리: 파일 타입별 폴더 구조화로 GitHub에 포함
 *.db
 *.sqlite
 

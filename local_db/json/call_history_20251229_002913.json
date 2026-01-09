@@ -1,0 +1,114 @@
+{
+  "initial_query": "",
+  "customer_type": "일반 고객",
+  "messages": [
+    {
+      "role": "agent_response",
+      "content": "안녕하세요. 고객님 고객 센터에 연락 주셔서 감사드립니다. 저는 상담원 정태영라고 합니다. 무엇을 도와드릴까요?"
+    },
+    {
+      "role": "customer",
+      "content": "おはようございます。僕の声、現在聞こえますか?"
+    },
+    {
+      "role": "agent_response",
+      "content": "はい、こちらからお客様の声はしっかりと聞こえています。何かお困りのことがあれば、お知らせください。"
+    },
+    {
+      "role": "customer",
+      "content": "はい、わかりました。まずちょっと確認したいものがありますが、 ヨーロッパでユーロスターでロンドンからパリまで旅行することを今ちょっと考えているんですけど、 この中でもしかして座席の予約の後で、もしかして座席のことが気に入りませんでしたら、 座席の変更のお願いは多分できますかね。 それとも手数料がかかるかどうか、そして広い座席の指定までもできるか。 クルクで予約したいんですけど、これ多分大丈夫ですか。"
+    },
+    {
+      "role": "agent_response",
+      "content": "ユーロスターの座席変更についてですが、通常、出発前に変更することが可能です。ただし、手数料がかかる場合がありますので、予約時の条件を確認することをお勧めします。広い座席の指定も可能ですが、追加料金が発生することがあります。クルックでの予約は問題ありませんが、予約内容をしっかりと確認してください。"
+    },
+    {
+      "role": "customer",
+      "content": "はいわかりましたそれとあのロンドンからパリまで長 パリまで隠れそうなその時間はどうやって調べられますか 多分えっと えっと何でしたっけあの意味ぐらいのその時間も確かにかからないわけではないと思いますが これはどうどうなっておりますか"
+    },
+    {
+      "role": "agent_response",
+      "content": "ユーロスターの運行時間はユーロスターの公式ウェブサイトやクルックの予約ページで確認できます。ロンドンからパリまでの所要時間は通常約2時間15分です。詳細なスケジュールを確認するには、具体的な日付と時間帯で検索していただくと良いでしょう。"
+    },
+    {
+      "role": "customer",
+      "content": "はいかしこまりましたユルスターのその問い合わせは以上です そしてもう一つあるんですけど何かもしかしてこれを買って何かこれで何かに移動することがあれば パリで旅行することの中で もしかしてお得で恵まれてもらえるものがあるか これをもうちょっと一緒に調べられますか で例えばなんか えっとパリでのその博物館のその入場券の料金とか それともディズニーランドのことが利用のことが多分割引とか無料になれるよって そういうことがあるかどうか これをちょっと一緒に調べて教えていただけますか"
+    },
+    {
+      "role": "agent_response",
+      "content": "パリでの旅行中にお得な特典を利用したい場合、パリ・ミュージアム・パスを検討されると良いでしょう。これにより、多くの博物館や美術館への入場が無料になります。また、パリの公共交通機関や観光施設での割引がある場合もあります。ディズニーランド・パリに関しては、公式ウェブサイトで割引情報を確認することをお勧めします。"
+    },
+    {
+      "role": "customer",
+      "content": "はい、分かりました。参考にして調べてみます。 ありがとうございました。助かりました。 他のご問い合わせはございません。"
+    },
+    {
+      "role": "agent_response",
+      "content": "こちらこそ、お役に立てて嬉しいです。また何かありましたら、いつでもご連絡ください。良い旅をお楽しみくださいね。"
+    }
+  ],
+  "language_key": "ja",
+  "is_call": true,
+  "call_duration": 341.590963,
+  "timestamp": "2025-12-29T00:29:13.018236",
+  "customer_info": {
+    "name": "渡辺武",
+    "phone": "+8190-1234-5678",
+    "email": "takeshi.watanabe50@softbank.ne.jp",
+    "memo": "ユニバーサルスタジオのエクスプレスの利用方法と注意点"
+  },
+  "summary": {
+    "customer_inquiry": "JFS 뉴욕 기간에 가능한 역에 대한 문의",
+    "key_solutions": [
+      "고객님의 요청 사항 확인",
+      "관련 주문번호나 상세 정보 요청"
+    ],
+    "summary": "고객은 JFS 뉴욕 기간 동안 가능한 역에 대해 문의했고, 상담원은 고객의 요청 사항을 확인하고 추가 정보를 요청했습니다.",
+    "summary_ko": "고객은 JFS 뉴욕 기간 동안 가능한 역에 대해 문의했고, 상담원은 고객의 요청 사항을 확인하고 추가 정보를 요청했습니다.",
+    "summary_en": [
+      "The customer inquired about possible stations during JFS New York, and the agent confirmed the customer's request and asked for additional information.",
+      true
+    ],
+    "summary_ja": [
+      "顧客はJFSニューヨーク期間中に可能な駅について問い合わせ、相談員は顧客の要請事項を確認し追加情報を求めました。",
+      true
+    ]
+  },
+  "chat_summary": {
+    "main_inquiry": "Eurostar seat change and Paris travel discounts",
+    "key_responses": [
+      "Eurostar seat changes are possible before departure, may incur fees, and larger seats may have additional charges.",
+      "Eurostar schedules can be checked on the official website, London to Paris takes about 2 hours 15 minutes.",
+      "For Paris travel discounts, consider Paris Museum Pass and check Disneyland Paris official site for offers."
+    ],
+    "customer_sentiment_score": 50,
+    "customer_satisfaction_score": 50,
+    "customer_characteristics": {
+      "language": "ja",
+      "cultural_hints": "unknown",
+      "cultural_score": 0,
+      "region": "unknown",
+      "communication_style": "unknown",
+      "formality_score": 50,
+      "detail_level_score": 50,
+      "personality_traits": {
+        "patience_level": 50,
+        "assertiveness": 50,
+        "politeness_level": 50,
+        "technical_proficiency": 50
+      }
+    },
+    "privacy_info": {
+      "has_email": false,
+      "has_phone": false,
+      "has_address": false,
+      "region_hint": "unknown"
+    },
+    "behavior_patterns": {
+      "response_time": "moderate",
+      "question_complexity": "moderate",
+      "escalation_tendency": 50
+    },
+    "summary": "Customer inquiry about: 전화 통화"
+  }
+}
