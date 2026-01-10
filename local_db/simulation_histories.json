@@ -1,5 +1,118 @@
 [
   {
+    "id": "2781efc2-0975-4c4d-8a85-e16f200fe4b1",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Inquiry about purchasing Universal Studios Japan express pass and entry ticket for a visit on October 20.",
+      "key_responses": [
+        "Clarification provided on the purpose of each ticket link.",
+        "Advised to purchase both the express pass and general entry ticket for a smooth visit.",
+        "Provided assurance of further assistance if needed during the purchase process."
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Use of respectful and formal language",
+        "cultural_score": 85,
+        "region": "Asia",
+        "communication_style": "formal and brief",
+        "formality_score": 90,
+        "detail_level_score": 40,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 10월 20일 오사카 유니버셜 스튜디오 재팬을 방문하기 위해 입장권과 익스프레스 패스를 구매하고자 합니다. 두 링크의 차이점에 대해 명확히 이해하였으며, 추가적인 도움이 필요한 경우 다시 연락하겠다고 하였습니다. 고객은 질문에 대해 정중하고 명확하게 응답하였으며, 전체적으로 긍정적인 대화를 나누었습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-10T15:20:23.952315",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "8f46e456-5370-4b5a-b26e-25595237004c",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Purchase of Universal Studios Japan Express Pass and admission ticket for a specific date",
+      "key_responses": [
+        "Explained the difference between the Express Pass and regular e-ticket",
+        "Advised purchasing both links for full experience",
+        "Confirmed and anonymized customer's email for account-related queries"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean-speaking, likely familiar with Japanese attractions",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 75,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 오사카 유니버셜 스튜디오 재팬의 입장권과 익스프레스 패스를 구매하는 방법에 대한 명확한 설명을 요청했습니다. 고객은 10월 20일에 방문할 예정이며, 두 링크 모두 구매해야 한다는 점을 이해했습니다. 에이전트는 차이를 설명하고 이메일을 통해 고객의 계정을 확인했습니다. 고객은 추가 도움 필요 시 다시 연락하겠다고 했습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-10T15:19:24.362547",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "35643cf7-0632-4ece-8af5-22221d799910",
+    "initial_query": "https://www.klook.com/ko/activity/3407-universal-studios-japan-express-pass-osaka/?spm=Activity.Good_to_know.Link&clickId=6178885762\n\n\nhttps://www.klook.com/ko/activity/46604-universal-studios-japan-e-ticket-osaka-qr-code-direct-entry/?spm=Activity.SearchSuggest_LIST&clickId=3cf3a8b9e1\n오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의 \n",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/activity/3407-universal-studios-japan-express-pass-osaka/?spm=Activity.Good_to_know.Link&clickId=6178885762\n\n\nhttps://www.klook.com/ko/activity/46604-universal-studios-japan-e-ticket-osaka-qr-code-direct-entry/?spm=Activity.SearchSuggest_LIST&clickId=3cf3a8b9e1\n오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의 \n"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-01-10T14:17:45.086305",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
     "id": "55e3ed88-fe24-4429-ba97-23215e131e60",
     "initial_query": "",
     "customer_type": "까다로운 고객",

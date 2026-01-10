@@ -88,12 +88,26 @@ def _render_agent_message(L, current_lang, idx, content, save_feedback):
     # 타임스탬프 추가 (스크린샷 스타일)
     from datetime import datetime
     timestamp = ""
+    attachments = []
     if idx < len(st.session_state.simulator_messages):
         msg = st.session_state.simulator_messages[idx]
         if "timestamp" in msg:
             timestamp = msg["timestamp"]
         else:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # 첨부 파일 정보 가져오기
+        if "attachments" in msg:
+            attachments = msg["attachments"]
+    
+    # 첨부 파일 미리보기 표시
+    if attachments:
+        for att_idx, attachment in enumerate(attachments):
+            if attachment.get("data_url"):
+                if attachment["type"].startswith("image/"):
+                    st.image(attachment["data_url"], caption=attachment.get("name", f"첨부 이미지 {att_idx+1}"), use_column_width=True)
+                elif attachment["type"].startswith("video/"):
+                    st.video(attachment["data_url"])
     
     st.markdown(f"""
     <div style="display: flex; justify-content: {justify_content}; margin: 8px 0; animation: {animation} 0.4s ease-out;">

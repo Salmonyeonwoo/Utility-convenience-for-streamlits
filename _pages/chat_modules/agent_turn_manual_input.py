@@ -23,20 +23,30 @@ def handle_manual_agent_input(L, agent_response_input):
 
             # 에이전트 첨부 파일 처리
             final_response_content = agent_response
+            attachments = []
             if st.session_state.agent_attachment_file:
                 file_infos = st.session_state.agent_attachment_file
-                file_names = ", ".join([f["name"] for f in file_infos])
-                attachment_msg = L["agent_attachment_status"].format(
+                file_names = ", ".join([f.get("name", "파일") for f in file_infos])
+                attachment_msg = L.get("agent_attachment_status", "📎 첨부 파일: {filename} ({filetype})").format(
                     filename=file_names, filetype=f"총 {len(file_infos)}개 파일"
                 )
                 final_response_content = f"{agent_response}\n\n---\n{attachment_msg}"
+                
+                # 첨부 파일 정보 저장 (이미지/동영상 데이터 포함)
+                attachments = [{
+                    "name": f.get("name", "파일"),
+                    "type": f.get("type", "application/octet-stream"),
+                    "size": f.get("size", 0),
+                    "data_url": f.get("data_url"),  # base64 data URL
+                } for f in file_infos if f.get("data_url")]
 
             # ⭐ 메시지 추가 및 즉시 화면 반영 (수동 전송)
             new_message = {
                 "role": "agent_response", 
                 "content": final_response_content,
                 "is_manual_response": True,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "attachments": attachments  # 첨부 파일 정보 포함
             }
             st.session_state.simulator_messages = st.session_state.simulator_messages + [new_message]
             
