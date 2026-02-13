@@ -58,7 +58,15 @@ RULES:
 7. Output ONLY the customer's next message.
 """
     try:
-        reaction = run_llm(next_prompt)
+        prev_tag = st.session_state.get("_llm_call_tag")
+        st.session_state["_llm_call_tag"] = "customer_reaction_chat"
+        try:
+            reaction = run_llm(next_prompt)
+        finally:
+            if prev_tag is None:
+                st.session_state.pop("_llm_call_tag", None)
+            else:
+                st.session_state["_llm_call_tag"] = prev_tag
 
         if not reaction or len(reaction.strip()) < 5:
             print("LLM returned insufficient response. Using positive closing fallback.")
@@ -235,7 +243,15 @@ EXAMPLES:
 Your response (respond ONLY to the agent's question above, with {emotion_tone} tone):
 """
     try:
-        reaction = run_llm(call_prompt)
+        prev_tag = st.session_state.get("_llm_call_tag")
+        st.session_state["_llm_call_tag"] = "customer_reaction_call"
+        try:
+            reaction = run_llm(call_prompt)
+        finally:
+            if prev_tag is None:
+                st.session_state.pop("_llm_call_tag", None)
+            else:
+                st.session_state["_llm_call_tag"] = prev_tag
         reaction_text = reaction.strip()
         
         if is_closing_question:
@@ -348,7 +364,15 @@ YOUR TASK: Respond to the agent's greeting in a way that:
 Your response (respond naturally to the greeting and briefly mention your inquiry, with {emotion_tone} tone):
 """
     try:
-        reaction = run_llm(call_prompt)
+        prev_tag = st.session_state.get("_llm_call_tag")
+        st.session_state["_llm_call_tag"] = "customer_first_greeting_reaction_call"
+        try:
+            reaction = run_llm(call_prompt)
+        finally:
+            if prev_tag is None:
+                st.session_state.pop("_llm_call_tag", None)
+            else:
+                st.session_state["_llm_call_tag"] = prev_tag
         reaction_text = reaction.strip()
         
         no_more_keywords = [
@@ -406,7 +430,15 @@ RULES:
 4. Output ONLY the customer's next message (must be one of the two rule options).
 """
     try:
-        reaction = run_llm(final_prompt)
+        prev_tag = st.session_state.get("_llm_call_tag")
+        st.session_state["_llm_call_tag"] = "customer_closing_response_chat"
+        try:
+            reaction = run_llm(final_prompt)
+        finally:
+            if prev_tag is None:
+                st.session_state.pop("_llm_call_tag", None)
+            else:
+                st.session_state["_llm_call_tag"] = prev_tag
         reaction_text = reaction.strip()
         if L_local['customer_no_more_inquiries'] in reaction_text:
             return L_local['customer_no_more_inquiries']

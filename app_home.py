@@ -143,23 +143,18 @@ def render_home_page():
                 content_type = st.selectbox(L.get("content_type_label", "콘텐츠 유형:"), content_type_options, key="home_content_type")
                 content_topic = st.text_input(L.get("topic_label", "주제:"), key="home_content_topic", placeholder=L.get("topic_placeholder", "콘텐츠 주제를 입력하세요..."))
                 if st.button(L.get("generate_button", "생성"), key="home_generate_content"):
-                    api_key = get_api_key("openai") or get_api_key("gemini")
-                    if content_topic and api_key:
+                    from llm_client import run_llm
+                    gemini_key = get_api_key("gemini")
+                    if content_topic and gemini_key:
                         try:
-                            from langchain_openai import ChatOpenAI
-                            try:
-                                from langchain.schema import HumanMessage
-                            except ImportError:
-                                from langchain_core.messages import HumanMessage
                             with st.spinner("콘텐츠 생성 중..."):
-                                llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.7, openai_api_key=api_key)
                                 prompt = f"""여행사 상담원을 위한 {content_type}를 작성해주세요.\n\n주제: {content_topic}\n\n친절하고 전문적인 톤으로 작성해주세요."""
-                                response = llm.invoke([HumanMessage(content=prompt)])
-                                st.text_area("생성된 콘텐츠:", value=response.content, height=200, key="home_generated_content")
+                                response = run_llm(prompt, max_tokens=2000)
+                                st.text_area("생성된 콘텐츠:", value=response, height=200, key="home_generated_content")
                         except Exception as e:
                             st.error(f"콘텐츠 생성 중 오류: {str(e)}")
                     else:
-                        st.warning(L.get("enter_topic_and_api_key", "주제를 입력하고 API 키를 설정해주세요."))
+                        st.warning("주제를 입력하고 Gemini API 키를 설정해주세요.")
                 if st.button(L.get("close_button", "닫기"), key="close_home_content"):
                     st.session_state.show_home_content = False
             except ImportError:

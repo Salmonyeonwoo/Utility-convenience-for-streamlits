@@ -124,7 +124,15 @@ HINT:
 
     with st.spinner(f"💡 {L['button_request_hint']}..."):
         try:
-            return run_llm(hint_prompt).strip()
+            prev_tag = st.session_state.get("_llm_call_tag")
+            st.session_state["_llm_call_tag"] = "realtime_hint"
+            try:
+                return run_llm(hint_prompt).strip()
+            finally:
+                if prev_tag is None:
+                    st.session_state.pop("_llm_call_tag", None)
+                else:
+                    st.session_state["_llm_call_tag"] = prev_tag
         except Exception as e:
             return f"❌ Hint Generation Error. (Try again or check API Key: {e})"
 

@@ -194,11 +194,12 @@ def split_documents(docs: List[Document]) -> List[Document]:
 
 
 def get_embedding_model():
-    if get_api_key("openai"):
-        try:
-            return OpenAIEmbeddings(model="text-embedding-3-small")
-        except:
-            pass
+    # OpenAI 임베딩 제거 (API 키 결제 지원 중단)
+    # if get_api_key("openai"):
+    #     try:
+    #         return OpenAIEmbeddings(model="text-embedding-3-small")
+    #     except:
+    #         pass
     if get_api_key("gemini"):
         try:
             return GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
@@ -211,27 +212,28 @@ def get_embedding_model():
 def get_embedding_function():
     """
     RAG 임베딩에 사용할 임베딩 모델을 결정합니다.
-    API 키 유효성 순서: OpenAI (사용자 설정 시) -> Gemini -> NVIDIA -> HuggingFace (fallback)
+    API 키 유효성 순서: Gemini -> NVIDIA -> HuggingFace (fallback)
     API 인증 오류 발생 시 다음 모델로 이동하도록 처리합니다.
     """
 
-    # 1. OpenAI 임베딩 시도 (사용자가 유효한 키를 설정했을 경우)
-    openai_key = get_api_key("openai")
-    if openai_key:
-        try:
-            st.info("🔹 RAG: OpenAI Embedding 사용 중")
-            return OpenAIEmbeddings(openai_api_key=openai_key)
-        except Exception as e:
-            error_msg = str(e).lower()
-            # ⭐ 수정: quota exceeded, network issue 등 구체적인 오류 메시지 처리
-            if "quota" in error_msg or "rate limit" in error_msg:
-                st.warning(f"OpenAI 임베딩 실패 (할당량 초과) → Gemini로 Fallback: {e}")
-            elif "network" in error_msg or "connection" in error_msg or "timeout" in error_msg:
-                st.warning(f"OpenAI 임베딩 실패 (네트워크 오류) → Gemini로 Fallback: {e}")
-            else:
-                st.warning(f"OpenAI 임베딩 실패 → Gemini로 Fallback: {e}")
+    # OpenAI 임베딩 제거 (API 키 결제 지원 중단)
+    # # 1. OpenAI 임베딩 시도 (사용자가 유효한 키를 설정했을 경우)
+    # openai_key = get_api_key("openai")
+    # if openai_key:
+    #     try:
+    #         st.info("🔹 RAG: OpenAI Embedding 사용 중")
+    #         return OpenAIEmbeddings(openai_api_key=openai_key)
+    #     except Exception as e:
+    #         error_msg = str(e).lower()
+    #         # ⭐ 수정: quota exceeded, network issue 등 구체적인 오류 메시지 처리
+    #         if "quota" in error_msg or "rate limit" in error_msg:
+    #             st.warning(f"OpenAI 임베딩 실패 (할당량 초과) → Gemini로 Fallback: {e}")
+    #         elif "network" in error_msg or "connection" in error_msg or "timeout" in error_msg:
+    #             st.warning(f"OpenAI 임베딩 실패 (네트워크 오류) → Gemini로 Fallback: {e}")
+    #         else:
+    #             st.warning(f"OpenAI 임베딩 실패 → Gemini로 Fallback: {e}")
 
-    # 2. Gemini 임베딩 시도
+    # 1. Gemini 임베딩 시도 (최우선)
     gemini_key = get_api_key("gemini")
     if IS_GEMINI_EMBEDDING_AVAILABLE and gemini_key:
         try:
@@ -284,8 +286,9 @@ def build_rag_index(files):
         error_msg = L["rag_embed_error_none"]
 
         # 상세 오류 정보 구성 (실제 사용 가능한 임베딩 모델이 없는 경우)
-        if not get_api_key("openai"):
-            error_msg += f"\n- {L['rag_embed_error_openai']}"
+        # OpenAI 제거 (API 키 결제 지원 중단)
+        # if not get_api_key("openai"):
+        #     error_msg += f"\n- {L['rag_embed_error_openai']}"
         if not get_api_key("gemini"):
             error_msg += f"\n- {L['rag_embed_error_gemini']}"
         if not get_api_key("nvidia"):

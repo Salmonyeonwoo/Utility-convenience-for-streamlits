@@ -41,6 +41,20 @@ def init_all_session_state():
     from streamlit_app_imports import (
         CustomerDataManager, CallHandler, AppAudioHandler, SESSION_INIT_AVAILABLE
     )
+
+    # ========================================
+    # 디버그/텔레메트리 (매 rerun마다 증가)
+    # ========================================
+    try:
+        st.session_state.rerun_seq = int(st.session_state.get("rerun_seq", 0)) + 1
+    except Exception:
+        st.session_state.rerun_seq = 1
+    if "telemetry_llm_enabled" not in st.session_state:
+        st.session_state.telemetry_llm_enabled = False
+    if "llm_call_events" not in st.session_state:
+        st.session_state.llm_call_events = []
+    if "llm_call_events_max" not in st.session_state:
+        st.session_state.llm_call_events_max = 200
     
     if "language" not in st.session_state:
         st.session_state.language = DEFAULT_LANG

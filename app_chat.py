@@ -56,7 +56,7 @@ def render_chat_page():
                 if current_chats:
                     last_msg = current_chats[-1]
                     current_last_id = last_msg.get('message_id', '')
-                    api_key_auto = get_api_key("openai") or get_api_key("gemini")
+                    api_key_auto = get_api_key("gemini")
                     if (last_msg['sender'] == 'customer' and current_last_id != last_msg_id and api_key_auto):
                         if f'ai_processing_{customer_id}' not in st.session_state:
                             st.session_state[f'ai_processing_{customer_id}'] = True

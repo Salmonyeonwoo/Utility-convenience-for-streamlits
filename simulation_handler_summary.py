@@ -54,7 +54,15 @@ Summary:
         return "LLM Key가 없어 요약 생성이 불가합니다."
 
     try:
-        summary = run_llm(summary_prompt)
+        prev_tag = st.session_state.get("_llm_call_tag")
+        st.session_state["_llm_call_tag"] = "call_summary_from_session"
+        try:
+            summary = run_llm(summary_prompt)
+        finally:
+            if prev_tag is None:
+                st.session_state.pop("_llm_call_tag", None)
+            else:
+                st.session_state["_llm_call_tag"] = prev_tag
         return summary.strip()
     except Exception as e:
         return f"❌ AI 요약 생성 오류: {e}"
@@ -86,7 +94,15 @@ Summary:
         return f"❌ LLM Key is missing. Cannot generate summary. Log length: {len(full_log_text.splitlines())}"
 
     try:
-        summary = run_llm(summary_prompt)
+        prev_tag = st.session_state.get("_llm_call_tag")
+        st.session_state["_llm_call_tag"] = "call_summary_from_logs"
+        try:
+            summary = run_llm(summary_prompt)
+        finally:
+            if prev_tag is None:
+                st.session_state.pop("_llm_call_tag", None)
+            else:
+                st.session_state["_llm_call_tag"] = prev_tag
         return summary.strip()
     except Exception as e:
         return f"❌ Summary Generation Error: {e}"

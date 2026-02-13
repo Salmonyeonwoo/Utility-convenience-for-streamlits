@@ -270,7 +270,15 @@ Generate a response draft that is SPECIFICALLY tailored to the customer's EXACT 
         return ""
 
     try:
-        draft = run_llm(draft_prompt).strip()
+        prev_tag = st.session_state.get("_llm_call_tag")
+        st.session_state["_llm_call_tag"] = "agent_response_draft"
+        try:
+            draft = run_llm(draft_prompt).strip()
+        finally:
+            if prev_tag is None:
+                st.session_state.pop("_llm_call_tag", None)
+            else:
+                st.session_state["_llm_call_tag"] = prev_tag
         if draft.startswith("```"):
             lines = draft.split("\n")
             draft = "\n".join(lines[1:-1]) if len(lines) > 2 else draft
@@ -314,7 +322,15 @@ Generate the phone call summary (Outcome ONLY):
         return f"❌ LLM Key missing. (Simulated Outcome: The {target} requested the agent to send proof via email.)"
 
     try:
-        summary = run_llm(summary_prompt).strip()
+        prev_tag = st.session_state.get("_llm_call_tag")
+        st.session_state["_llm_call_tag"] = "outbound_call_summary"
+        try:
+            summary = run_llm(summary_prompt).strip()
+        finally:
+            if prev_tag is None:
+                st.session_state.pop("_llm_call_tag", None)
+            else:
+                st.session_state["_llm_call_tag"] = prev_tag
         if summary.startswith("```"):
             lines = summary.split("\n")
             summary = "\n".join(lines[1:-1]) if len(lines) > 2 else summary

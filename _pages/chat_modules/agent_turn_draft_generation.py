@@ -24,9 +24,29 @@ def handle_auto_draft_generation(L):
     if st.session_state.is_llm_ready and st.session_state.sim_stage == "AGENT_TURN":
         # ⭐ 자동 응답이 비활성화되지 않은 경우에만 자동 응답 생성
         auto_response_disabled = st.session_state.get("auto_response_disabled", False)
+
+        # 마지막 고객 메시지 확인 (한 번만 계산해서 재사용)
+        last_customer_msg = None
+        last_customer_msg_idx = -1
+        for idx, msg in enumerate(reversed(st.session_state.simulator_messages)):
+            if msg.get("role") in ["customer", "customer_rebuttal", "initial_query"]:
+                last_customer_msg = msg.get("content", "")
+                last_customer_msg_idx = len(st.session_state.simulator_messages) - 1 - idx
+                break
+
+        # 이미 자동 전송(또는 초안 생성)된 고객 메시지인지 판별
+        # - auto_generated_draft_text는 UI 초기화로 비워질 수 있으므로, auto_sent_for_msg_*를 우선 신뢰
+        last_draft_for_idx = st.session_state.get("last_draft_for_message_idx", -1)
+        auto_sent_key = f"auto_sent_for_msg_{last_customer_msg_idx}" if last_customer_msg_idx >= 0 else None
+        auto_draft_exists = (
+            (auto_sent_key is not None and st.session_state.get(auto_sent_key, False)) or
+            (st.session_state.get("auto_draft_generated", False) and last_draft_for_idx == last_customer_msg_idx)
+        )
         
         # ⭐ 초기 문의 입력 시 자동 응답 즉시 생성 및 전송
-        if not auto_response_disabled and st.session_state.get("need_auto_response_on_agent_turn", False):
+        if (not auto_response_disabled
+                and st.session_state.get("need_auto_response_on_agent_turn", False)
+                and last_customer_msg):
             st.session_state.need_auto_response_on_agent_turn = False
             try:
                 from simulation_handler import generate_agent_response_draft
@@ -50,6 +70,12 @@ def handle_auto_draft_generation(L):
                         new_message = {"role": "agent_response", "content": draft_text_clean}
                         st.session_state.simulator_messages = st.session_state.simulator_messages + [new_message]
                         st.session_state.auto_draft_auto_sent = True
+
+                        # ⭐ 같은 고객 메시지에 대해 중복 초안 생성/전송 방지
+                        if last_customer_msg_idx >= 0:
+                            st.session_state[f"auto_sent_for_msg_{last_customer_msg_idx}"] = True
+                            st.session_state.last_draft_for_message_idx = last_customer_msg_idx
+                            st.session_state.auto_draft_generated = True
                         
                         # 고객 반응 자동 생성 플래그 설정
                         if st.session_state.is_llm_ready:
@@ -60,23 +86,6 @@ def handle_auto_draft_generation(L):
 
             except Exception as e:
                 print(f"초기 자동 응답 생성 오류: {e}")
-        
-        # 마지막 고객 메시지 확인
-        last_customer_msg = None
-        last_customer_msg_idx = -1
-        for idx, msg in enumerate(reversed(st.session_state.simulator_messages)):
-            if msg.get("role") in ["customer", "customer_rebuttal", "initial_query"]:
-                last_customer_msg = msg.get("content", "")
-                last_customer_msg_idx = len(st.session_state.simulator_messages) - 1 - idx
-                break
-        
-        # 응대 초안이 이미 생성되었는지 확인
-        last_draft_for_idx = st.session_state.get("last_draft_for_message_idx", -1)
-        auto_draft_exists = (
-            st.session_state.get("auto_draft_generated", False) and 
-            st.session_state.get("auto_generated_draft_text", "") and
-            last_draft_for_idx == last_customer_msg_idx
-        )
         
         # ⭐ 새로운 고객 메시지가 들어왔고, 응대 초안이 없거나 다른 메시지용이면 생성
         if not auto_response_disabled and last_customer_msg and not auto_draft_exists:

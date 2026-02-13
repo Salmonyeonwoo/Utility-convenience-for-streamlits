@@ -3,7 +3,7 @@ import json
 import re
 from datetime import datetime
 from typing import Dict, List
-from langchain_openai import ChatOpenAI
+# from langchain_openai import ChatOpenAI  # OpenAI API 키 결제 지원 중단으로 인해 비활성화
 # LangChain schema import (다양한 버전 지원)
 try:
     from langchain.schema import HumanMessage, SystemMessage, AIMessage
@@ -26,75 +26,53 @@ def get_api_key(api_name="openai"):
 
 
 def get_rag_chatbot_response(user_query: str, context: List[dict] = None) -> str:
-    """RAG 챗봇 응답 생성"""
-    api_key = get_api_key("openai") or get_api_key("gemini")
-    if not api_key:
-        return "OpenAI 또는 Gemini API 키가 설정되지 않았습니다."
+    """RAG 챗봇 응답 생성 (Gemini 사용)"""
+    from llm_client import run_llm
+    
+    gemini_key = get_api_key("gemini")
+    if not gemini_key:
+        return "Gemini API 키가 설정되지 않았습니다."
     
     try:
-        openai_key = get_api_key("openai")
-        if not openai_key:
-            return "OpenAI API 키가 설정되지 않았습니다."
-        
-        llm = ChatOpenAI(
-            model_name="gpt-4o-mini",
-            temperature=0.7,
-            openai_api_key=openai_key,
-            max_tokens=2000  # 채팅 응답을 위한 충분한 토큰 수
-        )
-        
         # 컨텍스트 구성
         context_text = ""
         if context:
             context_text = "\n".join([f"- {item}" for item in context[-5:]])
         
-        system_prompt = f"""당신은 여행사 정보를 제공하는 AI 어시스턴트입니다.
-        
+        prompt = f"""당신은 여행사 정보를 제공하는 AI 어시스턴트입니다.
+
 사용 가능한 컨텍스트 정보:
 {context_text}
 
 사용자의 질문에 대해 컨텍스트 정보를 활용하여 정확하고 도움이 되는 답변을 제공하세요.
-컨텍스트에 없는 정보는 추측하지 말고, 정확히 모른다고 답변하세요."""
+컨텍스트에 없는 정보는 추측하지 말고, 정확히 모른다고 답변하세요.
+
+사용자 질문: {user_query}
+
+답변:"""
         
-        messages = [SystemMessage(content=system_prompt)]
-        messages.append(HumanMessage(content=user_query))
-        
-        response = llm.invoke(messages)
-        return response.content
+        response = run_llm(prompt, max_tokens=2000)
+        return response
         
     except Exception as e:
         return f"챗봇 응답 생성 중 오류: {str(e)}"
 
 
 def perform_rag_analysis(customer_message: str, customer_info: dict) -> dict:
-    """RAG 분석 수행 (고객 메시지 분석)"""
-    api_key = get_api_key("openai") or get_api_key("gemini")
-    if not api_key:
+    """RAG 분석 수행 (고객 메시지 분석) - Gemini 사용"""
+    from llm_client import run_llm
+    
+    gemini_key = get_api_key("gemini")
+    if not gemini_key:
         return {
             "sentiment": "neutral",
             "intent": "일반 문의",
             "keywords": [],
-            "suggested_response": "",
+            "suggested_response": "Gemini API 키가 설정되지 않았습니다.",
             "confidence": 0.0
         }
     
     try:
-        openai_key = get_api_key("openai")
-        if not openai_key:
-            return {
-                "sentiment": "neutral",
-                "intent": "일반 문의",
-                "keywords": [],
-                "suggested_response": "API 키가 설정되지 않았습니다.",
-                "confidence": 0.0
-            }
-        
-        llm = ChatOpenAI(
-            model_name="gpt-4o-mini",
-            temperature=0.3,
-            openai_api_key=openai_key
-        )
-        
         analysis_prompt = f"""다음 고객 메시지를 분석하여 다음 정보를 JSON 형식으로 제공해주세요:
 1. sentiment: 감정 분석 (positive, neutral, negative)
 2. intent: 의도 (패키지 문의, 예약, 취소/변경, 일반 문의 등)
@@ -110,11 +88,10 @@ def perform_rag_analysis(customer_message: str, customer_info: dict) -> dict:
 
 JSON 형식으로만 응답해주세요."""
         
-        response = llm.invoke([HumanMessage(content=analysis_prompt)])
+        response = run_llm(analysis_prompt, max_tokens=1000)
         
         # JSON 파싱 시도 (강화된 오류 처리)
-        import json
-        json_match = re.search(r'\{.*\}', response.content, re.DOTALL)
+        json_match = re.search(r'\{.*\}', response, re.DOTALL)
         if json_match:
             try:
                 return json.loads(json_match.group())
@@ -125,7 +102,7 @@ JSON 형식으로만 응답해주세요."""
                     "sentiment": "neutral",
                     "intent": "일반 문의",
                     "keywords": customer_message.split()[:5],
-                    "suggested_response": response.content,
+                    "suggested_response": response,
                     "confidence": 0.7
                 }
         else:
@@ -134,7 +111,7 @@ JSON 형식으로만 응답해주세요."""
                 "sentiment": "neutral",
                 "intent": "일반 문의",
                 "keywords": customer_message.split()[:5],
-                "suggested_response": response.content,
+                "suggested_response": response,
                 "confidence": 0.7
             }
     except Exception as e:
@@ -148,23 +125,14 @@ JSON 형식으로만 응답해주세요."""
 
 
 def get_ai_response(customer_message: str, customer_info: dict, chat_history: List[dict]) -> str:
-    """OpenAI를 사용하여 상담원 응답 생성"""
-    api_key = get_api_key("openai") or get_api_key("gemini")
-    if not api_key:
-        return "OpenAI 또는 Gemini API 키가 설정되지 않았습니다. 환경변수나 세션 상태에서 설정해주세요."
+    """Gemini를 사용하여 상담원 응답 생성"""
+    from llm_client import run_llm
+    
+    gemini_key = get_api_key("gemini")
+    if not gemini_key:
+        return "Gemini API 키가 설정되지 않았습니다. 환경변수나 세션 상태에서 설정해주세요."
     
     try:
-        openai_key = get_api_key("openai")
-        if not openai_key:
-            return "OpenAI API 키가 설정되지 않았습니다."
-        
-        llm = ChatOpenAI(
-            model_name="gpt-4o-mini",
-            temperature=0.7,
-            openai_api_key=openai_key,
-            max_tokens=2000  # 채팅 응답을 위한 충분한 토큰 수
-        )
-        
         # 시스템 프롬프트 구성
         system_prompt = f"""당신은 여행사 상담원입니다. 고객에게 친절하고 전문적으로 응대해야 합니다.
 
@@ -178,45 +146,41 @@ def get_ai_response(customer_message: str, customer_info: dict, chat_history: Li
 고객의 성향에 맞춰 맞춤형 여행 상담을 제공하세요. 친절하고 전문적인 톤을 유지하며, 구체적인 정보를 제공하세요."""
         
         # 채팅 히스토리 구성
-        messages = [SystemMessage(content=system_prompt)]
-        
+        history_text = ""
         # 최근 10개 메시지만 포함 (컨텍스트 길이 제한)
         recent_history = chat_history[-10:] if len(chat_history) > 10 else chat_history
         
         for msg in recent_history:
-            if msg['sender'] == 'customer':
-                messages.append(HumanMessage(content=msg['message']))
-            elif msg['sender'] == 'operator':
-                messages.append(AIMessage(content=msg['message']))
+            sender_name = msg.get('sender_name', '고객' if msg['sender'] == 'customer' else '상담원')
+            history_text += f"{sender_name}: {msg['message']}\n"
         
-        # 현재 고객 메시지 추가
-        messages.append(HumanMessage(content=customer_message))
+        # 프롬프트 구성
+        prompt = f"""{system_prompt}
+
+대화 기록:
+{history_text}
+
+현재 고객 메시지: {customer_message}
+
+상담원 응답:"""
         
         # AI 응답 생성
-        response = llm.invoke(messages)
-        return response.content
+        response = run_llm(prompt, max_tokens=2000)
+        return response
         
     except Exception as e:
         return f"AI 응답 생성 중 오류가 발생했습니다: {str(e)}"
 
 
 def translate_text(text: str, target_lang: str) -> str:
-    """텍스트 번역"""
-    api_key = get_api_key("openai") or get_api_key("gemini")
-    if not api_key:
+    """텍스트 번역 (Gemini 사용)"""
+    from llm_client import run_llm
+    
+    gemini_key = get_api_key("gemini")
+    if not gemini_key:
         return text
     
     try:
-        openai_key = get_api_key("openai")
-        if not openai_key:
-            return text
-        
-        llm = ChatOpenAI(
-            model_name="gpt-4o-mini",
-            temperature=0.3,
-            openai_api_key=openai_key
-        )
-        
         lang_map = {
             "ko": "한국어",
             "en": "영어",
@@ -224,29 +188,21 @@ def translate_text(text: str, target_lang: str) -> str:
         }
         
         prompt = f"다음 텍스트를 {lang_map.get(target_lang, target_lang)}로 번역해주세요. 번역만 출력하세요:\n\n{text}"
-        response = llm.invoke([HumanMessage(content=prompt)])
-        return response.content.strip()
+        response = run_llm(prompt, max_tokens=500)
+        return response.strip()
     except Exception as e:
         return f"번역 오류: {str(e)}"
 
 
 def summarize_conversation(chat_history: List[dict], target_lang: str = "ko") -> str:
-    """대화 요약"""
-    api_key = get_api_key("openai") or get_api_key("gemini")
-    if not api_key:
-        return "요약을 생성할 수 없습니다. API 키를 설정해주세요."
+    """대화 요약 (Gemini 사용)"""
+    from llm_client import run_llm
+    
+    gemini_key = get_api_key("gemini")
+    if not gemini_key:
+        return "요약을 생성할 수 없습니다. Gemini API 키를 설정해주세요."
     
     try:
-        openai_key = get_api_key("openai")
-        if not openai_key:
-            return "요약을 생성할 수 없습니다. API 키를 설정해주세요."
-        
-        llm = ChatOpenAI(
-            model_name="gpt-4o-mini",
-            temperature=0.3,
-            openai_api_key=openai_key
-        )
-        
         # 대화 내용 추출
         conversation_text = "\n".join([
             f"{msg['sender_name']}: {msg['message']}" 
@@ -267,8 +223,8 @@ def summarize_conversation(chat_history: List[dict], target_lang: str = "ko") ->
 
 요약:"""
         
-        response = llm.invoke([HumanMessage(content=prompt)])
-        return response.content.strip()
+        response = run_llm(prompt, max_tokens=1000)
+        return response.strip()
     except Exception as e:
         return f"요약 생성 오류: {str(e)}"
 

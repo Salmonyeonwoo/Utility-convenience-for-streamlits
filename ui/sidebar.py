@@ -27,79 +27,83 @@ def render_sidebar():
         current_lang = st.session_state.get("language", "ko")
         if current_lang not in ["ko", "en", "ja"]:
             current_lang = "ko"
+            st.session_state.language = "ko"
         L = LANG.get(current_lang, LANG["ko"])
         
         st.title("💬 앱 설정")
         
         # 언어 선택 (app.py 스타일 유지)
         st.subheader("언어 선택")
-        lang_options = {
-            "한국어": "ko",
-            "English": "en",
-            "日本語": "ja"
-        }
-        lang_display_names = list(lang_options.keys())
-        
-        # 현재 언어에 해당하는 표시 이름 찾기
-        current_lang_display = None
-        for display_name, lang_code in lang_options.items():
-            if lang_code == current_lang:
-                current_lang_display = display_name
-                break
-        
-        # 현재 언어가 없으면 기본값으로 설정
-        if current_lang_display is None:
-            current_lang_display = lang_display_names[0]
-            st.session_state.language = lang_options[current_lang_display]
-        
-        # 현재 언어에 맞는 인덱스 찾기
-        try:
-            current_index = lang_display_names.index(current_lang_display)
-        except ValueError:
-            current_index = 0
-        
-        selected_lang_display = st.selectbox(
+        lang_codes = ["ko", "en", "ja"]
+        lang_names = {"ko": "한국어", "en": "English", "ja": "日本語"}
+
+        # 다른 모듈에서 st.session_state.language를 변경해도, 셀렉터가 따라오도록 동기화
+        if st.session_state.get("language_selector") != current_lang:
+            st.session_state["language_selector"] = current_lang
+
+        def _on_language_selector_change():
+            selected = st.session_state.get("language_selector", "ko")
+            if selected not in lang_codes:
+                selected = "ko"
+            if st.session_state.get("language") != selected:
+                st.session_state.language = selected
+
+        st.selectbox(
             "언어 선택",
-            lang_display_names,
-            index=current_index,
+            lang_codes,
             key="language_selector",
-            label_visibility="collapsed"
+            format_func=lambda c: lang_names.get(c, c),
+            label_visibility="collapsed",
+            on_change=_on_language_selector_change,
         )
-        
-        selected_lang_code = lang_options[selected_lang_display]
-        if selected_lang_code != current_lang:
-            st.session_state.language = selected_lang_code
-            # ⭐ 수정: rerun 제거 - 언어 변경은 세션 상태에 저장되어 다음 렌더링에서 자동 반영됨
-            # st.rerun()  # 언어 변경 시 즉시 반영
         
         st.divider()
         
         # 기능 선택 (app.py 스타일 - 참고용 구조 추가)
         st.subheader("기능 선택")
-        feature_options = [
-            L.get("home_tab", "홈"),
-            L.get("chat_email_tab", "채팅/이메일"),
-            L.get("phone_tab", "전화"),
-            L.get("customer_data_inquiry_tab", "고객 데이터 조회")
-        ]
-        
-        current_feature = st.session_state.get("feature_selection", feature_options[0])
-        feature_index = 0
-        for idx, opt in enumerate(feature_options):
-            if opt == current_feature:
-                feature_index = idx
-                break
-        
-        selected_feature = st.radio(
+        feature_ids = ["home", "chat_email", "phone", "customer_data_inquiry"]
+        feature_labels = {
+            "home": L.get("home_tab", "홈"),
+            "chat_email": L.get("chat_email_tab", "채팅/이메일"),
+            "phone": L.get("phone_tab", "전화"),
+            "customer_data_inquiry": L.get("customer_data_inquiry_tab", "고객 데이터 조회"),
+        }
+
+        # 기존 레거시(feature_selection: 표시 문자열) 상태가 있으면 ID로 승격
+        if "feature_selection_id" not in st.session_state:
+            legacy_label = st.session_state.get("feature_selection")
+            label_to_id = {v: k for k, v in feature_labels.items()}
+            st.session_state.feature_selection_id = label_to_id.get(legacy_label, "home")
+
+        current_feature_id = st.session_state.get("feature_selection_id", "home")
+        if current_feature_id not in feature_ids:
+            current_feature_id = "home"
+            st.session_state.feature_selection_id = "home"
+
+        # 언어 변경 시에도 레거시 라벨(feature_selection)을 현재 언어 라벨로 동기화
+        desired_label = feature_labels.get(current_feature_id, feature_labels["home"])
+        if st.session_state.get("feature_selection") != desired_label:
+            st.session_state.feature_selection = desired_label
+
+        # 라디오 위젯 키는 별도로 두어(=feature_selector_id) 다른 모듈과 충돌을 피함
+        if st.session_state.get("feature_selector_id") != current_feature_id:
+            st.session_state["feature_selector_id"] = current_feature_id
+
+        def _on_feature_selector_change():
+            selected_id = st.session_state.get("feature_selector_id", "home")
+            if selected_id not in feature_ids:
+                selected_id = "home"
+                st.session_state["feature_selector_id"] = "home"
+            st.session_state.feature_selection_id = selected_id
+            st.session_state.feature_selection = feature_labels.get(selected_id, feature_labels["home"])
+
+        st.radio(
             "기능 선택",
-            feature_options,
-            key="feature_selector",
-            index=feature_index
+            feature_ids,
+            key="feature_selector_id",
+            format_func=lambda fid: feature_labels.get(fid, fid),
+            on_change=_on_feature_selector_change,
         )
-        
-        if selected_feature != current_feature:
-            st.session_state.feature_selection = selected_feature
-            # st.rerun()  # 주석 처리: Streamlit이 자동으로 rerun함
         
         st.divider()
         
@@ -145,3 +149,45 @@ def render_sidebar():
                     """)
         else:
             st.warning("API Key 확인 모듈을 불러올 수 없습니다.")
+
+        st.divider()
+
+        # ========================================
+        # 디버그/성능(LLM 호출 로깅)
+        # ========================================
+        with st.expander("🧪 디버그/성능", expanded=False):
+            st.checkbox("LLM 호출 로깅(턴/리런/소요시간)", key="telemetry_llm_enabled")
+
+            events = st.session_state.get("llm_call_events", [])
+            if st.session_state.get("telemetry_llm_enabled"):
+                st.caption(
+                    f"rerun_seq={st.session_state.get('rerun_seq')} · "
+                    f"sim_stage={st.session_state.get('sim_stage')} · "
+                    f"events={len(events)}"
+                )
+                if st.button("LLM 로그 지우기", key="clear_llm_call_events"):
+                    st.session_state.llm_call_events = []
+                    events = []
+
+                if events:
+                    last_turn_key = events[-1].get("turn_key")
+                    last_turn_events = [e for e in events if e.get("turn_key") == last_turn_key] if last_turn_key else []
+                    if last_turn_events:
+                        total = len(last_turn_events)
+                        total_ms = sum(int(e.get("dur_ms") or 0) for e in last_turn_events)
+                        st.write(f"**최근 턴({last_turn_key})**: {total}회 호출 · 총 {total_ms}ms")
+
+                    st.write("**최근 10개 호출(최신순)**")
+                    for e in reversed(events[-10:]):
+                        st.caption(
+                            f"[rerun={e.get('rerun_seq')}] "
+                            f"{e.get('tag') or '-'} · "
+                            f"{e.get('provider')}/{e.get('model')} · "
+                            f"{e.get('status')} · "
+                            f"{e.get('dur_ms')}ms · "
+                            f"turn={e.get('turn_key')}"
+                        )
+                        if e.get("status") == "error" and e.get("error"):
+                            st.caption(f"  - err: {e.get('error')}")
+            else:
+                st.caption("체크를 켠 상태에서 느려지는 동작을 1~2번 재현하면, 여기서 LLM 호출 횟수/지연을 바로 볼 수 있어요.")
