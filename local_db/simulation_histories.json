@@ -1,26 +1,430 @@
 [
   {
-    "id": "2781efc2-0975-4c4d-8a85-e16f200fe4b1",
+    "id": "f23f5abb-222b-4679-8fed-e680895bb7ee",
     "initial_query": "",
     "customer_type": "까다로운 고객",
     "messages": [],
     "summary": {
-      "main_inquiry": "Inquiry about purchasing Universal Studios Japan express pass and entry ticket for a visit on October 20.",
+      "main_inquiry": "",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-02-05T05:33:20.871491",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "183451e9-7b0b-45c4-b640-320f10180ba4",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "베트남 다낭 바나힐의 설날 연휴 운영 여부, 영어 가이드, 식사 장소, 놀이기구 및 체험 프로그램(특히 스릴 놀이기구와 예약 필요 여부)에 대한 상세 정보 요청",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-02-05T05:30:59.275764",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "8517ed72-df26-4a0c-9c3d-3ef5899ad3ce",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "베트남 다낭 바나힐의 설날 연휴 운영 여부, 영어 가이드 이용 가능 여부, 식사 장소 및 예약 필요성, 놀이기구 및 체험 프로그램 종류와 예약 필요성에 대한 문의.",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-02-05T05:22:21.404872",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "eedd03a5-6bdb-4f0c-917d-2430f9740ee7",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "베트남 다낭 바나힐의 설날 연휴 운영 여부, 영어 가이드, 식사 장소 및 예약, 놀이기구/체험 프로그램 종류 및 예약 필요 여부 등 여행 관련 상세 정보 문의",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-02-05T05:16:36.757780",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "4d417196-f8ec-4c6b-a602-f998bb888365",
+    "initial_query": "추가 문의 사항도 있습니다. 바나힐 공식 웹사이트나 고객 지원 센터를 통해 직접 확인하라는 답변을 계속 받고 있는데, 제가 직접 확인하기 전에 혹시 에이전트님께서 지금 바로 확인해 주실 수 있는 정보는 없을까요? 특히 롤러코스터나 고공 체험 프로그램의 정확한 이름과 예약이 필요한지 여부 등 구체적인 정보를 지금 바로 알려주시면 감사하겠습니다.",
+    "customer_type": "까다로운 고객 (Outbound Call to 현지 업체/파트너)",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "추가 문의 사항도 있습니다. 바나힐 공식 웹사이트나 고객 지원 센터를 통해 직접 확인하라는 답변을 계속 받고 있는데, 제가 직접 확인하기 전에 혹시 에이전트님께서 지금 바로 확인해",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: 추가 문의 사항도 있습니다. 바나힐 공식 웹사이트나 고객 지원 센터를 통해 직접 확인하라는 답변을 계속 받고 있는데, 제가 직접 확인하기 전에 혹시 에이전트님께서 지금 바로 확인해"
+    },
+    "language_key": "ko",
+    "timestamp": "2026-02-05T05:12:32.353631",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "5cc4f020-a09c-447b-81ea-caee6f138f9c",
+    "initial_query": "추가 문의 사항도 있습니다. 바나힐 공식 웹사이트나 고객 지원 센터를 통해 직접 확인하라는 답변을 계속 받고 있는데, 제가 직접 확인하기 전에 혹시 에이전트님께서 지금 바로 확인해 주실 수 있는 정보는 없을까요? 특히 롤러코스터나 고공 체험 프로그램의 정확한 이름과 예약이 필요한지 여부 등 구체적인 정보를 지금 바로 알려주시면 감사하겠습니다.",
+    "customer_type": "까다로운 고객 (Outbound Call to 현지 업체/파트너)",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "베트남 다낭 바나힐의 설날 연휴 운영 여부, 영어 가이드 서비스, 식사 장소, 그리고 놀이기구 및 체험 프로그램(특히 롤러코스터와 고공 체험의 이름 및 예약 필요 여부)에 대한 구체적인 정보를 에이전트가 직접 확인해 줄 것을 요청했습니다.",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: 추가 문의 사항도 있습니다. 바나힐 공식 웹사이트나 고객 지원 센터를 통해 직접 확인하라는 답변을 계속 받고 있는데, 제가 직접 확인하기 전에 혹시 에이전트님께서 지금 바로 확인해"
+    },
+    "language_key": "ko",
+    "timestamp": "2026-02-05T05:06:31.904336",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "1e8fa7f1-36ff-4aa0-9547-66b8d2577889",
+    "initial_query": "추가 문의 사항도 있습니다. 바나힐 공식 웹사이트나 고객 지원 센터를 통해 직접 확인하라는 답변을 계속 받고 있는데, 제가 직접 확인하기 전에 혹시 에이전트님께서 지금 바로 확인해 주실 수 있는 정보는 없을까요? 특히 롤러코스터나 고공 체험 프로그램의 정확한 이름과 예약이 필요한지 여부 등 구체적인 정보를 지금 바로 알려주시면 감사하겠습니다.",
+    "customer_type": "까다로운 고객 (Outbound Call to 현지 업체/파트너)",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "추가 문의 사항도 있습니다. 바나힐 공식 웹사이트나 고객 지원 센터를 통해 직접 확인하라는 답변을 계속 받고 있는데, 제가 직접 확인하기 전에 혹시 에이전트님께서 지금 바로 확인해",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: 추가 문의 사항도 있습니다. 바나힐 공식 웹사이트나 고객 지원 센터를 통해 직접 확인하라는 답변을 계속 받고 있는데, 제가 직접 확인하기 전에 혹시 에이전트님께서 지금 바로 확인해"
+    },
+    "language_key": "ko",
+    "timestamp": "2026-02-05T05:04:41.521490",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "f461ce62-25b9-4ef9-930b-dfc4c1765d21",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "바나힐의 설날 연휴 운영 여부 및 영어 가이드, 식당, 놀이기구 정보 문의",
       "key_responses": [
-        "Clarification provided on the purpose of each ticket link.",
-        "Advised to purchase both the express pass and general entry ticket for a smooth visit.",
-        "Provided assurance of further assistance if needed during the purchase process."
+        "설날 연휴 기간 중 바나힐 운영 일정 확인을 위해 공식 웹사이트나 고객 지원 센터 추천",
+        "영어 가이드 서비스는 특정 날짜에만 제공되며 공식 채널을 통해 확인 권장",
+        "바나힐 내 레스토랑과 놀이기구 정보 제공 및 예약 필요 여부 안내"
+      ],
+      "customer_sentiment_score": 80,
+      "customer_satisfaction_score": 85,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean cultural context detected",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 90,
+        "detail_level_score": 85,
+        "personality_traits": {
+          "patience_level": 75,
+          "assertiveness": 70,
+          "politeness_level": 85,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객은 베트남 다낭 바나힐의 설날 연휴 기간 운영 여부, 영어 가이드 서비스, 식당 및 놀이기구에 대한 정보를 문의하였습니다. 에이전트는 공식 웹사이트나 고객 지원 센터를 통해 최신 정보를 확인할 것을 권장하였으며, 다양한 레스토랑과 놀이기구에 대한 정보를 제공하였습니다. 고객의 문의에 대한 답변은 정중하고 상세하였으며, 고객은 추가 질문을 통해 더 많은 정보를 요청하였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-02-05T05:02:39.311717",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "ba31b5f8-efc3-427d-ac8d-769be30b70d3",
+    "initial_query": "기다려주셔서 감사합니다. 확인 결과를 기다리겠습니다. 추가 문의 사항이 생기면 다시 말씀드리겠습니다. 감사합니다.",
+    "customer_type": "까다로운 고객 (Outbound Call to 현지 업체/파트너)",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Availability of Ba Na Hills during Lunar New Year and English guide service",
+      "key_responses": [
+        "Confirmed that operations may be limited during the Lunar New Year and recommended checking the official website or customer support.",
+        "Requested partial email for account verification to provide more detailed assistance.",
+        "Suggested checking official channels for English guide availability."
       ],
       "customer_sentiment_score": 85,
       "customer_satisfaction_score": 90,
       "customer_characteristics": {
         "language": "ko",
-        "cultural_hints": "Use of respectful and formal language",
-        "cultural_score": 85,
+        "cultural_hints": "Korean customer, possible travel interest in Vietnam",
+        "cultural_score": 80,
         "region": "Asia",
-        "communication_style": "formal and brief",
-        "formality_score": 90,
-        "detail_level_score": 40,
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 80,
+          "assertiveness": 75,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객님은 베트남 다낭 바나힐의 설날 연휴 운영 여부와 영어 가이드 서비스 가능 여부에 대해 문의하셨습니다. 에이전트는 공식 웹사이트나 고객 지원센터를 통해 정보를 확인할 것을 권장하고, 추가적인 정보가 필요할 경우 이메일 인증을 요청하였습니다. 고객님은 이메일 주소와 예약 번호를 제공하며 추가 정보를 요청하였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-02-05T04:56:58.722672",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "a60429f9-46e4-4b2f-a11a-1f92b036b85d",
+    "initial_query": "추가 문의 사항도 있습니다. 바나힐에 도착했을 때 영어 가이드를 이용할 수 있는지 확인하고 싶습니다. 영어 가이드가 있는 날과 없는 날이 있다면 그에 대한 정보도 부탁드립니다. 감사합니다.",
+    "customer_type": "까다로운 고객 (Outbound Call to 현지 업체/파트너)",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Bana Hills operation and English guide availability during Lunar New Year holidays",
+      "key_responses": [
+        "Recommended checking Bana Hills official website or customer support for exact operation schedule.",
+        "Suggested providing reservation number and email for more precise assistance.",
+        "Confirmed that English guide service availability varies and should be verified through official channels."
+      ],
+      "customer_sentiment_score": 80,
+      "customer_satisfaction_score": 85,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean language, reference to Lunar New Year",
+        "cultural_score": 75,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
         "personality_traits": {
           "patience_level": 70,
           "assertiveness": 60,
@@ -39,31 +443,512 @@
         "question_complexity": "moderate",
         "escalation_tendency": 20
       },
-      "summary": "고객은 10월 20일 오사카 유니버셜 스튜디오 재팬을 방문하기 위해 입장권과 익스프레스 패스를 구매하고자 합니다. 두 링크의 차이점에 대해 명확히 이해하였으며, 추가적인 도움이 필요한 경우 다시 연락하겠다고 하였습니다. 고객은 질문에 대해 정중하고 명확하게 응답하였으며, 전체적으로 긍정적인 대화를 나누었습니다."
+      "summary": "고객은 베트남 다낭의 바나힐 방문 시 설날 연휴 기간 동안의 운영 여부와 영어 가이드 이용 가능 여부에 대해 문의하였습니다. 에이전트는 바나힐 공식 웹사이트나 고객 지원 센터를 통한 확인을 권장하며, 추가 정보를 제공하면 더 정확한 안내가 가능하다고 답변했습니다."
     },
     "language_key": "ko",
-    "timestamp": "2026-01-10T15:20:23.952315",
+    "timestamp": "2026-02-05T04:55:38.239236",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "f57d47d4-ea7a-42f4-9a7f-901c35cc601a",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Inquiry about operational status of Ba Na Hills during Lunar New Year and availability of English guide service.",
+      "key_responses": [
+        "Recommended checking Ba Na Hills official website for the most accurate schedule information.",
+        "Requested customer to provide partial email for account verification.",
+        "Confirmed availability of English guide service by recommending official channels for specific dates."
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 80,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean-speaking customer interested in travel during Korean Lunar New Year.",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 65,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia region"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 40
+      },
+      "summary": "고객님께서는 베트남 다낭 바나힐의 설날 연휴 동안 운영 여부와 영어 가이드 가능 여부에 대해 문의하셨습니다. 에이전트는 공식 웹사이트를 통해 가장 정확한 정보를 확인할 것을 권장했으며, 추가 문의 사항에 대해 더 많은 정보를 제공할 수 있음을 안내했습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-02-05T04:55:17.667643",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "a79410fe-b2bd-4a6a-b1d8-60bbdf86565b",
+    "initial_query": "https://www.klook.com/ko/activity/14319-private-ba-na-hills-golden-bridge-day-trip-optional-english-speaking-guide-da-nang/?spm=SearchResult.SearchResult_LIST&clickId=004044b6a1\n\n베트남 다낭 바나힐 가려는데 설날 연휴 때 운영을 안 하는 것 같은데, 다시 한 번 확인 부탁드립니다.",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/activity/14319-private-ba-na-hills-golden-bridge-day-trip-optional-english-speaking-guide-da-nang/?spm=SearchResult.SearchResult_LIST&clickId=004044b6a1\n\n베트남 다낭 바나힐 가려는데 설날 연휴 때 운영을 안 하는 것 같은데, 다시 한 번 확인 부탁드립니다."
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-02-05T04:50:14.882020",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "34e3f959-3c0d-4e09-903e-25cdc9ee426c",
+    "initial_query": "https://www.klook.com/ko/activity/14319-private-ba-na-hills-golden-bridge-day-trip-optional-english-speaking-guide-da-nang/?spm=SearchResult.SearchResult_LIST&clickId=004044b6a1\n\n베트남 바나힐을 가려고 하는데, 설 연휴 때문에 혹시 운영을 안 하는지 확인 요청 드립니다.",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "https://www.klook.com/ko/activity/14319-private-ba-na-hills-golden-bridge-day-trip-optional-english-speaking-guide-da-nang/?spm=SearchResult.SearchResult_LIST&clickId=004044b6a1\n\n베트남 바나힐을 가려고 하는데, 설 연휴 때문에 혹시 운영을 안 하는지 확인 요청 드립니다."
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-02-05T04:31:26.874567",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "22d7ba4d-4aab-4f56-8e91-ee0fc4c89bef",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Request for room upgrade and additional services at Marina Bay Sands Hotel in Singapore",
+      "key_responses": [
+        "Recommended contacting the hotel front desk directly for room upgrade availability",
+        "Advised to check with the hotel upon check-in regarding the availability of additional services like breakfast, WiFi, gym, and swimming pool",
+        "Acknowledged the customer's dissatisfaction and offered further assistance for resolution"
+      ],
+      "customer_sentiment_score": 40,
+      "customer_satisfaction_score": 30,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Customer is Korean-speaking, possibly indicating Korean cultural background",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 70,
+        "personality_traits": {
+          "patience_level": 40,
+          "assertiveness": 75,
+          "politeness_level": 60,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 70
+      },
+      "summary": "고객은 싱가포르 마리나 베이 샌즈 호텔에서의 숙박에 대해 업그레이드 및 추가 서비스 요청을 했으나, 기대에 미치지 못한 경험으로 실망감을 표현하였습니다. 상담원은 호텔 프론트 데스크와의 직접적인 연락을 통해 문제를 해결할 것을 권장하였으며, 고객의 불만을 해소하기 위해 추가적인 지원을 제공하겠다고 약속했습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-11T07:26:43.622412",
     "is_chat_ended": true,
     "attachment_context": "",
     "is_call": false
   },
   {
-    "id": "8f46e456-5370-4b5a-b26e-25595237004c",
+    "id": "7fb9a358-1c94-456f-96c8-22cbbd45dfb4",
     "initial_query": "",
     "customer_type": "까다로운 고객",
     "messages": [],
     "summary": {
-      "main_inquiry": "Purchase of Universal Studios Japan Express Pass and admission ticket for a specific date",
+      "main_inquiry": "Request for room upgrade and additional services at Marina Bay Sands hotel.",
       "key_responses": [
-        "Explained the difference between the Express Pass and regular e-ticket",
-        "Advised purchasing both links for full experience",
-        "Confirmed and anonymized customer's email for account-related queries"
+        "Advised to contact hotel front desk for room upgrade and confirm service availability.",
+        "Recommended to verify included services at check-in.",
+        "Apologized for inconvenience and offered further assistance."
+      ],
+      "customer_sentiment_score": 40,
+      "customer_satisfaction_score": 30,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Customer is Korean, mentioned a family trip and emotional expression indicating cultural context.",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 70,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 40,
+          "assertiveness": 70,
+          "politeness_level": 60,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 60
+      },
+      "summary": "고객은 싱가포르 마리나 베이 샌즈 호텔에서의 룸 업그레이드와 부가 서비스 제공 여부를 문의하였습니다. 상담원은 호텔 프론트 데스크에 직접 문의할 것을 권장하였고, 체크인 시 서비스 포함 여부를 확인하도록 안내하였습니다. 고객은 여행의 기대에 미치지 못한 경험에 대해 실망감을 표명하였고, 상담원은 이에 대해 사과하고 추가 지원을 약속하였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-11T07:26:19.692969",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "421ab21b-d8ae-4cba-a30d-70350f64f572",
+    "initial_query": "아니 제가 모처럼 마음먹고 큰 돈을 내고 왔는데, 부가 서비스도 안 되고, 럭셔리 룸으로도 옮길 수도 없고 이게 뭐하자는 거죠? 하루에 100만원 받는 호텔이 이렇게 고객을 취급할 수 있는 건가요? 왜냐하면 방 시설 외부가 너무 시끄럽고 취침이 불편할 듯 하고, 좀 모처럼 여행 기분을 내고자 왔는데 너무 실망스럽습니다.",
+    "customer_type": "까다로운 고객 (Outbound Call to 현지 업체/파트너)",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Request for room upgrade and additional services at a hotel",
+      "key_responses": [
+        "Advised customer to contact hotel front desk for room upgrade and service confirmation",
+        "Suggested checking additional service availability at check-in",
+        "Offered to assist with further queries and support"
+      ],
+      "customer_sentiment_score": 40,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Customer is likely Korean, visiting Singapore",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 40,
+          "assertiveness": 70,
+          "politeness_level": 60,
+          "technical_proficiency": 30
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "resides in Asia region"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 60
+      },
+      "summary": "고객은 싱가포르 마리나 베이 샌즈 호텔에서 예약한 방의 업그레이드 및 부가 서비스 사용 가능 여부를 문의하였습니다. 고객은 외부 소음과 서비스에 대한 실망을 표명하며 업그레이드와 추가 서비스 제공 여부를 확인하고자 했습니다. 에이전트는 호텔 프론트 데스크에 직접 확인할 것을 권장하고, 고객의 불편에 대해 사과하며 가능한 지원을 제공하겠다고 약속하였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-11T07:21:08.056328",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "0e1e1c3f-63ad-4238-9264-97e6a1b28199",
+    "initial_query": "아니 제가 모처럼 마음먹고 큰 돈을 내고 왔는데, 부가 서비스도 안 되고, 럭셔리 룸으로도 옮길 수도 없고 이게 뭐하자는 거죠? 하루에 100만원 받는 호텔이 이렇게 고객을 취급할 수 있는 건가요? 왜냐하면 방 시설 외부가 너무 시끄럽고 취침이 불편할 듯 하고, 좀 모처럼 여행 기분을 내고자 왔는데 너무 실망스럽습니다.",
+    "customer_type": "까다로운 고객 (Outbound Call to 현지 업체/파트너)",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Upgrade to a luxury room and additional service requests at a hotel",
+      "key_responses": [
+        "Recommend contacting hotel front desk for room upgrade availability",
+        "Advise checking service inclusion at hotel check-in",
+        "Express apologies for inconvenience and offer assistance"
+      ],
+      "customer_sentiment_score": 40,
+      "customer_satisfaction_score": 30,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Customer mentions high expectations for luxury and service quality",
+        "cultural_score": 70,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 80,
+        "detail_level_score": 85,
+        "personality_traits": {
+          "patience_level": 40,
+          "assertiveness": 75,
+          "politeness_level": 60,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 70
+      },
+      "summary": "고객은 고급 룸 업그레이드 및 추가 서비스 요청에 대해 문의하였으며, 현재 호텔 상황에 따라 결정될 수 있음을 안내받았습니다. 외부 소음으로 인한 불편함과 기대에 미치지 못한 서비스에 대한 실망감을 표명하였으며, 고객 지원팀은 이에 대해 사과하고 추가적인 지원을 약속하였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-11T07:20:28.371134",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "f1d18222-15c5-437d-acff-19438ebdc527",
+    "initial_query": "안녕하세요 제가 오늘 싱가포르 마리나 베이 샌즈 호텔에서 숙박하는 것으로 예약했는데, 주문번호는 ABC123456 입니다. 혹시 가든 바이더 베이 야경이 더 잘 보이는 럭셔리 룸으로 방을 옮길 수 있을까요? 그리고 조식, WiFi, 헬스장, 수영장 등 시설 내 다른 서비스도 무료로 이용이 가능한지도 확인 부탁드립니다.",
+    "customer_type": "까다로운 고객 (Outbound Call to 현지 업체/파트너)",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Request for room upgrade and complimentary services at Marina Bay Sands hotel",
+      "key_responses": [
+        "Advised customer to contact hotel front desk for room upgrade availability",
+        "Recommended checking service inclusions at front desk during check-in"
+      ],
+      "customer_sentiment_score": 80,
+      "customer_satisfaction_score": 85,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean-speaking, potential familiarity with Korean cultural norms",
+        "cultural_score": 75,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 80,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 75,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객님은 싱가포르 마리나 베이 샌즈 호텔에서의 숙박 예약에 대한 룸 업그레이드 및 부가 서비스 이용 가능 여부를 문의하였습니다. 에이전트는 호텔 프론트 데스크에 직접 연락하여 현재 객실 상황과 패키지 포함 서비스 여부를 확인할 것을 권장하였습니다. 고객의 요구를 최대한 반영하기 위해 최선을 다하겠다는 의사를 밝혔습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-11T07:17:23.741428",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "77955eec-d5a0-499d-9607-bc293ad91b6e",
+    "initial_query": "안녕하세요 제가 오늘 싱가포르 마리나 베이 샌즈 호텔에서 숙박하는 것으로 예약했는데, 주문번호는 ABC123456 입니다. 혹시 가든 바이더 베이 야경이 더 잘 보이는 럭셔리 룸으로 방을 옮길 수 있을까요? 그리고 조식, WiFi, 헬스장, 수영장 등 시설 내 다른 서비스도 무료로 이용이 가능한지도 확인 부탁드립니다.",
+    "customer_type": "까다로운 고객 (Outbound Call to 현지 업체/파트너)",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "Upgrade room and confirm additional free services at Marina Bay Sands hotel reservation",
+      "key_responses": [
+        "Recommend contacting hotel front desk to check room upgrade availability",
+        "Suggest confirming free services at hotel check-in"
+      ],
+      "customer_sentiment_score": 80,
+      "customer_satisfaction_score": 75,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean language usage, possible travel to Singapore",
+        "cultural_score": 70,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 80,
+          "politeness_level": 90,
+          "technical_proficiency": 30
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": true,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 20
+      },
+      "summary": "고객님은 싱가포르 마리나 베이 샌즈 호텔에 대한 예약 업그레이드 및 무료 서비스 확인 요청을 하셨습니다. 에이전트는 호텔 프론트 데스크에 직접 문의하여 업그레이드 가능 여부와 추가 서비스 이용 가능 여부를 확인할 것을 제안하였습니다. 고객님의 만족을 위해 최선을 다하겠다고 안내하였습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-11T07:16:27.124843",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "0ae1c5f1-577e-4953-9aa0-8da8a55d7220",
+    "initial_query": "아고다 예약한 호텔에서 리조트 숙박 등급 업그레이드 및 다른 부가 서비스 요청",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "아고다 예약한 호텔에서 리조트 숙박 등급 업그레이드 및 다른 부가 서비스 요청"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-01-11T07:12:28.548247",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "092af092-5e5d-473d-b9e8-bc67bd17f021",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "JR 패스 유효기한 및 이용 가능한 역 구간들",
+      "key_responses": [
+        "JR 패스의 유효기간은 일본에 도착하여 사용을 최초로 시작한 날부터 시작됩니다.",
+        "도쿄에서 오사카까지의 구간은 JR 패스를 통해 이용 가능합니다.",
+        "계정 확인을 위해 이메일 일부를 요청"
+      ],
+      "customer_sentiment_score": 90,
+      "customer_satisfaction_score": 95,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean cultural context detected",
+        "cultural_score": 85,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 80,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 70,
+          "assertiveness": 60,
+          "politeness_level": 90,
+          "technical_proficiency": 40
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "resides in Asia region"
+      },
+      "behavior_patterns": {
+        "response_time": "fast",
+        "question_complexity": "simple",
+        "escalation_tendency": 10
+      },
+      "summary": "고객님은 JR 패스 유효기간과 도쿄에서 오사카까지의 구간 이용 가능 여부에 대해 문의하셨습니다. 에이전트는 유효기간이 일본 도착 후 시작됨을 확인하고, 구간이 포함됨을 설명하였습니다. 고객님은 명확한 답변에 만족하셨습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-11T07:02:30.969753",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "0afc3960-81cc-41b6-9db6-4bc77e920120",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "JR 패스의 유효기간과 이용 가능한 역 구간",
+      "key_responses": [
+        "JR 패스의 유효기간은 일본에 도착하여 처음 사용을 시작한 날부터 시작됨",
+        "도쿄에서 오사카까지의 구간은 JR 패스를 통해 이용 가능",
+        "계정 확인을 위해 이메일 주소 일부 제공 요청"
       ],
       "customer_sentiment_score": 85,
       "customer_satisfaction_score": 90,
       "customer_characteristics": {
         "language": "ko",
-        "cultural_hints": "Korean-speaking, likely familiar with Japanese attractions",
+        "cultural_hints": "Korean-speaking customer, likely familiar with Korean culture",
+        "cultural_score": 80,
+        "region": "Asia",
+        "communication_style": "formal/detailed",
+        "formality_score": 85,
+        "detail_level_score": 75,
+        "personality_traits": {
+          "patience_level": 75,
+          "assertiveness": 50,
+          "politeness_level": 90,
+          "technical_proficiency": 60
+        }
+      },
+      "privacy_info": {
+        "has_email": true,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "Asia"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 10
+      },
+      "summary": "고객은 JR 패스의 유효기간과 도쿄에서 오사카까지의 이용 가능 여부를 문의했습니다. 상담사는 유효기간이 일본 도착 후 사용 시작일에 시작되며, 해당 구간이 포함된다고 안내했습니다. 고객은 명확한 답변에 만족하며 추가 문의는 없었습니다."
+    },
+    "language_key": "ko",
+    "timestamp": "2026-01-11T07:01:51.993059",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "e9242084-e663-4fb8-8655-b58343caadaa",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "JR 패스 유효기간 및 이용 가능한 역 구간들",
+      "key_responses": [
+        "JR 패스의 유효기간은 일본에 도착한 날부터 시작됩니다.",
+        "도쿄에서 오사카까지의 구간은 JR 패스를 통해 이용 가능합니다.",
+        "계정 확인을 위해 이메일을 통해 로그인을 시도해 주시고, 문제가 지속될 경우 추가적인 확인 절차 제공"
+      ],
+      "customer_sentiment_score": 85,
+      "customer_satisfaction_score": 90,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "Korean-speaking, interested in Japanese travel",
         "cultural_score": 80,
         "region": "Asia",
         "communication_style": "formal/detailed",
@@ -71,9 +956,9 @@
         "detail_level_score": 80,
         "personality_traits": {
           "patience_level": 75,
-          "assertiveness": 60,
+          "assertiveness": 70,
           "politeness_level": 90,
-          "technical_proficiency": 40
+          "technical_proficiency": 50
         }
       },
       "privacy_info": {
@@ -87,140 +972,27 @@
         "question_complexity": "moderate",
         "escalation_tendency": 20
       },
-      "summary": "고객은 오사카 유니버셜 스튜디오 재팬의 입장권과 익스프레스 패스를 구매하는 방법에 대한 명확한 설명을 요청했습니다. 고객은 10월 20일에 방문할 예정이며, 두 링크 모두 구매해야 한다는 점을 이해했습니다. 에이전트는 차이를 설명하고 이메일을 통해 고객의 계정을 확인했습니다. 고객은 추가 도움 필요 시 다시 연락하겠다고 했습니다."
+      "summary": "고객은 JR 패스의 유효기간과 도쿄에서 오사카까지의 이용 가능 여부에 대해 문의했습니다. 에이전트는 유효기간이 일본 도착일부터 시작되며, 해당 구간이 패스에 포함되어 있다고 안내했습니다. 고객은 제공된 정보에 만족하는 것으로 보이며, 추가적인 문의 사항에 대해 친절하게 대응했습니다."
     },
     "language_key": "ko",
-    "timestamp": "2026-01-10T15:19:24.362547",
-    "is_chat_ended": true,
-    "attachment_context": "",
-    "is_call": false
-  },
-  {
-    "id": "35643cf7-0632-4ece-8af5-22221d799910",
-    "initial_query": "https://www.klook.com/ko/activity/3407-universal-studios-japan-express-pass-osaka/?spm=Activity.Good_to_know.Link&clickId=6178885762\n\n\nhttps://www.klook.com/ko/activity/46604-universal-studios-japan-e-ticket-osaka-qr-code-direct-entry/?spm=Activity.SearchSuggest_LIST&clickId=3cf3a8b9e1\n오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의 \n",
-    "customer_type": "까다로운 고객",
-    "messages": [
-      {
-        "role": "customer",
-        "content": "https://www.klook.com/ko/activity/3407-universal-studios-japan-express-pass-osaka/?spm=Activity.Good_to_know.Link&clickId=6178885762\n\n\nhttps://www.klook.com/ko/activity/46604-universal-studios-japan-e-ticket-osaka-qr-code-direct-entry/?spm=Activity.SearchSuggest_LIST&clickId=3cf3a8b9e1\n오사카 유니버셜 스튜디오 재팬 입장권 + 익스프레스 문의 \n"
-      }
-    ],
-    "summary": null,
-    "language_key": "ko",
-    "timestamp": "2026-01-10T14:17:45.086305",
+    "timestamp": "2026-01-11T06:58:09.375349",
     "is_chat_ended": false,
     "attachment_context": "",
     "is_call": false
   },
   {
-    "id": "55e3ed88-fe24-4429-ba97-23215e131e60",
-    "initial_query": "",
-    "customer_type": "까다로운 고객",
-    "messages": [],
-    "summary": {
-      "main_inquiry": "Issue with ticket purchase process, confirmation email not received.",
-      "key_responses": [
-        "Check purchase history in Klook account to verify ticket status.",
-        "Ensure email address is correct and check spam folder.",
-        "Contact customer support if issue persists."
-      ],
-      "customer_sentiment_score": 70,
-      "customer_satisfaction_score": 80,
-      "customer_characteristics": {
-        "language": "ko",
-        "cultural_hints": "Korean speaking, possibly located in South Korea",
-        "cultural_score": 80,
-        "region": "Asia",
-        "communication_style": "formal/detailed",
-        "formality_score": 85,
-        "detail_level_score": 80,
-        "personality_traits": {
-          "patience_level": 75,
-          "assertiveness": 60,
-          "politeness_level": 85,
-          "technical_proficiency": 60
-        }
-      },
-      "privacy_info": {
-        "has_email": true,
-        "has_phone": false,
-        "has_address": false,
-        "region_hint": "Asia"
-      },
-      "behavior_patterns": {
-        "response_time": "moderate",
-        "question_complexity": "moderate",
-        "escalation_tendency": 40
-      },
-      "summary": "고객은 도쿄 디즈니랜드 티켓 구매 과정에서 문제를 겪었으며, 결제 완료 이메일을 받지 못했다고 문의했습니다. 에이전트는 Klook 계정의 구매 이력을 확인하고 이메일 주소를 재확인할 것을 권장하였으며, 여전히 문제가 지속될 경우 고객 지원팀에 문의하라고 안내했습니다. 고객은 에이전트의 조언을 따르고 문제가 지속될 경우 추가적인 조치를 취할 것을 약속했습니다."
-    },
-    "language_key": "ko",
-    "timestamp": "2026-01-10T08:54:21.370832",
-    "is_chat_ended": true,
-    "attachment_context": "",
-    "is_call": false
-  },
-  {
-    "id": "ffc02e07-4fc1-496c-a703-9d76f17c0424",
-    "initial_query": "",
-    "customer_type": "까다로운 고객",
-    "messages": [],
-    "summary": {
-      "main_inquiry": "Issue with not receiving ticket purchase confirmation email for Tokyo Disneyland.",
-      "key_responses": [
-        "Check purchase history in Klook account to verify ticket status.",
-        "Ensure email address is correct and check spam folder.",
-        "Contact customer support for further assistance if issue persists."
-      ],
-      "customer_sentiment_score": 70,
-      "customer_satisfaction_score": 75,
-      "customer_characteristics": {
-        "language": "ko",
-        "cultural_hints": "Customer is likely Korean-speaking, inquiry made in Korean.",
-        "cultural_score": 80,
-        "region": "Asia",
-        "communication_style": "formal/detailed",
-        "formality_score": 85,
-        "detail_level_score": 80,
-        "personality_traits": {
-          "patience_level": 70,
-          "assertiveness": 60,
-          "politeness_level": 90,
-          "technical_proficiency": 60
-        }
-      },
-      "privacy_info": {
-        "has_email": true,
-        "has_phone": false,
-        "has_address": false,
-        "region_hint": "Asia"
-      },
-      "behavior_patterns": {
-        "response_time": "moderate",
-        "question_complexity": "simple",
-        "escalation_tendency": 40
-      },
-      "summary": "고객은 도쿄 디즈니랜드 티켓 구매 확인 이메일을 받지 못한 문제를 문의했습니다. 고객 지원팀은 Klook 계정에서 구매 이력을 확인하고 이메일 주소의 정확성을 확인할 것을 권장했습니다. 고객은 계정에서 확인 후, 문제가 지속될 경우 추가적인 지원을 요청할 계획입니다."
-    },
-    "language_key": "ko",
-    "timestamp": "2026-01-10T08:49:08.570316",
-    "is_chat_ended": true,
-    "attachment_context": "",
-    "is_call": false
-  },
-  {
-    "id": "0f0a94c5-9d8a-4ccb-8039-d7eeb02fd9ca",
-    "initial_query": "https://www.klook.com/ko/activity/695-tokyo-disney-resort-1-day-pass-tokyo/?spm=SearchResult.SearchResult_LIST&clickId=c452bea862\n\n도쿄 디즈니랜드 문의",
+    "id": "510eb01e-790d-4a4d-86e5-604c74b15505",
+    "initial_query": "https://www.klook.com/ko/activity/1420-7-day-whole-japan-rail-pass-jr-pass/?spm=Activity.SearchSuggest_LIST&clickId=c3031f6080\n\nJR 패스 유효기한 및 이용 가능한 역 구간들",
     "customer_type": "까다로운 고객",
     "messages": [
       {
         "role": "customer",
-        "content": "https://www.klook.com/ko/activity/695-tokyo-disney-resort-1-day-pass-tokyo/?spm=SearchResult.SearchResult_LIST&clickId=c452bea862\n\n도쿄 디즈니랜드 문의"
+        "content": "https://www.klook.com/ko/activity/1420-7-day-whole-japan-rail-pass-jr-pass/?spm=Activity.SearchSuggest_LIST&clickId=c3031f6080\n\nJR 패스 유효기한 및 이용 가능한 역 구간들"
       }
     ],
     "summary": null,
     "language_key": "ko",
-    "timestamp": "2026-01-10T08:43:38.720991",
+    "timestamp": "2026-01-11T06:54:18.141797",
     "is_chat_ended": false,
     "attachment_context": "",
     "is_call": false

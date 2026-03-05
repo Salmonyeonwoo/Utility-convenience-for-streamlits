@@ -133,6 +133,26 @@
       "service_rating": 0.0,
       "evaluation_data": [],
       "sentiment_analysis": []
+    },
+    {
+      "customer_id": "CUST75171625",
+      "customer_name": "황아영",
+      "phone": "+6010-1234-5678",
+      "email": "ahyeong.hwang50@gmail.com",
+      "identity_hash": "d91847d8ae9e81ae7715c4464ec48feb",
+      "account_created": "2026-01-11",
+      "last_login": "2026-01-11",
+      "last_consultation": "2026-01-11",
+      "consultation_history": [],
+      "personality": "일반",
+      "personality_summary": "",
+      "inquiry_summary": "",
+      "preferred_destination": "",
+      "travel_budget": "",
+      "survey_score": 0.0,
+      "service_rating": 0.0,
+      "evaluation_data": [],
+      "sentiment_analysis": []
     }
   ]
 }

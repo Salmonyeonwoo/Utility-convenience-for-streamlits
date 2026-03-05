@@ -363,7 +363,7 @@ def rag_answer(question: str, vectorstore: FAISS, lang_key: str) -> str:
 
     # Langchain ChatOpenAI 대신 run_llm을 사용하기 위해 prompt를 직접 구성
     retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
-    # ⭐ 수정: LangChain 버전 호환성 - get_relevant_documents 대신 invoke 사용
+    # ⭐ LangChain 버전 호환성 - get_relevant_documents 대신 invoke 사용
     try:
         # 최신 LangChain 버전 (invoke 사용)
         docs = retriever.invoke(question)
@@ -374,20 +374,57 @@ def rag_answer(question: str, vectorstore: FAISS, lang_key: str) -> str:
         except AttributeError:
             # 대체 방법: vectorstore에서 직접 검색
             docs = vectorstore.similarity_search(question, k=4)
+
     context = "\n\n".join(d.page_content[:1500] for d in docs)
 
     # ⭐ RAG 다국어 인식 오류 해결: 답변 생성 모델에게 질문 언어로 일관되게 답하도록 강력히 지시
     lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}.get(lang_key, "English")
 
-    prompt = (
-            f"You are a helpful AI tutor. Answer the question using ONLY the provided context.\n"
-            f"The answer MUST be STRICTLY in {lang_name}, which is the language of the question.\n"
-            f"If you cannot find the answer in the context, say you don't know in {lang_name}.\n"
-            f"Note: The context may be in a different language, but you must still answer in {lang_name}.\n\n"
-            "Question:\n" + question + "\n\n"
-                                       "Context:\n" + context + "\n\n"
-                                                                f"Answer (in {lang_name}):"
+    # ⭐ 여행사 전용이 아닌, 모든 회사/면접 질문까지 다루는 범용 RAG 비서로 역할 확장
+    base_instructions = (
+        "You are an AI assistant for company research and interview preparation (not limited to travel agencies).\n"
+        "Your goals are:\n"
+        "1) explain any company or industry the user asks about,\n"
+        "2) provide basic facts, business overview, and recent themes, and\n"
+        "3) suggest likely interview questions and good example answers tailored to that company or role.\n"
+        "Always prefer concrete, practical advice that would actually help a candidate prepare.\n"
+        f"The final answer MUST be written in {lang_name}.\n"
     )
+
+    if context.strip():
+        # 컨텍스트가 있을 경우: 우선적으로 활용하되, 부족한 부분은 일반 지식으로 보완
+        prompt = (
+            base_instructions
+            + "You receive additional context retrieved from a local knowledge base "
+              "(it may contain data about specific companies such as travel agencies, "
+              "but you are allowed to go beyond it).\n"
+            "Use this context as your primary source, but you MAY also use your own general knowledge "
+            "to fill any gaps, especially for company overviews and interview preparation.\n"
+            "If something is uncertain or speculative, clearly say that it may not be perfectly accurate.\n\n"
+            "Question:\n"
+            + question
+            + "\n\nContext:\n"
+            + context
+            + "\n\nProvide a clear, structured answer in "
+            + lang_name
+            + " with headings and bullet points where helpful."
+        )
+    else:
+        # 컨텍스트가 없을 경우: LLM의 일반 지식을 적극 활용
+        prompt = (
+            base_instructions
+            + "There is no extra document context available for this question.\n"
+              "Rely on your general knowledge to answer as accurately and concretely as possible.\n"
+              "If the question is about a specific company, assume it is about the real-world company "
+              "with that name and answer accordingly.\n"
+              "If you truly do not know, say so honestly and suggest how the user can research it.\n\n"
+            "Question:\n"
+            + question
+            + "\n\nAnswer in "
+            + lang_name
+            + ":"
+        )
+
     return run_llm(prompt)
 
 
