@@ -44,6 +44,37 @@ st.set_page_config(
 )
 
 # ========================================
+# 전역 UI 텍스트 잘림 방지 스타일
+# ========================================
+st.markdown("""
+<style>
+/* 버튼/익스팬더 제목이 잘리지 않도록 줄바꿈 허용 */
+div[data-testid="stButton"] button p,
+div[data-testid="stButton"] button span,
+button[kind="primary"] p,
+button[kind="secondary"] p,
+button[kind="primary"] span,
+button[kind="secondary"] span,
+details summary p,
+details summary span {
+    white-space: normal !important;
+    word-break: keep-all !important;
+    overflow-wrap: anywhere !important;
+    text-overflow: clip !important;
+}
+
+/* 긴 텍스트가 들어가는 알림/캡션/마크다운도 줄바꿈 유지 */
+div[data-testid="stAlert"] p,
+div[data-testid="stCaptionContainer"] p,
+div[data-testid="stMarkdownContainer"] p {
+    white-space: pre-wrap !important;
+    word-break: keep-all !important;
+    overflow-wrap: anywhere !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ========================================
 # 기본 경로/로컬 DB 설정
 # ========================================
 os.makedirs(DATA_DIR, exist_ok=True)
