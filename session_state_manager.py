@@ -210,7 +210,7 @@ def initialize_session_state():
     
     # 선택된 LLM
     if "selected_llm" not in st.session_state:
-        st.session_state.selected_llm = "openai_gpt4"
+        st.session_state.selected_llm = "gemini_flash"
     
     # 기능 선택
     current_lang = st.session_state.get("language", "ko")

@@ -20,9 +20,6 @@
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 import streamlit as st
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
-
 from lang_pack import LANG
 
 # Plotly 사용 가능 여부 확인

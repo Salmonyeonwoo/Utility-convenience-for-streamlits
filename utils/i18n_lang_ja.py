@@ -3,7 +3,7 @@
 # 일본어 번역 모듈
 # ========================================
 
-LANG_JA =     "ja": {
+LANG_JA = {
         "title": "パーソナライズAI学習コーチ (音声・ローカルDB)",
         "sidebar_title": "📚 AI学習コーチ設定",
         "file_uploader": "学習資料をアップロード (PDF, TXT, HTML)",

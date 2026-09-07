@@ -673,7 +673,7 @@ def translate_text_with_llm(text_content: str, target_lang_code: str, source_lan
         prompt = f"Original Chat History:\n\n{text_content}"
 
         # 3. 번역 실행
-        gen_model = client.GenerativeModel('gemini-2.5-flash')
+        gen_model = client.GenerativeModel('gemini-1.5-flash')
         response = gen_model.generate_content(
             contents=prompt,
             config=genai.types.GenerateContentConfig(
@@ -702,9 +702,9 @@ st.title(L["title"])
 # 10. 기능별 페이지
 # ... (RAG, Content, LSTM, Voice Tabs are maintained)
 # -------------------- Simulator Tab --------------------
-elif feature_selection == L["simulator_tab"]:
-st.header(L["simulator_header"])
-st.markdown(L["simulator_desc"])
+# elif feature_selection == L["simulator_tab"]:
+# st.header(L["simulator_header"])
+# st.markdown(L["simulator_desc"])
 
 current_lang = st.session_state.language
 L = LANG[current_lang]  # 다시 L 업데이트
@@ -1891,7 +1891,7 @@ elif feature_selection == L["content_tab"]:
                 llm_attempts.append(("openai", get_api_key("openai"), "gpt-4o"))
             # 2순위: Gemini (Fallback)
             if get_api_key("gemini"):
-                llm_attempts.append(("gemini", get_api_key("gemini"), "gemini-2.5-flash"))
+                llm_attempts.append(("gemini", get_api_key("gemini"), "gemini-1.5-flash"))
 
             with st.spinner(L["response_generating"]):
                 for provider, api_key, model_name in llm_attempts:

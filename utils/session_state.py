@@ -146,7 +146,7 @@ def init_session_state():
             st.session_state[cfg["session_key"]] = ""
     
     if "selected_llm" not in st.session_state:
-        st.session_state.selected_llm = "openai_gpt4"
+        st.session_state.selected_llm = "gemini_flash"
     
     # 초기화 완료 플래그 설정
     st.session_state.session_state_initialized = True

@@ -161,8 +161,14 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.prompts import PromptTemplate
 from langchain_core.documents import Document
 from streamlit_mic_recorder import mic_recorder
-from anthropic import Anthropic
-from openai import OpenAI
+try:
+    from anthropic import Anthropic
+except ImportError:
+    Anthropic = None
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
 import requests
 from matplotlib import pyplot as plt
 import streamlit as st

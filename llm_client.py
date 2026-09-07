@@ -21,8 +21,17 @@ import os
 import streamlit as st
 import time
 from typing import Optional
-# from openai import OpenAI  # OpenAI API 키 결제 지원 중단으로 인해 비활성화
-from anthropic import Anthropic
+
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
+
+try:
+    from anthropic import Anthropic
+except ImportError:
+    Anthropic = None
+
 import google.generativeai as genai
 
 from config import SUPPORTED_APIS
@@ -68,7 +77,6 @@ def _append_llm_event(event: dict) -> None:
     if not isinstance(events, list):
         events = []
     events.append(event)
-    # 너무 커지지 않도록 최근 N개만 유지
     max_events = int(st.session_state.get("llm_call_events_max", 200) or 200)
     if max_events < 20:
         max_events = 20
@@ -79,65 +87,61 @@ def _append_llm_event(event: dict) -> None:
 
 def get_api_key(api):
     """API 키를 가져옵니다 (Streamlit Secrets > 환경변수 > 세션 상태 순서)"""
-    cfg = SUPPORTED_APIS[api]
+    cfg = SUPPORTED_APIS.get(api, {})
+    secret_key = cfg.get("secret_key", f"{api.upper()}_API_KEY")
 
-    # ⭐ 1. Streamlit Secrets (.streamlit/secrets.toml) - 최우선
+    # 1. Streamlit Secrets (.streamlit/secrets.toml) - 최우선
     try:
-        if hasattr(st, "secrets") and cfg["secret_key"] in st.secrets:
-            key = st.secrets[cfg["secret_key"]]
-            if key and key.strip():
-                return key.strip()
+        if hasattr(st, "secrets") and secret_key in st.secrets:
+            key = st.secrets[secret_key]
+            if key and str(key).strip():
+                return str(key).strip()
     except Exception:
         pass
 
     # 2. Environment Variable (os.environ) - 대소문자 구분 없이 확인
-    env_key = os.environ.get(cfg["secret_key"])
+    env_key = os.environ.get(secret_key)
     if not env_key:
-        # 대소문자 변형도 확인
-        env_key = os.environ.get(cfg["secret_key"].upper())
+        env_key = os.environ.get(secret_key.upper())
     if not env_key:
-        env_key = os.environ.get(cfg["secret_key"].lower())
+        env_key = os.environ.get(secret_key.lower())
     if env_key and env_key.strip():
         return env_key.strip()
 
     # 3. User Input (Session State)
-    user_key = st.session_state.get(cfg["session_key"], "")
-    if user_key and user_key.strip():
-        return user_key.strip()
+    session_key = cfg.get("session_key", f"user_{api}_key")
+    user_key = st.session_state.get(session_key, "")
+    if user_key and str(user_key).strip():
+        return str(user_key).strip()
 
     return ""
 
 
 def get_llm_client():
     """선택된 모델에 맞는 클라이언트 + 모델코드 반환"""
-    model_key = st.session_state.get("selected_llm", "gemini_pro")
-
-    # --- OpenAI --- (비활성화: API 키 결제 지원 중단)
-    # if model_key.startswith("openai"):
-    #     key = get_api_key("openai")
-    #     if not key: 
-    #         return None, None
-    #     try:
-    #         client = OpenAI(api_key=key)
-    #         model_name = "gpt-4o" if model_key == "openai_gpt4" else "gpt-3.5-turbo"
-    #         return client, ("openai", model_name)
-    #     except Exception:
-    #         return None, None
+    model_key = st.session_state.get("selected_llm", "gemini_flash")
 
     # --- Gemini ---
-    if model_key.startswith("gemini"):
+    if model_key.startswith("gemini") or model_key in ("gemini_flash", "gemini_pro", "gemini_2_0"):
         key = get_api_key("gemini")
         if not key: 
             return None, None
         try:
             genai.configure(api_key=key)
-            model_name = "gemini-2.5-pro" if model_key == "gemini_pro" else "gemini-2.5-flash"
+            if model_key == "gemini_pro":
+                model_name = "gemini-1.5-pro"
+            elif model_key in ("gemini_2_0", "gemini_flash_2_0", "gemini-2.0-flash"):
+                model_name = "gemini-2.0-flash"
+            else:
+                model_name = "gemini-1.5-flash"
             return genai, ("gemini", model_name)
         except Exception:
             return None, None
 
     # --- Claude ---
     if model_key.startswith("claude"):
+        if Anthropic is None:
+            return None, None
         key = get_api_key("claude")
         if not key: 
             return None, None
@@ -150,7 +154,10 @@ def get_llm_client():
 
     # --- Groq ---
     if model_key.startswith("groq"):
-        from groq import Groq
+        try:
+            from groq import Groq
+        except ImportError:
+            return None, None
         key = get_api_key("groq")
         if not key: 
             return None, None
@@ -165,58 +172,84 @@ def get_llm_client():
         except Exception:
             return None, None
 
+    # --- OpenAI ---
+    if model_key.startswith("openai"):
+        if OpenAI is None:
+            return None, None
+        key = get_api_key("openai")
+        if not key: 
+            return None, None
+        try:
+            client = OpenAI(api_key=key)
+            model_name = "gpt-4o" if model_key == "openai_gpt4" else "gpt-3.5-turbo"
+            return client, ("openai", model_name)
+        except Exception:
+            return None, None
+
+    # Fallback to Gemini if key exists
+    gemini_key = get_api_key("gemini")
+    if gemini_key:
+        try:
+            genai.configure(api_key=gemini_key)
+            return genai, ("gemini", "gemini-1.5-flash")
+        except Exception:
+            pass
+
     return None, None
 
 
 def run_llm(prompt: str, max_tokens: int = 2000) -> str:
     """
-    선택된 LLM으로 프롬프트 실행 (Gemini 우선순위 변경 적용)
+    선택된 LLM으로 프롬프트 실행 (Gemini 최우선 적용)
     
     Args:
         prompt: LLM에 전달할 프롬프트
         max_tokens: 최대 토큰 수 (기본값: 2000, 채팅 응답에 적합)
-                    전화 응답 등 짧은 응답이 필요한 경우 200 등으로 조정 가능
     """
     client, info = get_llm_client()
-
-    # Note: info는 사이드바에서 선택된 주력 모델의 정보를 담고 있습니다.
     provider, model_name = info if info else (None, None)
 
-    # Fallback 순서를 정의합니다. (Gemini 우선)
+    # Fallback 순서 정의 (Gemini 우선)
     llm_attempts = []
 
-    # 1. Gemini를 최우선 Fallback으로 시도 (Keys 확인)
+    # 1. Gemini
     gemini_key = get_api_key("gemini")
     if gemini_key:
-        llm_attempts.append(("gemini", gemini_key, "gemini-2.5-pro" if "pro" in str(model_name) else "gemini-2.5-flash"))
+        if model_name and "pro" in str(model_name):
+            g_model = "gemini-1.5-pro"
+        elif model_name and ("2.0" in str(model_name) or "2_0" in str(model_name)):
+            g_model = "gemini-2.0-flash"
+        else:
+            g_model = "gemini-1.5-flash"
+        llm_attempts.append(("gemini", gemini_key, g_model))
 
-    # 2. OpenAI를 2순위 Fallback으로 시도 (Keys 확인) - 비활성화: API 키 결제 지원 중단
-    # openai_key = get_api_key("openai")
-    # if openai_key:
-    #     llm_attempts.append(("openai", openai_key, "gpt-4o" if "4" in str(model_name) else "gpt-3.5-turbo"))
-
-    # 3. Claude를 3순위 Fallback으로 시도 (Keys 확인)
+    # 2. Claude
     claude_key = get_api_key("claude")
-    if claude_key:
+    if claude_key and Anthropic is not None:
         llm_attempts.append(("claude", claude_key, "claude-3-5-sonnet-latest"))
 
-    # 4. Groq를 4순위 Fallback으로 시도 (Keys 확인)
+    # 3. Groq
     groq_key = get_api_key("groq")
     if groq_key:
-        groq_model = "llama3-70b-8192" if "llama3" in str(model_name) else "mixtral-8x7b-32768"
+        groq_model = "llama3-70b-8192" if (model_name and "llama3" in str(model_name)) else "mixtral-8x7b-32768"
         llm_attempts.append(("groq", groq_key, groq_model))
 
-    # ⭐ 순서 조정: 주력 모델(사용자가 사이드바에서 선택한 모델)을 가장 먼저 시도합니다.
-    # 만약 주력 모델이 Fallback 리스트에 포함되어 있다면, 그 모델을 첫 순서로 올립니다.
-    if provider and provider in [attempt[0] for attempt in llm_attempts]:
-            # 주력 모델을 리스트에서 찾아 제거
-            primary_attempt = next((attempt for attempt in llm_attempts if attempt[0] == provider), None)
-            if primary_attempt:
-                llm_attempts.remove(primary_attempt)
-                # 주력 모델이 Gemini가 아니라면, Fallback 순서와 관계없이 가장 먼저 시도하도록 삽입
-                llm_attempts.insert(0, primary_attempt)
+    # 4. OpenAI
+    openai_key = get_api_key("openai")
+    if openai_key and OpenAI is not None:
+        llm_attempts.append(("openai", openai_key, "gpt-4o" if (model_name and "4" in str(model_name)) else "gpt-3.5-turbo"))
 
-    # LLM 순차 실행
+    # 주력 모델이 Fallback 목록에 있으면 0번 인덱스로 올리기
+    if provider and provider in [attempt[0] for attempt in llm_attempts]:
+        primary_attempt = next((attempt for attempt in llm_attempts if attempt[0] == provider), None)
+        if primary_attempt:
+            llm_attempts.remove(primary_attempt)
+            llm_attempts.insert(0, primary_attempt)
+
+    if not llm_attempts:
+        return "❌ 사용 가능한 LLM API 키가 설정되지 않았습니다. .streamlit/secrets.toml 또는 환경변수에 GEMINI_API_KEY를 설정해주세요."
+
+    last_error_msg = ""
     for provider, key, model in llm_attempts:
         if not key: 
             continue
@@ -225,8 +258,8 @@ def run_llm(prompt: str, max_tokens: int = 2000) -> str:
             t0 = time.perf_counter()
             if provider == "gemini":
                 genai.configure(api_key=key)
-                gen_model = genai.GenerativeModel(model)
-                # 채팅 응답을 위한 충분한 토큰 수 설정
+                effective_model = model.replace("gemini-2.5", "gemini-1.5")
+                gen_model = genai.GenerativeModel(effective_model)
                 generation_config = {
                     "max_output_tokens": max_tokens,
                     "temperature": 0.7,
@@ -240,7 +273,7 @@ def run_llm(prompt: str, max_tokens: int = 2000) -> str:
                         "dur_ms": int((time.perf_counter() - t0) * 1000),
                         "status": "success",
                         "provider": provider,
-                        "model": model,
+                        "model": effective_model,
                         "tag": st.session_state.get("_llm_call_tag"),
                         "stage": stage,
                         "turn_key": _infer_turn_key(stage, last_customer_idx, last_agent_idx),
@@ -253,42 +286,12 @@ def run_llm(prompt: str, max_tokens: int = 2000) -> str:
                     })
                 return resp.text
 
-            # OpenAI provider 처리 제거 (API 키 결제 지원 중단)
-            # elif provider == "openai":
-            #     o_client = OpenAI(api_key=key, timeout=10.0)  # 10초 timeout
-            #     resp = o_client.chat.completions.create(
-            #         model=model,
-            #         messages=[{"role": "user", "content": prompt}],
-            #         max_tokens=max_tokens,  # 채팅 응답을 위한 충분한 토큰 수
-            #         temperature=0.7,
-            #     )
-            #     if _telemetry_enabled():
-            #         stage = st.session_state.get("sim_stage")
-            #         last_customer_idx, last_agent_idx = _infer_last_turn_indices()
-            #         _append_llm_event({
-            #             "ts": time.time(),
-            #             "dur_ms": int((time.perf_counter() - t0) * 1000),
-            #             "status": "success",
-            #             "provider": provider,
-            #             "model": model,
-            #             "tag": st.session_state.get("_llm_call_tag"),
-            #             "stage": stage,
-            #             "turn_key": _infer_turn_key(stage, last_customer_idx, last_agent_idx),
-            #             "last_customer_idx": last_customer_idx,
-            #             "last_agent_idx": last_agent_idx,
-            #             "prompt_chars": len(prompt or ""),
-            #             "max_tokens": max_tokens,
-            #             "rerun_seq": st.session_state.get("rerun_seq"),
-            #             "feature_id": st.session_state.get("feature_selection_id"),
-            #         })
-            #     return resp.choices[0].message.content
-
-            elif provider == "claude":
-                c_client = Anthropic(api_key=key, timeout=10.0)  # 10초 timeout
+            elif provider == "claude" and Anthropic:
+                c_client = Anthropic(api_key=key, timeout=10.0)
                 resp = c_client.messages.create(
                     model=model,
                     messages=[{"role": "user", "content": prompt}],
-                    max_tokens=max_tokens,  # 채팅 응답을 위한 충분한 토큰 수
+                    max_tokens=max_tokens,
                     temperature=0.7,
                 )
                 if _telemetry_enabled():
@@ -314,11 +317,11 @@ def run_llm(prompt: str, max_tokens: int = 2000) -> str:
 
             elif provider == "groq":
                 from groq import Groq
-                g_client = Groq(api_key=key, timeout=10.0)  # 10초 timeout
+                g_client = Groq(api_key=key, timeout=10.0)
                 resp = g_client.chat.completions.create(
                     model=model,
                     messages=[{"role": "user", "content": prompt}],
-                    max_tokens=max_tokens,  # 채팅 응답을 위한 충분한 토큰 수
+                    max_tokens=max_tokens,
                     temperature=0.7,
                 )
                 if _telemetry_enabled():
@@ -342,9 +345,19 @@ def run_llm(prompt: str, max_tokens: int = 2000) -> str:
                     })
                 return resp.choices[0].message.content
 
+            elif provider == "openai" and OpenAI:
+                o_client = OpenAI(api_key=key, timeout=10.0)
+                resp = o_client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=max_tokens,
+                    temperature=0.7,
+                )
+                return resp.choices[0].message.content
+
         except Exception as e:
+            last_error_msg = str(e)
             if _telemetry_enabled():
-                # 실패도 기록: Fallback 때문에 느려지는 경우 추적 가능
                 stage = st.session_state.get("sim_stage")
                 last_customer_idx, last_agent_idx = _infer_last_turn_indices()
                 _append_llm_event({
@@ -364,12 +377,12 @@ def run_llm(prompt: str, max_tokens: int = 2000) -> str:
                     "feature_id": st.session_state.get("feature_selection_id"),
                     "error": str(e)[:300],
                 })
-            # 해당 API가 실패하면 다음 API로 넘어갑니다.
             print(f"LLM {provider} ({model}) failed: {e}")
             continue
 
-    # 모든 시도가 실패했을 때
-    return "❌ 모든 LLM API 키가 작동하지 않거나 할당량이 소진되었습니다."
+    if "ResourceExhausted" in last_error_msg or "429" in last_error_msg:
+        return "⚠️ Gemini API 무료 할당량(RPM/TPM)이 일시적으로 초과되었습니다. 잠시 후(약 10~30초 뒤) 다시 시도해 주세요."
+    return f"❌ 모든 LLM API 호출에 실패했습니다. (오류: {last_error_msg[:100] if last_error_msg else 'API 키를 확인해주세요'})"
 
 
 def init_openai_audio_client():
@@ -380,33 +393,5 @@ def init_openai_audio_client():
     try:
         genai.configure(api_key=key)
         return genai
-    except:
+    except Exception:
         return None
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

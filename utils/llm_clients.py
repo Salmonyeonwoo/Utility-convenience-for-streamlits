@@ -5,8 +5,14 @@ API 키 관리, LLM 클라이언트 초기화, LLM 실행 등을 포함합니다
 import os
 import hashlib
 import streamlit as st
-from openai import OpenAI
-from anthropic import Anthropic
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
+try:
+    from anthropic import Anthropic
+except ImportError:
+    Anthropic = None
 
 # google.generativeai는 지연 로딩 (필요할 때만 import)
 GENAI_AVAILABLE = False
@@ -85,7 +91,7 @@ def get_api_key(api: str) -> str:
 
 def get_llm_client():
     """선택된 모델에 맞는 클라이언트 + 모델코드 반환"""
-    model_key = st.session_state.get("selected_llm", "openai_gpt4")
+    model_key = st.session_state.get("selected_llm", "gemini_flash")
 
     # --- OpenAI ---
     if model_key.startswith("openai"):
@@ -108,7 +114,7 @@ def get_llm_client():
             return None, None
         try:
             genai.configure(api_key=key)
-            model_name = "gemini-2.5-pro" if model_key == "gemini_pro" else "gemini-2.5-flash"
+            model_name = "gemini-1.5-pro" if model_key == "gemini_pro" else ("gemini-2.0-flash" if "2_0" in model_key or "2.0" in model_key else "gemini-1.5-flash")
             return genai, ("gemini", model_name)
         except Exception:
             return None, None
@@ -171,7 +177,7 @@ def run_llm(prompt: str, max_tokens: int = 2000) -> str:
     # 1. Gemini
     gemini_key = get_api_key("gemini")
     if gemini_key and _ensure_genai():
-        llm_attempts.append(("gemini", gemini_key, "gemini-2.5-pro" if "pro" in str(model_name) else "gemini-2.5-flash"))
+        llm_attempts.append(("gemini", gemini_key, "gemini-1.5-pro" if "pro" in str(model_name) else ("gemini-2.0-flash" if "2.0" in str(model_name) or "2_0" in str(model_name) else "gemini-1.5-flash")))
 
     # 2. OpenAI
     openai_key = get_api_key("openai")

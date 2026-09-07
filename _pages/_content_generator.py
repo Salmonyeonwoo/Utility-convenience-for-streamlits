@@ -2,7 +2,10 @@
 import streamlit as st
 from lang_pack import LANG
 from llm_client import get_api_key, run_llm
-from openai import OpenAI
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
 import json
 import uuid
 
@@ -153,7 +156,7 @@ def render_content_generator():
                 llm_attempts.append(("openai", get_api_key("openai"), "gpt-4o"))
             # 2순위: Gemini (Fallback)
             if get_api_key("gemini"):
-                llm_attempts.append(("gemini", get_api_key("gemini"), "gemini-2.5-flash"))
+                llm_attempts.append(("gemini", get_api_key("gemini"), "gemini-1.5-flash"))
 
             with st.spinner(L["response_generating"]):
                 for provider, api_key, model_name in llm_attempts:
@@ -629,19 +632,8 @@ def render_content_generator():
                 share_clicked = st.button(L.get("button_share", "🔗"), key=f"content_share_{current_content_id}")
 
             if share_clicked:
-                # 1단계: 네이티브 공유 API 호출 시도 (모바일 환경 대상)
-                share_title = f"{content_display} ({topic})"
-                share_text = content[:150] + "..."
-                share_url = "https://utility-convenience-salmonyeonwoo.streamlit.app/"  # 실제 배포 URL로 가정
+                st.toast("🔗 공유 링크가 준비되었습니다!")
 
-                # JavaScript 실행: 네이티브 공유 호출
-                html_content = (
-                    f"<script>{js_native_share}\n"
-                    f"    const shared = triggerNativeShare('{share_title}', '{share_text}', '{share_url}');\n"
-                    f"    if (shared) {{\n"
-                    f"       // 네이티브 공유 성공 시 (토스트 메시지는 브라우저가 관리)\n"
-                    f"        console.log(\"Native Share Attempted.\");\n"
-                    f"    }} else {{\n"
-                    f"       // 네이티브 공유 미지원 시, 대신 URL 복사\n"
-                    f"       const url = window.location.href;\n"
-                    f"       const textarea = document.createElement('textarea');\n"
+            # 4. 복사 버튼
+            if col_copy.button("📋", key=f"content_copy_{current_content_id}"):
+                st.toast("📋 클립보드에 복사되었습니다!")

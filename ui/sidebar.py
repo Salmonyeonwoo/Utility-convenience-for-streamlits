@@ -107,6 +107,35 @@ def render_sidebar():
         
         st.divider()
         
+        # LLM 모델 선택
+        st.subheader("🤖 AI 모델 선택")
+        llm_model_choices = {
+            "gemini_flash": "⚡ Gemini 1.5 Flash (권장 · 빠름)",
+            "gemini_pro": "🧠 Gemini 1.5 Pro (정밀 분석)",
+            "gemini_2_0": "🚀 Gemini 2.0 Flash (차세대)",
+            "claude": "Anthropic Claude 3.5 Sonnet",
+            "groq": "Groq (Llama 3 70B)",
+        }
+        current_llm = st.session_state.get("selected_llm", "gemini_flash")
+        if current_llm not in llm_model_choices:
+            current_llm = "gemini_flash"
+            st.session_state.selected_llm = "gemini_flash"
+
+        def _on_llm_change():
+            st.session_state.selected_llm = st.session_state.get("sidebar_selected_llm", "gemini_flash")
+
+        st.selectbox(
+            "활성 AI 모델",
+            list(llm_model_choices.keys()),
+            index=list(llm_model_choices.keys()).index(current_llm),
+            format_func=lambda k: llm_model_choices.get(k, k),
+            key="sidebar_selected_llm",
+            on_change=_on_llm_change,
+            label_visibility="collapsed",
+        )
+
+        st.divider()
+
         # API Key 상태 표시
         st.subheader("🔑 API Key 상태")
         if get_api_key:

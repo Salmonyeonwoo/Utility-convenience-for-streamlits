@@ -33,7 +33,7 @@ def render_wait_customer_closing_response(L, current_lang):
     # 고객 응답 확인
     last_customer_message = None
     for msg in reversed(st.session_state.simulator_messages):
-        if msg.get("role") == "customer_rebuttal"):
+        if msg.get("role") == "customer_rebuttal":
             last_customer_message = msg.get("content", "")
             break
         elif msg.get("role") == "customer" and is_email_closing:
@@ -115,7 +115,7 @@ def _add_agent_closing_if_needed(L, current_lang):
     """에이전트 감사 인사 추가 (필요한 경우)"""
     agent_closing_added = False
     for msg in reversed(st.session_state.simulator_messages):
-        if msg.get("role") == "agent_response"):
+        if msg.get("role") == "agent_response":
             agent_msg_content = msg.get("content", "")
             if "감사" in agent_msg_content or "Thank you" in agent_msg_content or "ありがとう" in agent_msg_content:
                 agent_closing_added = True
