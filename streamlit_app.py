@@ -18,6 +18,15 @@
 
 import streamlit as st
 import os
+try:
+    from dotenv import load_dotenv
+    _env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    if os.path.exists(_env_file):
+        load_dotenv(_env_file, override=True)
+    else:
+        load_dotenv(override=True)
+except ImportError:
+    pass
 from streamlit_app_imports import (
     CHAT_SIMULATOR_AVAILABLE, COMPANY_INFO_AVAILABLE, PHONE_SIMULATOR_AVAILABLE,
     RAG_AVAILABLE, CONTENT_AVAILABLE, SIDEBAR_AVAILABLE,

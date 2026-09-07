@@ -18,6 +18,15 @@ LLM 클라이언트 모듈
 """
 
 import os
+try:
+    from dotenv import load_dotenv
+    _base_env = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    if os.path.exists(_base_env):
+        load_dotenv(_base_env, override=True)
+    else:
+        load_dotenv(override=True)
+except ImportError:
+    pass
 import streamlit as st
 import time
 from typing import Optional
@@ -129,11 +138,11 @@ def get_llm_client():
         try:
             genai.configure(api_key=key)
             if model_key == "gemini_pro":
-                model_name = "gemini-1.5-pro"
-            elif model_key in ("gemini_2_0", "gemini_flash_2_0", "gemini-2.0-flash"):
-                model_name = "gemini-2.0-flash"
+                model_name = "gemini-2.5-pro"
+            elif model_key in ("gemini_2_0", "gemini_flash_2_0", "gemini-flash-latest"):
+                model_name = "gemini-flash-latest"
             else:
-                model_name = "gemini-1.5-flash"
+                model_name = "gemini-2.5-flash"
             return genai, ("gemini", model_name)
         except Exception:
             return None, None
@@ -191,7 +200,7 @@ def get_llm_client():
     if gemini_key:
         try:
             genai.configure(api_key=gemini_key)
-            return genai, ("gemini", "gemini-1.5-flash")
+            return genai, ("gemini", "gemini-2.5-flash")
         except Exception:
             pass
 
@@ -216,11 +225,11 @@ def run_llm(prompt: str, max_tokens: int = 2000) -> str:
     gemini_key = get_api_key("gemini")
     if gemini_key:
         if model_name and "pro" in str(model_name):
-            g_model = "gemini-1.5-pro"
+            g_model = "gemini-2.5-pro"
         elif model_name and ("2.0" in str(model_name) or "2_0" in str(model_name)):
-            g_model = "gemini-2.0-flash"
+            g_model = "gemini-flash-latest"
         else:
-            g_model = "gemini-1.5-flash"
+            g_model = "gemini-2.5-flash"
         llm_attempts.append(("gemini", gemini_key, g_model))
 
     # 2. Claude
@@ -258,7 +267,7 @@ def run_llm(prompt: str, max_tokens: int = 2000) -> str:
             t0 = time.perf_counter()
             if provider == "gemini":
                 genai.configure(api_key=key)
-                effective_model = model.replace("gemini-2.5", "gemini-1.5")
+                effective_model = model.replace("gemini-1.5", "gemini-2.5")
                 gen_model = genai.GenerativeModel(effective_model)
                 generation_config = {
                     "max_output_tokens": max_tokens,
@@ -380,6 +389,8 @@ def run_llm(prompt: str, max_tokens: int = 2000) -> str:
             print(f"LLM {provider} ({model}) failed: {e}")
             continue
 
+    if "prepayment credits are depleted" in last_error_msg.lower() or ("429" in last_error_msg and "depleted" in last_error_msg.lower()):
+        return "⚠️ [Gemini API 오류] 등록된 API 키의 사전 결제 크레딧이 소진되었습니다(429 Prepayment credits depleted). Google AI Studio(https://aistudio.google.com)에서 무료 티어 프로젝트의 새 API 키를 생성하시거나 크레딧을 충전해 주세요."
     if "ResourceExhausted" in last_error_msg or "429" in last_error_msg:
         return "⚠️ Gemini API 무료 할당량(RPM/TPM)이 일시적으로 초과되었습니다. 잠시 후(약 10~30초 뒤) 다시 시도해 주세요."
     return f"❌ 모든 LLM API 호출에 실패했습니다. (오류: {last_error_msg[:100] if last_error_msg else 'API 키를 확인해주세요'})"

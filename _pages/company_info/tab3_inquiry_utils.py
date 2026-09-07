@@ -104,7 +104,7 @@ def _extract_image_text(uploaded_file, file_type: str, current_lang: str, L: dic
         gemini_key = get_api_key("gemini")
         if gemini_key:
             genai.configure(api_key=gemini_key)
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             response = model.generate_content([
                 {"mime_type": file_type, "data": image_bytes},
                 ocr_prompt

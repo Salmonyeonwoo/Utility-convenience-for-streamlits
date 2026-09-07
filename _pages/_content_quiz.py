@@ -64,7 +64,7 @@ def generate_quiz(topic, level, lang_instruction, L):
         llm_attempts.append(("openai", get_api_key("openai"), "gpt-4o"))
     # 2순위: Gemini (Fallback)
     if get_api_key("gemini"):
-        llm_attempts.append(("gemini", get_api_key("gemini"), "gemini-1.5-flash"))
+        llm_attempts.append(("gemini", get_api_key("gemini"), "gemini-2.5-flash"))
 
     with st.spinner(L.get("response_generating", "생성 중...")):
         for provider, api_key, model_name in llm_attempts:

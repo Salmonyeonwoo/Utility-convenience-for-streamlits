@@ -18,6 +18,15 @@
 """
 
 import os
+try:
+    from dotenv import load_dotenv
+    _env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    if os.path.exists(_env_file):
+        load_dotenv(_env_file, override=True)
+    else:
+        load_dotenv(override=True)
+except ImportError:
+    pass
 
 # ⭐ OpenMP 라이브러리 충돌 해결
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'

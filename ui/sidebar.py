@@ -110,9 +110,9 @@ def render_sidebar():
         # LLM 모델 선택
         st.subheader("🤖 AI 모델 선택")
         llm_model_choices = {
-            "gemini_flash": "⚡ Gemini 1.5 Flash (권장 · 빠름)",
-            "gemini_pro": "🧠 Gemini 1.5 Pro (정밀 분석)",
-            "gemini_2_0": "🚀 Gemini 2.0 Flash (차세대)",
+            "gemini_flash": "⚡ Gemini 2.5 Flash (권장 · 빠름)",
+            "gemini_pro": "🧠 Gemini 2.5 Pro (정밀 분석)",
+            "gemini_flash_latest": "🚀 Gemini Flash Latest",
             "claude": "Anthropic Claude 3.5 Sonnet",
             "groq": "Groq (Llama 3 70B)",
         }

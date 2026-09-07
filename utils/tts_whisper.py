@@ -87,7 +87,7 @@ def transcribe_audio(audio_bytes, filename="audio.wav"):
         try:
             import google.generativeai as genai
             genai.configure(api_key=get_api_key("gemini"))
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel("gemini-2.5-flash")
             text = model.generate_content("Transcribe this audio:").text
             return text or ""
         except (ImportError, Exception) as e:

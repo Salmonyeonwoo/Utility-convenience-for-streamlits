@@ -339,7 +339,7 @@ import os
                                 if gemini_key:
                                     import google.generativeai as genai
                                     genai.configure(api_key=gemini_key)
-                                    model = genai.GenerativeModel('gemini-1.5-flash')
+                                    model = genai.GenerativeModel('gemini-2.5-flash')
                                     
                                     # 검증 정보 추출을 위한 특화 프롬프트
                                     ocr_verification_prompt = """이 이미지는 고객 검증을 위한 스크린샷입니다. 다음 정보를 추출해주세요:

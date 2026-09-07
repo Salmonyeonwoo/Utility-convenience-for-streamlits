@@ -87,7 +87,7 @@ def translate_text_with_llm_chunk(text_content: str, target_lang_code: str, sour
 
     llm_attempts = [
         ("openai", get_api_key("openai"), "gpt-4o"),
-        ("gemini", get_api_key("gemini"), "gemini-1.5-flash"),
+        ("gemini", get_api_key("gemini"), "gemini-2.5-flash"),
         ("claude", get_api_key("claude"), "claude-3-5-sonnet-latest"),
     ]
 

@@ -104,7 +104,7 @@ def transcribe_bytes_with_whisper(audio_bytes: bytes, mime_type: str = "audio/we
         try:
             import base64
             genai.configure(api_key=gemini_key)
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel("gemini-2.5-flash")
             
             lang_prompt = ""
             if lang_code:
@@ -167,7 +167,7 @@ def transcribe_audio(audio_bytes, filename="audio.wav"):
     if GENAI_AVAILABLE and genai is not None:
         try:
             genai.configure(api_key=get_api_key("gemini"))
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel("gemini-2.5-flash")
             text = model.generate_content("Transcribe this audio:").text
             return text or ""
         except Exception as e:
