@@ -1,3 +1,4 @@
+from simulation_handler import generate_ai_guideline, generate_agent_response_draft
 # ========================================
 # _pages/_chat_customer_message.py
 # 채팅 시뮬레이터 - 고객 메시지 렌더링 및 버튼 처리
@@ -236,24 +237,16 @@ def _handle_guideline_button(L, idx, content, current_lang):
         _clear_supervisor_messages(L)
         
         with st.spinner(L.get("generating_guideline", "AI 응대 가이드라인 생성 중...")):
-            initial_query = st.session_state.get('customer_query_text_area', content)
-            customer_type_display = st.session_state.get("customer_type_sim_select", "")
+            target_query = content if (content and content.strip()) else st.session_state.get('customer_query_text_area', '')
             session_lang = st.session_state.get("language", current_lang)
             if session_lang not in ["ko", "en", "ja"]:
                 session_lang = current_lang
 
-            guideline_text = _generate_initial_advice(
-                initial_query,
-                customer_type_display,
-                st.session_state.customer_email,
-                st.session_state.customer_phone,
-                session_lang,
-                st.session_state.customer_attachment_file
-            )
+            guideline_text = generate_ai_guideline(session_lang, target_query)
 
             st.session_state.simulator_messages.append({
                 "role": "supervisor",
-                "content": f"📋 **{L.get('guideline_label', 'AI 응대 가이드라인')}**:\n\n{guideline_text}"
+                "content": f"📋 **{L.get('guideline_label', 'AI 응대 가이드라인')}**:\n\n" + str(guideline_text)
             })
             st.session_state.sim_stage = "AGENT_TURN"
     else:
@@ -335,24 +328,15 @@ def _handle_draft_button(L, idx, content, current_lang):
         _clear_supervisor_messages(L)
 
         with st.spinner(L.get("generating_draft", "응대 초안 생성 중...")):
-            initial_query = st.session_state.get('customer_query_text_area', content)
-            customer_type_display = st.session_state.get("customer_type_sim_select", "")
             session_lang = st.session_state.get("language", "ko")
             if session_lang not in ["ko", "en", "ja"]:
                 session_lang = "ko"
 
-            draft_text = _generate_initial_advice(
-                initial_query,
-                customer_type_display,
-                st.session_state.customer_email,
-                st.session_state.customer_phone,
-                session_lang,
-                st.session_state.customer_attachment_file
-            )
+            draft_text = generate_agent_response_draft(session_lang)
 
             st.session_state.simulator_messages.append({
                 "role": "supervisor",
-                "content": f"✍️ **{L.get('draft_label', '응대 초안')}**:\n\n{draft_text}"
+                "content": f"✍️ **{L.get('draft_label', '응대 초안')}**:\n\n" + str(draft_text)
             })
     else:
         from llm_client import get_api_key

@@ -4,7 +4,7 @@
 # ========================================
 
 import streamlit as st
-from chat_modules.agent_input_js import render_draft_auto_fill_js, render_attachment_button_js
+from _pages.chat_modules.agent_input_js import render_draft_auto_fill_js, render_attachment_button_js
 
 
 def render_chat_input(L, current_lang):

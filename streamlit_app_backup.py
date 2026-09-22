@@ -6862,16 +6862,16 @@ elif feature_selection == L["sim_tab_phone"]:
                         st.session_state.hold_start_time = None
                     # ⭐ 재실행 불필요: Hold 해제 상태는 이미 반영됨, 다음 렌더링에서 자동 표시됨
                     # st.rerun()  # ⭐ Hold 해제 후 통화 기능 재활성화
-        else:
-            if st.button(L["button_hold"], key="hold_call_btn"):
-                st.session_state.is_on_hold = True
-                # ⭐ Hold 상태로 전환 시 대기 중인 고객 반응 초기화
-                st.session_state.process_customer_reaction = False
-                if "pending_agent_transcript" in st.session_state:
-                    del st.session_state.pending_agent_transcript
-                st.session_state.hold_start_time = datetime.now()
-                    # ⭐ 재실행 불필요: Hold 상태는 이미 반영됨, 다음 렌더링에서 자동 표시됨
-                    # st.rerun()  # ⭐ Hold 상태 즉시 반영
+            else:
+                if st.button(L["button_hold"], key="hold_call_btn"):
+                    st.session_state.is_on_hold = True
+                    # ⭐ Hold 상태로 전환 시 대기 중인 고객 반응 초기화
+                    st.session_state.process_customer_reaction = False
+                    if "pending_agent_transcript" in st.session_state:
+                        del st.session_state.pending_agent_transcript
+                    st.session_state.hold_start_time = datetime.now()
+                        # ⭐ 재실행 불필요: Hold 상태는 이미 반영됨, 다음 렌더링에서 자동 표시됨
+                        # st.rerun()  # ⭐ Hold 상태 즉시 반영
 
         # ------------------------------
         # Hold 표시

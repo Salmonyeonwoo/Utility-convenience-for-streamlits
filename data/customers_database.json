@@ -153,6 +153,26 @@
       "service_rating": 0.0,
       "evaluation_data": [],
       "sentiment_analysis": []
+    },
+    {
+      "customer_id": "CUST2289D84F",
+      "customer_name": "박지은",
+      "phone": "010-1234-5678",
+      "email": "jieunpark40@naver.com",
+      "identity_hash": "10527407b922aec6740011337b8be08d",
+      "account_created": "2026-09-22",
+      "last_login": "2026-09-22",
+      "last_consultation": "2026-09-22",
+      "consultation_history": [],
+      "personality": "일반",
+      "personality_summary": "",
+      "inquiry_summary": "",
+      "preferred_destination": "프랑스",
+      "travel_budget": "",
+      "survey_score": 0.0,
+      "service_rating": 0.0,
+      "evaluation_data": [],
+      "sentiment_analysis": []
     }
   ]
 }

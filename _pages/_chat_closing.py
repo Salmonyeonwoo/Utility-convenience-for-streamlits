@@ -9,6 +9,7 @@ from simulation_handler import generate_customer_closing_response
 from utils.history_handler import save_simulation_history_local
 import re
 import time
+from datetime import datetime
 
 
 def render_closing_stages(L, current_lang):
@@ -135,6 +136,12 @@ def render_wait_closing_confirmation(L, current_lang):
                 key=f"btn_email_end_chat_{st.session_state.sim_instance_id}",
                 use_container_width=True,
                 type="primary"):
+            if st.session_state.start_time is not None:
+                try:
+                    elapsed = (datetime.now() - st.session_state.start_time).total_seconds()
+                    st.session_state.actual_aht_seconds = max(10.0, round(elapsed, 1))
+                except Exception:
+                    pass
             st.session_state.start_time = None
 
             end_msg = L.get("prompt_survey", "설문 조사 링크를 전송했습니다.")
@@ -313,6 +320,12 @@ def _render_survey_button(L, customer_type_display, button_key):
         )
 
         if end_chat_button:
+            if st.session_state.start_time is not None:
+                try:
+                    elapsed = (datetime.now() - st.session_state.start_time).total_seconds()
+                    st.session_state.actual_aht_seconds = max(10.0, round(elapsed, 1))
+                except Exception:
+                    pass
             st.session_state.start_time = None
 
             end_msg = L["prompt_survey"]
@@ -352,6 +365,12 @@ def render_final_closing_action(L, current_lang):
         )
 
         if end_chat_button:
+            if st.session_state.start_time is not None:
+                try:
+                    elapsed = (datetime.now() - st.session_state.start_time).total_seconds()
+                    st.session_state.actual_aht_seconds = max(10.0, round(elapsed, 1))
+                except Exception:
+                    pass
             st.session_state.start_time = None
 
             end_msg = L["prompt_survey"]

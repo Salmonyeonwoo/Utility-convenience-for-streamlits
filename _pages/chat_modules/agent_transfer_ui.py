@@ -5,7 +5,7 @@
 
 import streamlit as st
 from lang_pack import LANG
-from chat_modules.language_transfer import handle_language_transfer
+from _pages.chat_modules.language_transfer import handle_language_transfer
 
 
 def render_transfer_ui(L, current_lang):

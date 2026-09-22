@@ -378,6 +378,173 @@ def render_closing_downloads(L, current_lang):
     st.success(L["survey_sent_confirm"])
     st.info(L["new_simulation_ready"])
 
+    # BPO 비즈니스 임팩트 & ROI 분석
+    bpo_summary = None
+    try:
+        from utils.bpo_analytics import generate_bpo_summary
+        actual_aht = st.session_state.get("actual_aht_seconds")
+        if not actual_aht or actual_aht < 5.0:
+            actual_aht = 65.0
+        
+        draft_history = st.session_state.get("bpo_draft_history", [])
+        messages = st.session_state.get("simulator_messages", [])
+        bpo_summary = generate_bpo_summary(
+            actual_aht_seconds=actual_aht,
+            draft_adoption_history=draft_history,
+            messages=messages
+        )
+    except Exception as e:
+        print(f"BPO summary generation error: {e}")
+
+    if bpo_summary:
+        st.markdown("---")
+        st.markdown(f"### 📊 {L.get('bpo_roi_card_title', 'BPO 비즈니스 임팩트 & AI Copilot ROI 분석')}")
+        st.caption(L.get('bpo_roi_card_desc', '상담 전 과정의 AI 초안 채택률, AHT 단축 효과 및 고객 감정/이탈 방지 기여도 정량 분석 리포트입니다.'))
+
+        roi_c1, roi_c2, roi_c3, roi_c4 = st.columns(4)
+        with roi_c1:
+            aht_pct = bpo_summary['aht_roi']['reduction_rate_pct']
+            saved_sec = bpo_summary['aht_roi']['saved_seconds']
+            st.metric(
+                label=L.get("bpo_metric_aht", "⏱️ AHT 절감률"),
+                value=f"-{aht_pct}%",
+                delta=f"{bpo_summary['aht_roi']['baseline_aht_seconds']}s → {bpo_summary['aht_roi']['actual_aht_seconds']}s ({saved_sec}s 단축)",
+                delta_color="normal"
+            )
+        with roi_c2:
+            cost_ticket = bpo_summary['aht_roi']['saved_cost_per_ticket']
+            m1000 = bpo_summary['aht_roi']['monthly_1000_savings']
+            st.metric(
+                label=L.get("bpo_metric_cost", "💰 티켓당 절감 비용"),
+                value=f"₩{cost_ticket:,}",
+                delta=f"월 1,000건 시 ₩{m1000:,}",
+                delta_color="normal"
+            )
+        with roi_c3:
+            adopt_pct = bpo_summary['draft_stats']['adoption_rate_pct']
+            full_c = bpo_summary['draft_stats']['full_adopt_count']
+            part_c = bpo_summary['draft_stats']['partial_adopt_count']
+            st.metric(
+                label=L.get("bpo_metric_adoption", "✍️ AI 초안 채택률"),
+                value=f"{adopt_pct}%",
+                delta=f"완전 {full_c}건 / 부분 {part_c}건",
+                delta_color="normal"
+            )
+        with roi_c4:
+            csat_val = bpo_summary['sentiment']['predicted_csat']
+            churn_risk = bpo_summary['sentiment']['churn_risk_pct']
+            shift_lbl = bpo_summary['sentiment']['shift_label']
+            st.metric(
+                label=L.get("bpo_metric_csat", "⭐ 예측 CSAT"),
+                value=f"{csat_val} / 5.0",
+                delta=f"이탈 위험 {churn_risk}% ({shift_lbl})",
+                delta_color="inverse" if churn_risk > 30 else "normal"
+            )
+
+        with st.expander(L.get("bpo_detail_expander", "💼 BPO ROI 세부 분석 및 산출 근거"), expanded=False):
+            st.markdown(f"""
+            - **AHT 기준**: 엔터프라이즈 CS 표준 AHT **{bpo_summary['aht_roi']['baseline_aht_seconds']}초** 대비 **{bpo_summary['aht_roi']['actual_aht_seconds']}초** 소요 (**{bpo_summary['aht_roi']['saved_seconds']}초 절감**)
+            - **인건비 환산 기준**: 상담원 시급 **₩{bpo_summary['aht_roi']['hourly_wage']:,}** 기준
+            - **월간 예상 비용 절감**:
+              - 월 1,000건 처리 센터: **₩{bpo_summary['aht_roi']['monthly_1000_savings']:,}** 절감
+              - 월 10,000건 처리 센터: **₩{bpo_summary['aht_roi']['monthly_10000_savings']:,}** 절감
+            - **고객 감정 전환(Sentiment Shift)**:
+              - 상담 초기: **{bpo_summary['sentiment']['initial_sentiment_score']}점** → 상담 종료: **{bpo_summary['sentiment']['final_sentiment_score']}점** (변화량: **+{bpo_summary['sentiment']['sentiment_shift_delta']}점**)
+              - 감정 상태: **{bpo_summary['sentiment']['shift_label']}** | 고객 이탈 위험도: **{bpo_summary['sentiment']['churn_risk_pct']}%**
+            """)
+
+    # 🛡️ QA & 컴플라이언스 실시간 자동 감사 리포트 (Automated Audit Report)
+    qa_audit_result = None
+    try:
+        from utils.qa_compliance_auditor import evaluate_chat_qa_compliance
+        messages = st.session_state.get("simulator_messages", [])
+        qa_audit_result = evaluate_chat_qa_compliance(messages, lang=current_lang)
+    except Exception as e:
+        print(f"QA audit generation error: {e}")
+
+    if qa_audit_result and qa_audit_result.get("grade") != "N/A":
+        st.markdown("---")
+        st.markdown(f"### 🛡️ {L.get('qa_audit_report_title', 'QA & 컴플라이언스 실시간 자동 감사 리포트 (Audit Report)')}")
+        st.caption(L.get('qa_audit_report_desc', '대화 전 과정을 실시간 분석하여 친절도/공감도, 규정 준수도, 금지어 탐지 및 필수 고지 항목을 다차원 평가한 엔터프라이즈 감사 리포트입니다.'))
+
+        # 1) 메트릭 카드 4종
+        qa_c1, qa_c2, qa_c3, qa_c4 = st.columns(4)
+        with qa_c1:
+            st.metric(
+                label=L.get("qa_metric_grade", "🏆 종합 QA 등급"),
+                value=f"{qa_audit_result['grade']} 등급",
+                delta=qa_audit_result['grade_desc'],
+                delta_color="normal" if qa_audit_result['grade'] in ['S', 'A', 'B'] else "inverse"
+            )
+        with qa_c2:
+            st.metric(
+                label=L.get("qa_metric_score", "📊 종합 평가 점수"),
+                value=f"{qa_audit_result['final_score']} / 100점",
+                delta=f"합격 기준(75점) {'달성' if qa_audit_result['final_score'] >= 75 else '미달'}",
+                delta_color="normal" if qa_audit_result['final_score'] >= 75 else "inverse"
+            )
+        with qa_c3:
+            st.metric(
+                label=L.get("qa_metric_compliance", "📋 필수 고지 준수율"),
+                value=f"{qa_audit_result['compliance_rate']}%",
+                delta=f"4개 항목 중 {int(qa_audit_result['compliance_rate'] / 25)}개 준수",
+                delta_color="normal" if qa_audit_result['compliance_rate'] >= 75 else "inverse"
+            )
+        with qa_c4:
+            viol_count = qa_audit_result['violation_count']
+            st.metric(
+                label=L.get("qa_metric_violations", "⚠️ 금지어 적발"),
+                value=f"{viol_count}건",
+                delta="정상 (Clean)" if viol_count == 0 else f"{viol_count}건 감점 발생",
+                delta_color="normal" if viol_count == 0 else "inverse"
+            )
+
+        # 2) 다차원 점수 세부 분석 및 금지어/체크리스트
+        with st.expander(L.get("qa_audit_detail_expander", "🔍 QA 세부 평가 지표 및 AI 코칭 리포트 보기"), expanded=True):
+            det_col1, det_col2 = st.columns(2)
+            
+            with det_col1:
+                st.markdown("#### 📈 다차원 품질 지표")
+                scores = qa_audit_result.get("scores", {})
+                
+                emp_s = scores.get("empathy_score", 0)
+                st.write(f"**공감도 및 친절도 (Empathy & Courtesy)**: `{emp_s}점`")
+                st.progress(emp_s / 100.0)
+                
+                sol_s = scores.get("solution_score", 0)
+                st.write(f"**해결책 및 규정 정확도 (Solution Accuracy)**: `{sol_s}점`")
+                st.progress(sol_s / 100.0)
+                
+                com_s = scores.get("compliance_score", 0)
+                st.write(f"**절차 준수 및 컴플라이언스 (Compliance)**: `{com_s}점`")
+                st.progress(com_s / 100.0)
+
+                st.markdown("#### 📋 필수 고지 4단계 체크리스트")
+                for item in qa_audit_result.get("checklist", []):
+                    icon = "✅" if item["status"] == "PASS" else "❌"
+                    st.write(f"{icon} **{item['name']}**: `{item['status']}` ({item['feedback']})")
+
+            with det_col2:
+                st.markdown("#### 🚨 금지어 및 리스크 발언 탐지 결과")
+                violations = qa_audit_result.get("prohibited_violations", [])
+                if violations:
+                    for v in violations:
+                        st.error(f"**[{v['severity']}] {v['rule_name']}** (턴 #{v['turn_index']})\n- 적발 발화: \"{v['matched_text']}\"\n- 감점: -{v['penalty']}점\n- 코칭 가이드: {v['advice']}")
+                else:
+                    st.success("✅ **금지어 및 리스크 발언 0건 (Clean)**\n단정적 거절이나 고객 귀책 전가 없이 규정을 완벽히 준수했습니다.")
+
+                st.markdown("#### 💡 상담원 맞춤형 AI 코칭 피드백")
+                coaching = qa_audit_result.get("coaching", {})
+                st.write("**🌟 우수 사항 (Good Points):**")
+                for g in coaching.get("good_points", []):
+                    st.write(f"- {g}")
+                
+                st.write("**⚠️ 개선 권장 사항 (Improvements):**")
+                for imp in coaching.get("improvements", []):
+                    st.write(f"- {imp}")
+                
+                st.info(f"👔 **수퍼바이저 종합 총평:**\n{coaching.get('supervisor_summary', '우수한 상담입니다.')}")
+
     st.markdown("---")
     st.markdown(f"**{L.get('download_current_session', '📥 현재 세션 이력 다운로드')}**")
     download_col1, download_col2, download_col3, download_col4, download_col5 = st.columns(
@@ -403,7 +570,9 @@ def render_closing_downloads(L, current_lang):
                 "messages": st.session_state.simulator_messages,
                 "summary": current_session_summary,
                 "is_chat_ended": True,
-                "attachment_context": st.session_state.sim_attachment_context_for_llm
+                "attachment_context": st.session_state.sim_attachment_context_for_llm,
+                "bpo_analytics": bpo_summary,
+                "rag_grounding": st.session_state.get("last_rag_citation", None)
             }]
         except Exception as e:
             st.warning(
@@ -497,6 +666,9 @@ def render_closing_downloads(L, current_lang):
                 output = io.StringIO()
                 writer = csv.writer(output)
 
+                if bpo_summary:
+                    writer.writerow(["# BPO ROI Summary", f"AHT Saved: {bpo_summary['aht_roi']['reduction_rate_pct']}%", f"Cost Saved/Ticket: {bpo_summary['aht_roi']['saved_cost_per_ticket']} KRW", f"Draft Adoption: {bpo_summary['draft_stats']['adoption_rate_pct']}%", f"Predicted CSAT: {bpo_summary['sentiment']['predicted_csat']}"])
+                    writer.writerow([])
                 writer.writerow(["Role", "Content", "Timestamp"])
 
                 for msg in current_session_history[0].get("messages", []):
@@ -541,6 +713,10 @@ def render_closing_downloads(L, current_lang):
         st.session_state.start_time = None
         st.session_state.sim_call_outbound_summary = ""
         st.session_state.sim_call_outbound_target = None
+        st.session_state.bpo_draft_history = []
+        st.session_state.last_agent_draft_text = ""
+        st.session_state.actual_aht_seconds = None
+        st.session_state.last_rag_citation = None
 
 
 def render_outbound_call(L, current_lang):

@@ -16,6 +16,18 @@ def handle_agent_message_send(agent_response, L):
     # AHT 타이머 시작
     if st.session_state.start_time is None and len(st.session_state.simulator_messages) >= 1:
         st.session_state.start_time = datetime.now()
+
+    # BPO AI 초안 채택률 및 유사도 추적
+    draft_text = st.session_state.get("last_agent_draft_text", "") or st.session_state.get("auto_generated_draft_text", "")
+    if draft_text:
+        try:
+            from utils.bpo_analytics import calculate_draft_adoption
+            adoption_stat = calculate_draft_adoption(draft_text, agent_response)
+            if "bpo_draft_history" not in st.session_state:
+                st.session_state.bpo_draft_history = []
+            st.session_state.bpo_draft_history.append(adoption_stat)
+        except Exception as e:
+            print(f"BPO draft tracking error: {e}")
     
     # 에이전트 첨부 파일 처리
     final_response_content = agent_response
@@ -146,5 +158,6 @@ def _reset_input_state():
     st.session_state.reset_agent_response_area = True
     st.session_state.auto_draft_generated = False
     st.session_state.auto_generated_draft_text = ""
+    st.session_state.last_agent_draft_text = ""
     st.session_state.auto_draft_auto_sent = False
 

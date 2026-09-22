@@ -6,7 +6,7 @@
 import streamlit as st
 from lang_pack import LANG
 import os
-
+from utils.customer_list_extractor import is_valid_customer_name
 
 def render_customer_list_display(L, current_lang):
     """고객 목록 표시"""
@@ -15,32 +15,26 @@ def render_customer_list_display(L, current_lang):
         from utils.history_handler import load_simulation_histories_local
         from utils.customer_list_extractor import extract_customers_from_histories
         
-        # 데이터 디렉토리 경로 설정
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         data_dirs = [
             os.path.join(base_dir, "data"),
+            os.path.join(base_dir, "data", "customers"),
             r"C:\Users\Admin\Downloads\Updated_streamlit_app_files\data",
+            r"C:\Users\Admin\Downloads\Updated_streamlit_app_files\data\customers",
             r"C:\Users\Admin\Downloads\Updated_streamlit_app_files\customer data histories via streamlits",
         ]
         
-        # 실제 존재하는 디렉토리만 필터링
         existing_dirs = [d for d in data_dirs if os.path.exists(d)]
-        
-        # 데이터 디렉토리에서 고객 정보 추출
         customers_from_files = extract_customers_from_data_directories(existing_dirs)
         
-        # 시뮬레이션 이력에서도 고객 정보 추출
         histories = load_simulation_histories_local(current_lang)
         customers_from_histories = extract_customers_from_histories(histories)
         
-        # 고객 정보 병합
         all_customers_dict = _merge_customer_sources(customers_from_files, customers_from_histories)
         
-        # 고객 목록을 리스트로 변환하고 정렬
         all_customers_list = list(all_customers_dict.values())
         all_customers_list.sort(key=lambda x: x.get('last_consultation_date', ''), reverse=True)
         
-        # 고객 목록 표시
         _display_customer_list(L, all_customers_list)
     except ImportError as e:
         st.info(f"{L.get('cannot_load_customer_extractor', '고객 목록 추출 모듈을 불러올 수 없습니다')}: {e}")
@@ -49,50 +43,60 @@ def render_customer_list_display(L, current_lang):
 
 
 def _merge_customer_sources(customers_from_files, customers_from_histories):
-    """여러 소스의 고객 정보 병합"""
+    """여러 소스의 고객 정보 병합 (CustomerDataManager 연동 포함)"""
     all_customers_dict = {}
     
+    # 1. 파일에서 추출한 고객들
     for customer in customers_from_files:
         name = customer.get('customer_name', '')
-        if name:
+        if name and is_valid_customer_name(name):
             if name not in all_customers_dict:
-                all_customers_dict[name] = customer
+                all_customers_dict[name] = customer.copy()
             else:
                 all_customers_dict[name]['consultation_count'] += customer.get('consultation_count', 0)
     
+    # 2. 시뮬레이션 이력에서 추출한 고객들
     for customer in customers_from_histories:
         name = customer.get('customer_name', '')
-        if name:
+        if name and is_valid_customer_name(name):
             if name not in all_customers_dict:
-                all_customers_dict[name] = customer
+                all_customers_dict[name] = customer.copy()
             else:
                 all_customers_dict[name]['consultation_count'] += customer.get('consultation_count', 0)
     
-    # 고객 데이터 관리자에서도 가져오기
+    # 3. CustomerDataManager (데이터베이스 파일)에서 가져오기
     try:
         if hasattr(st.session_state, 'customer_data_manager') and st.session_state.customer_data_manager:
             manager_customers = st.session_state.customer_data_manager.load_all_customers()
             for customer in manager_customers:
                 basic_info = customer.get("basic_info", {})
-                customer_name = basic_info.get("customer_name", "")
-                customer_id = basic_info.get("customer_id", "")
+                customer_name = customer.get("customer_name") or basic_info.get("customer_name", "")
+                customer_id = customer.get("customer_id") or basic_info.get("customer_id", "")
+                phone = customer.get("phone") or basic_info.get("phone", "")
+                email = customer.get("email") or basic_info.get("email", "")
+                personality = customer.get("personality") or basic_info.get("personality", "")
                 
-                if customer_name:
+                if customer_name and is_valid_customer_name(customer_name):
+                    consultation_history = customer.get("consultation_history") or customer.get("data", {}).get("consultation_history", [])
+                    c_count = len(consultation_history) if consultation_history else 1
+                    
                     if customer_name not in all_customers_dict:
-                        consultation_history = customer.get("data", {}).get("consultation_history", [])
-                        consultation_count = len(consultation_history) if consultation_history else 1
-                        
                         all_customers_dict[customer_name] = {
                             'customer_name': customer_name,
                             'customer_id': customer_id,
-                            'consultation_count': consultation_count,
-                            'last_consultation_date': '',
+                            'phone': phone,
+                            'email': email,
+                            'personality': personality,
+                            'consultation_count': c_count,
+                            'last_consultation_date': customer.get('last_consultation', ''),
                             'customer_data': customer
                         }
                     else:
-                        consultation_history = customer.get("data", {}).get("consultation_history", [])
-                        if consultation_history:
-                            all_customers_dict[customer_name]['consultation_count'] += len(consultation_history)
+                        all_customers_dict[customer_name]['consultation_count'] += c_count
+                        if phone: all_customers_dict[customer_name]['phone'] = phone
+                        if email: all_customers_dict[customer_name]['email'] = email
+                        if personality: all_customers_dict[customer_name]['personality'] = personality
+                        all_customers_dict[customer_name]['customer_data'] = customer
     except Exception:
         pass
     
@@ -101,16 +105,14 @@ def _merge_customer_sources(customers_from_files, customers_from_histories):
 
 def _display_customer_list(L, all_customers_list):
     """고객 목록 화면에 표시"""
-    # 현재 선택된 고객 확인
     current_customer_name = None
     if st.session_state.get("customer_data"):
-        basic_info = st.session_state.customer_data.get("basic_info", {})
-        current_customer_name = basic_info.get("customer_name", "")
+        c_data = st.session_state.customer_data
+        current_customer_name = c_data.get('customer_name') or c_data.get('basic_info', {}).get('customer_name', '')
     if not current_customer_name:
         current_customer_name = st.session_state.get('customer_name', '')
     
     if all_customers_list:
-        # 고객 목록 스타일 추가
         st.markdown("""
         <style>
         .customer-badge {
@@ -125,17 +127,17 @@ def _display_customer_list(L, all_customers_list):
         </style>
         """, unsafe_allow_html=True)
         
-        for customer in all_customers_list[:20]:  # 최대 20명 표시
+        for customer in all_customers_list[:25]:
             customer_name = customer.get('customer_name', L.get('customer_label', '고객'))
-            consultation_count = customer.get('consultation_count', 0)
-            is_selected = current_customer_name == customer_name
+            consultation_count = customer.get('consultation_count', 1)
+            is_selected = (current_customer_name == customer_name)
             
-            # 고객 이름과 배지를 한 줄에 표시
             col_name, col_badge = st.columns([4, 1])
             
             with col_name:
+                btn_key = f"cust_list_btn_{customer_name}_{st.session_state.get('sim_instance_id', 'default')}"
                 if st.button(f"👤 {customer_name}", 
-                           key=f"customer_list_{customer_name}_{st.session_state.sim_instance_id}",
+                           key=btn_key,
                            use_container_width=True, 
                            type="primary" if is_selected else "secondary"):
                     _select_customer(customer_name, customer)
@@ -148,19 +150,20 @@ def _display_customer_list(L, all_customers_list):
 
 
 def _select_customer(customer_name, customer):
-    """고객 선택 처리"""
-    customer_data = customer.get('customer_data', {})
-    if customer_data:
-        st.session_state.customer_data = customer_data
-    else:
-        st.session_state.customer_data = {
-            "basic_info": {
-                "customer_name": customer_name,
-                "customer_id": customer.get('customer_id', '')
-            },
-            "data": {}
-        }
+    """고객 선택 처리 (실시간 호출 및 세션 연동)"""
+    customer_data = customer.get('customer_data') or {}
+    st.session_state.customer_data = customer_data
     st.session_state.customer_name = customer_name
-
-
-
+    
+    c_id = customer.get('customer_id') or customer_data.get('customer_id', '')
+    phone = customer.get('phone') or customer_data.get('phone') or customer_data.get('basic_info', {}).get('phone', '')
+    email = customer.get('email') or customer_data.get('email') or customer_data.get('basic_info', {}).get('email', '')
+    
+    st.session_state.customer_id = c_id
+    st.session_state.selected_customer_id = c_id
+    if phone:
+        st.session_state.customer_phone = phone
+    if email:
+        st.session_state.customer_email = email
+    
+    st.rerun()

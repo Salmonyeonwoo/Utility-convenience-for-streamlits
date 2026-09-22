@@ -14,6 +14,7 @@ import os
 
     # 4. 대화 로그 표시 (공통)
     # =========================
+def render_guideline_draft_customer(L=None, current_lang='ko'):
     
     # 피드백 저장 콜백 함수
     def save_feedback(index):
@@ -200,24 +201,16 @@ import os
                                 ]
                                 
                                 with st.spinner(L.get("generating_guideline", "AI 응대 가이드라인 생성 중...")):
-                                    # 초기 문의 가져오기
-                                    initial_query = st.session_state.get('customer_query_text_area', content)
-                                    customer_type_display = st.session_state.get("customer_type_sim_select", "")
+                                    # 대상 문의 가져오기 (현재 메시지 내용 우선)
+                                    target_query = content if (content and content.strip()) else st.session_state.get('customer_query_text_area', '')
                                     
-                                    # ⭐ 수정: 세션 언어 설정을 직접 전달
+                                    # 세션 언어 설정
                                     session_lang = st.session_state.get("language", "ko")
                                     if session_lang not in ["ko", "en", "ja"]:
                                         session_lang = "ko"
                                     
                                     # 응대 가이드라인 생성
-                                    guideline_text = _generate_initial_advice(
-                                        initial_query,
-                                        customer_type_display,
-                                        st.session_state.customer_email,
-                                        st.session_state.customer_phone,
-                                        session_lang,
-                                        st.session_state.customer_attachment_file
-                                    )
+                                    guideline_text = generate_ai_guideline(session_lang, target_query)
                                     
                                     # 가이드라인을 supervisor 메시지로 추가하여 표시
                                     st.session_state.simulator_messages.append({
@@ -331,29 +324,33 @@ import os
                                 ]
                                 
                                 with st.spinner(L.get("generating_draft", "응대 초안 생성 중...")):
-                                    # 초기 문의 가져오기
-                                    initial_query = st.session_state.get('customer_query_text_area', content)
-                                    customer_type_display = st.session_state.get("customer_type_sim_select", "")
-                                    
-                                    # ⭐ 수정: 세션 언어 설정을 직접 전달
+                                    # 세션 언어 설정
                                     session_lang = st.session_state.get("language", "ko")
                                     if session_lang not in ["ko", "en", "ja"]:
                                         session_lang = "ko"
                                     
-                                    # 응대 초안 생성 (가이드라인과 동일한 함수 사용)
-                                    draft_text = _generate_initial_advice(
-                                        initial_query,
-                                        customer_type_display,
-                                        st.session_state.customer_email,
-                                        st.session_state.customer_phone,
-                                        session_lang,
-                                        st.session_state.customer_attachment_file
-                                    )
+                                    # 응대 초안 생성 (대화 이력 기반 에이전트 초안 생성기 사용)
+                                    draft_text = generate_agent_response_draft(session_lang)
                                     
-                                    # 초안을 supervisor 메시지로 추가하여 표시
+                                    # 초안 및 RAG 출처 검증 카드 추가
+                                    citation_md = ""
+                                    try:
+                                        from utils.rag_knowledge_engine import retrieve_grounding_knowledge, format_citation_markdown
+                                        query_for_citation = content if (content and content.strip()) else st.session_state.get('customer_query_text_area', '')
+                                        citation = retrieve_grounding_knowledge(query_for_citation, session_lang)
+                                        if citation:
+                                            st.session_state.last_rag_citation = citation
+                                            citation_md = format_citation_markdown(citation, session_lang)
+                                    except Exception as e:
+                                        print(f"RAG citation for draft button error: {e}")
+
+                                    draft_msg_content = f"✍️ **{L.get('draft_label', '응대 초안')}**:\n\n{draft_text}"
+                                    if citation_md:
+                                        draft_msg_content += f"\n\n{citation_md.strip()}"
+
                                     st.session_state.simulator_messages.append({
                                         "role": "supervisor",
-                                        "content": f"✍️ **{L.get('draft_label', '응대 초안')}**:\n\n{draft_text}"
+                                        "content": draft_msg_content
                                     })
                             else:
                                 st.warning(L.get("simulation_no_key_warning", "LLM이 준비되지 않았습니다."))

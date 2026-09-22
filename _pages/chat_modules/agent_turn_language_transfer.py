@@ -1,153 +1,89 @@
 # ========================================
 # _pages/chat_modules/agent_turn_language_transfer.py
-# 에이전트 턴 - 언어 이관 처리
+# 에이전트 턴 - 언어 이관 처리 (영어/일본어/한국어 팀 즉시 전환)
 # ========================================
 
 import streamlit as st
 from lang_pack import LANG
-from simulation_handler import summarize_history_with_ai
-from utils.history_handler import save_simulation_history_local
 from utils.translation import translate_text_with_llm
-from llm_client import get_api_key
-import time
-import numpy as np
+from utils.history_handler import save_simulation_history_local
 
 def render_language_transfer(L, current_lang):
-    """언어 이관 버튼 렌더링"""
+    """언어 이관 버튼 영역 (영어/일본어/한국어 팀 전용)"""
     st.markdown("---")
-    st.markdown(f"**{L['transfer_header']}**")
-    transfer_cols = st.columns(len(LANG) - 1)
+    st.markdown(f"**🌐 {L.get('transfer_header', '언어 이관 요청 (다른 팀)')}**")
 
-    languages = list(LANG.keys())
-    languages.remove(current_lang)
+    languages = ["en", "ja", "ko"]
+    transfer_cols = st.columns(len(languages))
 
-    def transfer_session(target_lang: str, current_messages):
-        current_lang_at_start = st.session_state.language
-        L = LANG.get(current_lang_at_start, LANG["ko"])
+    def transfer_session(target_lang, current_messages):
+        """세션 언어 이관 및 메시지 전체 번역"""
+        current_lang_at_start = st.session_state.get("language", "ko")
+        if target_lang == current_lang_at_start:
+            st.info(f"이미 {target_lang.upper()} 언어로 상담 중입니다.")
+            return
 
-        if not get_api_key("gemini"):
-            st.error(
-                L["simulation_no_key_warning"].replace(
-                    'API Key', 'Gemini API Key'))
-        else:
-            st.session_state.start_time = None
+        with st.spinner(f"🌐 {target_lang.upper()} 팀으로 이관 및 대화 내역 번역 중..."):
+            translated_messages = []
+            for msg in current_messages:
+                translated_msg = msg.copy()
+                role = msg.get("role", "")
+                content = msg.get("content", "")
+                
+                # 시스템 및 일반 메시지 번역
+                if content and role in ["customer", "initial_query", "agent_response", "customer_rebuttal", "supervisor"]:
+                    try:
+                        trans_text, success = translate_text_with_llm(content, target_lang, current_lang_at_start)
+                        translated_msg["content"] = trans_text
+                    except Exception:
+                        pass
+                translated_messages.append(translated_msg)
 
-            with st.spinner(L["transfer_loading"]):
-                time.sleep(np.random.uniform(5, 10))
+            # 언어 및 메시지 상태 전환
+            st.session_state.language = target_lang
+            L_target = LANG.get(target_lang, LANG["ko"])
 
-                try:
-                    original_summary = summarize_history_with_ai(
-                        current_lang_at_start)
+            lang_team_names = {
+                "en": "US English Support Team",
+                "ja": "JP 日本語サポートチーム",
+                "ko": "KR 한국어 지원 팀"
+            }
+            system_notice = {
+                "en": "📞 System: Chat session transferred to US English Support Team. All communication is now in English.",
+                "ja": "📞 システム: JP日本語サポートチームへ移管されました。これ以降の対応は日本語で行われます。",
+                "ko": "📞 시스템: KR 한국어 지원 팀으로 이관되었습니다. 모든 상담이 한국어로 진행됩니다."
+            }
 
-                    if not original_summary or original_summary.startswith("❌"):
-                        history_text = ""
-                        for msg in current_messages:
-                            role = "Customer" if msg["role"].startswith(
-                                "customer") or msg["role"] == "initial_query" else "Agent"
-                            if msg["role"] in [
-                                "initial_query",
-                                "customer_rebuttal",
-                                "agent_response",
-                                    "customer_closing_response"]:
-                                history_text += f"{role}: {msg['content']}\n"
-                        original_summary = history_text
+            translated_messages.append({
+                "role": "system_transfer",
+                "content": system_notice.get(target_lang, f"Session transferred to {target_lang} team.")
+            })
 
-                    translated_summary, is_success = translate_text_with_llm(
-                        original_summary,
-                        target_lang,
-                        current_lang_at_start
-                    )
-
-                    if not translated_summary:
-                        translated_summary = summarize_history_with_ai(
-                            target_lang)
-                        is_success = True if translated_summary and not translated_summary.startswith(
-                            "❌") else False
-
-                    translated_messages = []
-                    for msg in current_messages:
-                        translated_msg = msg.copy()
-                        if msg["role"] in [
-                            "initial_query",
-                            "customer",
-                            "customer_rebuttal",
-                            "agent_response",
-                            "customer_closing_response",
-                                "supervisor"]:
-                            if msg.get("content"):
-                                try:
-                                    translated_content, trans_success = translate_text_with_llm(
-                                        msg["content"],
-                                        target_lang,
-                                        current_lang_at_start
-                                    )
-                                    if trans_success:
-                                        translated_msg["content"] = translated_content
-                                except Exception:
-                                    pass
-                        translated_messages.append(translated_msg)
-
-                    st.session_state.simulator_messages = translated_messages
-                    st.session_state.transfer_summary_text = translated_summary
-                    st.session_state.translation_success = is_success
-                    st.session_state.language_at_transfer_start = current_lang_at_start
-
-                    st.session_state.language = target_lang
-                    L = LANG.get(target_lang, LANG["ko"])
-
-                    lang_name_target = {
-                        "ko": "Korean",
-                        "en": "English",
-                        "ja": "Japanese"}.get(
-                        target_lang,
-                        "Korean")
-
-                    system_msg = L["transfer_system_msg"].format(
-                        target_lang=lang_name_target)
-                    st.session_state.simulator_messages.append(
-                        {"role": "system_transfer", "content": system_msg}
-                    )
-                    
-                    summary_msg = f"### {L['transfer_summary_header']}\n\n{translated_summary}"
-                    st.session_state.simulator_messages.append(
-                        {"role": "supervisor", "content": summary_msg}
-                    )
-
-                    customer_type_display = st.session_state.get(
-                        "customer_type_sim_select", "")
-                    save_simulation_history_local(
-                        st.session_state.customer_query_text_area,
-                        customer_type_display,
-                        st.session_state.simulator_messages,
-                        is_chat_ended=False,
-                        attachment_context=st.session_state.sim_attachment_context_for_llm,
-                    )
-
-                    st.session_state.sim_stage = "AGENT_TURN"
-
-                except Exception as e:
-                    error_msg = L.get(
-                        "transfer_error",
-                        "이관 처리 중 오류 발생: {error}").format(
-                        error=str(e))
-                    st.error(error_msg)
+            st.session_state.simulator_messages = translated_messages
+            st.session_state.language_transfer_requested = False
+            
+            # 저장
+            save_simulation_history_local(
+                st.session_state.get("customer_query_text_area", ""),
+                st.session_state.get("customer_type_sim_select", "") + f" (Transferred to {target_lang})",
+                st.session_state.simulator_messages,
+                is_chat_ended=False,
+                attachment_context=st.session_state.get("sim_attachment_context_for_llm", "")
+            )
+            
+            st.rerun()
 
     for idx, lang_code in enumerate(languages):
-        lang_name = {
-            "ko": "Korean",
-            "en": "English",
-            "ja": "Japanese"}.get(
-            lang_code,
-            lang_code)
-        transfer_label = L.get(
-            f"transfer_to_{lang_code}",
-            f"Transfer to {lang_name} Team")
+        lang_labels = {
+            "en": "🇺🇸 US 영어 팀으로 이관",
+            "ja": "🇯🇵 JP 일본어 팀으로 이관",
+            "ko": "🇰🇷 KR 한국어 팀으로 이관"
+        }
+        transfer_label = lang_labels.get(lang_code, f"{lang_code.upper()} 팀으로 이관")
 
         with transfer_cols[idx]:
             if st.button(
                     transfer_label,
-                    key=f"btn_transfer_{lang_code}_{st.session_state.sim_instance_id}",
+                    key=f"btn_transfer_{lang_code}_{st.session_state.get('sim_instance_id', 'default')}",
                     use_container_width=True):
-                transfer_session(
-                    lang_code, st.session_state.simulator_messages)
-
+                transfer_session(lang_code, st.session_state.get("simulator_messages", []))

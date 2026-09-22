@@ -14,7 +14,8 @@ import os
 
     # 5-A. 전화 발신 진행 중 (OUTBOUND_CALL_IN_PROGRESS)
     # =========================
-    elif st.session_state.sim_stage == "OUTBOUND_CALL_IN_PROGRESS":
+def render_download_section(L=None, current_lang='ko'):
+    if st.session_state.sim_stage == "OUTBOUND_CALL_IN_PROGRESS":
         # 언어 키 안전하게 가져오기
         current_lang = st.session_state.get("language", "ko")
         if current_lang not in ["ko", "en", "ja"]:

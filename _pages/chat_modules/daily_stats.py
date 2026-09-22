@@ -12,6 +12,7 @@ import uuid
 import time
 import os
 
+def render_daily_stats(L=None, current_lang='ko'):
     """채팅/이메일 시뮬레이터 렌더링"""
     current_lang = st.session_state.get("language", "ko")
     if current_lang not in ["ko", "en", "ja"]:

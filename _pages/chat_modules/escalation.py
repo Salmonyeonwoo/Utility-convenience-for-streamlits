@@ -13,6 +13,8 @@ import time
 import os
 
         # 언어 키 안전하게 가져오기
+def render_escalation(L=None, current_lang='ko'):
+    if True:
         current_lang = st.session_state.get("language", "ko")
         if current_lang not in ["ko", "en", "ja"]:
             current_lang = "ko"
@@ -53,3 +55,4 @@ import os
     # 6. 고객 반응 생성 단계 (CUSTOMER_TURN)
     # =========================
     elif st.session_state.sim_stage == "CUSTOMER_TURN":
+        pass

@@ -190,6 +190,13 @@
       "sender_name": "이지은",
       "message": "추가 문의 하려면 어떡하나요?",
       "timestamp": "2025-12-25 15:07:14"
+    },
+    {
+      "message_id": "MSG004",
+      "sender": "operator",
+      "sender_name": "상담원",
+      "message": "고객님의 문의 내용을 정상적으로 접수하였습니다. CS 표준 절차에 따라 최우선으로 검토 후 안내해 드리겠습니다.",
+      "timestamp": "2026-09-22 11:04:08"
     }
   ],
   "CUST003": [

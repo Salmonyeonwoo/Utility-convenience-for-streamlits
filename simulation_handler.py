@@ -23,6 +23,10 @@ from simulation_handler_base import get_chat_history_for_prompt
 # 힌트 생성
 from simulation_handler_hint import generate_realtime_hint
 
+# AI 가이드라인 생성
+from simulation_handler_guideline import generate_ai_guideline
+from utils.customer_analysis_advice import generate_initial_advice as _generate_initial_advice
+
 # 에이전트 응답 생성
 from simulation_handler_agent_response import (
     generate_agent_response_draft,
@@ -48,6 +52,8 @@ from simulation_handler_summary import (
 __all__ = [
     'get_chat_history_for_prompt',
     'generate_realtime_hint',
+    'generate_ai_guideline',
+    '_generate_initial_advice',
     'generate_agent_response_draft',
     'generate_outbound_call_summary',
     'generate_customer_reaction',

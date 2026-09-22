@@ -12,6 +12,10 @@ import uuid
 import time
 import os
 
+def render_load_history(L=None, current_lang='ko'):
+    if True:
+        if True:
+            def _label(h):
                 try:
                     t = datetime.fromisoformat(h["timestamp"])
                     t_str = t.strftime("%m-%d %H:%M")

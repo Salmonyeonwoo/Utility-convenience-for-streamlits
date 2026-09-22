@@ -31,7 +31,7 @@ def generate_customer_reaction(current_lang_key: str, is_call: bool = False) -> 
     lang_name = {"ko": "Korean", "en": "English", "ja": "Japanese"}[current_lang_key]
     L_local = LANG.get(current_lang_key, LANG["ko"])
 
-    attachment_context = st.session_state.sim_attachment_context_for_llm
+    attachment_context = st.session_state.get('sim_attachment_context_for_llm', '')
     if attachment_context:
         attachment_context = f"[INITIAL ATTACHMENT CONTEXT (for customer reference only, do not repeat to agent)]\n{attachment_context}\n\n"
     else:
@@ -54,8 +54,17 @@ RULES:
 5. If the agent's LAST message was the closing confirmation: "{L_local['customer_closing_confirm']}"
     - If you have NO additional questions: You MUST reply with "{L_local['customer_no_more_inquiries']}".
    - If you DO have additional questions: You MUST reply with "{L_local['customer_has_additional_inquiries']}" AND MUST FOLLOW UP WITH THE NEW INQUIRY DETAILS IMMEDIATELY.
-6. Do NOT repeat your initial message or previous responses unless necessary.
-7. Output ONLY the customer's next message.
+6. **[Closing Greeting / Farewell]** If the agent's LAST message was a farewell or closing greeting (e.g. wishing a good day, concluding the chat):
+    - You MUST reply with a polite closing farewell (e.g., "네, 친절하게 안내해 주셔서 감사합니다. 수고하세요!").
+7. **[Travel / Hotel Preference Intake]** If the agent asked for travel dates, party size, budget, or accommodation preferences:
+    - You MUST provide realistic details (e.g., "다음 달 초 3박 4일 일정으로 성인 2명 여행을 생각 중입니다. 위치가 편리한 곳으로 추천 부탁드립니다.").
+8. **[Booking / Order Reference]** If the agent asked for a booking or order number:
+    - You MUST provide your reference number (e.g., "제 예약 번호는 BK-882910 입니다. 확인 부탁드립니다.").
+9. Do NOT repeat your initial message or previous responses unless necessary.
+10. **[Additional Inquiry Details]** If you previously said "추가 문의 사항도 있습니다" OR the agent is asking for your new inquiry (e.g. "네 문의가 어떻게 되시나요?", "어떤 문의이신가요?"):
+    - You MUST clearly state your specific follow-up question related to the topic (e.g. for eSIM: ask about data usage check or roaming in Switzerland; for hotel: ask about luggage storage or breakfast).
+    - DO NOT say "네, 확인했습니다. 안내해 주신 대로 진행 부탁드립니다."!
+11. Output ONLY the customer's next message.
 """
     try:
         prev_tag = st.session_state.get("_llm_call_tag")
@@ -405,7 +414,7 @@ def generate_customer_closing_response(current_lang_key: str) -> str:
 
     closing_msg = L_local['customer_closing_confirm']
 
-    attachment_context = st.session_state.sim_attachment_context_for_llm
+    attachment_context = st.session_state.get('sim_attachment_context_for_llm', '')
     if attachment_context:
         attachment_context = f"[INITIAL ATTACHMENT CONTEXT (for customer reference only, do not repeat to agent)]\n{attachment_context}\n\n"
     else:

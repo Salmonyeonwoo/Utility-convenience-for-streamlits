@@ -125,11 +125,14 @@ def render_initial_query(L, current_lang):
                                     'preferred_destination': reg_destination
                                 }
                                 customer_id = st.session_state.customer_data_manager.create_customer(customer_data)
-                                st.success(L.get("customer_registered_success", "고객이 등록되었습니다! 고객 ID: {customer_id}").format(customer_id=customer_id))
-                                # 등록된 고객 정보를 세션 상태에 저장
                                 st.session_state.customer_name = reg_customer_name
                                 st.session_state.customer_phone = reg_phone
                                 st.session_state.customer_email = reg_email
+                                st.session_state.customer_id = customer_id
+                                st.session_state.selected_customer_id = customer_id
+                                st.session_state.customer_data = st.session_state.customer_data_manager.get_customer_by_id(customer_id)
+                                st.success(L.get("customer_registered_success", "고객이 등록되었습니다! 고객 ID: {customer_id}").format(customer_id=customer_id))
+                                st.rerun()
                             except Exception as e:
                                 st.error(f"고객 등록 오류: {str(e)}")
                         else:

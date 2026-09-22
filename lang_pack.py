@@ -23,6 +23,24 @@ DEFAULT_LANG = "ko"
 
 LANG: Dict[str, Dict[str, str]] = {
     "ko": {
+        "bpo_roi_dashboard_title": "BPO 비즈니스 임팩트 & AI Copilot ROI 지표",
+        "bpo_roi_dashboard_desc": "AI Copilot 도입 전후의 AHT(평균 처리 시간), 인건비 절감액 및 AI 초안 채택률 분석 현황입니다.",
+        "bpo_home_aht": "⏱️ AHT 절감률",
+        "bpo_home_cost": "💰 티켓당 절감액",
+        "bpo_home_adoption": "✍️ AI 초안 채택률",
+        "bpo_home_csat": "⭐ 예상 CSAT",
+        "bpo_roi_card_title": "BPO 비즈니스 임팩트 & AI Copilot ROI 분석",
+        "bpo_roi_card_desc": "상담 전 과정의 AI 초안 채택률, AHT 단축 효과 및 고객 감정/이탈 방지 기여도 정량 분석 리포트입니다.",
+        "qa_compliance_audit": "QA & 컴플라이언스 감사",
+        "qa_compliance_audit_title": "QA & 컴플라이언스 자동 감사 시스템 (Enterprise Audit Dashboard)",
+        "qa_audit_report_title": "QA & 컴플라이언스 실시간 자동 감사 리포트 (Audit Report)",
+        "qa_audit_report_desc": "대화 전 과정을 실시간 분석하여 친절도/공감도, 규정 준수도, 금지어 탐지 및 필수 고지 항목을 다차원 평가한 엔터프라이즈 감사 리포트입니다.",
+        "qa_metric_grade": "🏆 종합 QA 등급",
+        "qa_metric_score": "📊 종합 평가 점수",
+        "qa_metric_compliance": "📋 필수 고지 준수율",
+        "qa_metric_violations": "⚠️ 금지어 적발",
+        "qa_audit_detail_expander": "🔍 QA 세부 평가 지표 및 AI 코칭 리포트 보기",
+
         "title": "개인 맞춤형 AI 학습 코치 (음성 및 DB 통합)",
         "sidebar_title": "📚 AI Study Coach 설정",
         "file_uploader": "학습 자료 업로드 (PDF, TXT, HTML)",
@@ -962,6 +980,24 @@ LANG: Dict[str, Dict[str, str]] = {
 
     # --- ⭐ 영어 버전 (한국어 100% 매칭) ---
     "en": {
+        "bpo_roi_dashboard_title": "BPO Business Impact & AI Copilot ROI Metrics",
+        "bpo_roi_dashboard_desc": "Analysis of AHT (Average Handling Time) reduction, cost savings, and AI draft adoption rates before and after AI Copilot introduction.",
+        "bpo_home_aht": "⏱️ AHT Reduction Rate",
+        "bpo_home_cost": "💰 Savings per Ticket",
+        "bpo_home_adoption": "✍️ AI Draft Adoption",
+        "bpo_home_csat": "⭐ Predicted CSAT",
+        "bpo_roi_card_title": "BPO Business Impact & AI Copilot ROI Analysis",
+        "bpo_roi_card_desc": "Quantitative analysis report on AI draft adoption rate, AHT reduction effect, and churn prevention contribution throughout the consultation.",
+        "qa_compliance_audit": "QA & Compliance Audit",
+        "qa_compliance_audit_title": "Automated QA & Compliance Audit System (Enterprise Dashboard)",
+        "qa_audit_report_title": "Real-time QA & Compliance Automated Audit Report",
+        "qa_audit_report_desc": "Enterprise audit report evaluating empathy, courtesy, policy compliance, prohibited word detection, and mandatory disclosures through real-time dialogue analysis.",
+        "qa_metric_grade": "🏆 Overall QA Grade",
+        "qa_metric_score": "📊 Total Evaluation Score",
+        "qa_metric_compliance": "📋 Mandatory Disclosure Rate",
+        "qa_metric_violations": "⚠️ Prohibited Words Detected",
+        "qa_audit_detail_expander": "🔍 View Detailed QA Metrics & AI Coaching Report",
+
         "title": "Personalized AI Study Coach (Voice & Local DB)",
         "sidebar_title": "📚 AI Study Coach Settings",
         "file_uploader": "Upload Study Materials (PDF, TXT, HTML)",
@@ -1889,6 +1925,24 @@ LANG: Dict[str, Dict[str, str]] = {
 
     # --- ⭐ 일본어 버전 (한국어 100% 매칭) ---
     "ja": {
+        "bpo_roi_dashboard_title": "BPOビジネスインパクト＆AI Copilot ROI指標",
+        "bpo_roi_dashboard_desc": "AI Copilot導入前後のAHT（平均処理時間）短縮率、コスト削減額、AIドラフト採用率の分析現況です。",
+        "bpo_home_aht": "⏱️ AHT削減率",
+        "bpo_home_cost": "💰 チケットあたり削減額",
+        "bpo_home_adoption": "✍️ AIドラフト採用率",
+        "bpo_home_csat": "⭐ 予測CSAT",
+        "bpo_roi_card_title": "BPOビジネスインパクト＆AI Copilot ROI分析",
+        "bpo_roi_card_desc": "相談全過程のAIドラフト採用率、AHT短縮効果、顧客離脱防止への貢献度を定量分析したレポートです。",
+        "qa_compliance_audit": "QA＆コンプライアンス監査",
+        "qa_compliance_audit_title": "QA＆コンプライアンス自動監査システム（Enterprise Audit Dashboard）",
+        "qa_audit_report_title": "QA＆コンプライアンス リアルタイム自動監査レポート（Audit Report）",
+        "qa_audit_report_desc": "対話全過程をリアルタイム分析し、親切度・共感度、規定遵守度、禁止用語検知、必須告知項目を多次元評価した監査レポートです。",
+        "qa_metric_grade": "🏆 総合QA等級",
+        "qa_metric_score": "📊 総合評価スコア",
+        "qa_metric_compliance": "📋 必須告知遵守率",
+        "qa_metric_violations": "⚠️ 禁止用語検知",
+        "qa_audit_detail_expander": "🔍 QA詳細評価指標およびAIコーチングレポートを表示",
+
         "title": "パーソナライズAI学習コーチ (音声・ローカルDB)",
         "sidebar_title": "📚 AI学習コーチ設定",
         "file_uploader": "学習資料をアップロード (PDF, TXT, HTML)",

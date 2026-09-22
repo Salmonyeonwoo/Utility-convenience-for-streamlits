@@ -1246,6 +1246,7 @@ elif feature_selection == L["voice_rec_header"]:
         # [1] 채팅 - 추가 문의 확인 메시지 보내기 버튼 (기존 로직)
         with col_chat_end:
             if st.button(L["send_closing_confirm_button"], key="btn_send_closing_confirm"):
+                pass
                 # ... (기존 채팅 종료 확인 로직 유지)
                 # st.rerun()  # 주석 처리: 과도한 rerun 방지
 
@@ -1267,7 +1268,7 @@ elif feature_selection == L["voice_rec_header"]:
     # 기존 1차 가드 → 유지
     if not st.session_state.is_llm_ready:
         st.warning(L["simulation_no_key_warning"])
-        return
+        st.stop()
 
     # 2차 실제 호출 기반 가드 → 추가
     resp = run_llm("ping")
@@ -1275,7 +1276,7 @@ elif feature_selection == L["voice_rec_header"]:
     if resp is None or len(resp.strip()) == 0 or "❌" in resp:
         st.session_state.is_llm_ready = False
         st.warning(L["simulation_no_key_warning"])
-        return
+        st.stop()
 
 
 elif feature_selection == L["rag_tab"]:
@@ -2140,28 +2141,28 @@ elif feature_selection == L["content_tab"]:
                         alert("복사 완료!"); 
                     }});
                 }}
-                copyToClipboard('{content.replace( / '/g, "\\'").replace(/\\n/g, " ")}');
+                copyToClipboard(document.getElementById('generated-content').innerText);
                                                      """
                                        
-                                                   col_like, col_dislike, col_share, col_copy, col_more = st.columns([1, 1, 1, 1, 6])
+            col_like, col_dislike, col_share, col_copy, col_more = st.columns([1, 1, 1, 1, 6])
                                        
-                                                   # 좋아요 버튼
-                                                   if col_like.button("👍", key="content_like"):
-                                                       st.toast("✅ '좋아요' 기능 활성화 예정")
+            # 좋아요 버튼
+            if col_like.button("👍", key="content_like"):
+                st.toast("✅ '좋아요' 기능 활성화 예정")
                                        
-                                                   # 싫어요 버튼
-                                                   if col_dislike.button("👎", key="content_dislike"):
-                                                       st.toast("✅ '싫어요' 기능 활성화 예정")
+            # 싫어요 버튼
+            if col_dislike.button("👎", key="content_dislike"):
+                st.toast("✅ '싫어요' 기능 활성화 예정")
                                        
-                                                   # 공유 버튼
-                                                   if col_share.button("🔗", key="content_share"):
-                                                       st.toast("✅ '공유' 기능 활성화 예정")
+            # 공유 버튼
+            if col_share.button("🔗", key="content_share"):
+                st.toast("✅ '공유' 기능 활성화 예정")
                                        
-                                                   # 복사 버튼 (기능 활성화)
-                                                   if col_copy.button("📋", key="content_copy"):
-                                                       # Streamlit에서 직접 JavaScript를 실행하여 복사
-                                                       st.components.v1.html(
-                                                           f""" < script > {js_copy_script} </ script > """,
+            # 복사 버튼 (기능 활성화)
+            if col_copy.button("📋", key="content_copy"):
+                # Streamlit에서 직접 JavaScript를 실행하여 복사
+                st.components.v1.html(
+                    f""" < script > {js_copy_script} </ script > """,
                     height=0,
                 )
                 st.toast("✅ 콘텐츠가 클립보드에 복사되었습니다!")

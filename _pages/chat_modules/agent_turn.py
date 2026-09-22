@@ -17,6 +17,7 @@ import os
     # ⭐ 수정: AGENT_TURN 단계에서 항상 에이전트 응답 입력 UI를 표시 (원위치 복원)
     # app.py 스타일: AGENT_TURN 단계에서 항상 입력 칸이 보이도록 함
     # 단, 검증 UI나 응대 초안 UI가 표시될 때는 에이전트 응답 UI를 숨김
+def render_agent_turn_module(L=None, current_lang='ko'):
     if st.session_state.sim_stage == "AGENT_TURN":
         # ⭐ 수정: app.py 스타일 - 플래그 기반 처리 제거, 단순한 흐름 유지
         # 메시지 전송은 위의 agent_response 처리 부분에서 직접 처리됨
@@ -1116,14 +1117,7 @@ import os
                             latest_customer_query = recent_customer_messages[-1] if recent_customer_messages else customer_response
                             
                             # 응대 초안 생성
-                            draft_text = _generate_initial_advice(
-                                latest_customer_query,
-                                st.session_state.get("customer_type_sim_select", ""),
-                                st.session_state.customer_email,
-                                st.session_state.customer_phone,
-                                st.session_state.language,
-                                st.session_state.customer_attachment_file
-                            )
+                            draft_text = generate_agent_response_draft(st.session_state.language)
                             
                             # 응대 초안을 세션 상태에 저장 (입력창에 자동 표시용)
                             st.session_state.auto_generated_draft = draft_text
@@ -1378,3 +1372,4 @@ import os
     # 5-B. 에스컬레이션 요청 단계 (ESCALATION_REQUIRED)
     # =========================
     elif st.session_state.sim_stage == "ESCALATION_REQUIRED":
+        pass

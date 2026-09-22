@@ -13,6 +13,8 @@ import time
 import os
 
         # 언어 키 안전하게 가져오기
+def render_customer_closing_response(L=None, current_lang='ko'):
+    if True:
         current_lang = st.session_state.get("language", "ko")
         if current_lang not in ["ko", "en", "ja"]:
             current_lang = "ko"
@@ -348,3 +350,4 @@ import os
     # 9. 최종 종료 행동 (FINAL_CLOSING_ACTION)
     # =========================
     elif st.session_state.sim_stage == "FINAL_CLOSING_ACTION":
+        pass

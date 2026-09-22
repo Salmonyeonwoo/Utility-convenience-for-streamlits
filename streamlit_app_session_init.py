@@ -191,6 +191,14 @@ def init_all_session_state():
         st.session_state.last_message_id = {}
     if "ai_suggestion" not in st.session_state:
         st.session_state.ai_suggestion = {}
+    if "bpo_draft_history" not in st.session_state:
+        st.session_state.bpo_draft_history = []
+    if "last_agent_draft_text" not in st.session_state:
+        st.session_state.last_agent_draft_text = ""
+    if "actual_aht_seconds" not in st.session_state:
+        st.session_state.actual_aht_seconds = None
+    if "last_rag_citation" not in st.session_state:
+        st.session_state.last_rag_citation = None
     
     # 세션 상태 초기화 모듈 호출
     if SESSION_INIT_AVAILABLE:

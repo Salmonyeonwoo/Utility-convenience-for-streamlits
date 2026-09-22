@@ -99,3 +99,11 @@ node_modules
 customer data histories via streamlits/
 data/scanned_files.json
 temp_uploads/
+
+
+# Exported customer history files
+local_db/*.docx
+local_db/*.pdf
+local_db/*.pptx
+local_db/*.TXT
+local_db/*.txt

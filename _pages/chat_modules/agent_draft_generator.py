@@ -107,6 +107,7 @@ def _handle_new_customer_message_draft(L, auto_response_disabled):
                 st.session_state.agent_response_area_text = draft_text_clean
                 st.session_state.auto_draft_generated = True
                 st.session_state.auto_generated_draft_text = draft_text_clean
+                st.session_state.last_agent_draft_text = draft_text_clean
                 st.session_state.last_draft_for_message_idx = last_customer_msg_idx
                 
                 # 자동 전송 처리

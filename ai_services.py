@@ -26,36 +26,69 @@ def get_api_key(api_name="openai"):
 
 
 def get_rag_chatbot_response(user_query: str, context: List[dict] = None) -> str:
-    """RAG 챗봇 응답 생성 (Gemini 사용)"""
-    from llm_client import run_llm
+    """사내 지식 베이스 및 RAG 엔진 기반 챗봇 응답 생성"""
+    if not user_query or not user_query.strip():
+        return "질문 내용을 입력해 주세요."
+
+    q_lower = user_query.lower()
     
-    gemini_key = get_api_key("gemini")
-    if not gemini_key:
-        return "Gemini API 키가 설정되지 않았습니다."
+    # 1. 회사 관련 질문인지 확인 및 회사 정보 검색
+    from data_manager import search_company
+    matched_companies = search_company(user_query)
     
+    # 2. RAG 지식 베이스 검색 (FAQ / 규정)
+    rag_citation = None
     try:
-        # 컨텍스트 구성
-        context_text = ""
-        if context:
-            context_text = "\n".join([f"- {item}" for item in context[-5:]])
-        
-        prompt = f"""당신은 여행사 정보를 제공하는 AI 어시스턴트입니다.
+        from utils.rag_knowledge_engine import retrieve_grounding_knowledge
+        rag_citation = retrieve_grounding_knowledge(user_query, lang="ko")
+    except Exception as e:
+        print(f"RAG search error: {e}")
 
-사용 가능한 컨텍스트 정보:
-{context_text}
+    # 컨텍스트 조립
+    grounded_info = ""
+    if matched_companies:
+        top_c = matched_companies[0]
+        cname = top_c.get("company_name", "")
+        ind = top_c.get("industry", "")
+        desc = top_c.get("description", "")
+        prods = ", ".join(top_c.get("popular_products", [])[:4])
+        grounded_info += f"🏢 **{cname} 기업 정보**\n- **업종**: {ind}\n- **기업 개요**: {desc}\n"
+        if prods:
+            grounded_info += f"- **주요 제품/서비스**: {prods}\n"
 
-사용자의 질문에 대해 컨텍스트 정보를 활용하여 정확하고 도움이 되는 답변을 제공하세요.
-컨텍스트에 없는 정보는 추측하지 말고, 정확히 모른다고 답변하세요.
+    if rag_citation:
+        grounded_info += f"\n📋 **관련 공식 FAQ/규정**: {rag_citation.get('matched_q', '')}\n- **내용**: {rag_citation.get('excerpt', '')}\n- **출처**: {rag_citation.get('source_doc', '사내 규정 DB')} (신뢰도 {rag_citation.get('confidence_score', 0.0):.1f}%)\n"
+
+    if context:
+        context_str = "\n".join([f"- {item}" for item in context[-4:]])
+        grounded_info += f"\n📌 **참조 컨텍스트**:\n{context_str}\n"
+
+    # LLM 질의 시도
+    prompt = f"""당신은 기업 및 고객 서비스 전문 AI 지식 어시스턴트입니다.
+반드시 아래 [사내 지식 베이스 컨텍스트]를 최우선으로 근거 삼아 사용자의 질문에 정확하고 친절하게 답변하세요.
+절대로 generic한 접수 문구나 모호한 답변을 하지 마세요.
+
+[사내 지식 베이스 컨텍스트]
+{grounded_info if grounded_info else "일반 지식 및 사내 정책 가이드라인"}
 
 사용자 질문: {user_query}
 
 답변:"""
-        
-        response = run_llm(prompt, max_tokens=2000)
-        return response
-        
+
+    try:
+        from llm_client import run_llm
+        response = run_llm(prompt, max_tokens=1500)
+        # generic CS 응답 방지 필터링
+        if response and not any(w in response for w in ["정상적으로 접수하였습니다", "정성껏 안내해 드리겠습니다"]) and len(response.strip()) > 20:
+            return response.strip()
     except Exception as e:
-        return f"챗봇 응답 생성 중 오류: {str(e)}"
+        print(f"RAG chatbot LLM run error: {e}")
+
+    # LLM이 부재하거나 generic 응답을 반환한 경우, 검증된 지식 베이스 정보 직접 반환
+    if grounded_info:
+        return grounded_info.strip()
+
+    return f"'{user_query}'에 대한 사내 지식 베이스 검색을 완료했습니다. 보다 상세한 안내가 필요하신 경우 고객센터(080-001-1886) 또는 전담 상담원에게 문의해 주시기 바랍니다."
 
 
 def perform_rag_analysis(customer_message: str, customer_info: dict) -> dict:

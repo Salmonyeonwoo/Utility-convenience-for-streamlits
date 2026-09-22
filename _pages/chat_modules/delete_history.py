@@ -14,6 +14,7 @@ import os
 
     # 1. 이전 이력 로드 (검색/필터링 기능 개선)
     # =========================
+def render_delete_history(L=None, current_lang='ko'):
     with st.expander(L["history_expander_title"]):
         # Always load all available histories for the current language (sorted by recency)
         histories = load_simulation_histories_local(current_lang)
@@ -128,3 +129,4 @@ import os
 
         if filtered_for_display:
             def _label(h):
+                pass

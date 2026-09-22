@@ -13,6 +13,8 @@ import time
 import os
 
         # 언어 키 안전하게 가져오기
+def render_customer_turn(L=None, current_lang='ko'):
+    if True:
         current_lang = st.session_state.get("language", "ko")
         if current_lang not in ["ko", "en", "ja"]:
             current_lang = "ko"
@@ -31,7 +33,10 @@ import os
                 last_customer_message = msg.get("content", "")
                 break
         
-        if last_customer_message is None:
+        last_msg = st.session_state.simulator_messages[-1] if st.session_state.simulator_messages else {}
+        needs_customer_reaction = (last_customer_message is None) or (last_msg.get("role") in ["agent", "agent_response"])
+
+        if needs_customer_reaction:
             # 고객 반응이 없는 경우에만 생성
             with st.spinner(L["generating_customer_response"]):
                 customer_response = generate_customer_reaction(st.session_state.language, is_call=False)
@@ -261,3 +266,4 @@ import os
     # 7. 종료 확인 메시지 대기 (WAIT_CLOSING_CONFIRMATION_FROM_AGENT)
     # =========================
     elif st.session_state.sim_stage == "WAIT_CLOSING_CONFIRMATION_FROM_AGENT":
+        pass

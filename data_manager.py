@@ -126,23 +126,78 @@ def load_company_info():
 
 
 def search_company(query: str) -> List[dict]:
-    """회사 정보 검색"""
-    company_data = load_company_info()
-    companies = company_data.get('companies', [])
-    
-    if not query:
-        return companies
-    
-    query_lower = query.lower()
-    results = []
-    for company in companies:
-        if (query_lower in company.get('company_name', '').lower() or
-            query_lower in company.get('industry', '').lower() or
-            query_lower in company.get('description', '').lower() or
-            any(query_lower in service.lower() for service in company.get('services', []))):
-            results.append(company)
-    return results
+    """회사 정보 및 사내 FAQ 데이터베이스 통합 검색 (비쥬얼 자산 및 RAG 엔진 연동)"""
+    import os
+    import json
+    from faq.company_visual_engine import get_company_visual_and_details
 
+    all_companies = []
+    seen_names = set()
+
+    # 1. data/company_info.json 로드
+    company_data = load_company_info()
+    for c in company_data.get('companies', []):
+        name = c.get('company_name', '')
+        if name and name.lower() not in seen_names:
+            seen_names.add(name.lower())
+            enriched = get_company_visual_and_details(name, c)
+            all_companies.append(enriched)
+
+    # 2. local_db/json/faq_database.json 및 local_db/faq_database.json 통합 로드
+    faq_paths = [
+        'local_db/json/faq_database.json',
+        'local_db/faq_database.json'
+    ]
+    for fp in faq_paths:
+        if os.path.exists(fp):
+            try:
+                with open(fp, 'r', encoding='utf-8', errors='ignore') as f:
+                    faq_db = json.load(f)
+                    comp_dict = faq_db.get('companies', {})
+                    for cname, cdata in comp_dict.items():
+                        if not isinstance(cdata, dict) or cname.lower() in seen_names:
+                            continue
+                        seen_names.add(cname.lower())
+                        enriched = get_company_visual_and_details(cname, cdata)
+                        all_companies.append(enriched)
+            except Exception as e:
+                print(f"Error loading {fp}: {e}")
+
+    if not query or not query.strip():
+        return all_companies
+
+    query_lower = query.strip().lower()
+    results = []
+    for comp in all_companies:
+        cname = str(comp.get('company_name', '')).lower()
+        ind = str(comp.get('industry', '')).lower()
+        desc = str(comp.get('description', '')).lower()
+        
+        services_text = []
+        for s in comp.get('services', []):
+            if isinstance(s, str):
+                services_text.append(s.lower())
+            elif isinstance(s, dict):
+                services_text.append(str(s.get('name', s.get('title', ''))).lower())
+
+        for p in comp.get('popular_products', []):
+            if isinstance(p, str):
+                services_text.append(p.lower())
+            elif isinstance(p, dict):
+                services_text.append(str(p.get('name', p.get('title', ''))).lower())
+        
+        if (query_lower in cname or cname in query_lower or
+            query_lower in ind or
+            query_lower in desc or
+            any(query_lower in st for st in services_text)):
+            results.append(comp)
+
+    # 일치하는 기업이 없을 경우, 사용자가 검색한 회사명으로 실시간 비쥬얼 및 상세 기업 정보 생성
+    if not results and query and query.strip():
+        generated_comp = get_company_visual_and_details(query.strip())
+        results.append(generated_comp)
+            
+    return results
 
 # ========== 고객 데이터 관리 V2 함수들 ==========
 

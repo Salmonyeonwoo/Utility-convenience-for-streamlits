@@ -13,6 +13,8 @@ import time
 import os
 
         # 언어 키 안전하게 가져오기
+def render_final_closing(L=None, current_lang='ko'):
+    if True:
         current_lang = st.session_state.get("language", "ko")
         if current_lang not in ["ko", "en", "ja"]:
             current_lang = "ko"

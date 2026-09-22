@@ -49,13 +49,40 @@ def generate_agent_response_draft(current_lang_key: str) -> str:
         latest_customer_message = all_customer_messages[-1]
         
         short_response_keywords = ["네", "예", "아니요", "Yes", "No", "はい", "いいえ", "좋아요", "알겠습니다", "OK", "ok"]
-        is_short_response = len(latest_customer_message.strip()) <= 10 or any(
+        is_short_response = (len(latest_customer_message.strip()) <= 10 or any(
             keyword in latest_customer_message.strip() for keyword in short_response_keywords
-        )
+        )) and not any(w in latest_customer_message.lower() for w in ["다른 문의", "없습니다", "no more", "ないです"])
         
-        short_response_instruction = ""
-        if is_short_response:
-            short_response_instruction = """
+        # ⭐ 1. 고객 종료 및 감사 의사 확인
+        is_closing_intent = any(w in latest_customer_message.lower() for w in [
+            "다른 문의", "없습니다", "감사합니다", "도움이 되었", "no more", "that will be all", "ないです", "大丈夫", "解決"
+        ])
+
+        # ⭐ 2. 여행 / 호텔 / 예약 문의 확인 (에이전시 확인 사항 파악)
+        is_travel_inquiry = any(w in (latest_customer_message + " " + initial_customer_query).lower() for w in [
+            "태국", "여행", "추천", "호텔", "예약", "방콕", "항공", "숙소", "투어", "travel", "booking", "hotel"
+        ])
+
+        context_specific_instruction = ""
+        if is_closing_intent:
+            context_specific_instruction = """
+**🔔 CRITICAL: CUSTOMER STATED NO MORE INQUIRIES / CLOSING INTENT**
+The customer indicated they have no further questions or thanked the agent for the help.
+
+**YOU MUST:**
+1. Provide a warm, polite closing appreciation (e.g. "도움이 되어 기쁩니다, 고객님! 추가로 도움이 필요하신 사항이 생기시면 언제든지 편하게 문의해 주시기 바랍니다. 좋은 하루 보내세요!").
+2. DO NOT apologize for unmentioned issues or escalate tickets unless the customer requested it.
+3. Keep it warm, concise, and professional (1-2 sentences).
+"""
+        elif is_travel_inquiry and not any(w in latest_customer_message.lower() for w in ["불편", "환불", "취소", "오류"]):
+            context_specific_instruction = """
+**✈️ CRITICAL: AGENCY INTAKE CHECKLIST FOR TRAVEL / HOTEL INQUIRIES**
+As an agency agent, before recommending specific bookings, you must first verify customer preferences:
+1. Clarify travel dates (departure/duration), party size (adults/children), budget range, and preferred accommodation style (city center, resort, etc.).
+2. Generate a response draft that warmly welcomes their inquiry and asks these clarifying intake questions so the agency can provide the best tailored recommendation.
+"""
+        elif is_short_response:
+            context_specific_instruction = """
 **⚠️ CRITICAL: CUSTOMER GAVE A SHORT RESPONSE**
 
 The customer's last message was very short (e.g., "네", "예", "아니요", "Yes", "No", "좋아요", "알겠습니다").
@@ -65,15 +92,27 @@ The customer's last message was very short (e.g., "네", "예", "아니요", "Ye
 2. **Request clarification** on what they need help with
 3. **Ask follow-up questions** to get the details needed to provide proper assistance
 4. **DO NOT** just acknowledge their short response - actively seek more information
-
-**Example good responses:**
-- "네, 알겠습니다. 어떤 부분이 궁금하신지 좀 더 자세히 말씀해주실 수 있을까요?"
-- "감사합니다. 정확히 어떤 도움이 필요하신지 구체적으로 알려주시면 더 정확한 안내를 드릴 수 있습니다."
-- "네, 이해했습니다. 혹시 [구체적인 정보]에 대해 더 자세히 알려주실 수 있나요?"
-
-**IMPORTANT**: If the customer's response is too short to provide proper assistance, you MUST ask for more details.
 """
         
+        # RAG 지식 베이스 검색 및 출처 주입
+        rag_grounding_section = ""
+        try:
+            from utils.rag_knowledge_engine import retrieve_grounding_knowledge
+            target_query_for_rag = latest_customer_message or initial_customer_query
+            citation = retrieve_grounding_knowledge(target_query_for_rag, current_lang_key)
+            if citation:
+                st.session_state.last_rag_citation = citation
+                rag_grounding_section = f"""
+**VERIFIED ENTERPRISE KNOWLEDGE GROUNDING (OFFICIAL POLICY):**
+- Document: {citation.get('source_doc', '사내 규정')}
+- Clause: {citation.get('clause', '')}
+- Confidence: {citation.get('confidence_score', 0.0):.1f}% ({citation.get('confidence_level', '')})
+- Official Excerpt: {citation.get('excerpt', '')}
+- Instruction: You MUST incorporate these official policy steps and details into your response draft accurately.
+"""
+        except Exception as e:
+            print(f"RAG retrieval in agent response draft error: {e}")
+
         inquiry_summary = f"""
 **CUSTOMER INQUIRY DETAILS:**
 
@@ -83,7 +122,7 @@ Latest Customer Message: "{latest_customer_message}"
 
 All Customer Messages Context:
 {chr(10).join([f"- {msg[:150]}..." if len(msg) > 150 else f"- {msg}" for msg in all_customer_messages[-3:]])}
-
+{rag_grounding_section}
 **YOUR RESPONSE MUST DIRECTLY ADDRESS:**
 
 1. **SPECIFIC ISSUE IDENTIFICATION**: 
@@ -115,12 +154,12 @@ All Customer Messages Context:
 - Your response must read as if it was written SPECIFICALLY for this customer's exact inquiry
 
 **NOW GENERATE YOUR RESPONSE** following these requirements:
-{short_response_instruction if short_response_instruction else ""}
+{context_specific_instruction if context_specific_instruction else ""}
 """
         
         customer_query_analysis = inquiry_summary
 
-    attachment_context = st.session_state.sim_attachment_context_for_llm
+    attachment_context = st.session_state.get('sim_attachment_context_for_llm', '')
     if attachment_context:
         attachment_context = f"\n[고객 첨부 파일 정보: {attachment_context}]\n"
     else:

@@ -13,6 +13,8 @@ import time
 import os
 
         # 언어 키 안전하게 가져오기
+def render_closing_confirmation(L=None, current_lang='ko'):
+    if True:
         current_lang = st.session_state.get("language", "ko")
         if current_lang not in ["ko", "en", "ja"]:
             current_lang = "ko"
@@ -30,14 +32,13 @@ import os
             if st.button(L.get("send_closing_confirm_button", "✅ 추가 문의 있나요?"),
                          key=f"btn_send_closing_confirm_{st.session_state.sim_instance_id}", use_container_width=True):
                 # ⭐ 수정: 에이전트가 감사 인사를 포함한 종료 메시지 전송
-                # 언어별 감사 인사 메시지 생성
-                agent_name = st.session_state.get("agent_name", "000")
+                # ⭐ 추가 문의 확인 질문만 전송 (종료/작별 인사는 고객이 "문의사항 없습니다" 할 때 전송)
                 if current_lang == "ko":
-                    closing_msg = f"연락 주셔서 감사드립니다. 지금까지 상담원 {agent_name}였습니다. {L.get('customer_closing_confirm', '추가 문의사항이 있으시면 언제든지 연락 주세요.')} 즐거운 하루 되세요."
+                    closing_msg = "다른 문의 사항 있으신가요?"
                 elif current_lang == "en":
-                    closing_msg = f"Thank you for contacting us. This was {agent_name}. {L.get('customer_closing_confirm', 'Please feel free to contact us if you have any additional questions.')} Have a great day!"
+                    closing_msg = "Is there anything else I can assist you with?"
                 else:  # ja
-                    closing_msg = f"お問い合わせいただき、ありがとうございました。担当は{agent_name}でした。{L.get('customer_closing_confirm', '追加のご質問がございましたら、お気軽にお問い合わせください。')} 良い一日をお過ごしください。"
+                    closing_msg = "他にご不明な点や追加のご質問はございますでしょうか？"
 
                 # 에이전트 응답으로 로그 기록
                 st.session_state.simulator_messages.append(
@@ -81,3 +82,4 @@ import os
     # 8. 고객 최종 응답 생성 및 처리 (WAIT_CUSTOMER_CLOSING_RESPONSE)
     # =========================
     elif st.session_state.sim_stage == "WAIT_CUSTOMER_CLOSING_RESPONSE":
+        pass

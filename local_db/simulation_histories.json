@@ -1,5 +1,773 @@
 [
   {
+    "id": "2ef4ef89-5c05-4412-b051-13d89e665650",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-09-22T07:50:39.210311",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "624c40d8-fa39-4ec4-a1b8-04843d9e10ab",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-09-22T07:50:33.092561",
+    "is_chat_ended": true,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "5c9315ba-780e-458e-9686-3c02bf056fe0",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-09-22T07:50:14.191791",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "88fc5f34-375e-4abe-bf3d-05f19306ecde",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-09-22T07:49:42.367512",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "909b20a9-ae21-451a-9bf8-a65367bd5c89",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-09-22T07:49:13.804677",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "16265f2e-ba6b-4b69-9715-b8112733b31e",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-09-22T07:45:04.586749",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "6197e1a5-053b-4689-8eac-fef5532ba63a",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "프랑스 파리에 도착했는데, esim 활성화가 안 돼요."
+      },
+      {
+        "role": "agent_response",
+        "content": "안녕하세요. 고객님 esim 문의 주셔서 감사드리며, 1. 현재 기종명, 2. 프랑스에서 현재 체류중인 여부를 확인하시는 대로 회신 부탁드립니다.",
+        "is_manual_response": true,
+        "timestamp": "2026-09-22T16:04:09.355654",
+        "attachments": []
+      },
+      {
+        "role": "customer",
+        "content": "혹시 프랑스 체류 중에 데이터 사용량이나 잔여 데이터를 실시간으로 확인하는 방법이 어떻게 되나요? 그리고 프랑스 외에 스위스로 이동해도 이 eSIM을 그대로 사용할 수 있는지 궁금합니다."
+      },
+      {
+        "role": "agent_response",
+        "content": "안녕하세요. 고객님 esim 문의 주셔서 감사드리며, 1. 현재 기종명, 2. 프랑스에서 현재 체류중인 여부를 확인하시는 대로 회신 부탁드립니다.",
+        "is_manual_response": true,
+        "timestamp": "2026-09-22T16:04:42.374924",
+        "attachments": []
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-09-22T07:04:49.532651",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "b0be44af-d5ab-4b83-b2e6-ac222f5e6a36",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "프랑스 파리에 도착했는데, esim 활성화가 안 돼요."
+      },
+      {
+        "role": "agent_response",
+        "content": "안녕하세요. 고객님 esim 문의 주셔서 감사드리며, 1. 현재 기종명, 2. 프랑스에서 현재 체류중인 여부를 확인하시는 대로 회신 부탁드립니다.",
+        "is_manual_response": true,
+        "timestamp": "2026-09-22T16:04:09.355654",
+        "attachments": []
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-09-22T07:04:19.438640",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "936f4657-8210-4e1a-a198-a2f51e4f8be8",
+    "initial_query": "프랑스 파리에 도착했는데, esim 활성화가 안 돼요.",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "프랑스 파리에 도착했는데, esim 활성화가 안 돼요."
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-09-22T07:03:17.060078",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "4da0e652-4ad5-4313-be44-27d74ec35ae6",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-09-22T06:56:33.440437",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "236a20ac-3f51-45ad-9d6a-cccb161ecccb",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-09-22T06:55:21.983047",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "d43d9899-0145-4a03-b825-87150d4c5769",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-09-22T06:25:38.563153",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "7ce85fac-319d-4316-b5fc-5cf1bf45d7dc",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-09-22T06:16:20.949542",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "08b03bc4-b9d2-496a-9190-b15854f752e2",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-09-22T06:15:30.062208",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "0b08f878-9cb6-440a-a44a-72f18f1ec700",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-09-22T06:14:43.290467",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "bd27e808-89a2-46c4-bc5b-68381a209fb7",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-09-22T06:14:11.824428",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "a0995409-de6b-4368-bf07-54e4faa67b6e",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "프랑스 eSIM 문의\n\nhttps://www.klook.com/activity/161040-5g-esim-france-orange-sfr/?spm=Home.SearchSuggest_LIST&clickId=e0afd4e324"
+      },
+      {
+        "role": "agent_response",
+        "content": "안녕하세요. 박지은 고객님 콜 센터에 연락 주셔서 감사드립니다. 프랑스 eSIM 문의 주신 건과 관련하여, 1. 현재 사용 중이신 기종명 2. 현재 프랑스에서의 체류 여부 확인을 하시는 대로 회신 부탁드립니다.",
+        "is_manual_response": true,
+        "timestamp": "2026-09-22T15:00:46.328727",
+        "attachments": []
+      },
+      {
+        "role": "customer",
+        "content": "네, 친절하게 안내해 주셔서 감사합니다. 다른 문의 사항은 없습니다. 수고하세요!"
+      },
+      {
+        "role": "agent_response",
+        "content": "안녕하세요. 박지은 고객님 콜 센터에 연락 주셔서 감사드립니다. 프랑스 eSIM 문의 주신 건과 관련하여, 1. 현재 사용 중이신 기종명 2. 현재 프랑스에서의 체류 여부 확인을 하시는 대로 회신 부탁드립니다.",
+        "is_manual_response": true,
+        "timestamp": "2026-09-22T15:10:18.217334",
+        "attachments": []
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-09-22T06:11:05.707356",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "1cea3ccc-2793-4428-b5ac-50f214d6df0d",
+    "initial_query": "프랑스 eSIM 문의\n\nhttps://www.klook.com/activity/161040-5g-esim-france-orange-sfr/?spm=Home.SearchSuggest_LIST&clickId=e0afd4e324",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "프랑스 eSIM 문의\n\nhttps://www.klook.com/activity/161040-5g-esim-france-orange-sfr/?spm=Home.SearchSuggest_LIST&clickId=e0afd4e324"
+      },
+      {
+        "role": "agent_response",
+        "content": "안녕하세요. 박지은 고객님 콜 센터에 연락 주셔서 감사드립니다. 프랑스 eSIM 문의 주신 건과 관련하여, 1. 현재 사용 중이신 기종명 2. 현재 프랑스에서의 체류 여부 확인을 하시는 대로 회신 부탁드립니다.",
+        "is_manual_response": true,
+        "timestamp": "2026-09-22T15:00:46.328727",
+        "attachments": []
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-09-22T06:01:08.942697",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "60059b7e-e1ce-4a55-9866-51f513aa27a1",
+    "initial_query": "프랑스 eSIM 문의\n\nhttps://www.klook.com/activity/161040-5g-esim-france-orange-sfr/?spm=Home.SearchSuggest_LIST&clickId=e0afd4e324",
+    "customer_type": "까다로운 고객",
+    "messages": [
+      {
+        "role": "customer",
+        "content": "프랑스 eSIM 문의\n\nhttps://www.klook.com/activity/161040-5g-esim-france-orange-sfr/?spm=Home.SearchSuggest_LIST&clickId=e0afd4e324"
+      }
+    ],
+    "summary": null,
+    "language_key": "ko",
+    "timestamp": "2026-09-22T05:58:38.100869",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
+    "id": "9fb39ca5-c769-4c50-aa08-666f2a8c4b06",
+    "initial_query": "",
+    "customer_type": "까다로운 고객",
+    "messages": [],
+    "summary": {
+      "main_inquiry": "",
+      "key_responses": [],
+      "customer_sentiment_score": 50,
+      "customer_satisfaction_score": 50,
+      "customer_characteristics": {
+        "language": "ko",
+        "cultural_hints": "unknown",
+        "cultural_score": 0,
+        "region": "unknown",
+        "communication_style": "unknown",
+        "formality_score": 50,
+        "detail_level_score": 50,
+        "personality_traits": {
+          "patience_level": 50,
+          "assertiveness": 50,
+          "politeness_level": 50,
+          "technical_proficiency": 50
+        }
+      },
+      "privacy_info": {
+        "has_email": false,
+        "has_phone": false,
+        "has_address": false,
+        "region_hint": "unknown"
+      },
+      "behavior_patterns": {
+        "response_time": "moderate",
+        "question_complexity": "moderate",
+        "escalation_tendency": 50
+      },
+      "summary": "Customer inquiry about: "
+    },
+    "language_key": "ko",
+    "timestamp": "2026-09-22T05:26:04.604840",
+    "is_chat_ended": false,
+    "attachment_context": "",
+    "is_call": false
+  },
+  {
     "id": "f23f5abb-222b-4679-8fed-e680895bb7ee",
     "initial_query": "",
     "customer_type": "까다로운 고객",

@@ -4,7 +4,7 @@
 # ========================================
 
 import streamlit as st
-from chat_modules.customer_language_detection import detect_and_handle_language_change
+from _pages.chat_modules.customer_language_detection import detect_and_handle_language_change
 
 
 def handle_customer_mode_input(L, current_lang, detect_closing_intent_func, determine_customer_turn_stage_func):

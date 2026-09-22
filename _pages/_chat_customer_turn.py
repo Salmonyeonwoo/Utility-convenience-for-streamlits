@@ -167,7 +167,10 @@ def render_customer_turn(L, current_lang):
             last_customer_message = msg.get("content", "")
             break
 
-    if last_customer_message is None:
+    last_msg = st.session_state.simulator_messages[-1] if st.session_state.simulator_messages else {}
+    needs_customer_reaction = (last_customer_message is None) or (last_msg.get("role") in ["agent", "agent_response"])
+
+    if needs_customer_reaction:
         # 고객 반응 즉시 생성 (5초 이내 빠른 응답)
         customer_response = generate_customer_reaction(
             st.session_state.language, is_call=False)
@@ -282,6 +285,7 @@ def render_customer_turn(L, current_lang):
                             st.session_state.agent_response_area_text = draft_text_clean
                             st.session_state.auto_draft_generated = True
                             st.session_state.auto_generated_draft_text = draft_text_clean
+                            st.session_state.last_agent_draft_text = draft_text_clean
                             st.session_state.last_draft_for_message_idx = len(st.session_state.simulator_messages) - 1
                             
                             # ⭐ 응대 초안은 입력창에만 표시 (자동 전송하지 않음)

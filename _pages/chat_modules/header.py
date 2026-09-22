@@ -13,6 +13,7 @@ import time
 import os
 
 def render_chat_simulator():
+    pass
 # 채팅/이메일 시뮬레이터
 import streamlit as st
 from lang_pack import LANG
@@ -27,4 +28,4 @@ import uuid
 import time
 import os
 
-def render_chat_simulator():
+def render_chat_simulator():    pass

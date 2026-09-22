@@ -1339,6 +1339,433 @@
         "education_ko": "서울대학교 경영학 학사",
         "career_ko": "SK텔레콤 CEO, SK C&C 대표이사 등 다양한 SK그룹 내 직책 역임"
       }
+    },
+    "Mercedes-Benz": {
+      "info_ko": "메르세데스-벤츠(Mercedes-Benz)는 1886년 칼 벤츠에 의해 설립된 세계 최초의 자동차 제조사이자 독일을 대표하는 글로벌 최고급 프리미엄 자동차 브랜드입니다. 최고급 세단(S-Class, E-Class, C-Class), 프리미엄 SUV(GLC, GLE, GLS), 고성능 서브 브랜드인 메르세데스-AMG, 초호화 브랜드 메르세데스-마이바흐, 그리고 전동화 전용 라인업인 메르세데스-EQ 시리즈를 통해 글로벌 럭셔리 모빌리티 시장을 선도하고 있습니다.",
+      "info_en": "Mercedes-Benz is a renowned German luxury and commercial vehicle automotive brand established in 1926, tracing its origins to Karl Benz's creation of the first petrol-powered car in 1886. It is globally celebrated for its premium passenger cars, cutting-edge engineering, safety innovations, and the Mercedes-EQ electric lineup.",
+      "info_ja": "メルセデス・ベンツ（Mercedes-Benz）は、1886年にカール・ベンツによって設立されたドイツの高級自動車メーカーです。最高級セダン、SUV、電気自動車EQシリーズ、ハイパフォーマンスのAMGなど、世界のプレミアムモビリティをリードしています。",
+      "popular_products": [
+        "S-Class (플래그십 럭셔리 대형 세단)",
+        "E-Class (글로벌 베스트셀링 프리미엄 비즈니스 세단)",
+        "C-Class (도심형 컴팩트 럭셔리 세단)",
+        "Mercedes-EQ (EQE / EQS 순수 전기 세단 및 SUV)",
+        "Mercedes-AMG (초고성능 퍼포먼스 라인업)",
+        "Mercedes-Maybach (초호화 럭셔리 리무진)"
+      ],
+      "trending_topics": [
+        "드라이브 파일럿 (Drive Pilot) 레벨 3 자율주행",
+        "MBUX 하이퍼스크린 차세대 AI 인포테인먼트",
+        "순수 전기차 EQE/EQS 라인업 및 충전 네트워크",
+        "지속 가능한 탄소 중립 제조 전략 (Ambition 2039)"
+      ],
+      "faqs": [
+        {
+          "question_ko": "메르세데스-벤츠의 주요 특징과 브랜드 가치는 무엇인가요?",
+          "answer_ko": "메르세데스-벤츠는 'The Best or Nothing(최고가 아니면 만들지 않는다)'이라는 브랜드 철학을 바탕으로, 세계 최고 수준의 안전 공학, 정밀한 주행 성능, 독보적인 럭셔리 인테리어를 제공합니다. 첨단 MBUX 인공지능 인포테인먼트 시스템과 레벨 3 자율주행 기술을 통해 차세대 모빌리티를 선도하고 있습니다.",
+          "question_en": "What are the main features and brand values of Mercedes-Benz?",
+          "answer_en": "Guided by 'The Best or Nothing', Mercedes-Benz delivers world-class safety engineering, refined performance, and peerless luxury. It pioneers modern mobility with MBUX AI infotainment and Level 3 automated driving.",
+          "question_ja": "メルセデス・ベンツの主な特徴とブランド価値は何ですか？",
+          "answer_ja": "「The Best or Nothing（最善か無か）」の哲学のもと、世界最高峰の安全性、走行性能、ラグジュアリーを提供し、MBUX AIや自動運転技術をリードしています。"
+        },
+        {
+          "question_ko": "메르세데스-EQ 순수 전기차 충전 서비스(Mercedes me Charge)는 어떻게 이용하나요?",
+          "answer_ko": "메르세데스-EQ 차량 고객은 'Mercedes me Charge' 앱 및 멤버십 카드를 통해 국내외 수십만 개 충전소에서 단일 계정으로 간편 결제 및 충전이 가능합니다. 차량 내 내비게이션(Electric Intelligence)과 연동되어 최적의 충전 경로와 실시간 충전기 가용 현황을 안내받으실 수 있습니다.",
+          "question_en": "How do I use Mercedes me Charge for electric vehicles?",
+          "answer_en": "Mercedes-EQ owners can charge across nationwide partner networks using the Mercedes me Charge app or card, featuring integrated Electric Intelligence route navigation.",
+          "question_ja": "Mercedes me Chargeはどのように利用しますか？",
+          "answer_ja": "専用アプリまたはカードを通じて、提携充電スタンドでシームレスな充電と決済が可能です。"
+        },
+        {
+          "question_ko": "보증 기간 및 정기 점검(컴팩트플러스/워런티 플러스) 규정은 어떻게 되나요?",
+          "answer_ko": "신차 출고 시 일반 부품 및 엔진/동력계통에 대해 3년/10만km 무상 보증을 제공하며, '워런티 플러스'를 통해 최대 5년/14만km까지 연장할 수 있습니다. 정기 점검 패키지인 '컴팩트플러스'를 통해 공식 서비스센터에서 정기 소모품 교환과 전문 테크니션 점검을 받으실 수 있습니다.",
+          "question_en": "What are the warranty and maintenance terms for Mercedes-Benz?",
+          "answer_en": "Vehicles include a 3-year/100,000 km standard warranty, extendable up to 5 years/140,000 km with Warranty Plus, along with CompactPlus maintenance packages.",
+          "question_ja": "保証期間および定期点検サービスはどうなっていますか？",
+          "answer_ja": "新車3年/10万kmの標準保証を提供し、ワランティ・プラスで最大5年まで延長可能です。"
+        },
+        {
+          "question_ko": "MBUX 음성 인식(Hey Mercedes)과 내비게이션 업데이트는 어떻게 하나요?",
+          "answer_ko": "'안녕 벤츠' 또는 'Hey Mercedes' 음성 명령을 통해 공조기, 내비게이션, 시트 온도, 앰비언트 라이트 등을 자연어로 제어할 수 있습니다. 내비게이션 지도 및 시스템 소프트웨어는 OTA(무선 통신 업데이트)를 통해 센터 방문 없이 자동으로 최신 버전으로 업데이트됩니다.",
+          "question_en": "How do I use MBUX voice control and OTA updates?",
+          "answer_en": "Say 'Hey Mercedes' to control climate, navigation, and cabin comfort. Navigation maps and system software update over-the-air (OTA) automatically.",
+          "question_ja": "MBUX音声操作とOTAアップデートの方法は？",
+          "answer_ja": "「ヘイ、メルセデス」と話しかけるだけで各種機能を操作でき、OTAによる自動更新に対応しています。"
+        },
+        {
+          "question_ko": "메르세데스-벤츠 고객센터 및 24시간 긴급 출동 서비스(Mobilo) 연락처는 어디인가요?",
+          "answer_ko": "벤츠 고객센터(080-001-1886)를 통해 연중무휴 24시간 상담 및 긴급 출동 지원(Mobilo)을 받으실 수 있습니다. 차량 내비게이션 상단의 'me' 버튼 또는 SOS 버튼을 누르시면 긴급 출동 센터로 즉시 연결됩니다.",
+          "question_en": "How can I contact Mercedes-Benz 24/7 Roadside Assistance?",
+          "answer_en": "Call 080-001-1886 or press the in-car 'me' / SOS button for 24/7 Mobilo roadside assistance and customer care.",
+          "question_ja": "24時間ロードサービスへの連絡方法は？",
+          "answer_ja": "カスタマーセンターまたは車内のSOSボタンから24時間365日緊急サポートをご利用いただけます。"
+        }
+      ]
+    },
+    "메르세데스 벤츠": {
+      "info_ko": "메르세데스-벤츠(Mercedes-Benz)는 1886년 칼 벤츠에 의해 설립된 세계 최초의 자동차 제조사이자 독일을 대표하는 글로벌 최고급 프리미엄 자동차 브랜드입니다. 최고급 세단(S-Class, E-Class, C-Class), 프리미엄 SUV(GLC, GLE, GLS), 고성능 서브 브랜드인 메르세데스-AMG, 초호화 브랜드 메르세데스-마이바흐, 그리고 전동화 전용 라인업인 메르세데스-EQ 시리즈를 통해 글로벌 럭셔리 모빌리티 시장을 선도하고 있습니다.",
+      "info_en": "Mercedes-Benz is a renowned German luxury and commercial vehicle automotive brand established in 1926, tracing its origins to Karl Benz's creation of the first petrol-powered car in 1886. It is globally celebrated for its premium passenger cars, cutting-edge engineering, safety innovations, and the Mercedes-EQ electric lineup.",
+      "info_ja": "メルセデス・ベンツ（Mercedes-Benz）は、1886年にカール・ベンツによって設立されたドイツの高級自動車メーカーです。最高級セダン、SUV、電気自動車EQシリーズ、ハイパフォーマンスのAMGなど、世界のプレミアムモビリティをリードしています。",
+      "popular_products": [
+        "S-Class (플래그십 럭셔리 대형 세단)",
+        "E-Class (글로벌 베스트셀링 프리미엄 비즈니스 세단)",
+        "C-Class (도심형 컴팩트 럭셔리 세단)",
+        "Mercedes-EQ (EQE / EQS 순수 전기 세단 및 SUV)",
+        "Mercedes-AMG (초고성능 퍼포먼스 라인업)",
+        "Mercedes-Maybach (초호화 럭셔리 리무진)"
+      ],
+      "trending_topics": [
+        "드라이브 파일럿 (Drive Pilot) 레벨 3 자율주행",
+        "MBUX 하이퍼스크린 차세대 AI 인포테인먼트",
+        "순수 전기차 EQE/EQS 라인업 및 충전 네트워크",
+        "지속 가능한 탄소 중립 제조 전략 (Ambition 2039)"
+      ],
+      "faqs": [
+        {
+          "question_ko": "메르세데스-벤츠의 주요 특징과 브랜드 가치는 무엇인가요?",
+          "answer_ko": "메르세데스-벤츠는 'The Best or Nothing(최고가 아니면 만들지 않는다)'이라는 브랜드 철학을 바탕으로, 세계 최고 수준의 안전 공학, 정밀한 주행 성능, 독보적인 럭셔리 인테리어를 제공합니다. 첨단 MBUX 인공지능 인포테인먼트 시스템과 레벨 3 자율주행 기술을 통해 차세대 모빌리티를 선도하고 있습니다.",
+          "question_en": "What are the main features and brand values of Mercedes-Benz?",
+          "answer_en": "Guided by 'The Best or Nothing', Mercedes-Benz delivers world-class safety engineering, refined performance, and peerless luxury. It pioneers modern mobility with MBUX AI infotainment and Level 3 automated driving.",
+          "question_ja": "メルセデス・ベンツの主な特徴とブランド価値は何ですか？",
+          "answer_ja": "「The Best or Nothing（最善か無か）」の哲学のもと、世界最高峰の安全性、走行性能、ラグジュアリーを提供し、MBUX AIや自動運転技術をリードしています。"
+        },
+        {
+          "question_ko": "메르세데스-EQ 순수 전기차 충전 서비스(Mercedes me Charge)는 어떻게 이용하나요?",
+          "answer_ko": "메르세데스-EQ 차량 고객은 'Mercedes me Charge' 앱 및 멤버십 카드를 통해 국내외 수십만 개 충전소에서 단일 계정으로 간편 결제 및 충전이 가능합니다. 차량 내 내비게이션(Electric Intelligence)과 연동되어 최적의 충전 경로와 실시간 충전기 가용 현황을 안내받으실 수 있습니다.",
+          "question_en": "How do I use Mercedes me Charge for electric vehicles?",
+          "answer_en": "Mercedes-EQ owners can charge across nationwide partner networks using the Mercedes me Charge app or card, featuring integrated Electric Intelligence route navigation.",
+          "question_ja": "Mercedes me Chargeはどのように利用しますか？",
+          "answer_ja": "専用アプリまたはカードを通じて、提携充電スタンドでシームレスな充電と決済が可能です。"
+        },
+        {
+          "question_ko": "보증 기간 및 정기 점검(컴팩트플러스/워런티 플러스) 규정은 어떻게 되나요?",
+          "answer_ko": "신차 출고 시 일반 부품 및 엔진/동력계통에 대해 3년/10만km 무상 보증을 제공하며, '워런티 플러스'를 통해 최대 5년/14만km까지 연장할 수 있습니다. 정기 점검 패키지인 '컴팩트플러스'를 통해 공식 서비스센터에서 정기 소모품 교환과 전문 테크니션 점검을 받으실 수 있습니다.",
+          "question_en": "What are the warranty and maintenance terms for Mercedes-Benz?",
+          "answer_en": "Vehicles include a 3-year/100,000 km standard warranty, extendable up to 5 years/140,000 km with Warranty Plus, along with CompactPlus maintenance packages.",
+          "question_ja": "保証期間および定期点検サービスはどうなっていますか？",
+          "answer_ja": "新車3年/10万kmの標準保証を提供し、ワランティ・プラスで最大5年まで延長可能です。"
+        },
+        {
+          "question_ko": "MBUX 음성 인식(Hey Mercedes)과 내비게이션 업데이트는 어떻게 하나요?",
+          "answer_ko": "'안녕 벤츠' 또는 'Hey Mercedes' 음성 명령을 통해 공조기, 내비게이션, 시트 온도, 앰비언트 라이트 등을 자연어로 제어할 수 있습니다. 내비게이션 지도 및 시스템 소프트웨어는 OTA(무선 통신 업데이트)를 통해 센터 방문 없이 자동으로 최신 버전으로 업데이트됩니다.",
+          "question_en": "How do I use MBUX voice control and OTA updates?",
+          "answer_en": "Say 'Hey Mercedes' to control climate, navigation, and cabin comfort. Navigation maps and system software update over-the-air (OTA) automatically.",
+          "question_ja": "MBUX音声操作とOTAアップデートの方法は？",
+          "answer_ja": "「ヘイ、メルセデス」と話しかけるだけで各種機能を操作でき、OTAによる自動更新に対応しています。"
+        },
+        {
+          "question_ko": "메르세데스-벤츠 고객센터 및 24시간 긴급 출동 서비스(Mobilo) 연락처는 어디인가요?",
+          "answer_ko": "벤츠 고객센터(080-001-1886)를 통해 연중무휴 24시간 상담 및 긴급 출동 지원(Mobilo)을 받으실 수 있습니다. 차량 내비게이션 상단의 'me' 버튼 또는 SOS 버튼을 누르시면 긴급 출동 센터로 즉시 연결됩니다.",
+          "question_en": "How can I contact Mercedes-Benz 24/7 Roadside Assistance?",
+          "answer_en": "Call 080-001-1886 or press the in-car 'me' / SOS button for 24/7 Mobilo roadside assistance and customer care.",
+          "question_ja": "24時間ロードサービスへの連絡方法は？",
+          "answer_ja": "カスタマーセンターまたは車内のSOSボタンから24時間365日緊急サポートをご利用いただけます。"
+        }
+      ]
+    },
+    "메르세데스-벤츠": {
+      "info_ko": "메르세데스-벤츠(Mercedes-Benz)는 1886년 칼 벤츠에 의해 설립된 세계 최초의 자동차 제조사이자 독일을 대표하는 글로벌 최고급 프리미엄 자동차 브랜드입니다. 최고급 세단(S-Class, E-Class, C-Class), 프리미엄 SUV(GLC, GLE, GLS), 고성능 서브 브랜드인 메르세데스-AMG, 초호화 브랜드 메르세데스-마이바흐, 그리고 전동화 전용 라인업인 메르세데스-EQ 시리즈를 통해 글로벌 럭셔리 모빌리티 시장을 선도하고 있습니다.",
+      "info_en": "Mercedes-Benz is a renowned German luxury and commercial vehicle automotive brand established in 1926, tracing its origins to Karl Benz's creation of the first petrol-powered car in 1886. It is globally celebrated for its premium passenger cars, cutting-edge engineering, safety innovations, and the Mercedes-EQ electric lineup.",
+      "info_ja": "メルセデス・ベンツ（Mercedes-Benz）は、1886年にカール・ベンツによって設立されたドイツの高級自動車メーカーです。最高級セダン、SUV、電気自動車EQシリーズ、ハイパフォーマンスのAMGなど、世界のプレミアムモビリティをリードしています。",
+      "popular_products": [
+        "S-Class (플래그십 럭셔리 대형 세단)",
+        "E-Class (글로벌 베스트셀링 프리미엄 비즈니스 세단)",
+        "C-Class (도심형 컴팩트 럭셔리 세단)",
+        "Mercedes-EQ (EQE / EQS 순수 전기 세단 및 SUV)",
+        "Mercedes-AMG (초고성능 퍼포먼스 라인업)",
+        "Mercedes-Maybach (초호화 럭셔리 리무진)"
+      ],
+      "trending_topics": [
+        "드라이브 파일럿 (Drive Pilot) 레벨 3 자율주행",
+        "MBUX 하이퍼스크린 차세대 AI 인포테인먼트",
+        "순수 전기차 EQE/EQS 라인업 및 충전 네트워크",
+        "지속 가능한 탄소 중립 제조 전략 (Ambition 2039)"
+      ],
+      "faqs": [
+        {
+          "question_ko": "메르세데스-벤츠의 주요 특징과 브랜드 가치는 무엇인가요?",
+          "answer_ko": "메르세데스-벤츠는 'The Best or Nothing(최고가 아니면 만들지 않는다)'이라는 브랜드 철학을 바탕으로, 세계 최고 수준의 안전 공학, 정밀한 주행 성능, 독보적인 럭셔리 인테리어를 제공합니다. 첨단 MBUX 인공지능 인포테인먼트 시스템과 레벨 3 자율주행 기술을 통해 차세대 모빌리티를 선도하고 있습니다.",
+          "question_en": "What are the main features and brand values of Mercedes-Benz?",
+          "answer_en": "Guided by 'The Best or Nothing', Mercedes-Benz delivers world-class safety engineering, refined performance, and peerless luxury. It pioneers modern mobility with MBUX AI infotainment and Level 3 automated driving.",
+          "question_ja": "メルセデス・ベンツの主な特徴とブランド価値は何ですか？",
+          "answer_ja": "「The Best or Nothing（最善か無か）」の哲学のもと、世界最高峰の安全性、走行性能、ラグジュアリーを提供し、MBUX AIや自動運転技術をリードしています。"
+        },
+        {
+          "question_ko": "메르세데스-EQ 순수 전기차 충전 서비스(Mercedes me Charge)는 어떻게 이용하나요?",
+          "answer_ko": "메르세데스-EQ 차량 고객은 'Mercedes me Charge' 앱 및 멤버십 카드를 통해 국내외 수십만 개 충전소에서 단일 계정으로 간편 결제 및 충전이 가능합니다. 차량 내 내비게이션(Electric Intelligence)과 연동되어 최적의 충전 경로와 실시간 충전기 가용 현황을 안내받으실 수 있습니다.",
+          "question_en": "How do I use Mercedes me Charge for electric vehicles?",
+          "answer_en": "Mercedes-EQ owners can charge across nationwide partner networks using the Mercedes me Charge app or card, featuring integrated Electric Intelligence route navigation.",
+          "question_ja": "Mercedes me Chargeはどのように利用しますか？",
+          "answer_ja": "専用アプリまたはカードを通じて、提携充電スタンドでシームレスな充電と決済が可能です。"
+        },
+        {
+          "question_ko": "보증 기간 및 정기 점검(컴팩트플러스/워런티 플러스) 규정은 어떻게 되나요?",
+          "answer_ko": "신차 출고 시 일반 부품 및 엔진/동력계통에 대해 3년/10만km 무상 보증을 제공하며, '워런티 플러스'를 통해 최대 5년/14만km까지 연장할 수 있습니다. 정기 점검 패키지인 '컴팩트플러스'를 통해 공식 서비스센터에서 정기 소모품 교환과 전문 테크니션 점검을 받으실 수 있습니다.",
+          "question_en": "What are the warranty and maintenance terms for Mercedes-Benz?",
+          "answer_en": "Vehicles include a 3-year/100,000 km standard warranty, extendable up to 5 years/140,000 km with Warranty Plus, along with CompactPlus maintenance packages.",
+          "question_ja": "保証期間および定期点検サービスはどうなっていますか？",
+          "answer_ja": "新車3年/10万kmの標準保証を提供し、ワランティ・プラスで最大5年まで延長可能です。"
+        },
+        {
+          "question_ko": "MBUX 음성 인식(Hey Mercedes)과 내비게이션 업데이트는 어떻게 하나요?",
+          "answer_ko": "'안녕 벤츠' 또는 'Hey Mercedes' 음성 명령을 통해 공조기, 내비게이션, 시트 온도, 앰비언트 라이트 등을 자연어로 제어할 수 있습니다. 내비게이션 지도 및 시스템 소프트웨어는 OTA(무선 통신 업데이트)를 통해 센터 방문 없이 자동으로 최신 버전으로 업데이트됩니다.",
+          "question_en": "How do I use MBUX voice control and OTA updates?",
+          "answer_en": "Say 'Hey Mercedes' to control climate, navigation, and cabin comfort. Navigation maps and system software update over-the-air (OTA) automatically.",
+          "question_ja": "MBUX音声操作とOTAアップデートの方法は？",
+          "answer_ja": "「ヘイ、メルセデス」と話しかけるだけで各種機能を操作でき、OTAによる自動更新に対応しています。"
+        },
+        {
+          "question_ko": "메르세데스-벤츠 고객센터 및 24시간 긴급 출동 서비스(Mobilo) 연락처는 어디인가요?",
+          "answer_ko": "벤츠 고객센터(080-001-1886)를 통해 연중무휴 24시간 상담 및 긴급 출동 지원(Mobilo)을 받으실 수 있습니다. 차량 내비게이션 상단의 'me' 버튼 또는 SOS 버튼을 누르시면 긴급 출동 센터로 즉시 연결됩니다.",
+          "question_en": "How can I contact Mercedes-Benz 24/7 Roadside Assistance?",
+          "answer_en": "Call 080-001-1886 or press the in-car 'me' / SOS button for 24/7 Mobilo roadside assistance and customer care.",
+          "question_ja": "24時間ロードサービスへの連絡方法は？",
+          "answer_ja": "カスタマーセンターまたは車内のSOSボタンから24時間365日緊急サポートをご利用いただけます。"
+        }
+      ]
+    },
+    "Mercendo Benz": {
+      "info_ko": "메르세데스-벤츠(Mercedes-Benz)는 1886년 칼 벤츠에 의해 설립된 세계 최초의 자동차 제조사이자 독일을 대표하는 글로벌 최고급 프리미엄 자동차 브랜드입니다. 최고급 세단(S-Class, E-Class, C-Class), 프리미엄 SUV(GLC, GLE, GLS), 고성능 서브 브랜드인 메르세데스-AMG, 초호화 브랜드 메르세데스-마이바흐, 그리고 전동화 전용 라인업인 메르세데스-EQ 시리즈를 통해 글로벌 럭셔리 모빌리티 시장을 선도하고 있습니다.",
+      "info_en": "Mercedes-Benz is a renowned German luxury and commercial vehicle automotive brand established in 1926, tracing its origins to Karl Benz's creation of the first petrol-powered car in 1886. It is globally celebrated for its premium passenger cars, cutting-edge engineering, safety innovations, and the Mercedes-EQ electric lineup.",
+      "info_ja": "メルセデス・ベンツ（Mercedes-Benz）は、1886年にカール・ベンツによって設立されたドイツの高級自動車メーカーです。最高級セダン、SUV、電気自動車EQシリーズ、ハイパフォーマンスのAMGなど、世界のプレミアムモビリティをリードしています。",
+      "popular_products": [
+        "S-Class (플래그십 럭셔리 대형 세단)",
+        "E-Class (글로벌 베스트셀링 프리미엄 비즈니스 세단)",
+        "C-Class (도심형 컴팩트 럭셔리 세단)",
+        "Mercedes-EQ (EQE / EQS 순수 전기 세단 및 SUV)",
+        "Mercedes-AMG (초고성능 퍼포먼스 라인업)",
+        "Mercedes-Maybach (초호화 럭셔리 리무진)"
+      ],
+      "trending_topics": [
+        "드라이브 파일럿 (Drive Pilot) 레벨 3 자율주행",
+        "MBUX 하이퍼스크린 차세대 AI 인포테인먼트",
+        "순수 전기차 EQE/EQS 라인업 및 충전 네트워크",
+        "지속 가능한 탄소 중립 제조 전략 (Ambition 2039)"
+      ],
+      "faqs": [
+        {
+          "question_ko": "메르세데스-벤츠의 주요 특징과 브랜드 가치는 무엇인가요?",
+          "answer_ko": "메르세데스-벤츠는 'The Best or Nothing(최고가 아니면 만들지 않는다)'이라는 브랜드 철학을 바탕으로, 세계 최고 수준의 안전 공학, 정밀한 주행 성능, 독보적인 럭셔리 인테리어를 제공합니다. 첨단 MBUX 인공지능 인포테인먼트 시스템과 레벨 3 자율주행 기술을 통해 차세대 모빌리티를 선도하고 있습니다.",
+          "question_en": "What are the main features and brand values of Mercedes-Benz?",
+          "answer_en": "Guided by 'The Best or Nothing', Mercedes-Benz delivers world-class safety engineering, refined performance, and peerless luxury. It pioneers modern mobility with MBUX AI infotainment and Level 3 automated driving.",
+          "question_ja": "メルセデス・ベンツの主な特徴とブランド価値は何ですか？",
+          "answer_ja": "「The Best or Nothing（最善か無か）」の哲学のもと、世界最高峰の安全性、走行性能、ラグジュアリーを提供し、MBUX AIや自動運転技術をリードしています。"
+        },
+        {
+          "question_ko": "메르세데스-EQ 순수 전기차 충전 서비스(Mercedes me Charge)는 어떻게 이용하나요?",
+          "answer_ko": "메르세데스-EQ 차량 고객은 'Mercedes me Charge' 앱 및 멤버십 카드를 통해 국내외 수십만 개 충전소에서 단일 계정으로 간편 결제 및 충전이 가능합니다. 차량 내 내비게이션(Electric Intelligence)과 연동되어 최적의 충전 경로와 실시간 충전기 가용 현황을 안내받으실 수 있습니다.",
+          "question_en": "How do I use Mercedes me Charge for electric vehicles?",
+          "answer_en": "Mercedes-EQ owners can charge across nationwide partner networks using the Mercedes me Charge app or card, featuring integrated Electric Intelligence route navigation.",
+          "question_ja": "Mercedes me Chargeはどのように利用しますか？",
+          "answer_ja": "専用アプリまたはカードを通じて、提携充電スタンドでシームレスな充電と決済が可能です。"
+        },
+        {
+          "question_ko": "보증 기간 및 정기 점검(컴팩트플러스/워런티 플러스) 규정은 어떻게 되나요?",
+          "answer_ko": "신차 출고 시 일반 부품 및 엔진/동력계통에 대해 3년/10만km 무상 보증을 제공하며, '워런티 플러스'를 통해 최대 5년/14만km까지 연장할 수 있습니다. 정기 점검 패키지인 '컴팩트플러스'를 통해 공식 서비스센터에서 정기 소모품 교환과 전문 테크니션 점검을 받으실 수 있습니다.",
+          "question_en": "What are the warranty and maintenance terms for Mercedes-Benz?",
+          "answer_en": "Vehicles include a 3-year/100,000 km standard warranty, extendable up to 5 years/140,000 km with Warranty Plus, along with CompactPlus maintenance packages.",
+          "question_ja": "保証期間および定期点検サービスはどうなっていますか？",
+          "answer_ja": "新車3年/10万kmの標準保証を提供し、ワランティ・プラスで最大5年まで延長可能です。"
+        },
+        {
+          "question_ko": "MBUX 음성 인식(Hey Mercedes)과 내비게이션 업데이트는 어떻게 하나요?",
+          "answer_ko": "'안녕 벤츠' 또는 'Hey Mercedes' 음성 명령을 통해 공조기, 내비게이션, 시트 온도, 앰비언트 라이트 등을 자연어로 제어할 수 있습니다. 내비게이션 지도 및 시스템 소프트웨어는 OTA(무선 통신 업데이트)를 통해 센터 방문 없이 자동으로 최신 버전으로 업데이트됩니다.",
+          "question_en": "How do I use MBUX voice control and OTA updates?",
+          "answer_en": "Say 'Hey Mercedes' to control climate, navigation, and cabin comfort. Navigation maps and system software update over-the-air (OTA) automatically.",
+          "question_ja": "MBUX音声操作とOTAアップデートの方法は？",
+          "answer_ja": "「ヘイ、メルセデス」と話しかけるだけで各種機能を操作でき、OTAによる自動更新に対応しています。"
+        },
+        {
+          "question_ko": "메르세데스-벤츠 고객센터 및 24시간 긴급 출동 서비스(Mobilo) 연락처는 어디인가요?",
+          "answer_ko": "벤츠 고객센터(080-001-1886)를 통해 연중무휴 24시간 상담 및 긴급 출동 지원(Mobilo)을 받으실 수 있습니다. 차량 내비게이션 상단의 'me' 버튼 또는 SOS 버튼을 누르시면 긴급 출동 센터로 즉시 연결됩니다.",
+          "question_en": "How can I contact Mercedes-Benz 24/7 Roadside Assistance?",
+          "answer_en": "Call 080-001-1886 or press the in-car 'me' / SOS button for 24/7 Mobilo roadside assistance and customer care.",
+          "question_ja": "24時間ロードサービスへの連絡方法は？",
+          "answer_ja": "カスタマーセンターまたは車内のSOSボタンから24時間365日緊急サポートをご利用いただけます。"
+        }
+      ]
+    },
+    "벤츠": {
+      "info_ko": "메르세데스-벤츠(Mercedes-Benz)는 1886년 칼 벤츠에 의해 설립된 세계 최초의 자동차 제조사이자 독일을 대표하는 글로벌 최고급 프리미엄 자동차 브랜드입니다. 최고급 세단(S-Class, E-Class, C-Class), 프리미엄 SUV(GLC, GLE, GLS), 고성능 서브 브랜드인 메르세데스-AMG, 초호화 브랜드 메르세데스-마이바흐, 그리고 전동화 전용 라인업인 메르세데스-EQ 시리즈를 통해 글로벌 럭셔리 모빌리티 시장을 선도하고 있습니다.",
+      "info_en": "Mercedes-Benz is a renowned German luxury and commercial vehicle automotive brand established in 1926, tracing its origins to Karl Benz's creation of the first petrol-powered car in 1886. It is globally celebrated for its premium passenger cars, cutting-edge engineering, safety innovations, and the Mercedes-EQ electric lineup.",
+      "info_ja": "メルセデス・ベンツ（Mercedes-Benz）は、1886年にカール・ベンツによって設立されたドイツの高級自動車メーカーです。最高級セダン、SUV、電気自動車EQシリーズ、ハイパフォーマンスのAMGなど、世界のプレミアムモビリティをリードしています。",
+      "popular_products": [
+        "S-Class (플래그십 럭셔리 대형 세단)",
+        "E-Class (글로벌 베스트셀링 프리미엄 비즈니스 세단)",
+        "C-Class (도심형 컴팩트 럭셔리 세단)",
+        "Mercedes-EQ (EQE / EQS 순수 전기 세단 및 SUV)",
+        "Mercedes-AMG (초고성능 퍼포먼스 라인업)",
+        "Mercedes-Maybach (초호화 럭셔리 리무진)"
+      ],
+      "trending_topics": [
+        "드라이브 파일럿 (Drive Pilot) 레벨 3 자율주행",
+        "MBUX 하이퍼스크린 차세대 AI 인포테인먼트",
+        "순수 전기차 EQE/EQS 라인업 및 충전 네트워크",
+        "지속 가능한 탄소 중립 제조 전략 (Ambition 2039)"
+      ],
+      "faqs": [
+        {
+          "question_ko": "메르세데스-벤츠의 주요 특징과 브랜드 가치는 무엇인가요?",
+          "answer_ko": "메르세데스-벤츠는 'The Best or Nothing(최고가 아니면 만들지 않는다)'이라는 브랜드 철학을 바탕으로, 세계 최고 수준의 안전 공학, 정밀한 주행 성능, 독보적인 럭셔리 인테리어를 제공합니다. 첨단 MBUX 인공지능 인포테인먼트 시스템과 레벨 3 자율주행 기술을 통해 차세대 모빌리티를 선도하고 있습니다.",
+          "question_en": "What are the main features and brand values of Mercedes-Benz?",
+          "answer_en": "Guided by 'The Best or Nothing', Mercedes-Benz delivers world-class safety engineering, refined performance, and peerless luxury. It pioneers modern mobility with MBUX AI infotainment and Level 3 automated driving.",
+          "question_ja": "メルセデス・ベンツの主な特徴とブランド価値は何ですか？",
+          "answer_ja": "「The Best or Nothing（最善か無か）」の哲学のもと、世界最高峰の安全性、走行性能、ラグジュアリーを提供し、MBUX AIや自動運転技術をリードしています。"
+        },
+        {
+          "question_ko": "메르세데스-EQ 순수 전기차 충전 서비스(Mercedes me Charge)는 어떻게 이용하나요?",
+          "answer_ko": "메르세데스-EQ 차량 고객은 'Mercedes me Charge' 앱 및 멤버십 카드를 통해 국내외 수십만 개 충전소에서 단일 계정으로 간편 결제 및 충전이 가능합니다. 차량 내 내비게이션(Electric Intelligence)과 연동되어 최적의 충전 경로와 실시간 충전기 가용 현황을 안내받으실 수 있습니다.",
+          "question_en": "How do I use Mercedes me Charge for electric vehicles?",
+          "answer_en": "Mercedes-EQ owners can charge across nationwide partner networks using the Mercedes me Charge app or card, featuring integrated Electric Intelligence route navigation.",
+          "question_ja": "Mercedes me Chargeはどのように利用しますか？",
+          "answer_ja": "専用アプリまたはカードを通じて、提携充電スタンドでシームレスな充電と決済が可能です。"
+        },
+        {
+          "question_ko": "보증 기간 및 정기 점검(컴팩트플러스/워런티 플러스) 규정은 어떻게 되나요?",
+          "answer_ko": "신차 출고 시 일반 부품 및 엔진/동력계통에 대해 3년/10만km 무상 보증을 제공하며, '워런티 플러스'를 통해 최대 5년/14만km까지 연장할 수 있습니다. 정기 점검 패키지인 '컴팩트플러스'를 통해 공식 서비스센터에서 정기 소모품 교환과 전문 테크니션 점검을 받으실 수 있습니다.",
+          "question_en": "What are the warranty and maintenance terms for Mercedes-Benz?",
+          "answer_en": "Vehicles include a 3-year/100,000 km standard warranty, extendable up to 5 years/140,000 km with Warranty Plus, along with CompactPlus maintenance packages.",
+          "question_ja": "保証期間および定期点検サービスはどうなっていますか？",
+          "answer_ja": "新車3年/10万kmの標準保証を提供し、ワランティ・プラスで最大5年まで延長可能です。"
+        },
+        {
+          "question_ko": "MBUX 음성 인식(Hey Mercedes)과 내비게이션 업데이트는 어떻게 하나요?",
+          "answer_ko": "'안녕 벤츠' 또는 'Hey Mercedes' 음성 명령을 통해 공조기, 내비게이션, 시트 온도, 앰비언트 라이트 등을 자연어로 제어할 수 있습니다. 내비게이션 지도 및 시스템 소프트웨어는 OTA(무선 통신 업데이트)를 통해 센터 방문 없이 자동으로 최신 버전으로 업데이트됩니다.",
+          "question_en": "How do I use MBUX voice control and OTA updates?",
+          "answer_en": "Say 'Hey Mercedes' to control climate, navigation, and cabin comfort. Navigation maps and system software update over-the-air (OTA) automatically.",
+          "question_ja": "MBUX音声操作とOTAアップデートの方法は？",
+          "answer_ja": "「ヘイ、メルセデス」と話しかけるだけで各種機能を操作でき、OTAによる自動更新に対応しています。"
+        },
+        {
+          "question_ko": "메르세데스-벤츠 고객센터 및 24시간 긴급 출동 서비스(Mobilo) 연락처는 어디인가요?",
+          "answer_ko": "벤츠 고객센터(080-001-1886)를 통해 연중무휴 24시간 상담 및 긴급 출동 지원(Mobilo)을 받으실 수 있습니다. 차량 내비게이션 상단의 'me' 버튼 또는 SOS 버튼을 누르시면 긴급 출동 센터로 즉시 연결됩니다.",
+          "question_en": "How can I contact Mercedes-Benz 24/7 Roadside Assistance?",
+          "answer_en": "Call 080-001-1886 or press the in-car 'me' / SOS button for 24/7 Mobilo roadside assistance and customer care.",
+          "question_ja": "24時間ロードサービスへの連絡方法は？",
+          "answer_ja": "カスタマーセンターまたは車内のSOSボタンから24時間365日緊急サポートをご利用いただけます。"
+        }
+      ]
+    },
+    "mercedes": {
+      "info_ko": "메르세데스-벤츠(Mercedes-Benz)는 1886년 칼 벤츠에 의해 설립된 세계 최초의 자동차 제조사이자 독일을 대표하는 글로벌 최고급 프리미엄 자동차 브랜드입니다. 최고급 세단(S-Class, E-Class, C-Class), 프리미엄 SUV(GLC, GLE, GLS), 고성능 서브 브랜드인 메르세데스-AMG, 초호화 브랜드 메르세데스-마이바흐, 그리고 전동화 전용 라인업인 메르세데스-EQ 시리즈를 통해 글로벌 럭셔리 모빌리티 시장을 선도하고 있습니다.",
+      "info_en": "Mercedes-Benz is a renowned German luxury and commercial vehicle automotive brand established in 1926, tracing its origins to Karl Benz's creation of the first petrol-powered car in 1886. It is globally celebrated for its premium passenger cars, cutting-edge engineering, safety innovations, and the Mercedes-EQ electric lineup.",
+      "info_ja": "メルセデス・ベンツ（Mercedes-Benz）は、1886年にカール・ベンツによって設立されたドイツの高級自動車メーカーです。最高級セダン、SUV、電気自動車EQシリーズ、ハイパフォーマンスのAMGなど、世界のプレミアムモビリティをリードしています。",
+      "popular_products": [
+        "S-Class (플래그십 럭셔리 대형 세단)",
+        "E-Class (글로벌 베스트셀링 프리미엄 비즈니스 세단)",
+        "C-Class (도심형 컴팩트 럭셔리 세단)",
+        "Mercedes-EQ (EQE / EQS 순수 전기 세단 및 SUV)",
+        "Mercedes-AMG (초고성능 퍼포먼스 라인업)",
+        "Mercedes-Maybach (초호화 럭셔리 리무진)"
+      ],
+      "trending_topics": [
+        "드라이브 파일럿 (Drive Pilot) 레벨 3 자율주행",
+        "MBUX 하이퍼스크린 차세대 AI 인포테인먼트",
+        "순수 전기차 EQE/EQS 라인업 및 충전 네트워크",
+        "지속 가능한 탄소 중립 제조 전략 (Ambition 2039)"
+      ],
+      "faqs": [
+        {
+          "question_ko": "메르세데스-벤츠의 주요 특징과 브랜드 가치는 무엇인가요?",
+          "answer_ko": "메르세데스-벤츠는 'The Best or Nothing(최고가 아니면 만들지 않는다)'이라는 브랜드 철학을 바탕으로, 세계 최고 수준의 안전 공학, 정밀한 주행 성능, 독보적인 럭셔리 인테리어를 제공합니다. 첨단 MBUX 인공지능 인포테인먼트 시스템과 레벨 3 자율주행 기술을 통해 차세대 모빌리티를 선도하고 있습니다.",
+          "question_en": "What are the main features and brand values of Mercedes-Benz?",
+          "answer_en": "Guided by 'The Best or Nothing', Mercedes-Benz delivers world-class safety engineering, refined performance, and peerless luxury. It pioneers modern mobility with MBUX AI infotainment and Level 3 automated driving.",
+          "question_ja": "メルセデス・ベンツの主な特徴とブランド価値は何ですか？",
+          "answer_ja": "「The Best or Nothing（最善か無か）」の哲学のもと、世界最高峰の安全性、走行性能、ラグジュアリーを提供し、MBUX AIや自動運転技術をリードしています。"
+        },
+        {
+          "question_ko": "메르세데스-EQ 순수 전기차 충전 서비스(Mercedes me Charge)는 어떻게 이용하나요?",
+          "answer_ko": "메르세데스-EQ 차량 고객은 'Mercedes me Charge' 앱 및 멤버십 카드를 통해 국내외 수십만 개 충전소에서 단일 계정으로 간편 결제 및 충전이 가능합니다. 차량 내 내비게이션(Electric Intelligence)과 연동되어 최적의 충전 경로와 실시간 충전기 가용 현황을 안내받으실 수 있습니다.",
+          "question_en": "How do I use Mercedes me Charge for electric vehicles?",
+          "answer_en": "Mercedes-EQ owners can charge across nationwide partner networks using the Mercedes me Charge app or card, featuring integrated Electric Intelligence route navigation.",
+          "question_ja": "Mercedes me Chargeはどのように利用しますか？",
+          "answer_ja": "専用アプリまたはカードを通じて、提携充電スタンドでシームレスな充電と決済が可能です。"
+        },
+        {
+          "question_ko": "보증 기간 및 정기 점검(컴팩트플러스/워런티 플러스) 규정은 어떻게 되나요?",
+          "answer_ko": "신차 출고 시 일반 부품 및 엔진/동력계통에 대해 3년/10만km 무상 보증을 제공하며, '워런티 플러스'를 통해 최대 5년/14만km까지 연장할 수 있습니다. 정기 점검 패키지인 '컴팩트플러스'를 통해 공식 서비스센터에서 정기 소모품 교환과 전문 테크니션 점검을 받으실 수 있습니다.",
+          "question_en": "What are the warranty and maintenance terms for Mercedes-Benz?",
+          "answer_en": "Vehicles include a 3-year/100,000 km standard warranty, extendable up to 5 years/140,000 km with Warranty Plus, along with CompactPlus maintenance packages.",
+          "question_ja": "保証期間および定期点検サービスはどうなっていますか？",
+          "answer_ja": "新車3年/10万kmの標準保証を提供し、ワランティ・プラスで最大5年まで延長可能です。"
+        },
+        {
+          "question_ko": "MBUX 음성 인식(Hey Mercedes)과 내비게이션 업데이트는 어떻게 하나요?",
+          "answer_ko": "'안녕 벤츠' 또는 'Hey Mercedes' 음성 명령을 통해 공조기, 내비게이션, 시트 온도, 앰비언트 라이트 등을 자연어로 제어할 수 있습니다. 내비게이션 지도 및 시스템 소프트웨어는 OTA(무선 통신 업데이트)를 통해 센터 방문 없이 자동으로 최신 버전으로 업데이트됩니다.",
+          "question_en": "How do I use MBUX voice control and OTA updates?",
+          "answer_en": "Say 'Hey Mercedes' to control climate, navigation, and cabin comfort. Navigation maps and system software update over-the-air (OTA) automatically.",
+          "question_ja": "MBUX音声操作とOTAアップデートの方法は？",
+          "answer_ja": "「ヘイ、メルセデス」と話しかけるだけで各種機能を操作でき、OTAによる自動更新に対応しています。"
+        },
+        {
+          "question_ko": "메르세데스-벤츠 고객센터 및 24시간 긴급 출동 서비스(Mobilo) 연락처는 어디인가요?",
+          "answer_ko": "벤츠 고객센터(080-001-1886)를 통해 연중무휴 24시간 상담 및 긴급 출동 지원(Mobilo)을 받으실 수 있습니다. 차량 내비게이션 상단의 'me' 버튼 또는 SOS 버튼을 누르시면 긴급 출동 센터로 즉시 연결됩니다.",
+          "question_en": "How can I contact Mercedes-Benz 24/7 Roadside Assistance?",
+          "answer_en": "Call 080-001-1886 or press the in-car 'me' / SOS button for 24/7 Mobilo roadside assistance and customer care.",
+          "question_ja": "24時間ロードサービスへの連絡方法は？",
+          "answer_ja": "カスタマーセンターまたは車内のSOSボタンから24時間365日緊急サポートをご利用いただけます。"
+        }
+      ]
+    },
+    "benz": {
+      "info_ko": "메르세데스-벤츠(Mercedes-Benz)는 1886년 칼 벤츠에 의해 설립된 세계 최초의 자동차 제조사이자 독일을 대표하는 글로벌 최고급 프리미엄 자동차 브랜드입니다. 최고급 세단(S-Class, E-Class, C-Class), 프리미엄 SUV(GLC, GLE, GLS), 고성능 서브 브랜드인 메르세데스-AMG, 초호화 브랜드 메르세데스-마이바흐, 그리고 전동화 전용 라인업인 메르세데스-EQ 시리즈를 통해 글로벌 럭셔리 모빌리티 시장을 선도하고 있습니다.",
+      "info_en": "Mercedes-Benz is a renowned German luxury and commercial vehicle automotive brand established in 1926, tracing its origins to Karl Benz's creation of the first petrol-powered car in 1886. It is globally celebrated for its premium passenger cars, cutting-edge engineering, safety innovations, and the Mercedes-EQ electric lineup.",
+      "info_ja": "メルセデス・ベンツ（Mercedes-Benz）は、1886年にカール・ベンツによって設立されたドイツの高級自動車メーカーです。最高級セダン、SUV、電気自動車EQシリーズ、ハイパフォーマンスのAMGなど、世界のプレミアムモビリティをリードしています。",
+      "popular_products": [
+        "S-Class (플래그십 럭셔리 대형 세단)",
+        "E-Class (글로벌 베스트셀링 프리미엄 비즈니스 세단)",
+        "C-Class (도심형 컴팩트 럭셔리 세단)",
+        "Mercedes-EQ (EQE / EQS 순수 전기 세단 및 SUV)",
+        "Mercedes-AMG (초고성능 퍼포먼스 라인업)",
+        "Mercedes-Maybach (초호화 럭셔리 리무진)"
+      ],
+      "trending_topics": [
+        "드라이브 파일럿 (Drive Pilot) 레벨 3 자율주행",
+        "MBUX 하이퍼스크린 차세대 AI 인포테인먼트",
+        "순수 전기차 EQE/EQS 라인업 및 충전 네트워크",
+        "지속 가능한 탄소 중립 제조 전략 (Ambition 2039)"
+      ],
+      "faqs": [
+        {
+          "question_ko": "메르세데스-벤츠의 주요 특징과 브랜드 가치는 무엇인가요?",
+          "answer_ko": "메르세데스-벤츠는 'The Best or Nothing(최고가 아니면 만들지 않는다)'이라는 브랜드 철학을 바탕으로, 세계 최고 수준의 안전 공학, 정밀한 주행 성능, 독보적인 럭셔리 인테리어를 제공합니다. 첨단 MBUX 인공지능 인포테인먼트 시스템과 레벨 3 자율주행 기술을 통해 차세대 모빌리티를 선도하고 있습니다.",
+          "question_en": "What are the main features and brand values of Mercedes-Benz?",
+          "answer_en": "Guided by 'The Best or Nothing', Mercedes-Benz delivers world-class safety engineering, refined performance, and peerless luxury. It pioneers modern mobility with MBUX AI infotainment and Level 3 automated driving.",
+          "question_ja": "メルセデス・ベンツの主な特徴とブランド価値は何ですか？",
+          "answer_ja": "「The Best or Nothing（最善か無か）」の哲学のもと、世界最高峰の安全性、走行性能、ラグジュアリーを提供し、MBUX AIや自動運転技術をリードしています。"
+        },
+        {
+          "question_ko": "메르세데스-EQ 순수 전기차 충전 서비스(Mercedes me Charge)는 어떻게 이용하나요?",
+          "answer_ko": "메르세데스-EQ 차량 고객은 'Mercedes me Charge' 앱 및 멤버십 카드를 통해 국내외 수십만 개 충전소에서 단일 계정으로 간편 결제 및 충전이 가능합니다. 차량 내 내비게이션(Electric Intelligence)과 연동되어 최적의 충전 경로와 실시간 충전기 가용 현황을 안내받으실 수 있습니다.",
+          "question_en": "How do I use Mercedes me Charge for electric vehicles?",
+          "answer_en": "Mercedes-EQ owners can charge across nationwide partner networks using the Mercedes me Charge app or card, featuring integrated Electric Intelligence route navigation.",
+          "question_ja": "Mercedes me Chargeはどのように利用しますか？",
+          "answer_ja": "専用アプリまたはカードを通じて、提携充電スタンドでシームレスな充電と決済が可能です。"
+        },
+        {
+          "question_ko": "보증 기간 및 정기 점검(컴팩트플러스/워런티 플러스) 규정은 어떻게 되나요?",
+          "answer_ko": "신차 출고 시 일반 부품 및 엔진/동력계통에 대해 3년/10만km 무상 보증을 제공하며, '워런티 플러스'를 통해 최대 5년/14만km까지 연장할 수 있습니다. 정기 점검 패키지인 '컴팩트플러스'를 통해 공식 서비스센터에서 정기 소모품 교환과 전문 테크니션 점검을 받으실 수 있습니다.",
+          "question_en": "What are the warranty and maintenance terms for Mercedes-Benz?",
+          "answer_en": "Vehicles include a 3-year/100,000 km standard warranty, extendable up to 5 years/140,000 km with Warranty Plus, along with CompactPlus maintenance packages.",
+          "question_ja": "保証期間および定期点検サービスはどうなっていますか？",
+          "answer_ja": "新車3年/10万kmの標準保証を提供し、ワランティ・プラスで最大5年まで延長可能です。"
+        },
+        {
+          "question_ko": "MBUX 음성 인식(Hey Mercedes)과 내비게이션 업데이트는 어떻게 하나요?",
+          "answer_ko": "'안녕 벤츠' 또는 'Hey Mercedes' 음성 명령을 통해 공조기, 내비게이션, 시트 온도, 앰비언트 라이트 등을 자연어로 제어할 수 있습니다. 내비게이션 지도 및 시스템 소프트웨어는 OTA(무선 통신 업데이트)를 통해 센터 방문 없이 자동으로 최신 버전으로 업데이트됩니다.",
+          "question_en": "How do I use MBUX voice control and OTA updates?",
+          "answer_en": "Say 'Hey Mercedes' to control climate, navigation, and cabin comfort. Navigation maps and system software update over-the-air (OTA) automatically.",
+          "question_ja": "MBUX音声操作とOTAアップデートの方法は？",
+          "answer_ja": "「ヘイ、メルセデス」と話しかけるだけで各種機能を操作でき、OTAによる自動更新に対応しています。"
+        },
+        {
+          "question_ko": "메르세데스-벤츠 고객센터 및 24시간 긴급 출동 서비스(Mobilo) 연락처는 어디인가요?",
+          "answer_ko": "벤츠 고객센터(080-001-1886)를 통해 연중무휴 24시간 상담 및 긴급 출동 지원(Mobilo)을 받으실 수 있습니다. 차량 내비게이션 상단의 'me' 버튼 또는 SOS 버튼을 누르시면 긴급 출동 센터로 즉시 연결됩니다.",
+          "question_en": "How can I contact Mercedes-Benz 24/7 Roadside Assistance?",
+          "answer_en": "Call 080-001-1886 or press the in-car 'me' / SOS button for 24/7 Mobilo roadside assistance and customer care.",
+          "question_ja": "24時間ロードサービスへの連絡方法は？",
+          "answer_ja": "カスタマーセンターまたは車内のSOSボタンから24時間365日緊急サポートをご利用いただけます。"
+        }
+      ]
     }
   }
 }

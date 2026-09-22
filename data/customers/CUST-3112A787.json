@@ -1,0 +1,50 @@
+{
+    "basic_info": {
+        "customer_id": "CUST-3112A787",
+        "name": "jieunpark40",
+        "phone": "010-1234-5678",
+        "email": "jieunpark40@naver.com",
+        "identity_hash": "10527407b922aec6740011337b8be08d",
+        "created_at": "2026-09-22T16:04:09.452456",
+        "last_access_at": "2026-09-22T16:04:09.452456"
+    },
+    "crm_profile": {
+        "trait": "일반",
+        "total_consultations": 0,
+        "avg_satisfaction": 0.0,
+        "tags": []
+    },
+    "consultation_history": [],
+    "agent_manual_responses": [
+        {
+            "response": "안녕하세요. 고객님 esim 문의 주셔서 감사드리며, 1. 현재 기종명, 2. 프랑스에서 현재 체류중인 여부를 확인하시는 대로 회신 부탁드립니다.",
+            "timestamp": "2026-09-22T16:04:09.476410",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "안녕하세요. 고객님 esim 문의 주셔서 감사드리며, 1. 현재 기종명, 2. 프랑스에서 현재 체류중인 여부를 확인하시는 대로 회신 부탁드립니다.",
+            "timestamp": "2026-09-22T16:04:42.416476",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "안녕하세요. 고객님 esim 문의 주셔서 감사드리며, 1. 현재 기종명, 2. 프랑스에서 현재 체류중인 여부를 확인하시는 대로 회신 부탁드립니다.\n\n아울러, 구매하신 유럽 통합 eSIM은 프랑스뿐만 아니라 스위스를 포함한 유럽 주요 33개국에서 별도 설정 변경 없이 자동으로 로밍이 지원되어 편리하게 데이터를 이용하실 수 있습니다. 또한 데이터 잔여량은 단말기 [설정 > 셀룰러 > 현재 사용량] 또는 개통 안내문 이메일에 첨부된 잔여량 조회 링크에서 실시간으로 확인 가능합니다. 다른 문의 사항 있으신가요?",
+            "timestamp": "2026-09-22T16:44:04.971978",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "그렇다면, 하기의 설정대로 확인 부탁드립니다.\n\n1. 비행기 모드를 켜신 후에 1~5분 정도 후에 꺼시기 바랍니다.\n2. 그럼에도 안 되실 경우, 데이터 모드, 로밍, eSIM 등 제대로 되어 있는지 확인 부탁드립니다.\n3. 그럼에도 안 되실 경우, 앱이나 다른 시스템, 설정 업데이트가 있으신 경우 반드시 진행해 주시기 바랍니다.\n4. 그래도 안 되시는 경우, 휴대폰을 잠시 끄시고 1~5분 후에 다시 켜 주시기 바랍니다.",
+            "timestamp": "2026-09-22T16:48:58.177375",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "네 그러면 추가 문의 어떻게 되시나요?",
+            "timestamp": "2026-09-22T16:50:01.066978",
+            "reason": "일반 응대",
+            "is_cancellation_refund": false
+        }
+    ]
+}
