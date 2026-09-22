@@ -470,32 +470,39 @@ def render_closing_downloads(L, current_lang):
         # 1) 메트릭 카드 4종
         qa_c1, qa_c2, qa_c3, qa_c4 = st.columns(4)
         with qa_c1:
+            grade_val = f"{qa_audit_result['grade']} {L.get('qa_grade_label', '등급')}" if current_lang != "en" else f"Grade {qa_audit_result['grade']}"
             st.metric(
                 label=L.get("qa_metric_grade", "🏆 종합 QA 등급"),
-                value=f"{qa_audit_result['grade']} 등급",
+                value=grade_val,
                 delta=qa_audit_result['grade_desc'],
                 delta_color="normal" if qa_audit_result['grade'] in ['S', 'A', 'B'] else "inverse"
             )
         with qa_c2:
+            pts_unit = L.get("qa_points_unit", "점")
+            target_status = L.get("qa_pass_target_met", "합격 기준(75점) 달성") if qa_audit_result['final_score'] >= 75 else L.get("qa_pass_target_unmet", "합격 기준(75점) 미달")
             st.metric(
                 label=L.get("qa_metric_score", "📊 종합 평가 점수"),
-                value=f"{qa_audit_result['final_score']} / 100점",
-                delta=f"합격 기준(75점) {'달성' if qa_audit_result['final_score'] >= 75 else '미달'}",
+                value=f"{qa_audit_result['final_score']} / 100 {pts_unit}",
+                delta=target_status,
                 delta_color="normal" if qa_audit_result['final_score'] >= 75 else "inverse"
             )
         with qa_c3:
+            comp_n = int(qa_audit_result['compliance_rate'] / 25)
+            comp_delta = L.get("qa_items_compliant", "4개 항목 중 {n}개 준수").replace("{n}", str(comp_n))
             st.metric(
                 label=L.get("qa_metric_compliance", "📋 필수 고지 준수율"),
                 value=f"{qa_audit_result['compliance_rate']}%",
-                delta=f"4개 항목 중 {int(qa_audit_result['compliance_rate'] / 25)}개 준수",
+                delta=comp_delta,
                 delta_color="normal" if qa_audit_result['compliance_rate'] >= 75 else "inverse"
             )
         with qa_c4:
             viol_count = qa_audit_result['violation_count']
+            case_unit = L.get("qa_cases_unit", "건")
+            viol_delta = L.get("qa_clean_status", "정상 (Clean)") if viol_count == 0 else L.get("qa_deduction_status", "{n}건 감점 발생").replace("{n}", str(viol_count))
             st.metric(
                 label=L.get("qa_metric_violations", "⚠️ 금지어 적발"),
-                value=f"{viol_count}건",
-                delta="정상 (Clean)" if viol_count == 0 else f"{viol_count}건 감점 발생",
+                value=f"{viol_count} {case_unit}",
+                delta=viol_delta,
                 delta_color="normal" if viol_count == 0 else "inverse"
             )
 
@@ -504,46 +511,47 @@ def render_closing_downloads(L, current_lang):
             det_col1, det_col2 = st.columns(2)
             
             with det_col1:
-                st.markdown("#### 📈 다차원 품질 지표")
+                st.markdown(f"#### {L.get('qa_dim_header', '📈 다차원 품질 지표')}")
                 scores = qa_audit_result.get("scores", {})
+                pts_u = L.get("qa_points_unit", "점")
                 
                 emp_s = scores.get("empathy_score", 0)
-                st.write(f"**공감도 및 친절도 (Empathy & Courtesy)**: `{emp_s}점`")
+                st.write(f"**{L.get('qa_empathy_title', '공감도 및 친절도 (Empathy & Courtesy)')}**: `{emp_s} {pts_u}`")
                 st.progress(emp_s / 100.0)
                 
                 sol_s = scores.get("solution_score", 0)
-                st.write(f"**해결책 및 규정 정확도 (Solution Accuracy)**: `{sol_s}점`")
+                st.write(f"**{L.get('qa_solution_title', '해결책 및 규정 정확도 (Solution Accuracy)')}**: `{sol_s} {pts_u}`")
                 st.progress(sol_s / 100.0)
                 
                 com_s = scores.get("compliance_score", 0)
-                st.write(f"**절차 준수 및 컴플라이언스 (Compliance)**: `{com_s}점`")
+                st.write(f"**{L.get('qa_compliance_title', '절차 준수 및 컴플라이언스 (Compliance)')}**: `{com_s} {pts_u}`")
                 st.progress(com_s / 100.0)
 
-                st.markdown("#### 📋 필수 고지 4단계 체크리스트")
+                st.markdown(f"#### {L.get('qa_chk_header', '📋 필수 고지 4단계 체크리스트')}")
                 for item in qa_audit_result.get("checklist", []):
                     icon = "✅" if item["status"] == "PASS" else "❌"
                     st.write(f"{icon} **{item['name']}**: `{item['status']}` ({item['feedback']})")
 
             with det_col2:
-                st.markdown("#### 🚨 금지어 및 리스크 발언 탐지 결과")
+                st.markdown(f"#### {L.get('qa_prohibited_header', '🚨 금지어 및 리스크 발언 탐지 결과')}")
                 violations = qa_audit_result.get("prohibited_violations", [])
                 if violations:
                     for v in violations:
-                        st.error(f"**[{v['severity']}] {v['rule_name']}** (턴 #{v['turn_index']})\n- 적발 발화: \"{v['matched_text']}\"\n- 감점: -{v['penalty']}점\n- 코칭 가이드: {v['advice']}")
+                        st.error(f"**[{v['severity']}] {v['rule_name']}** (turn #{v['turn_index']})\n- {v['matched_text']}\n- -{v['penalty']} {pts_u}\n- {v['advice']}")
                 else:
-                    st.success("✅ **금지어 및 리스크 발언 0건 (Clean)**\n단정적 거절이나 고객 귀책 전가 없이 규정을 완벽히 준수했습니다.")
+                    st.success(L.get("qa_clean_msg", "✅ **금지어 및 리스크 발언 0건 (Clean)**\n단정적 거절이나 고객 귀책 전가 없이 규정을 완벽히 준수했습니다."))
 
-                st.markdown("#### 💡 상담원 맞춤형 AI 코칭 피드백")
+                st.markdown(f"#### {L.get('qa_coaching_header', '💡 상담원 맞춤형 AI 코칭 피드백')}")
                 coaching = qa_audit_result.get("coaching", {})
-                st.write("**🌟 우수 사항 (Good Points):**")
+                st.write(f"**{L.get('qa_good_points', '🌟 우수 사항 (Good Points):')}**")
                 for g in coaching.get("good_points", []):
                     st.write(f"- {g}")
                 
-                st.write("**⚠️ 개선 권장 사항 (Improvements):**")
+                st.write(f"**{L.get('qa_improvements', '⚠️ 개선 권장 사항 (Improvements):')}**")
                 for imp in coaching.get("improvements", []):
                     st.write(f"- {imp}")
                 
-                st.info(f"👔 **수퍼바이저 종합 총평:**\n{coaching.get('supervisor_summary', '우수한 상담입니다.')}")
+                st.info(f"👔 **{L.get('qa_supervisor_summary', '수퍼바이저 종합 총평:')}**\n{coaching.get('supervisor_summary', '우수한 상담입니다.')}")
 
     st.markdown("---")
     st.markdown(f"**{L.get('download_current_session', '📥 현재 세션 이력 다운로드')}**")

@@ -474,91 +474,135 @@ def render_home_page():
     # 5. 🛡️ QA & 컴플라이언스 자동 감사 시스템 (Enterprise Audit Dashboard)
     if st.session_state.get('show_home_qa_audit', False):
         with st.expander(f"🛡️ {L.get('qa_compliance_audit_title', 'QA & 컴플라이언스 자동 감사 시스템 (Enterprise Audit Dashboard)')}", expanded=True):
-            st.markdown("### 🏢 센터 전체 QA 품질 & 컴플라이언스 총괄 현황")
-            st.caption("AI 기반 실시간 전수 감사를 통해 도출된 상담 품질 지표, 규정 준수율 및 금지어 적발 통계입니다.")
+            st.markdown(f"### {L.get('qa_home_center_title', '🏢 센터 전체 QA 품질 & 컴플라이언스 총괄 현황')}")
+            st.caption(L.get('qa_home_center_desc', 'AI 기반 실시간 전수 감사를 통해 도출된 상담 품질 지표, 규정 준수율 및 금지어 적발 통계입니다.'))
 
             # 총괄 KPI 4종
             kpi1, kpi2, kpi3, kpi4 = st.columns(4)
             with kpi1:
-                st.metric("🏆 센터 평균 QA 점수", "91.8점", delta="+4.2점 (A등급)")
+                st.metric(L.get("qa_home_avg_score", "🏆 센터 평균 QA 점수"), f"91.8 {L.get('qa_points_unit', '점')}", delta=L.get("qa_home_avg_score_delta", "+4.2점 (A등급)"))
             with kpi2:
-                st.metric("📋 필수 고지 준수율", "98.5%", delta="+6.8% (최우수)")
+                st.metric(L.get("qa_home_compliance_rate", "📋 필수 고지 준수율"), "98.5%", delta=L.get("qa_home_compliance_rate_delta", "+6.8% (최우수)"))
             with kpi3:
-                st.metric("🚨 금지어/리스크 적발률", "0.1%", delta="-1.4% (안전 수준)", delta_color="normal")
+                st.metric(L.get("qa_home_risk_rate", "🚨 금지어/리스크 적발률"), "0.1%", delta=L.get("qa_home_risk_rate_delta", "-1.4% (안전 수준)"), delta_color="normal")
             with kpi4:
-                st.metric("💡 AI 코칭 이행률", "94.2%", delta="+8.5% 개선")
+                st.metric(L.get("qa_home_coaching_rate", "💡 AI 코칭 이행률"), "94.2%", delta=L.get("qa_home_coaching_rate_delta", "+8.5% 개선"))
 
             st.divider()
-            st.markdown("### 🔍 실시간 상담 케이스 자동 감사 시뮬레이터 (Case Audit Viewer)")
+            st.markdown(f"### {L.get('qa_home_sim_title', '🔍 실시간 상담 케이스 자동 감사 시뮬레이터 (Case Audit Viewer)')}")
+            
+            case_good_label = L.get("qa_home_case_good", "모범 상담 케이스 (eSIM 장애 긴급 해결 & 규정 안내)")
+            case_bad_label = L.get("qa_home_case_bad", "컴플라이언스 위반 케이스 (단정적 거절 & 임의 구두 확약)")
             
             case_type = st.radio(
-                "감사 대상 상담 케이스 선택:",
-                ["모범 상담 케이스 (eSIM 장애 긴급 해결 & 규정 안내)", "컴플라이언스 위반 케이스 (단정적 거절 & 임의 구두 확약)"],
+                L.get("qa_home_select_case", "감사 대상 상담 케이스 선택:"),
+                [case_good_label, case_bad_label],
                 horizontal=True,
                 key="home_qa_case_select"
             )
 
             from utils.qa_compliance_auditor import evaluate_chat_qa_compliance
 
-            if "모범" in case_type:
-                sample_msgs = [
-                    {"role": "customer", "content": "해외 도착했는데 eSIM 데이터가 전혀 안 터져요! 급합니다."},
-                    {"role": "agent_response", "content": "고객님, 낯선 해외에서 데이터가 연결되지 않아 얼마나 당황스럽고 속상하셨습니까. 신속히 확인해 드리겠습니다. 본인 확인을 위해 예약번호와 사용 중이신 스마트폰 기종을 말씀해 주시겠습니까?"},
-                    {"role": "customer", "content": "예약번호 KLK-8812이고 아이폰 15입니다."},
-                    {"role": "agent_response", "content": "확인 감사드립니다. 아이폰 설정 > 셀룰러에서 데이터 로밍 활성화 및 회선 켬 상태를 확인해 주세요. 공식 보증 규정에 따라 미해결 시 영업일 1일 이내 100% 무상 재발급 또는 전액 환불 규정이 적용됩니다."},
-                    {"role": "customer", "content": "알려주신 대로 로밍 켜니까 바로 인터넷 잘 되네요! 감사합니다."},
-                    {"role": "agent_response", "content": "정상 연결되어 정말 다행입니다! 혹시 다른 추가 문의 사항 있으신가요?"},
-                    {"role": "customer", "content": "아니요, 더 문의할 건 없습니다."},
-                    {"role": "agent_response", "content": "소중한 시간 내어 주셔서 감사드립니다. 안전하고 즐거운 여행 되시길 바라며, 좋은 하루 되세요!"}
-                ]
+            # 다국어 지원 샘플 대화록
+            if case_type == case_good_label:
+                if current_lang == "en":
+                    sample_msgs = [
+                        {"role": "customer", "content": "I arrived overseas but my eSIM has no network! Please help."},
+                        {"role": "agent_response", "content": "Hello! I sincerely apologize for the inconvenience during your trip. Let me verify your reservation number and smartphone model. According to our policy, if unresolvable, a free reissue or 100% refund is guaranteed within 1 business day."},
+                        {"role": "customer", "content": "Booking KLK-8812, iPhone 15."},
+                        {"role": "agent_response", "content": "Thank you for confirming. Please enable Data Roaming in Settings > Cellular. Do you have any additional questions?"},
+                        {"role": "customer", "content": "Data works now! No more questions, thank you."},
+                        {"role": "agent_response", "content": "I am so glad it works! Thank you for contacting us, and have a wonderful and safe trip!"}
+                    ]
+                elif current_lang == "ja":
+                    sample_msgs = [
+                        {"role": "customer", "content": "海外に到着しましたが、eSIMのデータ通信が繋がりません！急いでいます。"},
+                        {"role": "agent_response", "content": "お客様、海外での不通で大変ご不便とご心配をおかけし申し訳ございません。迅速に確認いたしますので、予約番号とお使いのスマートフォンの機種をお知らせいただけますか？当社の公式保証規定に基づき、未解決の場合は1営業日以内の100%無償再発行または全額返金が適用されます。"},
+                        {"role": "customer", "content": "予約番号KLK-8812、iPhone 15です。"},
+                        {"role": "agent_response", "content": "確認ありがとうございます。設定 > モバイル通信でデータローミングをオンにしてください。他にご質問はございますか？"},
+                        {"role": "customer", "content": "繋がりました！追加の質問はありません。ありがとうございます。"},
+                        {"role": "agent_response", "content": "無事解決して幸いです！お問い合わせいただきありがとうございました。安全で楽しいご旅行を、良い一日をお過ごしください！"}
+                    ]
+                else:
+                    sample_msgs = [
+                        {"role": "customer", "content": "해외 도착했는데 eSIM 데이터가 전혀 안 터져요! 급합니다."},
+                        {"role": "agent_response", "content": "고객님, 낯선 해외에서 데이터가 연결되지 않아 얼마나 당황스럽고 속상하셨습니까. 신속히 확인해 드리겠습니다. 본인 확인을 위해 예약번호와 사용 중이신 스마트폰 기종을 말씀해 주시겠습니까?"},
+                        {"role": "customer", "content": "예약번호 KLK-8812이고 아이폰 15입니다."},
+                        {"role": "agent_response", "content": "확인 감사드립니다. 아이폰 설정 > 셀룰러에서 데이터 로밍 활성화 및 회선 켬 상태를 확인해 주세요. 공식 보증 규정에 따라 미해결 시 영업일 1일 이내 100% 무상 재발급 또는 전액 환불 규정이 적용됩니다."},
+                        {"role": "customer", "content": "알려주신 대로 로밍 켜니까 바로 인터넷 잘 되네요! 감사합니다."},
+                        {"role": "agent_response", "content": "정상 연결되어 정말 다행입니다! 혹시 다른 추가 문의 사항 있으신가요?"},
+                        {"role": "customer", "content": "아니요, 더 문의할 건 없습니다."},
+                        {"role": "agent_response", "content": "소중한 시간 내어 주셔서 감사드립니다. 안전하고 즐거운 여행 되시길 바라며, 좋은 하루 되세요!"}
+                    ]
             else:
-                sample_msgs = [
-                    {"role": "customer", "content": "비행기가 결항되어 당일 투어를 못 갔는데 환불해 주세요!"},
-                    {"role": "agent_response", "content": "규정상 절대 안 됩니다. 당일 취소 불가라고 약관에 적혀 있으니 고객님 잘못입니다."},
-                    {"role": "customer", "content": "천재지변인데 왜 제 잘못입니까? 너무 무책임하네요!"},
-                    {"role": "agent_response", "content": "소리 지르지 마세요. 제 소관이 아닙니다. 다른 데 가서 알아보세요."},
-                    {"role": "customer", "content": "팀장 나오라고 하세요!"},
-                    {"role": "agent_response", "content": "알겠습니다. 제가 무조건 100% 다 전액 환불해 드릴게요. 개인 돈으로 물어드리겠습니다."}
-                ]
+                if current_lang == "en":
+                    sample_msgs = [
+                        {"role": "customer", "content": "My flight was cancelled, refund my day tour immediately!"},
+                        {"role": "agent_response", "content": "It is absolutely not allowed by policy. It is your fault for not reading the cancellation terms."},
+                        {"role": "customer", "content": "It was severe weather! Why is it my fault?"},
+                        {"role": "agent_response", "content": "Stop shouting. Not my department. Search on Google somewhere else."},
+                        {"role": "customer", "content": "Get me your manager right now!"},
+                        {"role": "agent_response", "content": "Fine. I unconditionally guarantee 100% full refund from my own pocket."}
+                    ]
+                elif current_lang == "ja":
+                    sample_msgs = [
+                        {"role": "customer", "content": "飛行機が欠航してツアーに参加できませんでした。今すぐ返金してください！"},
+                        {"role": "agent_response", "content": "規定上絶対にできません。当日取消不可と約款に書いてあるのでお客様の過失です。"},
+                        {"role": "customer", "content": "天災なのに何でお客のせいなんですか？無責任すぎます！"},
+                        {"role": "agent_response", "content": "大声を上げないでください。私の管轄ではありません。他で探してください。"},
+                        {"role": "customer", "content": "責任者を出してください！"},
+                        {"role": "agent_response", "content": "分かりました。無条件で全額返金します。私の自腹で補償します。"}
+                    ]
+                else:
+                    sample_msgs = [
+                        {"role": "customer", "content": "비행기가 결항되어 당일 투어를 못 갔는데 환불해 주세요!"},
+                        {"role": "agent_response", "content": "규정상 절대 안 됩니다. 당일 취소 불가라고 약관에 적혀 있으니 고객님 잘못입니다."},
+                        {"role": "customer", "content": "천재지변인데 왜 제 잘못입니까? 너무 무책임하네요!"},
+                        {"role": "agent_response", "content": "소리 지르지 마세요. 제 소관이 아닙니다. 다른 데 가서 알아보세요."},
+                        {"role": "customer", "content": "팀장 나오라고 하세요!"},
+                        {"role": "agent_response", "content": "알겠습니다. 제가 무조건 100% 다 전액 환불해 드릴게요. 개인 돈으로 물어드리겠습니다."}
+                    ]
 
-            audit_res = evaluate_chat_qa_compliance(sample_msgs)
+            audit_res = evaluate_chat_qa_compliance(sample_msgs, lang=current_lang)
 
             # 감사 결과 카드 렌더링
             res_col1, res_col2 = st.columns([1, 1])
             with res_col1:
-                st.markdown(f"#### 🏆 종합 감사 결과: `{audit_res['grade']} 등급` ({audit_res['grade_desc']})")
-                st.metric("종합 QA 점수", f"{audit_res['final_score']} / 100점")
+                grade_title = L.get("qa_home_audit_result_header", "종합 감사 결과: {grade} 등급 ({desc})").replace("{grade}", audit_res['grade']).replace("{desc}", audit_res['grade_desc'])
+                st.markdown(f"#### 🏆 {grade_title}")
+                st.metric(L.get("qa_home_audit_score_label", "종합 QA 점수"), f"{audit_res['final_score']} / 100 {L.get('qa_points_unit', '점')}")
                 
-                st.markdown("##### 📊 세부 품질 지표")
-                st.write(f"**공감도 및 친절도**: `{audit_res['scores']['empathy_score']}점`")
+                st.markdown(f"##### 📊 {L.get('qa_home_sub_metrics', '세부 품질 지표')}")
+                pts_u = L.get('qa_points_unit', '점')
+                st.write(f"**{L.get('qa_empathy_title', '공감도 및 친절도 (Empathy & Courtesy)')}**: `{audit_res['scores']['empathy_score']} {pts_u}`")
                 st.progress(audit_res['scores']['empathy_score'] / 100.0)
-                st.write(f"**해결책 및 규정 정확도**: `{audit_res['scores']['solution_score']}점`")
+                st.write(f"**{L.get('qa_solution_title', '해결책 및 규정 정확도 (Solution Accuracy)')}**: `{audit_res['scores']['solution_score']} {pts_u}`")
                 st.progress(audit_res['scores']['solution_score'] / 100.0)
-                st.write(f"**절차 준수도**: `{audit_res['scores']['compliance_score']}점`")
+                st.write(f"**{L.get('qa_compliance_title', '절차 준수 및 컴플라이언스 (Compliance)')}**: `{audit_res['scores']['compliance_score']} {pts_u}`")
                 st.progress(audit_res['scores']['compliance_score'] / 100.0)
 
-                st.markdown("##### 📋 필수 고지 체크리스트")
+                st.markdown(f"##### 📋 {L.get('qa_home_checklist_sub', '필수 고지 체크리스트')}")
                 for chk in audit_res['checklist']:
                     st.write(f"{'✅' if chk['status'] == 'PASS' else '❌'} **{chk['name']}**: `{chk['status']}`")
 
             with res_col2:
-                st.markdown("#### 🚨 금지어 및 리스크 발언")
+                st.markdown(f"#### 🚨 {L.get('qa_home_prohibited_sub', '금지어 및 리스크 발언')}")
                 if audit_res['violation_count'] > 0:
                     for v in audit_res['prohibited_violations']:
-                        st.error(f"**[{v['severity']}] {v['rule_name']}** (턴 #{v['turn_index']})\n- 적발: \"{v['matched_text']}\"\n- 감점: -{v['penalty']}점\n- 가이드: {v['advice']}")
+                        st.error(f"**[{v['severity']}] {v['rule_name']}** (turn #{v['turn_index']})\n- {v['matched_text']}\n- -{v['penalty']} {pts_u}\n- {v['advice']}")
                 else:
-                    st.success("✅ **금지어 및 리스크 발언 0건 (Clean)**\n모든 응대가 모범 컴플라이언스 기준을 통과했습니다.")
+                    st.success(L.get("qa_clean_msg", "✅ **금지어 및 리스크 발언 0건 (Clean)**\n단정적 거절이나 고객 귀책 전가 없이 규정을 완벽히 준수했습니다."))
 
-                st.markdown("#### 💡 AI 맞춤형 코칭 피드백")
-                st.write("**우수 사항 (Good Points):**")
+                st.markdown(f"#### 💡 {L.get('qa_home_coaching_sub', 'AI 맞춤형 코칭 피드백')}")
+                st.write(f"**{L.get('qa_good_points', '우수 사항 (Good Points):')}**")
                 for gp in audit_res['coaching']['good_points']:
                     st.write(f"- {gp}")
                 
-                st.write("**개선 권장 사항 (Improvements):**")
+                st.write(f"**{L.get('qa_improvements', '개선 권장 사항 (Improvements):')}**")
                 for imp in audit_res['coaching']['improvements']:
                     st.write(f"- {imp}")
                 
-                st.info(f"👔 **수퍼바이저 총평:**\n{audit_res['coaching']['supervisor_summary']}")
+                st.info(f"👔 **{L.get('qa_supervisor_summary', '수퍼바이저 총평:')}**\n{audit_res['coaching']['supervisor_summary']}")
 
             if st.button(L.get("close_button", "닫기"), key="close_home_qa_audit"):
                 st.session_state.show_home_qa_audit = False
