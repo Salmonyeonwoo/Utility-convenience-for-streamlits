@@ -23,6 +23,21 @@ DEFAULT_LANG = "ko"
 
 LANG: Dict[str, Dict[str, str]] = {
     "ko": {
+        "rec_companies_label": "추천 기업 선택:",
+        "comp_search_results_label": "검색 결과: {n}개 기업 (고품질 비쥬얼 및 상세 기업 정보)",
+        "comp_expander_title": "🏢 {cname} - 상세 기업 정보 및 비쥬얼 FAQ",
+        "comp_hero_caption": "🏢 {cname} 공식 비즈니스 프로필 | {tagline}",
+        "comp_industry_label": "🏭 업종 및 사업 영역:",
+        "comp_slogan_label": "🎯 슬로건 / 비전:",
+        "comp_desc_label": "📝 기업 상세 소개:",
+        "comp_products_showcase": "🌟 대표 제품 및 서비스 라인업 (Visual Showcase):",
+        "comp_faq_header": "❓ 사내 및 고객 공식 FAQ ({n}개 등록):",
+        "comp_answer_label": "답변:",
+        "comp_rag_search_title": "💬 {cname} 전용 RAG 지식 검색:",
+        "comp_rag_input_label": "{cname}에 대해 질문하세요:",
+        "comp_rag_placeholder": "예: {cname}의 보증 기간이나 주요 서비스 정책은 어떻게 되나요?",
+        "comp_rag_ask_btn": "질문하기",
+
         "qa_grade_label": "등급",
         "qa_points_unit": "점",
         "qa_cases_unit": "건",
@@ -1020,6 +1035,21 @@ LANG: Dict[str, Dict[str, str]] = {
 
     # --- ⭐ 영어 버전 (한국어 100% 매칭) ---
     "en": {
+        "rec_companies_label": "Recommended Companies:",
+        "comp_search_results_label": "Search Results: {n} Companies (High-Quality Visuals & Detailed Info)",
+        "comp_expander_title": "🏢 {cname} - Detailed Company Info & Visual FAQ",
+        "comp_hero_caption": "🏢 {cname} Official Business Profile | {tagline}",
+        "comp_industry_label": "🏭 Industry & Business Domain:",
+        "comp_slogan_label": "🎯 Slogan / Vision:",
+        "comp_desc_label": "📝 Detailed Company Introduction:",
+        "comp_products_showcase": "🌟 Flagship Products & Services (Visual Showcase):",
+        "comp_faq_header": "❓ Official Company & Customer FAQs ({n} Registered):",
+        "comp_answer_label": "Answer:",
+        "comp_rag_search_title": "💬 {cname} Dedicated RAG Knowledge Search:",
+        "comp_rag_input_label": "Ask about {cname}:",
+        "comp_rag_placeholder": "e.g., What is {cname}'s warranty period or main service policy?",
+        "comp_rag_ask_btn": "Ask",
+
         "qa_grade_label": "Grade",
         "qa_points_unit": "pts",
         "qa_cases_unit": "cases",
@@ -2005,6 +2035,21 @@ LANG: Dict[str, Dict[str, str]] = {
 
     # --- ⭐ 일본어 버전 (한국어 100% 매칭) ---
     "ja": {
+        "rec_companies_label": "おすすめ企業を選択:",
+        "comp_search_results_label": "検索結果: {n}社（高品質ビジュアル＆企業詳細情報）",
+        "comp_expander_title": "🏢 {cname} - 企業詳細情報＆ビジュアルFAQ",
+        "comp_hero_caption": "🏢 {cname} 公式ビジネスプロフィール | {tagline}",
+        "comp_industry_label": "🏭 業種および事業領域:",
+        "comp_slogan_label": "🎯 スローガン / ビジョン:",
+        "comp_desc_label": "📝 企業詳細紹介:",
+        "comp_products_showcase": "🌟 代表的な製品およびサービス (Visual Showcase):",
+        "comp_faq_header": "❓ 公式FAQ（{n}件登録）:",
+        "comp_answer_label": "回答:",
+        "comp_rag_search_title": "💬 {cname} 専用RAG知識検索:",
+        "comp_rag_input_label": "{cname}について質問してください:",
+        "comp_rag_placeholder": "例：{cname}の保証期間や主要なサービスポリシーはどうなっていますか？",
+        "comp_rag_ask_btn": "質問する",
+
         "qa_grade_label": "等級",
         "qa_points_unit": "点",
         "qa_cases_unit": "件",

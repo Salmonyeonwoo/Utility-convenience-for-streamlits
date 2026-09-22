@@ -125,11 +125,19 @@ def load_company_info():
         return {"companies": []}
 
 
-def search_company(query: str) -> List[dict]:
-    """회사 정보 및 사내 FAQ 데이터베이스 통합 검색 (비쥬얼 자산 및 RAG 엔진 연동)"""
+def search_company(query: str, lang: str = "ko") -> List[dict]:
+    """회사 및 FAQ 데이터베이스 검색 (다국어 및 RAG 지원, 스마트 랭킹 및 중복 제거)"""
     import os
     import json
-    from faq.company_visual_engine import get_company_visual_and_details
+    from faq.company_visual_engine import (
+        get_company_visual_and_details,
+        classify_company_category,
+        COMPANY_ALIAS_MAP,
+        CANONICAL_COMPANY_NAMES
+    )
+
+    if lang not in ["ko", "en", "ja"]:
+        lang = "ko"
 
     all_companies = []
     seen_names = set()
@@ -140,10 +148,10 @@ def search_company(query: str) -> List[dict]:
         name = c.get('company_name', '')
         if name and name.lower() not in seen_names:
             seen_names.add(name.lower())
-            enriched = get_company_visual_and_details(name, c)
+            enriched = get_company_visual_and_details(name, c, lang=lang)
             all_companies.append(enriched)
 
-    # 2. local_db/json/faq_database.json 및 local_db/faq_database.json 통합 로드
+    # 2. local_db/json/faq_database.json 및 local_db/faq_database.json 로드
     faq_paths = [
         'local_db/json/faq_database.json',
         'local_db/faq_database.json'
@@ -158,7 +166,7 @@ def search_company(query: str) -> List[dict]:
                         if not isinstance(cdata, dict) or cname.lower() in seen_names:
                             continue
                         seen_names.add(cname.lower())
-                        enriched = get_company_visual_and_details(cname, cdata)
+                        enriched = get_company_visual_and_details(cname, cdata, lang=lang)
                         all_companies.append(enriched)
             except Exception as e:
                 print(f"Error loading {fp}: {e}")
@@ -167,11 +175,16 @@ def search_company(query: str) -> List[dict]:
         return all_companies
 
     query_lower = query.strip().lower()
-    results = []
+    query_canon = COMPANY_ALIAS_MAP.get(query_lower)
+    q_cat = classify_company_category(query_lower)
+
+    scored_results = []
     for comp in all_companies:
         cname = str(comp.get('company_name', '')).lower()
+        c_canon = COMPANY_ALIAS_MAP.get(cname) or COMPANY_ALIAS_MAP.get(comp.get('company_id', ''))
         ind = str(comp.get('industry', '')).lower()
         desc = str(comp.get('description', '')).lower()
+        comp_cat = comp.get('category', classify_company_category(cname))
         
         services_text = []
         for s in comp.get('services', []):
@@ -186,18 +199,42 @@ def search_company(query: str) -> List[dict]:
             elif isinstance(p, dict):
                 services_text.append(str(p.get('name', p.get('title', ''))).lower())
         
-        if (query_lower in cname or cname in query_lower or
-            query_lower in ind or
-            query_lower in desc or
-            any(query_lower in st for st in services_text)):
-            results.append(comp)
+        score = 0
+        # 1. 정규화 ID 일치 (최우선)
+        if query_canon and c_canon and query_canon == c_canon:
+            score += 100
+        # 2. 회사명 직접 매칭
+        elif query_lower in cname or cname in query_lower:
+            score += 80
+        # 3. 제품 / 업종 / 본문 키워드 매칭
+        elif any(query_lower in st for st in services_text) or query_lower in ind or query_lower in desc:
+            score += 50
+        # 4. 동일 카테고리 매칭
+        elif q_cat != "general" and comp_cat == q_cat:
+            score += 20
 
-    # 일치하는 기업이 없을 경우, 사용자가 검색한 회사명으로 실시간 비쥬얼 및 상세 기업 정보 생성
-    if not results and query and query.strip():
-        generated_comp = get_company_visual_and_details(query.strip())
-        results.append(generated_comp)
+        if score > 0:
+            scored_results.append((score, comp))
+
+    # 점수 높은 순으로 정렬
+    scored_results.sort(key=lambda x: x[0], reverse=True)
+
+    # 중복 제거 (동일 정규화 ID 또는 동일 카테고리의 유사 기업 필터링)
+    deduped_results = []
+    seen_canon = set()
+    for score, comp in scored_results:
+        cname = str(comp.get('company_name', '')).lower()
+        c_canon = COMPANY_ALIAS_MAP.get(cname) or comp.get('category')
+        if c_canon not in seen_canon:
+            seen_canon.add(c_canon)
+            deduped_results.append(comp)
+
+    # 일치하는 회사가 없을 경우, 사용자가 검색한 회사명으로 실시간 프로필 생성
+    if not deduped_results and query and query.strip():
+        generated_comp = get_company_visual_and_details(query.strip(), lang=lang)
+        deduped_results.append(generated_comp)
             
-    return results
+    return deduped_results
 
 # ========== 고객 데이터 관리 V2 함수들 ==========
 

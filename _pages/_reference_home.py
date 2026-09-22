@@ -132,10 +132,15 @@ def render_home_page():
                 st.markdown("<br>", unsafe_allow_html=True)
                 search_clicked = st.button(L.get("search_button", "🔍 검색"), key="home_company_search_btn", use_container_width=True)
 
-            # 빠른 추천 검색 태그
-            st.markdown(f"**추천 기업 선택:**")
+            # 빠른 추천 검색 태그 (다국어 지원)
+            st.markdown(f"**{L.get('rec_companies_label', '추천 기업 선택:')}**")
             quick_cols = st.columns(6)
-            quick_companies = ["메르세데스 벤츠", "클룩", "삼성", "넷플릭스", "유니버셜 스튜디오", "코레일"]
+            quick_companies_by_lang = {
+                "ko": ["메르세데스 벤츠", "클룩", "삼성", "넷플릭스", "유니버셜 스튜디오", "코레일"],
+                "en": ["Mercedes-Benz", "Klook", "Samsung", "Netflix", "Universal Studios", "KORAIL"],
+                "ja": ["メルセデス・ベンツ", "クルック (Klook)", "サムスン", "ネットフリックス", "ユニバーサル・スタジオ", "コレイル"]
+            }
+            quick_companies = quick_companies_by_lang.get(current_lang, quick_companies_by_lang["ko"])
             for i, qcomp in enumerate(quick_companies):
                 with quick_cols[i]:
                     if st.button(qcomp, key=f"quick_comp_{i}", use_container_width=True):
@@ -143,39 +148,35 @@ def render_home_page():
                         st.session_state.home_company_search_query = qcomp
                         search_clicked = True
 
-            if search_clicked or (st.session_state.get('home_company_search_query') and not st.session_state.get('home_company_search_results')):
+            # 언어 변경 감지 또는 검색 클릭 시 현재 언어에 맞춰 실시간 재검색
+            stored_lang = st.session_state.get('home_company_search_lang')
+            need_refresh = (
+                search_clicked
+                or (st.session_state.get('home_company_search_query') and stored_lang != current_lang)
+                or (st.session_state.get('home_company_search_query') and not st.session_state.get('home_company_search_results'))
+            )
+
+            if need_refresh:
                 q = search_query.strip() if search_query else st.session_state.get('home_company_search_query', '').strip()
                 if q:
                     st.session_state.home_company_search_query = q
+                    st.session_state.home_company_search_lang = current_lang
                     try:
-                        results = search_company(q)
+                        results = search_company(q, lang=current_lang)
                         if not results:
-                            # 로컬 검색에 없으면 LLM / 스마트 생성기로 기업 데이터 구축
-                            from faq_manager import generate_company_info_with_llm
-                            current_lang = st.session_state.get("language", "ko")
-                            generated_data = generate_company_info_with_llm(q, current_lang)
-                            if generated_data:
-                                comp_obj = {
-                                    'company_name': q,
-                                    'company_id': q.lower().replace(' ', '_'),
-                                    'industry': generated_data.get('company_info', '').split('\n\n')[0] if '\n\n' in generated_data.get('company_info', '') else "글로벌 비즈니스 및 엔터프라이즈",
-                                    'description': generated_data.get('company_info', '').split('\n\n')[1] if '\n\n' in generated_data.get('company_info', '') else generated_data.get('company_info', 'N/A'),
-                                    'popular_products': generated_data.get('popular_products', []),
-                                    'trending_topics': generated_data.get('trending_topics', []),
-                                    'faqs': generated_data.get('faqs', []),
-                                    'generated_data': generated_data
-                                }
-                                results = [comp_obj]
+                            from faq.company_visual_engine import get_company_visual_and_details
+                            results = [get_company_visual_and_details(q, lang=current_lang)]
                         st.session_state.home_company_search_results = results
                     except Exception as e:
-                        st.error(f"검색 중 오류가 발생했습니다: {e}")
+                        st.error(f"Error during search / 검색 중 오류가 발생했습니다: {e}")
                         st.session_state.home_company_search_results = []
 
-            # 검색 결과 세분화 표시 (비쥬얼 이미지/사진 및 상세 정보 완벽 지원)
+            # 검색 결과 세분화 표시 (비쥬얼 이미지/사진 및 상세 정보 다국어 완벽 지원)
             if st.session_state.get('home_company_search_results') is not None:
                 results = st.session_state.home_company_search_results
                 if results:
-                    st.markdown(f"**검색 결과: {len(results)}개 기업 (고품질 비쥬얼 및 상세 기업 정보)**")
+                    results_header_tmpl = L.get("comp_search_results_label", "검색 결과: {n}개 기업 (고품질 비쥬얼 및 상세 기업 정보)")
+                    st.markdown(f"**{results_header_tmpl.replace('{n}', str(len(results)))}**")
                     for company in results[:4]:
                         cname = company.get('company_name', 'N/A')
                         industry = company.get('industry', 'N/A')
@@ -185,70 +186,91 @@ def render_home_page():
                         products_detail = company.get('products_detail', [])
                         faqs = company.get('faqs', [])
 
-                        with st.expander(f"🏢 {cname} - 상세 기업 정보 및 비쥬얼 FAQ", expanded=True):
+                        expander_title_tmpl = L.get("comp_expander_title", "🏢 {cname} - 상세 기업 정보 및 비쥬얼 FAQ")
+                        with st.expander(expander_title_tmpl.replace('{cname}', cname), expanded=True):
                             # 1. 기업 비쥬얼 히어로 배너
                             if hero_image:
-                                st.image(hero_image, caption=f"🏢 {cname} 공식 비즈니스 프로필 | {hero_tagline}", use_container_width=True)
+                                hero_caption_tmpl = L.get("comp_hero_caption", "🏢 {cname} 공식 비즈니스 프로필 | {tagline}")
+                                caption_text = hero_caption_tmpl.replace('{cname}', cname).replace('{tagline}', hero_tagline)
+                                st.image(hero_image, caption=caption_text, use_container_width=True)
 
                             # 2. 기업 기본 개요 & 슬로건
                             c_col1, c_col2 = st.columns([1, 1])
                             with c_col1:
-                                st.markdown(f"**🏭 업종 및 사업 영역:**\n`{industry}`")
-                            with c_col2:
-                                if hero_tagline:
-                                    st.markdown(f"**🎯 슬로건 / 비전:**\n*{hero_tagline}*")
-                                else:
-                                    st.markdown(f"**🎯 슬로건 / 비전:**\n*고객 중심의 혁신 서비스와 최고 품질 추구*")
-
-                            # 3. 기업 상세 소개 (placeholder 원천 차단)
-                            st.markdown(f"**📝 기업 상세 소개:**\n{description}")
-
+                                ind_label = L.get("comp_industry_label", "🏭 업종 및 사업 영역:")
+                                st.markdown(f"**{ind_label}**\n`{industry}`")
+                                slogan_label = L.get("comp_slogan_label", "🎯 슬로건 / 비전:")
+                                default_slogan = {
+                                    "ko": "고객 중심의 혁신 서비스와 최고 품질 추구",
+                                    "en": "Customer-First Innovation & Pursuit of Highest Quality",
+                                    "ja": "顧客第一の革新的サービスと最高品質の追求"
+                                }.get(current_lang, "고객 중심의 혁신 서비스와 최고 품질 추구")
+                                s_text = hero_tagline if hero_tagline else default_slogan
+                                st.markdown(f"**{slogan_label}**\n*{s_text}*")
+                            # 3. 기업 상세 소개
+                            desc_label = L.get("comp_desc_label", "📝 기업 상세 소개:")
+                            st.markdown(f"**{desc_label}**\n{description}")
                             # 4. 대표 제품 및 서비스 비쥬얼 쇼케이스 (사진 및 카드 그리드)
+                            prod_header = L.get("comp_products_showcase", "🌟 대표 제품 및 서비스 라인업 (Visual Showcase):")
                             if products_detail:
                                 st.markdown("---")
-                                st.markdown("**🌟 대표 제품 및 서비스 라인업 (Visual Showcase):**")
+                                st.markdown(f"**{prod_header}**")
                                 p_cols = st.columns(min(len(products_detail), 4))
                                 for p_idx, prod in enumerate(products_detail[:4]):
                                     with p_cols[p_idx]:
                                         if prod.get('image_url'):
                                             st.image(prod['image_url'], use_container_width=True)
-                                        st.markdown(f"**{prod.get('name', '대표 제품')}**")
+                                        default_prod_name = {"ko": "대표 제품", "en": "Key Product", "ja": "代表製品"}.get(current_lang, "대표 제품")
+                                        st.markdown(f"**{prod.get('name', default_prod_name)}**")
                                         st.caption(f"🏷️ `{prod.get('category', '')}`\n\n{prod.get('desc', '')}")
                             elif company.get('popular_products'):
                                 st.markdown("---")
-                                st.markdown("**🌟 대표 제품 및 서비스:**")
+                                st.markdown(f"**{prod_header}**")
                                 st.write(", ".join(company.get('popular_products', [])))
 
                             # 5. 사내 및 고객 공식 FAQ 세분화
                             if faqs:
                                 st.markdown("---")
-                                st.markdown(f"**❓ 사내 및 고객 공식 FAQ ({len(faqs)}개 등록):**")
+                                faq_header_tmpl = L.get("comp_faq_header", "❓ 사내 및 고객 공식 FAQ ({n}개 등록):")
+                                st.markdown(f"**{faq_header_tmpl.replace('{n}', str(len(faqs)))}**")
+                                ans_label = L.get("comp_answer_label", "답변:")
                                 for f_idx, faq in enumerate(faqs[:4], 1):
-                                    q_text = faq.get('question_ko', faq.get('question', faq.get('question_en', '')))
-                                    a_text = faq.get('answer_ko', faq.get('answer', faq.get('answer_en', '')))
+                                    if current_lang == "en":
+                                        q_text = faq.get('question_en', faq.get('question', faq.get('question_ko', '')))
+                                        a_text = faq.get('answer_en', faq.get('answer', faq.get('answer_ko', '')))
+                                    elif current_lang == "ja":
+                                        q_text = faq.get('question_ja', faq.get('question', faq.get('question_ko', '')))
+                                        a_text = faq.get('answer_ja', faq.get('answer', faq.get('answer_ko', '')))
+                                    else:
+                                        q_text = faq.get('question_ko', faq.get('question', faq.get('question_en', '')))
+                                        a_text = faq.get('answer_ko', faq.get('answer', faq.get('answer_en', '')))
                                     if q_text and a_text:
                                         with st.expander(f"Q{f_idx}. {q_text}", expanded=False):
-                                            st.markdown(f"**답변:**\n{a_text}")
-
+                                            st.markdown(f"**{ans_label}**\n{a_text}")
                             # 6. RAG 지식 베이스 기반 전용 AI 검색
                             st.markdown("---")
-                            st.markdown(f"**💬 {cname} 전용 RAG 지식 검색:**")
+                            rag_title_tmpl = L.get("comp_rag_search_title", "💬 {cname} 전용 RAG 지식 검색:")
+                            st.markdown(f"**{rag_title_tmpl.replace('{cname}', cname)}**")
+                            
+                            rag_input_lbl_tmpl = L.get("comp_rag_input_label", "{cname}에 대해 질문하세요:")
+                            rag_ph_tmpl = L.get("comp_rag_placeholder", "예: {cname}의 보증 기간이나 주요 서비스 정책은 어떻게 되나요?")
                             company_q = st.text_input(
-                                f"{cname}에 대해 질문하세요:",
+                                rag_input_lbl_tmpl.replace('{cname}', cname),
                                 key=f"home_cq_{company.get('company_id', 'unknown')}",
-                                placeholder=f"예: {cname}의 보증 기간이나 주요 서비스 정책은 어떻게 되나요?"
+                                placeholder=rag_ph_tmpl.replace('{cname}', cname)
                             )
-                            if st.button("질문하기", key=f"btn_ask_c_{company.get('company_id', 'unknown')}"):
+                            rag_btn_lbl = L.get("comp_rag_ask_btn", "질문하기")
+                            if st.button(rag_btn_lbl, key=f"btn_ask_c_{company.get('company_id', 'unknown')}"):
                                 if company_q:
                                     context = [
-                                        f"회사명: {cname}",
-                                        f"업종: {industry}",
-                                        f"설명: {description}"
+                                        f"Company: {cname}",
+                                        f"Industry: {industry}",
+                                        f"Description: {description}"
                                     ]
                                     resp = get_rag_chatbot_response(company_q, context)
                                     st.info(f"🤖 {resp}")
                 else:
-                    st.info("검색된 기업 정보가 없습니다. 추천 기업 태그를 클릭해 보세요.")
+                    st.info(L.get("no_company_found", "검색된 기업 정보가 없습니다. 추천 기업 태그를 클릭해 보세요."))
 
             if st.button(L.get("close_button", "닫기"), key="close_home_company_info"):
                 st.session_state.show_home_company_info = False
