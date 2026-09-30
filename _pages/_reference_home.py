@@ -40,6 +40,29 @@ def render_home_page():
     
     st.divider()
 
+    # 🤖 차세대 AI 에이전트 관제탑 바로가기 카드 배너
+    st.markdown('''
+    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 18px 22px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #38bdf8; color: white;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <div>
+                <h3 style="color: #38bdf8; margin: 0; font-size: 1.25rem; font-weight: 700;">
+                    🚀 차세대 자율형 AI 에이전트 관제탑 (Frontend Control Tower)
+                </h3>
+                <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 0.9rem;">
+                    자율 에이전트에게 3단계(데이터 수집 ➔ 심층 분석 ➔ 결과 보고) 업무를 위임하고 결과를 시각적으로 관제합니다.
+                </p>
+            </div>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
+    if st.button("🤖 자율 업무 자동화 관제탑 바로가기", key="home_go_control_tower_btn", type="primary", use_container_width=True):
+        st.session_state.feature_selection_id = "agent_control_tower"
+        st.session_state.feature_selection = L.get("agent_control_tower_tab", "🤖 AI 관제탑 (업무 자동화)")
+        st.session_state.feature_selector_id = "agent_control_tower"
+        st.rerun()
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
     # BPO 비즈니스 임팩트 & ROI 지표 (Enterprise Executive Dashboard)
     st.markdown(f"### 📈 {L.get('bpo_roi_dashboard_title', 'BPO 비즈니스 임팩트 & AI Copilot ROI 지표')}")
     st.caption(L.get('bpo_roi_dashboard_desc', 'AI Copilot 도입 전후의 AHT(평균 처리 시간), 인건비 절감액 및 AI 초안 채택률 분석 현황입니다.'))

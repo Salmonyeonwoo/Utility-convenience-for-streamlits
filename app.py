@@ -18,7 +18,7 @@ def show_mode_selection():
     st.title("AI 고객응대 시뮬레이터")
     st.markdown("---")
     
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown("### 👨‍💼 상담원 모드")
@@ -33,6 +33,13 @@ def show_mode_selection():
         if st.button("고객으로 접속", type="secondary", use_container_width=True):
             st.session_state.user_type = "customer"
             st.session_state.current_page = "chat"
+
+    with col3:
+        st.markdown("### 🤖 AI 관제탑 모드")
+        st.markdown("자율형 에이전트의 다단계 업무 자동화 및 결과를 관제합니다.")
+        if st.button("관제탑으로 접속", type="primary", use_container_width=True):
+            st.session_state.user_type = "control_tower"
+            st.session_state.current_page = "control_tower"
     
     st.stop()
 
@@ -42,8 +49,17 @@ def render_call_page():
     st.title("📞 전화 기능")
     st.info("전화 기능은 채팅 페이지에서 사용할 수 있습니다.")
 
+# AI 관제탑 모드
+if st.session_state.user_type == "control_tower":
+    from _pages._agent_control_tower import render_agent_control_tower_page
+    render_agent_control_tower_page()
+    if st.button("🔄 메인 모드 선택으로 돌아가기", use_container_width=True):
+        st.session_state.user_type = None
+        st.session_state.current_page = None
+        st.rerun()
+
 # 상담원 모드
-if st.session_state.user_type == "operator":
+elif st.session_state.user_type == "operator":
     render_operator_sidebar()
     
     if st.session_state.current_page is None:

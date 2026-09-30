@@ -1,3 +1,21 @@
+
+def is_agent_actively_asking():
+    """상담원이 질문을 하거나 사유/서류 등 추가 정보를 요청 중인지 감지"""
+    last_agent_msg = ""
+    for msg in reversed(st.session_state.get("simulator_messages", [])):
+        if msg.get("role") == "agent_response" and msg.get("content"):
+            last_agent_msg = msg.get("content", "")
+            break
+    if not last_agent_msg:
+        return False
+    if "?" in last_agent_msg:
+        return True
+    asking_keywords = [
+        "어떤 사정", "사유", "이유", "사정인가요", "증빙", "서류",
+        "회신 부탁", "알려주", "말씀해 주", "확인 부탁", "어떻게 되시",
+        "무엇인가요", "남겨주", "기종", "예약 번호", "되실까요", "있으실까요"
+    ]
+    return any(w in last_agent_msg.lower() for w in asking_keywords)
 # ========================================
 # _pages/_chat_customer_turn.py
 # 채팅 시뮬레이터 - 고객 반응 생성 모듈
@@ -528,31 +546,27 @@ def render_customer_turn(L, current_lang):
         "thank you" in customer_response.lower() or "thanks" in customer_response.lower()
     )
     
-    if L["customer_positive_response"] in customer_response or has_positive_response or has_positive_combination:
-        if st.session_state.is_solution_provided:
-            st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
-        else:
-            st.session_state.sim_stage = "AGENT_TURN"
-    elif is_positive_closing:
-        escaped = re.escape(L['customer_no_more_inquiries'])
-        no_more_pattern = escaped.replace(
-            r'\.', r'[.\\s]*').replace(r'\ ', r'[.\\s]*')
-        no_more_regex = re.compile(no_more_pattern, re.IGNORECASE)
-        if no_more_regex.search(customer_response):
-            st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
-        else:
-            if st.session_state.is_solution_provided:
-                st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
-            else:
-                st.session_state.sim_stage = "AGENT_TURN"
+    # ⭐ 상담원이 질문을 하거나 서류/정보를 요청 중이면 절대 종료하지 않고 AGENT_TURN 유지
+    is_asking_now = is_agent_actively_asking()
+    has_explicit_closing = (
+        has_positive_combination or
+        (("알겠습니다" in customer_response or "이해했습니다" in customer_response or "확인했습니다" in customer_response) and
+         ("감사합니다" in customer_response or "감사" in customer_response))
+    )
+
+    if is_asking_now:
+        st.session_state.sim_stage = "AGENT_TURN"
+        st.session_state.is_solution_provided = False
+        st.session_state.auto_draft_generated = False
+    elif (has_explicit_closing or is_positive_closing) and st.session_state.get("is_solution_provided", False):
+        st.session_state.sim_stage = "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
+        st.session_state.is_solution_provided = False
     elif customer_response.startswith(L["customer_escalation_start"]):
         st.session_state.sim_stage = "ESCALATION_REQUIRED"
     else:
         st.session_state.sim_stage = "AGENT_TURN"
-        # 응대 초안 자동 생성을 위한 플래그 리셋
         st.session_state.auto_draft_generated = False
-
-    st.session_state.is_solution_provided = False
+        st.session_state.is_solution_provided = False
 
     # 이력 저장
     if st.session_state.sim_stage != "CLOSING":

@@ -61,9 +61,10 @@ def render_sidebar():
         
         # 기능 선택 (app.py 스타일 - 참고용 구조 추가)
         st.subheader("기능 선택")
-        feature_ids = ["home", "chat_email", "phone", "customer_data_inquiry"]
+        feature_ids = ["home", "agent_control_tower", "chat_email", "phone", "customer_data_inquiry"]
         feature_labels = {
             "home": L.get("home_tab", "홈"),
+            "agent_control_tower": L.get("agent_control_tower_tab", "🤖 AI 관제탑 (Dots 자율 업무)"),
             "chat_email": L.get("chat_email_tab", "채팅/이메일"),
             "phone": L.get("phone_tab", "전화"),
             "customer_data_inquiry": L.get("customer_data_inquiry_tab", "고객 데이터 조회"),

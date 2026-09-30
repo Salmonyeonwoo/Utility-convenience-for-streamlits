@@ -1,3 +1,16 @@
+# Python 3.9 importlib.metadata compatibility patch
+try:
+    import importlib.metadata
+    if not hasattr(importlib.metadata, 'packages_distributions'):
+        try:
+            import importlib_metadata
+            importlib.metadata.packages_distributions = importlib_metadata.packages_distributions
+        except ImportError:
+            importlib.metadata.packages_distributions = lambda: {}
+except Exception:
+    pass
+
+import random
 # Copyright (c) Streamlit Inc. (2018-2022) Snowflake Inc. (2022-2025)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -802,51 +815,83 @@ def generate_fast_cs_simulation(prompt: str) -> str:
     #    (상담원이 보낸 마지막 메시지에 맞춰 고객이 현실감 있게 답변)
     # -------------------------------------------------------------
     if "roleplaying as the customer" in p_lower:
-        # 1. 상담원이 기종명 / 체류 여부 / eSIM 정보 요청을 한 경우
+        # 1. 상담원이 구체적 사정 / 사유 / 이유 또는 증빙 서류를 요청한 경우
+        has_doc_request = any(w in lat_lower for w in [
+            "증빙", "서류", "진단서", "확인서", "소견서", "영수증", "증명서", "document", "proof", "certificate"
+        ])
+        is_asking_cancellation_reason = (
+            has_doc_request or
+            any(w in lat_lower for w in [
+                "어떤 사정", "사정인가요", "사정이 어떻게", "정확하게 어떤", "어떤 이유", "이유가 어떻게",
+                "사유가 어떻게", "취소 사유", "환불 사유", "사유를", "사정을", "이유를", "사정",
+                "사유가 무엇", "이유가 무엇", "왜 취소", "회신 부탁", "알려주실 수", "말씀해 주시",
+                "확인하시는 대로", "reason for cancellation", "why you wish to cancel",
+                "what circumstances", "what reason", "supporting documents"
+            ]) or (
+                any(w in lat_lower for w in ["취소", "환불", "cancel", "refund"]) and
+                any(w in lat_lower for w in ["사유", "이유", "사정", "여쭤 봐도", "알려주실 수", "말씀해 주시", "why", "reason", "어떻게 되시는지"])
+            )
+        )
+        is_asking_reason_or_proof = is_asking_cancellation_reason
+
+        # 2. 상담원이 기종명 / 체류 여부 / eSIM 정보 요청을 한 경우
         is_asking_device_stay = (
             any(w in lat_lower for w in ["기종", "기종명", "체류", "device", "model"]) and
             any(w in lat_lower for w in ["회신", "알려", "부탁", "어떻게", "여부", "확인하시는", "무엇인가요", "남겨"]) and
             not any(w in lat_lower for w in ["감사드립니다", "확인 감사합니다", "확인 완료", "확인되었습니다", "안내해 드린"])
         )
 
-        # 2. 상담원이 예약 번호 / 주문 번호를 요청한 경우
+        # 3. 상담원이 예약 번호 / 주문 번호를 요청한 경우
         is_asking_booking = (
             any(w in lat_lower for w in ["예약 번호", "주문 번호", "booking number", "order number", "바우처 번호"]) and
             any(w in lat_lower for w in ["알려", "말씀", "부탁", "확인", "입력", "어떻게", "please provide", "share"]) and
             not any(w in lat_lower for w in ["감사드립니다", "확인 감사합니다", "확인되었습니다"])
         )
 
-        # 3. 상담원이 여행 일정 / 인원 / 선호도를 요청한 경우
+        # 4. 상담원이 고객 연락처 / 성함 / 이메일을 요청한 경우
+        is_asking_contact = (
+            any(w in lat_lower for w in ["연락처", "전화번호", "핸드폰 번호", "휴대폰", "이메일", "성함", "contact", "phone number", "email address"]) and
+            any(w in lat_lower for w in ["알려", "말씀", "부탁", "남겨", "남겨주", "확인", "provide", "share"]) and
+            not any(w in lat_lower for w in ["감사드립니다", "확인 감사합니다", "확인되었습니다"])
+        )
+
+        # 5. 상담원이 여행 일정 / 날짜 / 인원 / 선호도를 요청한 경우
         is_asking_schedule = (
             any(w in lat_lower for w in ["일정", "날짜", "인원", "여행 일정", "travel dates", "party size"]) and
             any(w in lat_lower for w in ["알려", "말씀", "부탁", "어떻게", "계획", "share", "provide"]) and
             not any(w in lat_lower for w in ["감사드립니다", "확인 감사합니다", "확인되었습니다"])
         )
 
-        # 4. 상담원이 스위스 로밍 및 데이터 잔여량에 대해 솔루션을 제공한 경우
+        # 6. 상담원이 취소 규정 및 전액 환불 가능 기한을 안내한 경우 (사유 질문 없이 규정만 안내 시)
+        is_refund_policy_guidance = (
+            any(w in lat_lower for w in ["전액 환불", "취소 수수료", "전날", "현지 시각", "환불 규정", "취소 가능", "위약금", "환불이 가능", "full refund", "cancellation policy"]) and
+            not is_asking_cancellation_reason
+        )
+
+        # 7. 상담원이 스위스 로밍 및 데이터 잔여량에 대해 솔루션을 제공한 경우
         is_solution_swiss = (
             any(w in lat_lower for w in ["스위스", "33개국", "잔여량", "잔여 데이터", "사용량"]) and
             any(w in lat_lower for w in ["로밍", "지원", "확인 가능", "이용 가능", "조회 링크", "settings"])
         )
 
-        # 5. 상담원이 호텔 짐 보관 / 조식에 대해 솔루션을 제공한 경우
+        # 8. 상담원이 호텔 짐 보관 / 조식에 대해 솔루션을 제공한 경우
         is_solution_hotel = (
             any(w in lat_lower for w in ["짐 보관", "조식", "체크인 전", "무료 조식", "보관 서비스", "luggage", "breakfast"]) and
             any(w in lat_lower for w in ["가능", "포함", "이용", "제공", "available", "included"])
         )
 
-        # 6. 상담원이 설정 방법/해결책을 안내한 경우 (설정, 셀룰러, 로밍 ON, QR)
+        # 9. 상담원이 설정 방법/해결책을 안내한 경우 (설정, 셀룰러, 로밍 ON, QR)
         is_solution_esim = (
             any(w in lat_lower for w in ["설정", "셀룰러", "로밍", "스캔", "qr", "esim 추가"]) and
             any(w in lat_lower for w in ["켜", "on", "스캔해", "설정해", "진행", "스캔하고"])
         )
 
-        # 7. 상담원이 추가 문의 내용 확인을 명시적으로 요청한 경우 (e.g. "어떤 문의이신가요?", "문의 내용이 어떻게 되시나요?")
+        # 10. 상담원이 추가 문의 내용 확인을 명시적으로 요청한 경우 (e.g. "어떤 문의이신가요?", "문의 내용이 어떻게 되시나요?")
         is_asking_inquiry_details = any(w in lat_lower for w in [
             "어떤 문의", "문의 내용", "어떻게 되시나", "무엇이 궁금", "어떤 도움", "what is your inquiry", "how can i help"
         ])
 
-        # 8. 상담원이 추가 문의 여부를 확인하거나 종료 인사를 건넨 경우
+        # 11. 상담원이 추가 문의 여부를 확인하거나 종료 인사를 건넨 경우
         is_asking_closing = any(w in lat_lower for w in [
             "다른 문의 사항 있으신가요", "추가 문의사항이 있으신가요", "다른 문의 사항이 있으실까요",
             "다른 문의 있으신가요", "다른 문의사항 있으신가요", "다른 문의가 있으신가요",
@@ -855,31 +900,131 @@ def generate_fast_cs_simulation(prompt: str) -> str:
             "have a great day", "any other questions", "anything else"
         ])
 
-        # 분기 처리
-        if is_asking_device_stay:
+        # 12. 상담원이 의문문이나 질문을 던진 경우
+        is_general_question = any(w in lat_lower for w in ["?", "되시나요", "있으신가요", "맞으신가요", "어떠신가요", "여쭤"])
+
+        # ----------------- 분기 응답 처리 -----------------
+        # 1. 사정/사유 및 증빙 서류에 대한 구체적이고 정확한 답변
+        if is_asking_reason_or_proof:
+            if has_doc_request:
+                if lang == "ko":
+                    doc_reasons = [
+                        "갑작스러운 고열과 급성 장염으로 병원 입원 치료를 받게 되어 일정을 취소하게 되었습니다. 병원 진단서와 진료비 영수증을 증빙 서류로 준비하여 확인되는 대로 바로 회신드리겠습니다.",
+                        "회사에서 긴급 프로젝트 해외 출장 일정이 잡혀 부득이하게 취소하게 되었습니다. 재직 증명서 및 출장 확인 공문을 증빙 서류로 준비하여 바로 전달드리겠습니다.",
+                        "동행 가족의 갑작스러운 건강 악화로 인해 비행기 탑승 불가 소견을 받았습니다. 병원 의사 소견서와 가족관계증명서 서류를 준비해서 보내드리면 될까요?",
+                        "예약 당일 항공편이 기상 악화로 결항되어 현지 도착이 불가능해졌습니다. 항공사 결항 증명서 서류를 발급받아 확인되는 대로 바로 첨부해 드리겠습니다.",
+                        "개인적인 긴급 수술 일정이 잡혀 부득이 취소해야 하는 상황입니다. 병원 입퇴원 확인서 및 진단서 서류 발급받는 대로 바로 회신드리겠습니다."
+                    ]
+                    return random.choice(doc_reasons)
+                elif lang == "en":
+                    doc_reasons = [
+                        "I was suddenly hospitalized due to acute enteritis and high fever. I will send the medical certificate and hospital receipt as proof as soon as issued.",
+                        "I have an urgent overseas business trip scheduled by my company. I will prepare the employment certificate and official business trip dispatch letter.",
+                        "My travel companion suddenly fell severely ill and cannot fly. I will provide the doctor's note and family relation certificate."
+                    ]
+                    return random.choice(doc_reasons)
+                else:
+                    doc_reasons = [
+                        "急な高熱と急性腸炎で入院治療を受けることになり、旅行に行けなくなりました。医師の診断書と領収書を発行して確認次第、返信いたします。",
+                        "会社から緊急の海外出張命令が下り、やむを得ずキャンセルすることになりました。在職証明書と出張辞令書を準備して提出いたします。"
+                    ]
+                    return random.choice(doc_reasons)
+            else:
+                if lang == "ko":
+                    reasons = [
+                        "갑작스럽게 회사 출장 일정이 잡혀서 부득이하게 여행 일정을 취소하게 되었습니다. 전액 환불 접수 부탁드립니다.",
+                        "함께 가기로 한 동행자가 갑자기 독감에 걸려 여행을 함께 갈 수 없는 상황이라 취소 요청드립니다.",
+                        "현지 항공편 스케줄이 갑자기 변경되면서 해당 투어 시간에 맞출 수 없게 되었습니다. 취소 진행 부탁드립니다.",
+                        "개인적인 긴급 사정이 생겨 일정을 부득이 취소해야 할 것 같습니다. 안내해 주신 대로 환불 처리 부탁드립니다.",
+                        "여행 일정이 전체적으로 변경되어 다른 날짜나 다른 상품으로 재예약하고자 취소를 요청드립니다. 바로 취소 처리될까요?"
+                    ]
+                    return random.choice(reasons)
+                elif lang == "en":
+                    reasons = [
+                        "I have to cancel due to an unexpected urgent business trip. Please proceed with the full refund as guided.",
+                        "My travel companion suddenly fell ill, so we are unable to make the trip. Please help process the cancellation."
+                    ]
+                    return random.choice(reasons)
+                else:
+                    reasons = [
+                        "急な出張の予定が入ってしまい、誠に残念ながら日程をキャンセルせざるを得なくなりました。全額返金のお手続きをお願いいたします。",
+                        "同行者の体調不良により旅行に参加できなくなったため、キャンセルをお願いしたく存じます。"
+                    ]
+                    return random.choice(reasons)
+
+
+
+        # 2. 기종/체류지
+        elif is_asking_device_stay:
             if lang == "ko":
-                return "네, 현재 사용 중인 기종은 아이폰 15 프로이고, 지금 프랑스 파리 현지에 도착해 체류 중인 상태입니다. eSIM 설정 확인 부탁드립니다."
+                devices = [
+                    "네, 현재 사용 중인 기종은 아이폰 15 프로이고, 지금 프랑스 파리 현지에 도착해 체류 중인 상태입니다. 설정 확인 부탁드립니다.",
+                    "갤럭시 S24 울트라를 사용 중이며, 현재 일본 도쿄에 체류 중입니다. 확인 부탁드려요.",
+                    "아이폰 14 프로 모델이고, 현지 공항에 도착한 상태입니다. eSIM 활성화 확인 부탁드립니다."
+                ]
+                return random.choice(devices)
             elif lang == "en":
                 return "Yes, I am using an iPhone 15 Pro and I have arrived and am staying in Paris, France. Please check my eSIM activation."
             else:
                 return "はい、使用している機種はiPhone 15 Proで、現在フランスのパリに到着して滞在しております。eSIMの確認をお願いいたします。"
 
+        # 3. 예약번호
         elif is_asking_booking:
             if lang == "ko":
-                return "네, 제 예약 번호는 BK-882910 입니다. 확인 부탁드립니다."
+                bookings = [
+                    "네, 제 예약 번호는 BK-882910 입니다. 확인 부탁드립니다.",
+                    "예약 확인 메일에 있는 주문 번호는 KLK-2026-9482 입니다. 확인해 주시겠어요?",
+                    "바우처에 적힌 예약 번호가 BK-7749120 입니다. 조회 부탁드립니다."
+                ]
+                return random.choice(bookings)
             elif lang == "en":
                 return "Yes, my reservation number is BK-882910. Please look into it."
             else:
                 return "はい、私の予約番号は BK-882910 です。ご確認をお願いいたします。"
 
+        # 4. 연락처/성함/이메일
+        elif is_asking_contact:
+            if lang == "ko":
+                contacts = [
+                    f"제 연락처는 010-1234-5678 이고 이메일은 {cust_name}@example.com 입니다.",
+                    f"성함은 {cust_name}이고 휴대폰 번호는 010-9876-5432 입니다. 확인 부탁드립니다."
+                ]
+                return random.choice(contacts)
+            elif lang == "en":
+                return f"My name is {cust_name}, phone is 010-1234-5678, and email is {cust_name}@example.com."
+            else:
+                return f"名前は{cust_name}、連絡先は010-1234-5678です。ご確認お願いいたします。"
+
+        # 5. 일정/인원
         elif is_asking_schedule:
             if lang == "ko":
-                return "네, 다음 달 초 3박 4일 일정으로 성인 2명 여행을 생각 중입니다. 위치가 편리하고 평점이 좋은 곳으로 추천해 주시면 좋겠습니다."
+                schedules = [
+                    "네, 다음 달 초 3박 4일 일정으로 성인 2명 여행을 생각 중입니다. 위치가 편리하고 평점이 좋은 곳으로 추천해 주시면 좋겠습니다.",
+                    "참여 예정일은 이번 주 토요일이고, 성인 2명으로 예약했습니다.",
+                    "예약 날짜는 10월 15일이고, 아이 1명 포함 총 3명 가족 여행 일정입니다."
+                ]
+                return random.choice(schedules)
             elif lang == "en":
                 return "I am planning a 4-day trip for 2 adults early next month. I would appreciate recommendations for accommodations with convenient locations."
             else:
                 return "来月初旬に大人2名で3泊4日の日程を検討しています。立地が良く評価の高いところでおすすめをお願いできますでしょうか。"
 
+        # 6. 환불 규정 안내를 받은 경우
+        elif is_refund_policy_guidance:
+            if lang == "ko":
+                refund_replies = [
+                    "안내해 주신 취소 규정 확인했습니다. 전액 환불이 가능하다고 하니 다행이네요. 취소 신청 및 환불 접수 부탁드립니다. 환불은 며칠 정도 소요될까요?",
+                    "상세한 취소 규정 안내 감사드립니다. 말씀해 주신 전액 환불 기한 내에 맞춰 취소 처리 진행 부탁드립니다.",
+                    "네 규정 확인했습니다! 취소 접수 부탁드리며, 취소 완료되면 알림톡이나 메일로 취소 확인서가 발송되나요?",
+                    "다행이네요! 안내해 주신 대로 취소 및 환불 접수 진행해 주세요. 수고 많으십니다."
+                ]
+                return random.choice(refund_replies)
+            elif lang == "en":
+                return "Thank you for confirming the cancellation policy. I am glad full refund is possible. Please proceed with the cancellation and refund."
+            else:
+                return "キャンセル規定のご案内ありがとうございます。全額返金が可能とのことで安心いたしました。手続きの進行をお願いいたします。"
+
+        # 7. 스위스 로밍 솔루션
         elif is_solution_swiss:
             if lang == "ko":
                 return "네, 스위스에서도 문제없이 로밍이 되고 데이터 잔여량도 쉽게 확인할 수 있겠네요! 친절하고 자세하게 안내해 주셔서 감사합니다. 다른 문의 사항은 없습니다. 좋은 하루 되세요! 😊"
@@ -888,6 +1033,7 @@ def generate_fast_cs_simulation(prompt: str) -> str:
             else:
                 return "スイスでも問題なく利用でき、データ残量も簡単に確認できるのですね！丁寧かつわかりやすくご案内いただきありがとうございます。他には特にございません。良い一日をお過ごしください！"
 
+        # 8. 호텔 솔루션
         elif is_solution_hotel:
             if lang == "ko":
                 return "체크인 전에도 짐을 맡길 수 있고 조식도 포함되어 있다니 안심이네요! 친절하게 안내해 주셔서 정말 감사합니다. 다른 문의 사항은 없습니다. 수고하세요!"
@@ -896,6 +1042,7 @@ def generate_fast_cs_simulation(prompt: str) -> str:
             else:
                 return "チェックイン前でも荷物を預けられ、朝食も付いているとのことで安心いたしました！丁寧にご案内いただきありがとうございます。他にはございません。"
 
+        # 9. eSIM 설정 솔루션
         elif is_solution_esim:
             if lang == "ko":
                 return "네, 안내해 주신 대로 설정에서 QR 코드를 스캔하고 데이터 로밍을 켜보겠습니다! 친절하게 안내해 주셔서 감사합니다."
@@ -904,6 +1051,7 @@ def generate_fast_cs_simulation(prompt: str) -> str:
             else:
                 return "かしこまりました。ご案内通り設定からQRコードをスキャンし、データローミングをONにしてみます。ありがとうございます！"
 
+        # 10. 추가 문의 상세
         elif is_asking_inquiry_details:
             already_asked_followup = any(w in p_lower for w in [
                 "혹시 프랑스 체류 중에", "데이터 사용량이나 잔여 데이터",
@@ -939,23 +1087,61 @@ def generate_fast_cs_simulation(prompt: str) -> str:
                 else:
                     return "ご案内いただいた内容で十分に理解できました。ご親切にありがとうございます。他にはございません。"
 
+        # 11. 마무리 인사
         elif is_asking_closing:
             if lang == "ko":
-                return "네, 친절하게 안내해 주셔서 감사합니다. 다른 문의 사항은 없습니다. 좋은 하루 되세요!"
+                closing_replies = [
+                    "네, 친절하게 안내해 주셔서 감사합니다. 다른 문의 사항은 없습니다. 좋은 하루 되세요!",
+                    "모든 궁금증이 잘 해결되었습니다. 신속하고 친절한 상담 감사드립니다. 수고하세요!",
+                    "네 확인 잘 되었습니다. 더 필요한 사항은 없습니다. 상담사님도 좋은 하루 보내세요! 😊"
+                ]
+                return random.choice(closing_replies)
             elif lang == "en":
                 return "Thank you so much for your kind assistance. That answers all my questions. Have a great day!"
             else:
                 return "丁寧にご対応いただきありがとうございました。他にはございません。良い一日をお過ごしください！"
 
+        # 12. 일반 질문형 발화에 대한 응답
+        elif is_general_question:
+            if lang == "ko":
+                question_replies = [
+                    "네, 말씀해 주신 내용 잘 확인했습니다. 제가 추가로 말씀드리거나 제출해야 할 사항이 있을까요?",
+                    "네, 앞서 말씀드린 요청 사항대로 확인 부탁드립니다. 다른 확인 사항이 있으시면 편하게 말씀해 주세요.",
+                    "네 말씀해 주신 부분 잘 확인했습니다. 다음 단계는 어떻게 진행하면 될까요?"
+                ]
+                return random.choice(question_replies)
+            elif lang == "en":
+                return "Yes, that is correct. Please proceed as you described."
+            else:
+                return "はい、その通りです。ご案内いただいた通りに進めていただけますでしょうか。"
+
+        # 13. 기본 일반 대화 응답 (단일 고정 문구 탈피, 자연스러운 5+ 다채로운 대화체 풀)
         else:
             if lang == "ko":
-                return "네, 확인했습니다. 안내해 주신 대로 진행 부탁드립니다."
+                natural_replies = [
+                    "네, 설명해 주신 내용 잘 확인했습니다. 말씀해 주신 대로 원활하게 처리 부탁드립니다.",
+                    "친절하고 명확하게 안내해 주셔서 감사합니다. 알려주신 내용대로 진행해 주시면 감사하겠습니다.",
+                    "상담원님 안내 말씀 잘 이해했습니다. 혹시 추가로 제가 확인해야 할 사항이 있을까요?",
+                    "확인해 주셔서 감사합니다! 안내해 주신 절차에 맞춰서 진행 부탁드릴게요.",
+                    "자세히 설명해 주셔서 감사해요. 바로 확인되었으니 말씀하신 대로 진행해 주세요."
+                ]
+                return random.choice(natural_replies)
             elif lang == "en":
-                return "Understood. Please proceed as guided."
+                natural_replies = [
+                    "Understood. Thank you for the clear explanation, please proceed as guided.",
+                    "Thank you so much for your kind help. I appreciate your prompt assistance.",
+                    "Everything is clear. Please go ahead and process as discussed.",
+                    "Got it, thanks for confirming! Please let me know if you need anything else from my side."
+                ]
+                return random.choice(natural_replies)
             else:
-                return "了解いたしました。ご案内いただいた通りにお願いいたします。"
+                natural_replies = [
+                    "了解いたしました。ご案内いただいた通りにお願いいたします。",
+                    "丁寧にご説明いただきありがとうございます。ご案内通りに進めていただけますと幸いです。",
+                    "内容を確認いたしました。迅速なご対応に感謝申し上げます。引き続きよろしくお願いいたします。"
+                ]
+                return random.choice(natural_replies)
 
-    # -------------------------------------------------------------
     # D. 전화 통화 요약 (summarize_history_with_ai / summarize_history_for_call)
     # -------------------------------------------------------------
     if "summarizing customer phone calls" in p_lower or "ai call summary" in p_lower or "telephone support conversation log" in p_lower:

@@ -125,6 +125,19 @@ if feature_selection == L.get("home_tab", "홈"):
         st.title(L.get("dashboard_title", "📊 대시보드"))
         st.info(L.get("home_page_module_error", "홈 페이지 모듈을 불러올 수 없습니다."))
 
+elif feature_selection in [
+    L.get("agent_control_tower_tab"),
+    "🤖 AI 관제탑 (Dots 자율 업무)",
+    "🤖 AI Control Tower (Dots Engine)",
+    "🤖 AI管制塔 (Dots自律業務)",
+    "🤖 AI 관제탑 (업무 자동화)"
+] or st.session_state.get("feature_selection_id") == "agent_control_tower":
+    try:
+        from _pages._agent_control_tower import render_agent_control_tower_page
+        render_agent_control_tower_page(current_lang)
+    except ImportError as e:
+        st.error(f"AI 에이전트 관제탑 모듈을 불러올 수 없습니다: {str(e)}")
+
 elif feature_selection == L.get("chat_email_tab", "채팅/이메일"):
     if CHAT_SIMULATOR_AVAILABLE:
         render_chat_simulator()

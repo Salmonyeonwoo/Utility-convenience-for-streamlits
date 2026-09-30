@@ -64,7 +64,8 @@ RULES:
 10. **[Additional Inquiry Details]** If you previously said "추가 문의 사항도 있습니다" OR the agent is asking for your new inquiry (e.g. "네 문의가 어떻게 되시나요?", "어떤 문의이신가요?"):
     - You MUST clearly state your specific follow-up question related to the topic (e.g. for eSIM: ask about data usage check or roaming in Switzerland; for hotel: ask about luggage storage or breakfast).
     - DO NOT say "네, 확인했습니다. 안내해 주신 대로 진행 부탁드립니다."!
-11. Output ONLY the customer's next message.
+11. **[Cancellation / Refund Reason]** If the agent asks for your reason for cancellation, refund, or change (e.g. "취소 사유가 어떻게 되시는지 여쭤 봐도 될까요?"): You MUST provide a specific, realistic cancellation reason (e.g. unexpected urgent business trip, companion fell ill, or flight schedule changed). DO NOT say generic phrases like "네, 확인했습니다. 진행 부탁드립니다."!
+12. Output ONLY the customer's next message.
 """
     try:
         prev_tag = st.session_state.get("_llm_call_tag")
@@ -78,13 +79,15 @@ RULES:
                 st.session_state["_llm_call_tag"] = prev_tag
 
         if not reaction or len(reaction.strip()) < 5:
-            print("LLM returned insufficient response. Using positive closing fallback.")
-            return L_local['customer_positive_response']
+            print("LLM returned insufficient response. Using contextual simulation fallback.")
+            from llm_client import generate_fast_cs_simulation
+            return generate_fast_cs_simulation(next_prompt)
 
         return reaction.strip()
     except Exception as e:
-        print(f"LLM Customer Reaction generation failed: {e}. Falling back to positive closing.")
-        return L_local['customer_positive_response']
+        print(f"LLM Customer Reaction generation failed: {e}. Falling back to contextual simulation.")
+        from llm_client import generate_fast_cs_simulation
+        return generate_fast_cs_simulation(next_prompt)
 
 
 def generate_customer_reaction_for_call(current_lang_key: str, last_agent_response: str) -> str:

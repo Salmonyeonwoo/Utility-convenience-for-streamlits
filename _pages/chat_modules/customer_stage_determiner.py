@@ -1,3 +1,21 @@
+
+def is_agent_actively_asking():
+    """상담원이 질문을 하거나 사유/서류 등 추가 정보를 요청 중인지 감지"""
+    last_agent_msg = ""
+    for msg in reversed(st.session_state.get("simulator_messages", [])):
+        if msg.get("role") == "agent_response" and msg.get("content"):
+            last_agent_msg = msg.get("content", "")
+            break
+    if not last_agent_msg:
+        return False
+    if "?" in last_agent_msg:
+        return True
+    asking_keywords = [
+        "어떤 사정", "사유", "이유", "사정인가요", "증빙", "서류",
+        "회신 부탁", "알려주", "말씀해 주", "확인 부탁", "어떻게 되시",
+        "무엇인가요", "남겨주", "기종", "예약 번호", "되실까요", "있으실까요"
+    ]
+    return any(w in last_agent_msg.lower() for w in asking_keywords)
 # ========================================
 # chat_modules/customer_stage_determiner.py
 # 고객 응답 후 단계 결정 모듈
@@ -81,28 +99,24 @@ def _handle_email_closing_stage(customer_response, L, current_lang, is_positive_
 
 
 def _handle_normal_stage(customer_response, L, is_positive_closing, no_more_regex):
-    """일반 단계 처리 (백업 파일의 원본 로직 유지)"""
-    if L["customer_positive_response"] in customer_response or ("알겠습니다" in customer_response and "감사합니다" in customer_response):
-        if st.session_state.is_solution_provided:
-            return "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
-        else:
-            return "AGENT_TURN"
-    elif is_positive_closing:
-        escaped = re.escape(L['customer_no_more_inquiries'])
-        no_more_pattern = escaped.replace(r'\.', r'[.\\s]*').replace(r'\ ', r'[.\\s]*')
-        no_more_regex = re.compile(no_more_pattern, re.IGNORECASE)
-        if no_more_regex.search(customer_response):
-            return "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
-        else:
-            if st.session_state.is_solution_provided:
-                return "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
-            else:
-                return "AGENT_TURN"
+    """일반 단계 처리: 상담원이 질문/서류 요청 중이면 절대 종료하지 않고 AGENT_TURN 유지"""
+    if is_agent_actively_asking():
+        st.session_state.is_solution_provided = False
+        return "AGENT_TURN"
+
+    has_explicit_closing = (
+        ("알겠습니다" in customer_response or "이해했습니다" in customer_response or "확인했습니다" in customer_response) and
+        ("감사합니다" in customer_response or "감사" in customer_response)
+    )
+
+    if has_explicit_closing and st.session_state.get("is_solution_provided", False):
+        return "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
+    elif is_positive_closing and st.session_state.get("is_solution_provided", False):
+        return "WAIT_CLOSING_CONFIRMATION_FROM_AGENT"
     elif customer_response.startswith(L.get("customer_escalation_start", "")):
         return "ESCALATION_REQUIRED"
     else:
         return "AGENT_TURN"
-
 
 def _add_agent_closing_if_needed(current_lang):
     """에이전트 감사 인사 추가 (필요한 경우)"""
