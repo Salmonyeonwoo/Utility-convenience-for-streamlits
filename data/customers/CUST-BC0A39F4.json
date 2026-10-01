@@ -1,0 +1,62 @@
+{
+    "basic_info": {
+        "customer_id": "CUST-BC0A39F4",
+        "name": "Yeongwookim23",
+        "phone": "010-2345-6789",
+        "email": "Yeongwookim23@gmail.com",
+        "identity_hash": "609f26f998de0e8a851249dc81564618",
+        "created_at": "2026-10-01T10:32:50.525238",
+        "last_access_at": "2026-10-01T10:32:50.525238"
+    },
+    "crm_profile": {
+        "trait": "일반",
+        "total_consultations": 0,
+        "avg_satisfaction": 0.0,
+        "tags": []
+    },
+    "consultation_history": [],
+    "agent_manual_responses": [
+        {
+            "response": "안녕하세요 고객님 저희 클룩 센터에 연락 주셔서 감사드립니다. 해당 상품 취소의 경우 참여일로부터 31일 전 이내에 취소 신청을 하시면, 전액 환불이 가능합니다. 어떤 건으로 취소 요청을 하신 건지 여쭤 봐도 될까요?",
+            "timestamp": "2026-10-01T10:32:50.546776",
+            "reason": "일반 응대",
+            "is_cancellation_refund": true
+        },
+        {
+            "response": "네 그러시면, 말씀하신 동행자 분의 감기, 다른 출장 일정 등의 증빙 서류를 확인하시는 대로 공유해 주시면 바로 저희가 검토를 해 보도록 하겠습니다.",
+            "timestamp": "2026-10-01T10:34:28.427615",
+            "reason": "취소/환불 요청 - 에이전트 직접 응대",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "네 확인해 주시는 대로 공유 부탁드립니다",
+            "timestamp": "2026-10-01T10:35:31.258919",
+            "reason": "취소/환불 요청 - 에이전트 직접 응대",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "추가 문의 어떻게 되시나요?",
+            "timestamp": "2026-10-01T10:44:10.285419",
+            "reason": "고객 불만/직접 응대 요청",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "2. 규정 및 정책 확인:\n- 구매 상품: 유럽 33개국 통합 커버리지 eSIM (프랑스, 스위스 모두 기본 포함, 별도 요금 없음)\n\n> 🔍 **RAG 지식 베이스 출처 검증 (신뢰도: 92.3% - 매우 높음 (Verified))**\n> - **참조 규정**: `사내 FAQ 및 서비스 가이드 (클룩 부문)` > `eSIM은 어떤 국가에서 사용할 수 있나요?`\n> - **공식 근거**: \"eSIM은 전 세계 대부분의 국가에서 사용 가능합니다. 주요 여행지인 유럽, 아시아, 아메리카, 오세아니아 등 전 세계 190개 이상의 국가와 지역에서 사용할 수 있습니다. 각 국가별 데이터 요금제와 사용 가능 여부는 상품 페이지에서 확인하실 수 있습니다.\"\n\n위의 내용대로 확인 부탁드립니다.",
+            "timestamp": "2026-10-01T10:45:58.058808",
+            "reason": "고객 불만/직접 응대 요청",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "eSIM 부분은 해당 기종 부분이 아이폰 14 혹은 갤럭시 최신 폰들 위주, 그리고 프랑스 및 스위스 등 유럽 현지에 도착하신 후에 활성화를 하셔야 바로 이용이 되시니 참고 부탁드립니다. 그 전에는 아무 서류 제출 안 하셔도 됩니다.",
+            "timestamp": "2026-10-01T10:49:10.383424",
+            "reason": "고객 불만/직접 응대 요청",
+            "is_cancellation_refund": false
+        },
+        {
+            "response": "앞서 말씀하신 부분은 이미 환불 처리 완료되었으니 확인 부탁드립니다.",
+            "timestamp": "2026-10-01T10:49:53.265720",
+            "reason": "고객 불만/직접 응대 요청",
+            "is_cancellation_refund": true
+        }
+    ]
+}

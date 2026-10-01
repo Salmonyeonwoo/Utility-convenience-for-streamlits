@@ -1,7 +1,7 @@
 # ========================================
 # _pages/_agent_control_tower.py
 # AI 에이전트 관제탑 (Autonomous Agent Control Tower - OpenAI Dots / Operator Architecture)
-# 다국어(ko, en, ja) 100% 지원 및 실시간 도구 텔레메트리 / 자율 업무 목표 실행
+# 다국어(ko, en, ja) 100% 지원 및 실시간 Gemini 추론 & 채팅 탭 양방향 데이터 브릿지
 # ========================================
 import streamlit as st
 import json
@@ -85,8 +85,8 @@ TRANSLATIONS = {
         "solution_draft_caption": "상담원 검토 및 즉시 발송 메시지 (필요 시 수정 가능)",
         "rec_channel": "권장 발송 채널",
         "rec_action": "추천 후속 조치",
-        "btn_send_customer": "🚀 고객에게 즉시 발송",
-        "send_success": "✅ 고객에게 맞춤 솔루션이 안전하게 발송되었습니다!",
+        "btn_send_customer": "🚀 [채팅 탭]에 자동 승인 답변으로 전송",
+        "send_success": "✅ 고객 맞춤 솔루션이 채팅 탭으로 안전하게 전송되었습니다!",
         "crm_payload_title": "📋 CRM 자동 업데이트 페이로드",
         "btn_commit_crm": "💾 CRM 시스템 데이터베이스 즉시 커밋",
         "commit_success": "✅ 고객 CRM 데이터베이스에 자율 처리 이력이 성공적으로 저장되었습니다.",
@@ -167,8 +167,8 @@ TRANSLATIONS = {
         "solution_draft_caption": "Agent review & instant dispatch message (editable as needed)",
         "rec_channel": "Recommended Channel",
         "rec_action": "Recommended Next Action",
-        "btn_send_customer": "🚀 Dispatch to Customer Now",
-        "send_success": "✅ Tailored solution has been safely dispatched to the customer!",
+        "btn_send_customer": "🚀 Dispatch to Chat Simulator Now",
+        "send_success": "✅ Tailored solution has been safely dispatched to the chat tab!",
         "crm_payload_title": "📋 CRM Update Payload (Structured JSON)",
         "btn_commit_crm": "💾 Commit to CRM Database Now",
         "commit_success": "✅ Autonomous resolution records successfully committed to CRM database.",
@@ -249,8 +249,8 @@ TRANSLATIONS = {
         "solution_draft_caption": "オペレーター確認および即時送信メッセージ（必要に応じて編集可能）",
         "rec_channel": "推奨送信チャネル",
         "rec_action": "推奨フォローアクション",
-        "btn_send_customer": "🚀 顧客へ即時送信",
-        "send_success": "✅ 顧客向けソリューションが安全に送信されました！",
+        "btn_send_customer": "🚀 チャットタブへ即時送信",
+        "send_success": "✅ 顧客向けソリューションがチャットタブに安全に送信されました！",
         "crm_payload_title": "📋 CRM自動更新ペイロード",
         "btn_commit_crm": "💾 CRMデータベースへ即時コミット",
         "commit_success": "✅ 顧客CRMデータベースに自律処理履歴が正常に保存されました。",
@@ -378,13 +378,33 @@ def render_agent_control_tower_page(current_lang: Optional[str] = None):
     """, unsafe_allow_html=True)
 
     # ----------------------------------------------------
-    # 2. 에이전트 미션 설정 패널 (Mission Configuration)
+    # 2. 에이전트 미션 설정 패널 (동적 고객 풀 & 실시간 채팅 연동)
     # ----------------------------------------------------
     st.markdown(f"### {T['mission_cfg_title']}")
     st.caption(T["mission_cfg_desc"])
 
-    # 고객 목록 구성 (다국어 프리셋 지원)
-    customer_presets = T["customer_presets"]
+    # [핵심] 고객 목록 구성: 기본 프리셋 3명 + 채팅 탭의 실시간 대화 자동 결합
+    customer_presets = list(T["customer_presets"])
+
+    # 채팅 시뮬레이터 세션(simulator_messages)에서 실시간 고객 발화 감지
+    sim_msgs = st.session_state.get("simulator_messages", [])
+    cust_inquiries = [
+        m.get("content", "") for m in sim_msgs 
+        if isinstance(m, dict) and m.get("role") in ["customer", "customer_rebuttal", "initial_query", "user"]
+    ]
+    if cust_inquiries:
+        latest_cust_msg = cust_inquiries[-1]
+        live_cust_name = st.session_state.get("current_customer_name", "실시간 채팅 고객")
+        snippet = (latest_cust_msg[:24] + "...") if len(latest_cust_msg) > 24 else latest_cust_msg
+        
+        live_entry = {
+            "id": "LIVE_CHAT",
+            "name": live_cust_name,
+            "label": f"🔥 [실시간 채팅 연동] {live_cust_name} ({snippet})"
+        }
+        # 맨 앞에 추가하여 사용자가 채팅 후 넘어왔을 때 바로 보이도록 함
+        customer_presets.insert(0, live_entry)
+
     customer_dict = {p["label"]: p for p in customer_presets}
 
     with st.container():
@@ -459,7 +479,7 @@ def render_agent_control_tower_page(current_lang: Optional[str] = None):
             mission_id=f"MSN-{int(time.time())}",
             task_type=selected_task,
             customer_id=selected_customer.get("id", "CUST001"),
-            customer_name=selected_customer.get("name", "김민수"),
+            customer_name=selected_customer.get("name", "고객"),
             custom_goal=custom_goal.strip() if custom_goal else "",
             params={"execution_mode": execution_mode}
         )
@@ -529,53 +549,14 @@ def render_agent_control_tower_page(current_lang: Optional[str] = None):
     # ----------------------------------------------------
     result = st.session_state.get("agent_workflow_result")
     if result:
-        # 1) 기존 구버전 객체 누락 속성 방어 패치 (AttributeError 원천 차단)
+        # 방어적 속성 검사
         if not hasattr(result, "tool_telemetry") or result.tool_telemetry is None:
             result.tool_telemetry = []
         if not hasattr(result, "lang") or not result.lang:
-            result.lang = "ko"  # 구버전 객체는 한국어로 생성되었으므로 'ko' 부여
+            result.lang = "ko"
         if hasattr(result, "mission") and result.mission:
             if not hasattr(result.mission, "custom_goal") or result.mission.custom_goal is None:
                 result.mission.custom_goal = ""
-
-        # 2) 다국어 실시간 동기화: 언어 변경 시 결과 내용도 현재 선택된 언어로 즉시 동기화(재생성)
-        if result.lang != current_lang:
-            try:
-                engine = AutonomousAgentEngine()
-                target_mission = getattr(result, "mission", None)
-                if not target_mission:
-                    target_mission = AgentMission(
-                        mission_id=f"MSN-{int(time.time())}",
-                        task_type=T["task_options"][0],
-                        customer_id=T["customer_presets"][0]["id"],
-                        customer_name=T["customer_presets"][0]["name"],
-                        custom_goal=st.session_state.get("custom_dots_goal_input", "")
-                    )
-                else:
-                    if not hasattr(target_mission, "custom_goal"):
-                        target_mission.custom_goal = ""
-                    # 고객명 및 태스크 언어 동기화
-                    cid = getattr(target_mission, "customer_id", "CUST001")
-                    if current_lang == "en":
-                        target_mission.task_type = T["task_options"][0]
-                        target_mission.customer_name = "Min-soo Kim" if cid == "CUST001" else ("Eun-chan Park" if cid == "CUST002" else "Young-hee Lee")
-                    elif current_lang == "ja":
-                        target_mission.task_type = T["task_options"][0]
-                        target_mission.customer_name = "キム・ミンス" if cid == "CUST001" else ("パク・ウンチャン" if cid == "CUST002" else "イ・ヨンヒ")
-                    else:
-                        target_mission.task_type = T["task_options"][0]
-                        target_mission.customer_name = "김민수" if cid == "CUST001" else ("박은찬" if cid == "CUST002" else "이영희")
-
-                sync_state = None
-                for s in engine.run_workflow_stream(target_mission, lang=current_lang):
-                    sync_state = s
-                if sync_state and sync_state.is_finished:
-                    result = sync_state
-                    st.session_state.agent_workflow_result = result
-            except Exception:
-                # 동기화 실패 시 구버전 객체 제거
-                st.session_state.agent_workflow_result = None
-                result = None
 
     if result and getattr(result, "is_finished", False):
         st.markdown("---")
@@ -608,7 +589,7 @@ def render_agent_control_tower_page(current_lang: Optional[str] = None):
         with m3:
             st.metric(
                 label=T["metric_sentiment"],
-                value=T["metric_sentiment_val"],
+                value=step2_out.get("sentiment_label", T["metric_sentiment_val"])[:18],
                 delta=T["metric_sentiment_delta"],
                 delta_color="normal"
             )
@@ -655,17 +636,33 @@ def render_agent_control_tower_page(current_lang: Optional[str] = None):
                 value=solution_text,
                 height=180
             )
-            col_act1, col_act2 = st.columns([3, 1])
+            col_act1, col_act2 = st.columns([3, 1.4])
             with col_act1:
                 st.caption(f"{T['rec_channel']}: {action_plan.get('channel', 'Chat & SMS')} | {T['rec_action']}: {action_plan.get('recommendation')}")
             with col_act2:
+                # [핵심 역동기화 브릿지] 버튼 클릭 시 채팅 탭의 simulator_messages로 답변 주입
                 if st.button(T["btn_send_customer"], type="primary", use_container_width=True):
-                    st.success(T["send_success"])
+                    if "simulator_messages" not in st.session_state:
+                        st.session_state.simulator_messages = []
+                    
+                    st.session_state.simulator_messages.append({
+                        "role": "agent_response",
+                        "content": f"🤖 **[Dots AI 자율 에이전트 승인 답변]**\n\n{edited_solution}",
+                        "feedback": None,
+                        "timestamp": datetime.now().strftime("%H:%M:%S")
+                    })
+                    st.session_state.agent_response_area_text = edited_solution
+                    st.session_state.initial_advice_provided = True
+                    st.success(f"{T['send_success']}")
+                    st.info("💡 이제 상단 또는 사이드바 메뉴에서 **[채팅/이메일]** 탭으로 이동하시면 방금 승인된 에이전트 답변이 대화창에 즉시 등록되어 있는 것을 확인하실 수 있습니다!")
 
         with tab_crm:
             st.markdown(f"#### {T['crm_payload_title']}")
             st.json(crm_payload)
             if st.button(T["btn_commit_crm"], use_container_width=True):
+                if "crm_committed_records" not in st.session_state:
+                    st.session_state.crm_committed_records = []
+                st.session_state.crm_committed_records.append(crm_payload)
                 st.success(T["commit_success"])
 
         with tab_telemetry:
